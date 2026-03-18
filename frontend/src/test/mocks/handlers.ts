@@ -1,4 +1,8 @@
 import { http, HttpResponse } from 'msw'
+import {
+  sampleOptimizationResult,
+  sampleDemoResponse,
+} from '../fixtures/optimization-result'
 
 const API_BASE = 'http://localhost:8000'
 
@@ -7,35 +11,25 @@ export const handlers = [
     return HttpResponse.json({ status: 'ok' })
   }),
 
-  http.post(`${API_BASE}/api/optimize`, async ({ request }) => {
+  http.post(`${API_BASE}/api/optimize`, async () => {
+    return HttpResponse.json(sampleOptimizationResult)
+  }),
+
+  http.post(`${API_BASE}/api/chat`, async () => {
     return HttpResponse.json({
-      optimal_conversion: 25000,
-      tax_impact: { /* stub */ },
-      projections: [],
-      reasoning_trace: { conversion_amount: 25000, reasoning_steps: ['Step 1'] },
+      response: 'Based on your inputs, converting $45,000 in 2026 and $50,000 in 2027 could save approximately $28,500 in lifetime taxes by filling the 12% and 22% brackets during your low-income years.',
     })
   }),
 
-  http.post(`${API_BASE}/api/chat`, async ({ request }) => {
-    return HttpResponse.json({
-      response: 'Based on your inputs, converting $25,000 this year could save approximately $15,000 in lifetime taxes.',
-    })
-  }),
-
-  http.post(`${API_BASE}/api/email`, async ({ request }) => {
+  http.post(`${API_BASE}/api/email`, async () => {
     return HttpResponse.json({ success: true })
   }),
 
-  http.post(`${API_BASE}/api/feedback`, async ({ request }) => {
+  http.post(`${API_BASE}/api/feedback`, async () => {
     return HttpResponse.json({ success: true })
   }),
 
   http.get(`${API_BASE}/api/demo`, () => {
-    return HttpResponse.json({
-      optimal_conversion: 30000,
-      tax_impact: {},
-      projections: [],
-      reasoning_trace: { conversion_amount: 30000, reasoning_steps: ['Demo step'] },
-    })
+    return HttpResponse.json(sampleDemoResponse)
   }),
 ]

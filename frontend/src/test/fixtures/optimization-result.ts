@@ -1,23 +1,161 @@
-export const sampleOptimizationResult = {
-  optimal_conversion: 25000,
-  tax_impact: {
-    current_year_tax_increase: 5500,
-    lifetime_tax_savings: 15000,
-    effective_rate: 0.22,
-  },
-  projections: [
-    { year: 2024, traditional_balance: 475000, roth_balance: 25000, tax_paid: 5500 },
-    { year: 2025, traditional_balance: 450000, roth_balance: 52000, tax_paid: 0 },
+import type { OptimizationResult, DemoResponse } from "@/lib/types";
+
+export const sampleOptimizationResult: OptimizationResult = {
+  yearly_conversions: [45000, 50000, 0],
+  total_conversion: 95000,
+  total_tax_on_conversions: 14200,
+  overall_effective_rate: 0.1495,
+  estimated_lifetime_tax_savings: 28500,
+  npv_at_optimal: 620000,
+  npv_at_zero: 591500,
+  yearly_detail: [
+    {
+      year: 2026,
+      income: 35000,
+      conversion: 45000,
+      tax_cost: 6300,
+      effective_rate: 0.14,
+      marginal_bracket: 0.22,
+    },
+    {
+      year: 2027,
+      income: 30000,
+      conversion: 50000,
+      tax_cost: 7900,
+      effective_rate: 0.158,
+      marginal_bracket: 0.22,
+    },
+    {
+      year: 2028,
+      income: 150000,
+      conversion: 0,
+      tax_cost: 0,
+      effective_rate: 0,
+      marginal_bracket: 0.24,
+    },
+  ],
+  yearly_bracket_fill: [
+    [
+      {
+        bracket_rate: 0.1,
+        bracket_min: 0,
+        bracket_max: 11925,
+        bracket_capacity: 11925,
+        filled_by_income: 11925,
+        filled_by_conversion: 0,
+        remaining_capacity: 0,
+        tax_in_bracket: 1192.5,
+      },
+      {
+        bracket_rate: 0.12,
+        bracket_min: 11925,
+        bracket_max: 48475,
+        bracket_capacity: 36550,
+        filled_by_income: 8075,
+        filled_by_conversion: 28475,
+        remaining_capacity: 0,
+        tax_in_bracket: 4386,
+      },
+      {
+        bracket_rate: 0.22,
+        bracket_min: 48475,
+        bracket_max: 103350,
+        bracket_capacity: 54875,
+        filled_by_income: 0,
+        filled_by_conversion: 16525,
+        remaining_capacity: 38350,
+        tax_in_bracket: 3635.5,
+      },
+    ],
+  ],
+  scenarios: [
+    {
+      label: "No conversion",
+      conversion_amount: 0,
+      npv: 591500,
+      tax_on_conversion: 0,
+      difference_from_optimal: -28500,
+    },
+    {
+      label: "Optimal",
+      conversion_amount: 95000,
+      npv: 620000,
+      tax_on_conversion: 14200,
+      difference_from_optimal: 0,
+    },
+    {
+      label: "Full conversion (year 1)",
+      conversion_amount: 210000,
+      npv: 602000,
+      tax_on_conversion: 42000,
+      difference_from_optimal: -18000,
+    },
   ],
   reasoning_trace: {
-    conversion_amount: 25000,
-    tax_impact: 'Fills 22% bracket',
-    npv_difference: 15000,
-    reasoning_steps: [
-      'Current taxable income: $75,000',
-      'Top of 22% bracket: $100,525',
-      'Available bracket space: $25,525',
-      'Recommended conversion: $25,000',
+    binding_constraint: "bracket_boundary",
+    marginal_tax_rate_at_optimal: 0.22,
+    marginal_benefit_at_optimal: 0.02,
+    cost_of_next_bracket: {
+      bracketRate: 0.24,
+      additionalTax: 2400,
+      netEffect: -800,
+    },
+    benefit_of_current_bracket: {
+      bracketRate: 0.22,
+      taxPaid: 3635,
+      futureTaxAvoided: 5200,
+    },
+    sensitivity_notes: [
+      "Increasing conversion by $10K would push into 24% bracket",
+      "Growth rate sensitivity: ±1% changes savings by ~$3K",
     ],
+    summary_points: {
+      whatToConvert: "Convert $45K in 2026 and $50K in 2027",
+      whyThisAmount: "Fills the 12% and part of the 22% bracket in both low-income years",
+      howMuchYouSave: "Approximately $28,500 in lifetime tax savings vs. not converting",
+      keyTradeoff: "Converting more would push into the 24% bracket, where the marginal cost exceeds the benefit",
+    },
   },
-}
+  traditional_at_retirement: 345000,
+  roth_at_retirement: 275000,
+  trajectory_chart: [
+    { year: 2026, income: 35000, conversion: 45000, bracket_boundaries: [11925, 48475, 103350] },
+    { year: 2027, income: 30000, conversion: 50000, bracket_boundaries: [11925, 48475, 103350] },
+    { year: 2028, income: 150000, conversion: 0, bracket_boundaries: [11925, 48475, 103350] },
+  ],
+  input: {
+    age: 38,
+    filing_status: "single",
+    income_trajectory: [
+      { year: 2026, gross_income: 35000, life_event: "startup" },
+      { year: 2027, gross_income: 30000, life_event: "startup" },
+      { year: 2028, gross_income: 150000, life_event: "back_to_work" },
+    ],
+    traditional_ira_balance: 210000,
+    roth_ira_balance: 5000,
+    retirement_age: 65,
+    years_in_retirement: 25,
+    annual_growth_rate: 0.07,
+    discount_rate: 0.05,
+  },
+};
+
+export const sampleDemoResponse: DemoResponse = {
+  persona: {
+    name: "Alex",
+    age: 38,
+    occupation: "Senior Software Engineer",
+    previous_salary: "$145,000/year",
+    situation: "Left job 6 months ago to co-found a startup",
+    income_trajectory: [
+      { year: 2026, income: "$35K", event: "Startup year 1" },
+      { year: 2027, income: "$30K", event: "Startup year 2" },
+      { year: 2028, income: "$150K", event: "Back to work" },
+    ],
+    ira_balance: "$210,000",
+    filing_status: "Single",
+    key_insight: "Two low-income years create a window to convert at 10-22% instead of 24%",
+  },
+  input: sampleOptimizationResult.input,
+  result: sampleOptimizationResult,
+};
