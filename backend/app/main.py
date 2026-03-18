@@ -24,9 +24,15 @@ app.add_middleware(
 
 from app.api.optimize import router as optimize_router
 from app.api.demo import router as demo_router
+from app.api.chat import router as chat_router
+from app.api.email import router as email_router
+from app.api.feedback import router as feedback_router
 
 app.include_router(optimize_router, prefix="/api")
 app.include_router(demo_router, prefix="/api")
+app.include_router(chat_router, prefix="/api")
+app.include_router(email_router, prefix="/api")
+app.include_router(feedback_router, prefix="/api")
 
 
 @app.get("/health")
