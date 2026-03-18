@@ -1,0 +1,14 @@
+{
+  "name": "lucerna",
+  "private": true,
+  "scripts": {
+    "dev": "npx concurrently -n backend,frontend -c blue,green \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && uvicorn app.main:app --reload --port 8000",
+    "dev:frontend": "cd frontend && npm run dev",
+    "test:backend": "cd backend && python -m pytest tests/ -v",
+    "test:frontend": "cd frontend && npm run test:run",
+    "test:e2e": "cd e2e && npx playwright test",
+    "test:e2e:smoke": "cd e2e && npx playwright test smoke.spec.ts",
+    "test:all": "npm run test:backend && npm run test:frontend && npm run test:e2e:smoke"
+  }
+}

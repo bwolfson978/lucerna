@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+pydantic
+scipy
+numpy
+pytest
+pytest-asyncio
+pytest-cov
+pytest-mock
+httpx

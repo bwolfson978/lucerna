@@ -22,7 +22,7 @@
 | D10 | Guided tour | Custom implementation (React state + CSS transitions) | Full control over mobile behavior and animation |
 | D11 | Domain | getlucerna.com | Clean, available, accommodates broader vision |
 | D12 | Filing status | Single + MFJ (simplified: one spouse's IRA, joint household income) | Covers majority of users with minimal added complexity |
-| D13 | Demo persona | Alex, 38, senior SWE ($145K), left for startup, $210K trad IRA, $35K current income | Broadly relatable, mid-career, substantial balance = dramatic results |
+| D13 | Demo persona | Alex, 38, senior SWE ($145K), left for startup, $210K trad IRA, 3-year trajectory: $35K→$30K→$150K | Multi-year income valley demonstrates the core product thesis — optimizer places conversions in years 1-2, not year 3 |
 | D14 | User-facing terminology | "After-tax wealth" and "lifetime tax savings" — never "NPV" | Plain English, avoids confusion about what the number represents |
 | D15 | Results hierarchy | Point-in-time balances primary, NPV curve secondary | Most users understand balances at ages; analytical users can drill into curve |
 | D16 | Estate planning | Out of scope M1 (full liquidation assumption, noted in UI) | Future expansion; would further favor Roth |
@@ -36,15 +36,17 @@
 getlucerna.com
 ├── frontend/ (Next.js + TypeScript + Tailwind)  → Vercel
 │   ├── Landing page / hero
-│   ├── Demo scenario (pre-populated results)
+│   ├── Demo scenario (pre-populated multi-year results)
 │   ├── Guided walkthrough (animated tour)
-│   ├── Bracket visualization (custom SVG)
-│   ├── Results summary
+│   ├── Income trajectory editor (year-by-year input)
+│   ├── Bracket visualization (custom SVG, per year)
+│   ├── Stacked bar chart (income + conversion per year with bracket lines)
+│   ├── Results summary (multi-year conversion schedule)
 │   ├── Input form (stepped, 3 screens)
 │   ├── AI chat UI (streaming)
 │   ├── Email capture + survey
 │   └── Calls backend API for:
-│       ├── /api/optimize (run engine)
+│       ├── /api/optimize (run multi-year engine)
 │       ├── /api/chat (AI conversation)
 │       ├── /api/email (capture)
 │       └── /api/feedback (survey)
@@ -52,11 +54,12 @@ getlucerna.com
 ├── backend/ (Python + FastAPI)  → Railway
 │   ├── app/
 │   │   ├── engine/
-│   │   │   ├── types.py (Pydantic models)
+│   │   │   ├── types.py (Pydantic models — multi-year input/output)
 │   │   │   ├── tax.py (bracket calculator)
-│   │   │   ├── optimizer.py (NPV + sweep)
+│   │   │   ├── optimizer.py (scipy.optimize SLSQP multi-year optimizer)
+│   │   │   ├── heuristic.py (greedy bracket-fill initialization)
 │   │   │   ├── trace.py (reasoning trace)
-│   │   │   └── demo.py (Alex scenario fixture)
+│   │   │   └── demo.py (Alex 3-year scenario fixture)
 │   │   ├── api/
 │   │   │   ├── optimize.py (POST /api/optimize)
 │   │   │   ├── chat.py (POST /api/chat)
@@ -80,25 +83,32 @@ getlucerna.com
 ```
 WEEK 1-2: FOUNDATION
   WS1 (Infrastructure)  ─────────────────┐
-  WS2 (Engine)          ─────────────────┤── All parallel
+  WS2.1-2.2 (Types + Tax calc)  ────────┤── All parallel
   WS7.1-7.3 (Copy/Legal writing) ────────┘
 
-WEEK 3-5: CORE EXPERIENCE
-  WS3 (Frontend UI)     ─────────────────┐── Partially parallel
-  WS4 (AI Layer)        ─────────────────┘   (different components, same design system)
+WEEK 3-5: ENGINE + EARLY FRONTEND
+  WS2.3-2.5 (Scipy optimizer + heuristic + validation)  ──┐── Partially parallel
+  WS3.1-3.3 (Design system + components + trajectory editor) ──┘
   │
-  Both depend on: WS1 complete + WS2 engine validated
+  WS2 depends on: WS1 complete
+  WS3 depends on: WS1 complete + design aesthetic spec
 
-WEEK 6-7: GUIDED EXPERIENCE + FEEDBACK
+WEEK 5-7: CORE EXPERIENCE
+  WS3.4-3.9 (Charts + results + demo)  ─────────────────┐── Partially parallel
+  WS4 (AI Layer)        ─────────────────────────────────┘
+  │
+  Both depend on: WS2 engine validated + WS3.1-3.3 complete
+
+WEEK 8-9: GUIDED EXPERIENCE + FEEDBACK
   WS5 (Walkthrough)     ── Depends on WS3 + WS4 (UI must exist)
-  WS6 (Email/Feedback)  ── Backend can start Week 5; UI needs WS3
+  WS6 (Email/Feedback)  ── Backend can start Week 7; UI needs WS3
 
-WEEK 8-9: LAUNCH
+WEEK 10: LAUNCH
   WS7.4-7.7 (SEO, QA, Launch posts) ── Depends on everything
 ```
 
 ### Critical Path:
-WS2 (engine validated) → WS3.3 (bracket viz) → WS4 (AI + trace) → WS5 (tour) → WS5.4 (video) → WS7.5 (launch)
+WS2 (multi-year engine validated) → WS3.4 (stacked bar chart + bracket viz) → WS4 (AI + trace) → WS5 (tour) → WS5.4 (video) → WS7.5 (launch)
 
 ---
 
@@ -445,9 +455,9 @@ Add environment variables:
 
 ---
 
-## WS2: Optimization Engine (Python)
+## WS2: Multi-Year Optimization Engine (Python)
 
-**Goal:** A validated, deterministic optimization engine that produces correct results and a structured reasoning trace. Validated against the Excel model.
+**Goal:** A validated, deterministic multi-year optimization engine that takes a year-by-year income trajectory, finds the optimal conversion schedule across all years using scipy.optimize, and produces a structured reasoning trace. The engine detects income "valleys" and fills brackets efficiently. Validated against the Excel model for single-year cases and against hand-calculated multi-year scenarios.
 
 ### WS2.1: Define Pydantic Models (Input/Output Schema)
 
@@ -464,31 +474,52 @@ class FilingStatus(str, Enum):
     MFJ = "married_filing_jointly"
 
 
+class LifeEvent(str, Enum):
+    NONE = "none"
+    GRAD_SCHOOL = "grad_school"
+    SABBATICAL = "sabbatical"
+    STARTUP = "startup"
+    CAREER_CHANGE = "career_change"
+    PART_TIME = "part_time"
+    EARLY_RETIREMENT = "early_retirement"
+    PARENTAL_LEAVE = "parental_leave"
+    BACK_TO_WORK = "back_to_work"
+    LAYOFF = "layoff"
+
+
+class YearlyIncome(BaseModel):
+    """Income forecast for a single year in the trajectory."""
+    year: int
+    gross_income: float = Field(ge=0)
+    life_event: LifeEvent = LifeEvent.NONE
+
+
 class ScenarioInput(BaseModel):
-    """All inputs needed to run the optimization."""
+    """All inputs needed to run the multi-year optimization."""
     
     # Personal
     age: int = Field(ge=18, le=80, description="Current age")
     filing_status: FilingStatus
     
-    # Current year income
-    current_year_income: float = Field(ge=0, description="W-2/1099 income for conversion year")
-    spouse_income: float = Field(
-        default=0, ge=0,
-        description="Spouse income (MFJ only). Ignored for single filers."
+    # Income trajectory (the core input — replaces single-year income)
+    income_trajectory: list[YearlyIncome] = Field(
+        min_length=1, max_length=15,
+        description="Year-by-year income forecast. The optimizer finds the best conversion schedule across all years."
+    )
+    
+    # For MFJ: spouse income per year (optional, defaults to 0)
+    spouse_income_trajectory: Optional[list[float]] = Field(
+        default=None,
+        description="Spouse income per year (MFJ only). If shorter than income_trajectory, remaining years default to last value."
     )
     
     # Retirement accounts
     traditional_ira_balance: float = Field(ge=0, description="Traditional IRA + rollover 401k balance")
     roth_ira_balance: float = Field(default=0, ge=0, description="Existing Roth IRA balance")
     
-    # Future assumptions
-    future_annual_income: float = Field(ge=0, description="Expected income after low-income period")
-    years_until_normal_income: int = Field(ge=1, le=10, description="Years until income returns to normal")
-    
     # Retirement assumptions (with defaults)
     retirement_age: int = Field(default=65, ge=30, le=80)
-    years_in_retirement: int = Field(default=20, ge=5, le=40)
+    years_in_retirement: int = Field(default=25, ge=5, le=40)
     annual_retirement_spending: Optional[float] = Field(
         default=None,
         description="If not provided, defaults to 4% rule on total balance"
@@ -542,21 +573,24 @@ class NPVCurvePoint(BaseModel):
 
 
 class OptimizationResult(BaseModel):
-    """Complete output from the optimizer."""
+    """Complete output from the multi-year optimizer."""
     
-    # The answer
-    optimal_conversion_amount: float
+    # The answer: conversion amount per year
+    yearly_conversions: list[float]  # One amount per year in trajectory
+    total_conversion: float
     
     # Key metrics
-    tax_on_conversion: float
-    effective_tax_rate_on_conversion: float
-    estimated_lifetime_tax_savings: float
+    total_tax_on_conversions: float
+    overall_effective_rate: float
+    estimated_lifetime_tax_savings: float  # vs. no conversion
     npv_at_optimal: float
     npv_at_zero: float
-    npv_at_full_conversion: float
     
-    # Bracket visualization data
-    bracket_fill_analysis: list[BracketFillResult]
+    # Per-year detail
+    yearly_detail: list[dict]  # Per year: {income, conversion, tax_cost, effective_rate, marginal_bracket}
+    
+    # Bracket visualization data (per year)
+    yearly_bracket_fill: list[list[BracketFillResult]]
     
     # Scenario comparisons
     scenarios: list[ScenarioComparison]
@@ -564,10 +598,14 @@ class OptimizationResult(BaseModel):
     # AI explanation data
     reasoning_trace: ReasoningTrace
     
-    # Full NPV curve for charting
-    npv_curve: list[NPVCurvePoint]
+    # Balance projections
+    traditional_at_retirement: float
+    roth_at_retirement: float
     
-    # Input echo (so frontend doesn't need to track separately)
+    # Income trajectory chart data (income + conversion stacked bars with bracket lines)
+    trajectory_chart: list[dict]  # Per year: {year, income, conversion, bracket_boundaries}
+    
+    # Input echo
     input: ScenarioInput
 ```
 
@@ -1041,20 +1079,21 @@ class TestExcelValidation:
 ```python
 # backend/app/engine/demo.py
 
-from app.engine.types import ScenarioInput, FilingStatus
+from app.engine.types import ScenarioInput, FilingStatus, YearlyIncome, LifeEvent
 
 DEMO_SCENARIO = ScenarioInput(
     age=38,
     filing_status=FilingStatus.SINGLE,
-    current_year_income=35000,
-    spouse_income=0,
+    income_trajectory=[
+        YearlyIncome(year=2026, gross_income=35000, life_event=LifeEvent.STARTUP),
+        YearlyIncome(year=2027, gross_income=30000, life_event=LifeEvent.STARTUP),
+        YearlyIncome(year=2028, gross_income=150000, life_event=LifeEvent.BACK_TO_WORK),
+    ],
     traditional_ira_balance=210000,
     roth_ira_balance=5000,
-    future_annual_income=145000,
-    years_until_normal_income=2,
     retirement_age=65,
-    years_in_retirement=20,
-    annual_retirement_spending=80000,
+    years_in_retirement=25,
+    annual_retirement_spending=70000,
     annual_growth_rate=0.07,
     discount_rate=0.05,
 )
@@ -1065,10 +1104,14 @@ DEMO_PERSONA = {
     "occupation": "Senior Software Engineer",
     "previous_salary": "$145,000/year",
     "situation": "Left job 6 months ago to co-found a startup",
-    "current_income": "$35,000 (6 months of salary before leaving)",
+    "income_trajectory": [
+        {"year": 2026, "income": "$35K", "event": "Startup year 1 (6 months salary before leaving)"},
+        {"year": 2027, "income": "$30K", "event": "Startup year 2 (minimal founder salary)"},
+        {"year": 2028, "income": "$150K", "event": "Back to work (startup acquired / new role)"},
+    ],
     "ira_balance": "$210,000 (traditional 401k rollover from 14 years of work)",
-    "outlook": "Expects minimal income for 1-2 years while startup gets off the ground",
     "filing_status": "Single",
+    "key_insight": "Two low-income years create a window to convert at 10-22% instead of the 24% bracket Alex would be in at $150K",
 }
 ```
 
@@ -1102,7 +1145,7 @@ async def get_demo():
 
 ---
 
-**WS2 Total: ~19 hours**
+**WS2 Total: ~30 hours** (increased from 19 due to scipy multi-year optimizer, smart initialization heuristics, multi-restart strategy, and additional test scenarios)
 
 ---
 
@@ -1110,18 +1153,22 @@ async def get_demo():
 
 Given the length of this document, here is the scope summary for WS3-WS7. Each will be broken down to the same granularity as WS1-WS2 in follow-up execution plan documents.
 
-### WS3: Frontend Core UI (~35 hours)
-- 3.1: Tailwind design system config with bracket colors, mobile breakpoints, Inter font
+### WS3: Frontend Core UI (~40 hours)
+- 3.1: Tailwind design system config with bracket colors, mobile breakpoints, JetBrains Mono + Geist Sans fonts (per design aesthetic spec)
+- 3.2: Shared UI components (metric cards, buttons, inputs, tooltips — Linear dark mode aesthetic)
+- 3.3: **Income trajectory editor** — editable year-by-year table with income per year, life event tags, add/remove year buttons, visual income bar chart that updates as user types. This is the primary input component and the core UX differentiator.
+- 3.4: Stacked bar chart — income (gray) + conversion (blue) per year, with bracket boundary lines overlaid. The key results visualization showing where the optimizer placed conversions.
+- 3.5: Bracket fill visualization (custom SVG) — shows how income + conversion fills each bracket for a selected year. Click a year in the stacked bar chart to drill into its bracket fill.
+- 3.6: Results summary page — headline lifetime tax savings, year-by-year conversion schedule table, balance projections at retirement, scenario comparison cards
+- 3.7: Single-year drill-down — when user clicks a year, show the wealth curve slider (from our prototype) for that specific year, letting them explore "what if I convert more/less in this year?"
+- 3.8: Stepped input form (3 screens with validation, smart defaults, mobile-responsive)
 - 3.2: Landing page / hero section (mobile-responsive from day one)
 - 3.3: Bracket visualization component (custom SVG, animated with CSS transitions, adaptive layout — horizontal stacked bars on desktop, vertical stacked bars on mobile)
 - 3.4: Results page — two-tier hierarchy:
   - **Primary view:** Headline tax savings metric, bracket fill visualization, point-in-time balance comparison at key ages (today / retirement / end of retirement) showing "with conversion vs. without," scenario comparison cards (no conversion / optimal / full conversion)
-  - **Secondary view (scroll or toggle):** "Impact on after-tax wealth" curve across all conversion amounts (ApexCharts area chart), year-by-year balance projections, sensitivity analysis
-  - **Terminology:** Never use "NPV." Use "estimated lifetime tax savings" for the headline, "impact on after-tax wealth (today's dollars)" for the curve, "projected balance" for point-in-time values
-- 3.5: Stepped input form (3 screens, filing status conditional for Single/MFJ with adjusted labels, smart defaults for all assumption fields, configurable retirement years/spending/growth rate)
-- 3.6: Demo scenario pre-populated view ("Meet Alex" — 38yo SWE, startup founder, $210K IRA, $35K income)
-- 3.7: Cross-device QA (iPhone SE, iPhone 14/15, iPad, laptop, wide desktop)
-- 3.8: Info tooltips for simplifying assumptions ("The model assumes all remaining balances are withdrawn at the end of this period. Estate planning and wealth transfer are not currently modeled.")
+- 3.9: Demo scenario pre-populated view ("Meet Alex" — 38yo SWE, startup founder, $210K IRA, 3-year income trajectory $35K→$30K→$150K)
+- 3.10: Cross-device QA (iPhone SE, iPhone 14/15, iPad, laptop, wide desktop)
+- 3.11: Info tooltips for simplifying assumptions ("The model assumes all remaining balances are withdrawn at the end of this period. Estate planning and wealth transfer are not currently modeled.")
 
 ### WS4: AI Conversation Layer (~26 hours)
 - 4.1: Anthropic SDK integration + test connection
@@ -1166,18 +1213,20 @@ Given the length of this document, here is the scope summary for WS3-WS7. Each w
 | Workstream | Hours |
 |-----------|-------|
 | WS1: Infrastructure & Setup | 6 |
-| WS2: Optimization Engine | 19 |
-| WS3: Frontend Core UI (mobile-responsive) | 35 |
+| WS2: Multi-Year Optimization Engine | 30 |
+| WS3: Frontend Core UI (income trajectory editor + multi-year results) | 40 |
 | WS4: AI Conversation Layer | 26 |
 | WS5: Guided Walkthrough | 15 |
 | WS6: Feedback & Email | 15 |
 | WS7: Legal, Content & Launch | 18 |
-| **Subtotal** | **134** |
-| **Buffer (25%)** | **34** |
-| **Total with buffer** | **168** |
+| **Subtotal** | **150** |
+| **Buffer (25%)** | **38** |
+| **Total with buffer** | **188** |
 
-**At 15 hrs/week: ~11 weeks**
-**At 20 hrs/week: ~8-9 weeks**
+**At 15 hrs/week: ~13 weeks**
+**At 20 hrs/week: ~10 weeks**
+
+**Key changes from original estimate:** WS2 increased from 19→30 hours (scipy multi-year optimizer is harder than brute-force single-year). WS3 increased from 35→40 hours (income trajectory editor + stacked bar year-by-year chart are new components).
 
 ---
 

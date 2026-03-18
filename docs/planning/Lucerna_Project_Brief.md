@@ -134,20 +134,20 @@ No tool combines: (1) comprehensive multi-variable optimization, (2) modern acce
 ## 5. Product Direction
 
 ### Core Engine: Multi-Year Optimizer
-Given a user's current situation and expected income trajectory over N years, find the conversion schedule (amount per year) that maximizes after-tax wealth.
+Given a user's current situation and expected income trajectory over N years, find the conversion schedule (amount per year) that maximizes after-tax wealth. The user enters their income forecast; the engine detects income valleys and fills brackets optimally across all years. **Multi-year optimization is the MVP from day one — it IS the product thesis.**
 
-**Must-model variables (M1 — single year):**
+**Must-model variables (MVP):**
 - Federal tax brackets (progressive, 2025 rates)
 - Standard deduction / filing status (Single + MFJ with simplified spousal model)
 - Traditional IRA / 401k balance and growth
 - Roth balance and growth
-- Current year income (+ spouse income for MFJ)
-- Expected future income and years until normal income resumes
+- **Year-by-year income trajectory** across a user-defined horizon (1–15 years)
+- Optional life event tags per year (grad school, sabbatical, startup, etc.) for AI explanation context
 - Configurable: retirement age, years in retirement, annual retirement spending, growth rate, discount rate
 
-**Must-model variables (M2 — multi-year):**
-- Year-by-year income trajectory across N low-income years
-- ACA premium tax credit interaction
+**Model in Phase 2:**
+- ACA premium tax credit interaction (the #1 pain point for FIRE users)
+- State taxes (top 5 states)
 - 0% LTCG bracket interaction / capital gains harvesting tradeoff
 
 **Model in future versions:**
@@ -308,23 +308,24 @@ Stepped input form (3 screens, filing status conditional for Single/MFJ, smart d
 **1d. Feedback, Email & Pricing Signal Collection**
 Sequenced: personalized results → email capture ("Join waitlist + 3 months free") → optional 3-question survey → behavioral pricing test (Stripe early-bird reservation, activated when traffic supports it).
 
-**Configurable inputs in M1:** Filing status, current year income (+ spouse for MFJ), traditional IRA balance, Roth IRA balance, expected future income, years until normal income, retirement age (default 65), years in retirement (default 20), annual retirement spending (default 4% rule), growth rate (default 7%), discount rate (default 5%).
+**Core MVP feature: Multi-year income trajectory → automatic conversion schedule.**
+The user enters their year-by-year income forecast (e.g., "$145K this year, $35K next year, $30K year after, $150K when I go back to work"), and the optimizer finds the optimal conversion amount for each year — automatically detecting income valleys and filling brackets efficiently. This is the entire product thesis from day one.
 
-**Simplifying assumptions in M1 (noted transparently in UI):**
-- Single-year conversion only (multi-year is M2)
+**Configurable inputs in MVP:** Filing status, year-by-year income trajectory (1–15 years), traditional IRA balance, Roth IRA balance, retirement age (default 65), years in retirement (default 25), annual retirement spending (default 4% rule), growth rate (default 7%), discount rate (default 5%). Optional life event tags per year (grad school, sabbatical, startup, etc.) for AI explanation personalization.
+
+**Simplifying assumptions in MVP (noted transparently in UI):**
 - Full liquidation at end of retirement (no estate planning / generational wealth transfer)
 - Federal tax only (no state tax)
-- No ACA subsidy modeling (M2)
+- No ACA subsidy modeling (Phase 2)
 - MFJ modeled as one spouse's IRA + joint household income (not dual IRA optimization)
 
-### Phase 2 — Multi-Year Optimizer (Weeks 10–17)
-Extend the engine to multi-year optimization using scipy.optimize. User specifies N years of varying income; tool finds the optimal conversion schedule across all years. Add ACA subsidy modeling. This is the paid feature and the competitive moat.
+**Everything is free at launch.** The goal of the MVP is to validate demand, collect feedback, and build an email list — not to monetize. Behavioral pricing data (Stripe early-bird reservations) collected once traffic supports it.
 
-### Phase 3 — Monetization & Growth (Weeks 18–24)
-Add accounts/auth, payment integration (Stripe), saved scenarios, PDF export. Implement the pricing model validated by Phase 1 behavioral testing. Add more demo personas (early retiree, sabbatical). This is where the product starts generating revenue.
+### Phase 2 — Polish, ACA & Monetization (Weeks 11–18)
+Add ACA subsidy modeling (the #1 pain point for FIRE users). Add state tax support for top 5 states. Add accounts/auth, payment integration (Stripe), saved scenarios, PDF export. Implement the pricing model validated by Phase 1 behavioral testing. Add more demo personas (early retiree, sabbatical, pre-retiree).
 
-### Phase 4 — Expand (Future)
-State taxes, IRMAA, Social Security timing, capital gains interaction, estate planning / generational wealth transfer, additional life-transition modules per the broader vision. Only if Phases 1–3 validate demand.
+### Phase 3 — Expand (Future)
+IRMAA, Social Security timing, capital gains interaction, RMD projections, estate planning / generational wealth transfer, additional life-transition modules per the broader vision. Only if Phases 1–2 validate demand.
 
 ---
 
@@ -341,8 +342,10 @@ These decisions were made during the planning process and are now locked for M1.
 | AI provider | Anthropic Claude Sonnet | Fast, affordable, tool use support |
 | Charts | ApexCharts + custom SVG for bracket viz | ApexCharts has modern defaults and built-in animations; custom SVG for the non-standard bracket fill |
 | Filing status (M1) | Single + MFJ (simplified) | One spouse's IRA, joint household income adjusts brackets. Minimal added complexity, covers majority of users |
-| Demo persona | Alex, 38, SWE, $145K → startup, $210K trad IRA, $35K current income | Broadly relatable, mid-career, substantial balance = dramatic results |
+| Demo persona | Alex, 38, SWE, $145K → startup, $210K trad IRA, 3-year income trajectory ($35K, $30K, $150K) | Multi-year income valley demonstrates the core product thesis |
 | User-facing terminology | "After-tax wealth" and "lifetime tax savings" — never "NPV" | Plain English, avoids confusing users about what the number represents |
+| Core engine | Multi-year optimizer (scipy.optimize SLSQP) from day one | Multi-year IS the product thesis — single-year is just what free calculators already do |
+| Monetization at launch | Everything free; behavioral pricing data collected post-launch | Goal is demand validation, not revenue. 500 users + 50 feedback responses > $29 from 10 users |
 | Results hierarchy | Point-in-time balances primary, after-tax wealth curve secondary | Most users understand balances at specific ages; analytical users can drill into the curve |
 | Estate planning | Out of scope for M1 (full liquidation assumption) | Noted transparently in UI; future expansion that would further favor Roth |
 | Mobile | Required from day one, not a polish task | Many users arrive from Reddit on phones |
@@ -357,9 +360,10 @@ These decisions were made during the planning process and are now locked for M1.
 - [ ] How to handle the 5-year rule for early conversion access in the model
 - [ ] Whether the AI conversation should be full chat or chat + inline annotations on the results
 - [ ] Exact query limit per session for AI (10? 15? 20?)
+- [ ] Income trajectory UX: editable table vs. inline chart editor vs. hybrid
 
 ### Business
-- [ ] Exact pricing (validated by behavioral test data)
+- [ ] Exact pricing (validated by behavioral test data post-launch)
 - [ ] Whether to pursue B2B (advisor tools) in addition to B2C
 - [ ] Whether to offer a one-time purchase option alongside subscription
 
@@ -369,9 +373,10 @@ These decisions were made during the planning process and are now locked for M1.
 - [ ] Confirm state-specific regulatory considerations
 
 ### Technical
-- [ ] Algorithm choice for M2 multi-year optimization (scipy SLSQP vs. other constrained nonlinear solvers)
+- [ ] scipy SLSQP performance with 10-15 year horizons — need < 2 second response time
+- [ ] Smart initialization strategy for multi-year optimizer (greedy bracket-fill heuristic + multiple restarts)
 - [ ] AI inference cost modeling at scale
-- [ ] Whether to add Framer Motion for UI micro-interactions or stay with CSS transitions + ApexCharts animations for M1
+- [ ] Whether to add Framer Motion for UI micro-interactions or stay with CSS transitions + ApexCharts animations
 
 ---
 
