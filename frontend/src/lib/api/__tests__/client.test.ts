@@ -9,12 +9,12 @@ describe('apiClient', () => {
       filing_status: 'single',
       traditional_ira_balance: 500000,
     })
-    expect(result.optimal_conversion).toBeDefined()
+    expect(result.yearly_conversions).toBeDefined()
   })
 
   it('fetches demo results', async () => {
     const result = await apiClient.getDemo()
-    expect(result.optimal_conversion).toBeDefined()
+    expect(result.result).toBeDefined()
   })
 
   it('sends chat message', async () => {

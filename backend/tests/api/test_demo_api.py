@@ -6,4 +6,6 @@ async def test_get_demo(async_client):
     response = await async_client.get("/api/demo")
     assert response.status_code == 200
     data = response.json()
-    assert "optimal_conversion" in data
+    assert "persona" in data
+    assert "result" in data
+    assert "yearly_conversions" in data["result"]

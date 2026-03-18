@@ -22,6 +22,13 @@ app.add_middleware(
 )
 
 
+from app.api.optimize import router as optimize_router
+from app.api.demo import router as demo_router
+
+app.include_router(optimize_router, prefix="/api")
+app.include_router(demo_router, prefix="/api")
+
+
 @app.get("/health")
 async def health_check():
     return {"status": "ok", "service": "lucerna-api"}

@@ -1,3 +1,32 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply text-body text-text-primary bg-bg font-sans antialiased;
+  }
+
+  .font-data {
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  .card {
+    @apply border border-border rounded-md bg-bg p-comfortable;
+  }
+
+  .card-recommended {
+    @apply border-2 border-accent rounded-md bg-bg p-comfortable relative;
+  }
+
+  .metric-label {
+    @apply text-caption text-text-tertiary uppercase;
+  }
+
+  .metric-value {
+    @apply text-data-lg font-mono text-text-primary;
+  }
+}
