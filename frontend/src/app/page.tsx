@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Header } from "@/components/common/Header";
+import { BackendStatus } from "@/components/common/BackendStatus";
 
 export default function Home() {
   return (
@@ -107,12 +108,13 @@ export default function Home() {
 
         {/* Footer */}
         <footer className="px-section md:px-page py-section border-t border-border">
-          <div className="max-w-content mx-auto text-body-sm text-text-tertiary">
+          <div className="max-w-content mx-auto text-body-sm text-text-tertiary flex flex-col gap-3">
             <p>
               Lucerna is an educational tool for scenario analysis. It does not
               provide financial, tax, or investment advice. Consult a qualified
               professional before making financial decisions.
             </p>
+            <BackendStatus />
           </div>
         </footer>
       </main>
