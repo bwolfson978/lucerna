@@ -154,7 +154,11 @@ export function TransposedDetailTable({
                   className="h-8 flex items-center justify-center text-[10px] text-text-primary"
                   style={{ fontFamily: "'JetBrains Mono', monospace" }}
                 >
-                  {detail?.marginal_bracket ?? "—"}
+                  {detail
+                    ? typeof detail.marginal_bracket === "number"
+                      ? formatPercent(detail.marginal_bracket)
+                      : detail.marginal_bracket
+                    : "—"}
                 </div>
               </div>
             );

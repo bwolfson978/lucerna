@@ -3,7 +3,6 @@
 import { useState, useMemo, useCallback } from "react";
 import type {
   OptimizationResult,
-  ConversionCurvePoint,
   LifeEvent,
   ScenarioInput,
 } from "@/lib/types";
@@ -16,6 +15,7 @@ import { ConversionSlider } from "./ConversionSlider";
 import { TransposedDetailTable } from "./TransposedDetailTable";
 import { ScenarioCards } from "./ScenarioCards";
 import { BalanceProjections } from "./BalanceProjections";
+import { useConversionSlider } from "@/hooks/useConversionSlider";
 
 interface YearOverride {
   income?: number;
@@ -29,43 +29,32 @@ interface ResultsViewProps {
 }
 
 export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
-  const [sliderValue, setSliderValue] = useState(result.total_conversion);
   const [overrides, setOverrides] = useState<Map<number, YearOverride>>(
     () => new Map()
   );
 
   const hasUnsavedChanges = overrides.size > 0;
 
-  // Find nearest pre-computed curve point for the current slider value
-  const currentCurvePoint: ConversionCurvePoint | null = useMemo(() => {
-    const curve = result.conversion_curve;
-    if (!curve || curve.length === 0) return null;
+  // Client-side slider: continuous bracket fill computation
+  const {
+    totalConversion: sliderValue,
+    setTotalConversion: setSliderValue,
+    yearlyBracketFills,
+    yearlyDetail,
+    displayTotalConversion,
+    totalTaxCost,
+    effectiveRate,
+    conversionYears,
+  } = useConversionSlider({ result });
 
-    let closest = curve[0];
-    let closestDist = Math.abs(curve[0].total_cap - sliderValue);
-    for (const point of curve) {
-      const dist = Math.abs(point.total_cap - sliderValue);
-      if (dist < closestDist) {
-        closest = point;
-        closestDist = dist;
-      }
-    }
-    return closest;
-  }, [result.conversion_curve, sliderValue]);
-
-  // Use curve point data if available, otherwise fall back to optimizer result
-  const displayDetail = currentCurvePoint?.yearly_detail ?? result.yearly_detail;
-  const displayBracketFill =
-    currentCurvePoint?.yearly_bracket_fill ?? result.yearly_bracket_fill;
-
-  // Build chart data
+  // Build chart data from client-side bracket fills
   const chartYears = useMemo(() => {
     return result.input.income_trajectory.map((yi, i) => ({
       year: yi.year,
       age: result.input.age + i,
-      bracketFill: displayBracketFill[i] || [],
+      bracketFill: yearlyBracketFills[i] || [],
     }));
-  }, [result.input, displayBracketFill]);
+  }, [result.input, yearlyBracketFills]);
 
   // Income and life event arrays for the detail table
   const incomes = result.input.income_trajectory.map((yi) => yi.gross_income);
@@ -119,17 +108,6 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
     onReRun(updatedInput);
   }, [result.input, overrides, onReRun]);
 
-  // Display metrics from curve point or optimizer
-  const displayTotalConversion = currentCurvePoint
-    ? currentCurvePoint.yearly_conversions.reduce((a, b) => a + b, 0)
-    : result.total_conversion;
-  const displayTotalTax = currentCurvePoint?.total_tax ?? result.total_tax_on_conversions;
-  const displayEffRate =
-    displayTotalConversion > 0 ? displayTotalTax / displayTotalConversion : 0;
-  const displayConversionYears = currentCurvePoint
-    ? currentCurvePoint.yearly_conversions.filter((c) => c > 0).length
-    : result.yearly_conversions.filter((c) => c > 0).length;
-
   return (
     <div className="flex flex-col gap-section">
       {/* Hero metric + slider */}
@@ -173,15 +151,15 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
         />
         <MetricCard
           label="Tax on conversions"
-          value={formatCurrency(displayTotalTax)}
+          value={formatCurrency(totalTaxCost)}
         />
         <MetricCard
           label="Effective rate"
-          value={formatPercent(displayEffRate)}
+          value={formatPercent(effectiveRate)}
         />
         <MetricCard
           label="Conversion years"
-          value={String(displayConversionYears)}
+          value={String(conversionYears)}
         />
       </div>
 
@@ -194,7 +172,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
       {/* Transposed detail table */}
       <div className="card p-0">
         <TransposedDetailTable
-          details={displayDetail}
+          details={yearlyDetail}
           years={yearInfos}
           incomes={incomes}
           lifeEvents={lifeEvents}

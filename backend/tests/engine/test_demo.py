@@ -8,8 +8,8 @@ class TestDemoScenario:
     def test_demo_scenario_is_scenario_input(self):
         assert isinstance(DEMO_SCENARIO, ScenarioInput)
 
-    def test_demo_has_3_year_trajectory(self):
-        assert len(DEMO_SCENARIO.income_trajectory) == 3
+    def test_demo_has_full_trajectory(self):
+        assert len(DEMO_SCENARIO.income_trajectory) == 27
 
     def test_demo_persona_has_name(self):
         assert DEMO_PERSONA["name"] == "Alex"
@@ -26,6 +26,6 @@ class TestDemoScenario:
         assert "result" in demo
         assert isinstance(demo["result"], OptimizationResult)
 
-    def test_get_demo_result_has_3_year_conversions(self):
+    def test_get_demo_result_has_matching_conversions(self):
         demo = get_demo()
-        assert len(demo["result"].yearly_conversions) == 3
+        assert len(demo["result"].yearly_conversions) == len(DEMO_SCENARIO.income_trajectory)

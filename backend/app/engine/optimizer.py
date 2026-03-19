@@ -343,9 +343,22 @@ def compute_conversion_curve(
     scenario: ScenarioInput,
     n_points: int = 25,
 ) -> list[ConversionCurvePoint]:
-    """Run optimizer at multiple total conversion caps to power the slider."""
+    """Run optimizer at multiple total conversion caps to power the slider.
+
+    For long trajectories (>10 years), reduce points to keep response time
+    reasonable. The frontend now handles continuous slider interactivity
+    via client-side tax calculations, so this curve is primarily used for
+    NPV data at discrete points.
+    """
     max_balance = scenario.traditional_ira_balance
     n_years = len(scenario.income_trajectory)
+
+    # Scale down points for long trajectories — each scipy call is O(n_years)
+    if n_years > 15:
+        n_points = min(n_points, 8)
+    elif n_years > 10:
+        n_points = min(n_points, 12)
+
     points = []
 
     for cap in np.linspace(0, max_balance, n_points):
