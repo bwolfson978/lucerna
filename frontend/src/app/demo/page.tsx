@@ -10,8 +10,7 @@ import {
   TableSkeleton,
 } from "@/components/common/Skeleton";
 import { apiClient } from "@/lib/api/client";
-import { LIFE_EVENT_LABELS } from "@/lib/utils/constants";
-import { formatCurrency } from "@/lib/utils/formatting";
+import { IncomeMilestonesTable } from "@/components/demo/IncomeMilestonesTable";
 import type { DemoResponse } from "@/lib/types";
 
 export default function DemoPage() {
@@ -27,10 +26,7 @@ export default function DemoPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Extract notable years (non-"none" life events) from trajectory
   const trajectory = demo?.result?.input?.income_trajectory;
-  const notableYears = trajectory?.filter((yi) => yi.life_event !== "none") ?? [];
-  const totalYears = trajectory?.length ?? 0;
   const retirementAge = demo?.result?.input?.retirement_age ?? 65;
 
   return (
@@ -59,27 +55,13 @@ export default function DemoPage() {
                   <h3 className="text-h3 text-text-primary mb-default">
                     Key income milestones
                   </h3>
-                  <div className="flex flex-col gap-2 text-body-sm">
-                    {notableYears.map((yi) => (
-                      <div key={yi.year} className="flex gap-3">
-                        <span className="font-mono text-text-secondary w-12">
-                          {yi.year}
-                        </span>
-                        <span className="font-mono w-16">
-                          {formatCurrency(yi.gross_income)}
-                        </span>
-                        <span className="text-text-tertiary">
-                          {LIFE_EVENT_LABELS[yi.life_event]}
-                        </span>
-                      </div>
-                    ))}
-                    {totalYears > notableYears.length && (
-                      <p className="text-text-tertiary text-[11px] mt-1">
-                        {totalYears} years modeled through retirement at age{" "}
-                        {retirementAge}
-                      </p>
-                    )}
-                  </div>
+                  <p className="text-text-tertiary text-[11px] mb-2">
+                    {trajectory?.length ?? 0} years modeled through retirement
+                    at age {retirementAge}
+                  </p>
+                  {trajectory && trajectory.length > 0 && (
+                    <IncomeMilestonesTable trajectory={trajectory} />
+                  )}
                 </div>
               </div>
             </div>
