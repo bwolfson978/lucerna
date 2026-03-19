@@ -90,7 +90,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           <div key={label} className="flex items-center gap-2">
             <div
               className={`
-                w-7 h-7 rounded-full flex items-center justify-center text-caption font-medium
+                w-7 h-7 rounded-full flex items-center justify-center text-caption font-medium transition-colors duration-150
                 ${i <= step ? "bg-accent text-white" : "bg-bg-hover text-text-tertiary"}
               `}
             >

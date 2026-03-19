@@ -16,7 +16,7 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
   const maxCapacity = Math.max(...data.map((b) => b.bracket_capacity));
 
   return (
-    <div className="flex flex-col gap-tight">
+    <div className="card flex flex-col gap-default">
       <div className="flex items-center gap-2">
         <h3 className="text-h3 text-text-primary">
           Bracket fill{year ? ` — ${year}` : ""}
@@ -25,29 +25,29 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-body-sm">
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm bg-neutral" />
+      <div className="flex items-center gap-5 text-body-sm text-text-secondary">
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded bg-neutral" />
           Income
         </span>
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm bg-accent" />
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded bg-accent" />
           Conversion
         </span>
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm bg-bg-hover" />
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded bg-bg-hover border border-border" />
           Remaining capacity
         </span>
       </div>
 
       <svg
-        viewBox={`0 0 600 ${data.length * 40 + 8}`}
+        viewBox={`0 0 600 ${data.length * 44 + 8}`}
         className="w-full"
         role="img"
         aria-label="Bracket fill visualization"
       >
         {data.map((bracket, i) => {
-          const y = i * 40 + 4;
+          const y = i * 44 + 4;
           const barWidth = 460;
           const labelX = 0;
           const barX = 80;
@@ -65,7 +65,7 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
               {/* Bracket rate label */}
               <text
                 x={labelX}
-                y={y + 22}
+                y={y + 23}
                 className="text-[13px] font-medium fill-text-secondary"
                 fontFamily="'JetBrains Mono', monospace"
               >
@@ -78,9 +78,9 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
                   x={barX}
                   y={y}
                   width={incomeWidth}
-                  height={32}
+                  height={34}
                   fill="#6B7280"
-                  rx={2}
+                  rx={4}
                 />
               )}
 
@@ -90,9 +90,9 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
                   x={barX + incomeWidth}
                   y={y}
                   width={conversionWidth}
-                  height={32}
-                  fill="#2563EB"
-                  rx={2}
+                  height={34}
+                  fill="#4F46E5"
+                  rx={4}
                 />
               )}
 
@@ -102,20 +102,20 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
                   x={barX + incomeWidth + conversionWidth}
                   y={y}
                   width={remainingWidth}
-                  height={32}
-                  fill="rgba(0,0,0,0.04)"
-                  rx={2}
+                  height={34}
+                  fill="rgba(0,0,0,0.03)"
+                  rx={4}
                 />
               )}
 
               {/* Bracket color indicator */}
               <rect
-                x={barX - 4}
-                y={y}
+                x={barX - 5}
+                y={y + 2}
                 width={3}
-                height={32}
+                height={30}
                 fill={color}
-                rx={1}
+                rx={1.5}
               />
 
               {/* Dollar amount label */}
@@ -126,9 +126,9 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
                     barX +
                     incomeWidth +
                     conversionWidth +
-                    8
+                    10
                   }
-                  y={y + 22}
+                  y={y + 23}
                   className="text-[11px] fill-text-tertiary"
                   fontFamily="'JetBrains Mono', monospace"
                 >

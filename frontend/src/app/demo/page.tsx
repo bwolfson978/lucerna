@@ -28,19 +28,19 @@ export default function DemoPage() {
   return (
     <>
       <Header />
-      <main className="px-section md:px-page py-section">
+      <main className="px-section md:px-page py-section-lg">
         <div className="max-w-content mx-auto flex flex-col gap-section">
           {/* Persona intro */}
           <div className="flex flex-col gap-comfortable">
             <h1 className="text-h1 text-text-primary">Meet Alex</h1>
 
             <div className="card bg-bg-alt">
-              <div className="flex flex-col gap-tight">
-                <p className="text-body text-text-primary">
+              <div className="flex flex-col gap-default">
+                <p className="text-body text-text-primary leading-relaxed">
                   <strong>Alex, 38</strong> — Senior Software Engineer who left
                   a $145K/year role 6 months ago to co-found a startup.
                 </p>
-                <p className="text-body text-text-secondary">
+                <p className="text-body text-text-secondary leading-relaxed">
                   Alex has a $210,000 traditional IRA (rolled over from 14 years
                   of 401k contributions) and is filing single. With two
                   low-income years ahead, there&apos;s a rare window to convert at
@@ -48,10 +48,10 @@ export default function DemoPage() {
                 </p>
 
                 <div className="mt-tight">
-                  <h3 className="text-h3 text-text-primary mb-tight">
+                  <h3 className="text-h3 text-text-primary mb-default">
                     Income trajectory
                   </h3>
-                  <div className="flex flex-col gap-1 text-body-sm">
+                  <div className="flex flex-col gap-2 text-body-sm">
                     <div className="flex gap-3">
                       <span className="font-mono text-text-secondary w-12">
                         2026
@@ -103,7 +103,7 @@ export default function DemoPage() {
               <p className="text-body text-negative">
                 Failed to load demo results: {error}
               </p>
-              <p className="text-body-sm text-text-secondary mt-tight">
+              <p className="text-body-sm text-text-secondary mt-default">
                 Make sure the backend is running on localhost:8000.
               </p>
             </div>
@@ -112,10 +112,10 @@ export default function DemoPage() {
           {demo && <ResultsView result={demo.result} />}
 
           {/* CTA */}
-          <div className="flex items-center gap-3 pt-comfortable border-t border-border">
+          <div className="flex items-center gap-3 pt-section border-t border-border">
             <Link
               href="/calculator"
-              className="inline-flex items-center justify-center h-9 min-h-[44px] px-4 rounded bg-accent text-white text-body font-medium hover:bg-accent-hover active:scale-[0.98] transition-all duration-100"
+              className="inline-flex items-center justify-center h-10 min-h-[44px] px-6 rounded-md bg-accent text-white text-body font-medium shadow-card hover:bg-accent-hover hover:shadow-card-hover active:scale-[0.98] transition-all duration-150"
             >
               Run your own scenario
             </Link>

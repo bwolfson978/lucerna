@@ -26,12 +26,12 @@ export function ResultsView({ result }: ResultsViewProps) {
     <div className="flex flex-col gap-section">
       {/* Headline metric */}
       <div className="card-recommended p-section">
-        <span className="absolute -top-3 left-4 bg-accent-light text-accent-hover text-[11px] font-medium px-2 py-0.5 rounded">
+        <span className="absolute -top-3 left-4 bg-accent-light text-accent-hover text-[11px] font-medium px-2.5 py-0.5 rounded-md">
           Optimal strategy
         </span>
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-2">
           <span className="metric-label">Estimated lifetime tax savings</span>
-          <span className="text-display font-mono text-text-primary">
+          <span className="metric-value-hero">
             {formatCurrency(result.estimated_lifetime_tax_savings)}
           </span>
           <span className="text-body-sm text-text-secondary">
@@ -88,7 +88,7 @@ export function ResultsView({ result }: ResultsViewProps) {
       <YearlyDetailTable details={result.yearly_detail} />
 
       {/* Assumptions disclaimer */}
-      <div className="text-body-sm text-text-tertiary border-t border-border pt-comfortable">
+      <div className="text-body-sm text-text-tertiary border-t border-border pt-section">
         <p>
           This analysis uses federal tax brackets only (2025 rates). State
           taxes, ACA subsidies, Social Security taxation, and RMDs are not

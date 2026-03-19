@@ -45,14 +45,15 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
     },
     plotOptions: {
       bar: {
-        borderRadius: 2,
-        columnWidth: "60%",
+        borderRadius: 4,
+        columnWidth: "56%",
       },
     },
-    colors: ["#6B7280", "#2563EB"],
+    colors: ["#6B7280", "#4F46E5"],
     grid: {
-      borderColor: "rgba(0, 0, 0, 0.06)",
+      borderColor: "rgba(0, 0, 0, 0.04)",
       strokeDashArray: 3,
+      padding: { left: 8, right: 8 },
     },
     xaxis: {
       categories,
@@ -60,9 +61,11 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
         style: {
           fontSize: "12px",
           fontFamily: "'JetBrains Mono', monospace",
-          colors: "#6B6B6B",
+          colors: "#6B7280",
         },
       },
+      axisBorder: { show: false },
+      axisTicks: { show: false },
     },
     yaxis: {
       labels: {
@@ -71,7 +74,7 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
         style: {
           fontSize: "11px",
           fontFamily: "'JetBrains Mono', monospace",
-          colors: "#6B6B6B",
+          colors: "#9CA3AF",
         },
       },
     },
@@ -89,7 +92,7 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
     annotations: {
       yaxis: bracketBoundaries.map((boundary) => ({
         y: boundary,
-        borderColor: "rgba(0, 0, 0, 0.12)",
+        borderColor: "rgba(0, 0, 0, 0.08)",
         strokeDashArray: 4,
         label: {
           text: `$${(boundary / 1000).toFixed(0)}K`,
@@ -97,7 +100,7 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
           style: {
             fontSize: "10px",
             fontFamily: "'JetBrains Mono', monospace",
-            color: "#9B9B9B",
+            color: "#9CA3AF",
             background: "transparent",
           },
         },
@@ -112,7 +115,7 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
   ];
 
   return (
-    <div className="flex flex-col gap-tight">
+    <div className="card flex flex-col gap-default">
       <div className="flex items-center gap-2">
         <h3 className="text-h3 text-text-primary">
           Income + conversion by year
@@ -121,13 +124,13 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
       </div>
 
       {/* Custom legend */}
-      <div className="flex items-center gap-4 text-body-sm">
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm bg-neutral" />
+      <div className="flex items-center gap-5 text-body-sm text-text-secondary">
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded bg-neutral" />
           Income
         </span>
-        <span className="flex items-center gap-1">
-          <span className="w-3 h-3 rounded-sm bg-accent" />
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded bg-accent" />
           Conversion
         </span>
       </div>

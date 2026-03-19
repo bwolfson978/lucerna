@@ -39,13 +39,13 @@ export default function CalculatorPage() {
   return (
     <>
       <Header />
-      <main className="px-section md:px-page py-section">
+      <main className="px-section md:px-page py-section-lg">
         <div className="max-w-content mx-auto flex flex-col gap-section">
-          <div className="flex flex-col gap-tight">
+          <div className="flex flex-col gap-default">
             <h1 className="text-h1 text-text-primary">
               Run your scenario
             </h1>
-            <p className="text-body text-text-secondary">
+            <p className="text-body text-text-secondary leading-relaxed">
               Enter your income trajectory and retirement account details.
               The optimizer will find the conversion schedule that maximizes
               your after-tax wealth.
@@ -101,7 +101,7 @@ export default function CalculatorPage() {
                   setError(null);
                   setResult(null);
                 }}
-                className="text-body-sm text-accent hover:underline mt-tight"
+                className="text-body-sm text-accent hover:text-accent-hover font-medium mt-default transition-colors duration-150"
               >
                 Try again
               </button>
@@ -111,14 +111,14 @@ export default function CalculatorPage() {
           {result && (
             <>
               <ResultsView result={result} />
-              <div className="flex items-center gap-3 pt-comfortable border-t border-border">
+              <div className="flex items-center gap-3 pt-section border-t border-border">
                 <button
                   type="button"
                   onClick={() => {
                     setResult(null);
                     setError(null);
                   }}
-                  className="inline-flex items-center justify-center h-9 min-h-[44px] px-4 rounded bg-transparent border border-border-emphasis text-text-primary text-body font-medium hover:bg-bg-hover transition-all duration-100"
+                  className="inline-flex items-center justify-center h-10 min-h-[44px] px-6 rounded-md bg-transparent border border-border-emphasis text-text-primary text-body font-medium hover:bg-bg-hover transition-all duration-150"
                 >
                   Run another scenario
                 </button>

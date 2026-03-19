@@ -20,7 +20,7 @@ export function MetricCard({
         : "text-text-secondary";
 
   return (
-    <div className="card flex flex-col gap-1">
+    <div className="card flex flex-col gap-2">
       <span className="metric-label">{label}</span>
       <span className="metric-value">{value}</span>
       {delta && (

@@ -5,7 +5,7 @@ interface SkeletonProps {
 export function Skeleton({ className = "" }: SkeletonProps) {
   return (
     <div
-      className={`animate-pulse bg-bg-hover rounded ${className}`}
+      className={`animate-pulse bg-bg-hover rounded-md ${className}`}
       aria-hidden="true"
     />
   );
@@ -24,7 +24,7 @@ export function ChartSkeleton() {
   return (
     <div className="card">
       <Skeleton className="h-4 w-48 mb-4" />
-      <Skeleton className="h-[200px] w-full" />
+      <Skeleton className="h-[200px] w-full rounded-md" />
     </div>
   );
 }
