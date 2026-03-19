@@ -3,7 +3,8 @@ from scipy.optimize import minimize
 
 from app.engine.types import (
     ScenarioInput, OptimizationResult, ScenarioComparison,
-    NPVCurvePoint, BracketFillResult,
+    NPVCurvePoint, BracketFillResult, ConversionCurvePoint,
+    ConversionPreferences,
 )
 from app.engine.tax import calculate_federal_tax, get_marginal_rate, analyze_bracket_fill
 from app.engine.heuristic import greedy_bracket_fill
@@ -203,6 +204,13 @@ def _build_constrained_params(
 
             constraints.append({"type": "ineq", "fun": _tax_constraint})
 
+    # Max total conversion across all years
+    if prefs.max_conversion_total is not None:
+        total_cap = prefs.max_conversion_total
+        constraints.append(
+            {"type": "ineq", "fun": lambda x, _cap=total_cap: _cap - np.sum(x)},
+        )
+
     # Min conversion years: set floor bounds for the N lowest-income years
     if prefs.min_conversion_years is not None:
         min_years = min(prefs.min_conversion_years, n_years)
@@ -233,7 +241,149 @@ def _has_active_preferences(scenario: ScenarioInput) -> bool:
         prefs.max_annual_tax_cost is not None
         or prefs.min_conversion_years is not None
         or prefs.max_conversion_per_year is not None
+        or prefs.max_conversion_total is not None
     )
+
+
+def _run_scipy_light(
+    scenario: ScenarioInput,
+    total_cap: float,
+) -> list[float]:
+    """Lighter optimizer for conversion curve: fewer restarts, lower precision."""
+    n_years = len(scenario.income_trajectory)
+    max_balance = min(scenario.traditional_ira_balance, total_cap)
+
+    bounds = [(0, max_balance) for _ in range(n_years)]
+    constraints = [
+        {"type": "ineq", "fun": lambda x: max_balance - np.sum(x)},
+    ]
+
+    greedy = greedy_bracket_fill(scenario)
+    # Cap greedy to total_cap
+    remaining = total_cap
+    capped_greedy = []
+    for c in greedy:
+        c = min(c, remaining)
+        capped_greedy.append(c)
+        remaining -= c
+    greedy = capped_greedy
+
+    zero = [0.0] * n_years
+    starting_points = [greedy, zero]
+
+    best_npv = float("-inf")
+    best_conversions = greedy
+
+    for x0 in starting_points:
+        x0_arr = np.array(x0, dtype=float)
+        for i, (lo, hi) in enumerate(bounds):
+            x0_arr[i] = np.clip(x0_arr[i], lo, hi)
+        if np.sum(x0_arr) > max_balance:
+            x0_arr = x0_arr * (max_balance / np.sum(x0_arr))
+
+        try:
+            result = minimize(
+                _objective,
+                x0_arr,
+                args=(scenario,),
+                method="SLSQP",
+                bounds=bounds,
+                constraints=constraints,
+                options={"maxiter": 50, "ftol": 1e-4},
+            )
+            if result.success or result.fun < -best_npv:
+                candidate_npv = -result.fun
+                if candidate_npv > best_npv:
+                    best_npv = candidate_npv
+                    best_conversions = result.x.tolist()
+        except Exception:
+            continue
+
+    return _finalize_conversions(best_conversions, max_balance)
+
+
+def _build_year_detail(
+    scenario: ScenarioInput,
+    conversions: list[float],
+) -> tuple[list[dict], list[list[BracketFillResult]], float]:
+    """Build per-year detail and bracket fill data for a given conversion schedule."""
+    n_years = len(scenario.income_trajectory)
+    yearly_detail = []
+    yearly_bracket_fill: list[list[BracketFillResult]] = []
+    total_tax = 0.0
+
+    for t in range(n_years):
+        income = scenario.income_trajectory[t].gross_income
+        c_t = conversions[t]
+
+        tax_with = calculate_federal_tax(income + c_t, scenario.filing_status)
+        tax_without = calculate_federal_tax(income, scenario.filing_status)
+        tax_cost = tax_with - tax_without
+        total_tax += tax_cost
+
+        eff_rate = tax_cost / c_t if c_t > 0 else 0.0
+        marginal = get_marginal_rate(income + c_t, scenario.filing_status)
+
+        yearly_detail.append({
+            "year": scenario.income_trajectory[t].year,
+            "income": income,
+            "conversion": c_t,
+            "tax_cost": round(tax_cost, 2),
+            "effective_rate": round(eff_rate, 4),
+            "marginal_bracket": f"{marginal:.0%}",
+        })
+
+        bracket_fill = analyze_bracket_fill(income, c_t, scenario.filing_status)
+        yearly_bracket_fill.append(bracket_fill)
+
+    return yearly_detail, yearly_bracket_fill, total_tax
+
+
+def compute_conversion_curve(
+    scenario: ScenarioInput,
+    n_points: int = 25,
+) -> list[ConversionCurvePoint]:
+    """Run optimizer at multiple total conversion caps to power the slider.
+
+    For long trajectories (>10 years), reduce points to keep response time
+    reasonable. The frontend now handles continuous slider interactivity
+    via client-side tax calculations, so this curve is primarily used for
+    NPV data at discrete points.
+    """
+    max_balance = scenario.traditional_ira_balance
+    n_years = len(scenario.income_trajectory)
+
+    # Scale down points for long trajectories — each scipy call is O(n_years)
+    if n_years > 15:
+        n_points = min(n_points, 8)
+    elif n_years > 10:
+        n_points = min(n_points, 12)
+
+    points = []
+
+    for cap in np.linspace(0, max_balance, n_points):
+        cap = round(cap / 100) * 100  # Round to nearest $100
+
+        if cap == 0:
+            conversions = [0.0] * n_years
+        else:
+            conversions = _run_scipy_light(scenario, cap)
+
+        yearly_detail, yearly_bracket_fill, total_tax = _build_year_detail(
+            scenario, conversions,
+        )
+        npv = calculate_npv(scenario, conversions)
+
+        points.append(ConversionCurvePoint(
+            total_cap=cap,
+            yearly_conversions=conversions,
+            yearly_bracket_fill=yearly_bracket_fill,
+            yearly_detail=yearly_detail,
+            total_tax=round(total_tax, 2),
+            npv=round(npv, 2),
+        ))
+
+    return points
 
 
 def optimize(scenario: ScenarioInput) -> OptimizationResult:
@@ -272,10 +422,11 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
     npv_at_zero = calculate_npv(scenario, [0.0] * n_years)
 
     # Per-year detail and bracket fill
-    yearly_detail = []
-    yearly_bracket_fill: list[list[BracketFillResult]] = []
+    yearly_detail, yearly_bracket_fill, total_tax = _build_year_detail(
+        scenario, final_conversions,
+    )
+
     trajectory_chart = []
-    total_tax = 0.0
     trad_balance = scenario.traditional_ira_balance
     roth_balance = scenario.roth_ira_balance
     g = scenario.annual_growth_rate
@@ -284,26 +435,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         income = scenario.income_trajectory[t].gross_income
         c_t = final_conversions[t]
 
-        tax_with = calculate_federal_tax(income + c_t, scenario.filing_status)
-        tax_without = calculate_federal_tax(income, scenario.filing_status)
-        tax_cost = tax_with - tax_without
-        total_tax += tax_cost
-
-        eff_rate = tax_cost / c_t if c_t > 0 else 0.0
-        marginal = get_marginal_rate(income + c_t, scenario.filing_status)
-
-        yearly_detail.append({
-            "year": scenario.income_trajectory[t].year,
-            "income": income,
-            "conversion": c_t,
-            "tax_cost": round(tax_cost, 2),
-            "effective_rate": round(eff_rate, 4),
-            "marginal_bracket": f"{marginal:.0%}",
-        })
-
-        bracket_fill = analyze_bracket_fill(income, c_t, scenario.filing_status)
-        yearly_bracket_fill.append(bracket_fill)
-
+        bracket_fill = yearly_bracket_fill[t]
         trajectory_chart.append({
             "year": scenario.income_trajectory[t].year,
             "income": income,
@@ -386,6 +518,9 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         result_unconstrained_npv = round(unconstrained_npv, 2)
         result_unconstrained_conversions = unconstrained_conversions
 
+    # Pre-compute conversion curve for interactive slider
+    conversion_curve = compute_conversion_curve(scenario)
+
     return OptimizationResult(
         yearly_conversions=final_conversions,
         total_conversion=total_conversion,
@@ -401,6 +536,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         traditional_at_retirement=round(trad_balance, 2),
         roth_at_retirement=round(roth_balance, 2),
         trajectory_chart=trajectory_chart,
+        conversion_curve=conversion_curve,
         unconstrained_npv=result_unconstrained_npv,
         unconstrained_conversions=result_unconstrained_conversions,
         input=scenario,
