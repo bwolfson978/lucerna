@@ -10,6 +10,8 @@ import {
   TableSkeleton,
 } from "@/components/common/Skeleton";
 import { apiClient } from "@/lib/api/client";
+import { LIFE_EVENT_LABELS } from "@/lib/utils/constants";
+import { formatCurrency } from "@/lib/utils/formatting";
 import type { DemoResponse } from "@/lib/types";
 
 export default function DemoPage() {
@@ -24,6 +26,12 @@ export default function DemoPage() {
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
+
+  // Extract notable years (non-"none" life events) from trajectory
+  const trajectory = demo?.result?.input?.income_trajectory;
+  const notableYears = trajectory?.filter((yi) => yi.life_event !== "none") ?? [];
+  const totalYears = trajectory?.length ?? 0;
+  const retirementAge = demo?.result?.input?.retirement_age ?? 65;
 
   return (
     <>
@@ -49,36 +57,28 @@ export default function DemoPage() {
 
                 <div className="mt-tight">
                   <h3 className="text-h3 text-text-primary mb-default">
-                    Income trajectory
+                    Key income milestones
                   </h3>
                   <div className="flex flex-col gap-2 text-body-sm">
-                    <div className="flex gap-3">
-                      <span className="font-mono text-text-secondary w-12">
-                        2026
-                      </span>
-                      <span className="font-mono">$35K</span>
-                      <span className="text-text-tertiary">
-                        Startup year 1
-                      </span>
-                    </div>
-                    <div className="flex gap-3">
-                      <span className="font-mono text-text-secondary w-12">
-                        2027
-                      </span>
-                      <span className="font-mono">$30K</span>
-                      <span className="text-text-tertiary">
-                        Startup year 2
-                      </span>
-                    </div>
-                    <div className="flex gap-3">
-                      <span className="font-mono text-text-secondary w-12">
-                        2028
-                      </span>
-                      <span className="font-mono">$150K</span>
-                      <span className="text-text-tertiary">
-                        Back to work
-                      </span>
-                    </div>
+                    {notableYears.map((yi) => (
+                      <div key={yi.year} className="flex gap-3">
+                        <span className="font-mono text-text-secondary w-12">
+                          {yi.year}
+                        </span>
+                        <span className="font-mono w-16">
+                          {formatCurrency(yi.gross_income)}
+                        </span>
+                        <span className="text-text-tertiary">
+                          {LIFE_EVENT_LABELS[yi.life_event]}
+                        </span>
+                      </div>
+                    ))}
+                    {totalYears > notableYears.length && (
+                      <p className="text-text-tertiary text-[11px] mt-1">
+                        {totalYears} years modeled through retirement at age{" "}
+                        {retirementAge}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

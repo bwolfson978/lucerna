@@ -66,11 +66,17 @@ DEMO_PERSONA = {
 }
 
 
+_cached_demo: dict | None = None
+
+
 def get_demo() -> dict:
-    """Get the pre-computed demo scenario and results."""
-    result = optimize(DEMO_SCENARIO)
-    return {
-        "persona": DEMO_PERSONA,
-        "input": DEMO_SCENARIO,
-        "result": result,
-    }
+    """Get the demo scenario and results, cached after first computation."""
+    global _cached_demo
+    if _cached_demo is None:
+        result = optimize(DEMO_SCENARIO)
+        _cached_demo = {
+            "persona": DEMO_PERSONA,
+            "input": DEMO_SCENARIO,
+            "result": result,
+        }
+    return _cached_demo

@@ -45,6 +45,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
     totalTaxCost,
     effectiveRate,
     conversionYears,
+    estimatedSavings,
   } = useConversionSlider({ result });
 
   // Build chart data from client-side bracket fills
@@ -122,7 +123,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
               Estimated lifetime tax savings
             </span>
             <span className="metric-value-hero">
-              {formatCurrency(result.estimated_lifetime_tax_savings)}
+              {formatCurrency(estimatedSavings)}
             </span>
             <span className="text-body-sm text-text-secondary">
               vs. not converting — in today&apos;s dollars

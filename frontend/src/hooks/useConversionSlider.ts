@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import type {
   OptimizationResult,
+  ConversionCurvePoint,
   BracketFillResult,
   FilingStatus,
   YearlyDetail,
@@ -92,6 +93,48 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
     displayTotalConversion > 0 ? totalTaxCost / displayTotalConversion : 0;
   const conversionYears = yearlyConversions.filter((c) => c > 0).length;
 
+  // Interpolate NPV-based estimated savings from pre-computed conversion curve
+  const estimatedSavings = useMemo(() => {
+    const curve = result.conversion_curve;
+    if (!curve || curve.length === 0) {
+      return result.estimated_lifetime_tax_savings;
+    }
+
+    const sorted = [...curve].sort((a, b) => a.total_cap - b.total_cap);
+    const npvAtZero = result.npv_at_zero;
+
+    // Find bounding points for linear interpolation
+    if (totalConversion <= sorted[0].total_cap) {
+      return sorted[0].npv - npvAtZero;
+    }
+    if (totalConversion >= sorted[sorted.length - 1].total_cap) {
+      return sorted[sorted.length - 1].npv - npvAtZero;
+    }
+
+    for (let i = 0; i < sorted.length - 1; i++) {
+      if (
+        sorted[i].total_cap <= totalConversion &&
+        sorted[i + 1].total_cap >= totalConversion
+      ) {
+        const range = sorted[i + 1].total_cap - sorted[i].total_cap;
+        const t =
+          range > 0
+            ? (totalConversion - sorted[i].total_cap) / range
+            : 0;
+        const interpolatedNpv =
+          sorted[i].npv + t * (sorted[i + 1].npv - sorted[i].npv);
+        return interpolatedNpv - npvAtZero;
+      }
+    }
+
+    return result.estimated_lifetime_tax_savings;
+  }, [
+    result.conversion_curve,
+    result.npv_at_zero,
+    result.estimated_lifetime_tax_savings,
+    totalConversion,
+  ]);
+
   return {
     totalConversion,
     setTotalConversion,
@@ -102,5 +145,6 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
     totalTaxCost,
     effectiveRate,
     conversionYears,
+    estimatedSavings,
   };
 }
