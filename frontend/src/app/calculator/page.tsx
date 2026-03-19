@@ -110,7 +110,11 @@ export default function CalculatorPage() {
 
           {result && (
             <>
-              <ResultsView result={result} />
+              <ResultsView
+                result={result}
+                onReRun={handleSubmit}
+                loading={loading}
+              />
               <div className="flex items-center gap-3 pt-section border-t border-border">
                 <button
                   type="button"

@@ -42,6 +42,10 @@ class ConversionPreferences(BaseModel):
         default=None, ge=0,
         description="Maximum conversion amount in any single year"
     )
+    max_conversion_total: Optional[float] = Field(
+        default=None, ge=0,
+        description="Maximum total conversion across all years"
+    )
 
 
 class ScenarioInput(BaseModel):
@@ -53,7 +57,7 @@ class ScenarioInput(BaseModel):
 
     # Income trajectory (the core input — replaces single-year income)
     income_trajectory: list[YearlyIncome] = Field(
-        min_length=1, max_length=15,
+        min_length=1,
         description="Year-by-year income forecast. The optimizer finds the best conversion schedule across all years."
     )
 
@@ -119,6 +123,17 @@ class NPVCurvePoint(BaseModel):
     npv: float
 
 
+class ConversionCurvePoint(BaseModel):
+    """Pre-computed optimizer result at a specific total conversion cap.
+    Powers the interactive slider on the frontend."""
+    total_cap: float
+    yearly_conversions: list[float]
+    yearly_bracket_fill: list[list[BracketFillResult]]
+    yearly_detail: list[dict]
+    total_tax: float
+    npv: float
+
+
 class OptimizationResult(BaseModel):
     """Complete output from the multi-year optimizer."""
 
@@ -151,6 +166,9 @@ class OptimizationResult(BaseModel):
 
     # Income trajectory chart data (income + conversion stacked bars with bracket lines)
     trajectory_chart: list[dict]  # Per year: {year, income, conversion, bracket_boundaries}
+
+    # Pre-computed conversion curve for interactive slider
+    conversion_curve: list["ConversionCurvePoint"] = Field(default_factory=list)
 
     # Unconstrained comparison (populated when conversion_preferences are active)
     unconstrained_npv: Optional[float] = None

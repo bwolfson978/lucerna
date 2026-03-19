@@ -35,6 +35,9 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
   const [traditionalBalance, setTraditionalBalance] = useState<number>(0);
   const [rothBalance, setRothBalance] = useState<number>(0);
   const [retirementAge, setRetirementAge] = useState<number>(65);
+  const [retirementSpending, setRetirementSpending] = useState<number | null>(
+    null
+  );
   const [yearsInRetirement, setYearsInRetirement] = useState<number>(25);
   const [growthRate, setGrowthRate] = useState<number>(7);
   const [discountRate, setDiscountRate] = useState<number>(5);
@@ -43,6 +46,8 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
     const errs: Record<string, string> = {};
     if (s === 0) {
       if (age < 18 || age > 80) errs.age = "Age must be between 18 and 80";
+      if (retirementAge <= age)
+        errs.retirementAge = "Retirement age must be greater than current age";
     }
     if (s === 1) {
       if (trajectory.some((y) => y.gross_income < 0))
@@ -54,8 +59,40 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
     return Object.keys(errs).length === 0;
   }
 
+  function generateTrajectory(
+    currentAge: number,
+    retAge: number,
+    baseIncome: number
+  ): YearlyIncome[] {
+    const yearsToRetirement = retAge - currentAge;
+    return Array.from({ length: yearsToRetirement }, (_, i) => ({
+      year: CURRENT_YEAR + i,
+      gross_income: baseIncome,
+      life_event: "none" as const,
+    }));
+  }
+
   function handleNext() {
     if (validateStep(step)) {
+      // Auto-generate trajectory when moving from step 0 to step 1
+      if (step === 0) {
+        const baseIncome = trajectory[0]?.gross_income || 0;
+        const newTrajectory = generateTrajectory(
+          age,
+          retirementAge,
+          baseIncome
+        );
+        // Preserve any existing edits for overlapping years
+        for (let i = 0; i < newTrajectory.length && i < trajectory.length; i++) {
+          if (trajectory[i].gross_income > 0) {
+            newTrajectory[i].gross_income = trajectory[i].gross_income;
+          }
+          if (trajectory[i].life_event !== "none") {
+            newTrajectory[i].life_event = trajectory[i].life_event;
+          }
+        }
+        setTrajectory(newTrajectory);
+      }
       setStep((s) => Math.min(s + 1, STEPS.length - 1));
     }
   }
@@ -76,6 +113,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
       roth_ira_balance: rothBalance,
       retirement_age: retirementAge,
       years_in_retirement: yearsInRetirement,
+      annual_retirement_spending: retirementSpending,
       annual_growth_rate: growthRate / 100,
       discount_rate: discountRate / 100,
     };
@@ -131,6 +169,32 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
               options={FILING_STATUS_OPTIONS}
               onChange={(e) =>
                 setFilingStatus(e.target.value as FilingStatus)
+              }
+            />
+            <Input
+              label="Retirement age"
+              type="number"
+              value={retirementAge}
+              numeric
+              min={30}
+              max={80}
+              error={errors.retirementAge}
+              onChange={(e) =>
+                setRetirementAge(parseInt(e.target.value) || 65)
+              }
+            />
+            <Input
+              label="Yearly spend in retirement"
+              type="number"
+              value={retirementSpending || ""}
+              placeholder="Auto (4% rule)"
+              numeric
+              min={0}
+              helper="Leave blank to use the 4% rule"
+              onChange={(e) =>
+                setRetirementSpending(
+                  e.target.value ? parseFloat(e.target.value) : null
+                )
               }
             />
           </div>
@@ -189,17 +253,6 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-default">
-            <Input
-              label="Retirement age"
-              type="number"
-              value={retirementAge}
-              numeric
-              min={30}
-              max={80}
-              onChange={(e) =>
-                setRetirementAge(parseInt(e.target.value) || 65)
-              }
-            />
             <Input
               label="Years in retirement"
               type="number"

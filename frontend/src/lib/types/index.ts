@@ -22,6 +22,7 @@ export interface ConversionPreferences {
   max_annual_tax_cost?: number | null;
   min_conversion_years?: number | null;
   max_conversion_per_year?: number | null;
+  max_conversion_total?: number | null;
 }
 
 export interface ScenarioInput {
@@ -96,6 +97,15 @@ export interface TrajectoryChartPoint {
   bracket_boundaries: number[];
 }
 
+export interface ConversionCurvePoint {
+  total_cap: number;
+  yearly_conversions: number[];
+  yearly_bracket_fill: BracketFillResult[][];
+  yearly_detail: YearlyDetail[];
+  total_tax: number;
+  npv: number;
+}
+
 export interface OptimizationResult {
   yearly_conversions: number[];
   total_conversion: number;
@@ -111,6 +121,7 @@ export interface OptimizationResult {
   traditional_at_retirement: number;
   roth_at_retirement: number;
   trajectory_chart: TrajectoryChartPoint[];
+  conversion_curve: ConversionCurvePoint[];
   unconstrained_npv?: number | null;
   unconstrained_conversions?: number[] | null;
   input: ScenarioInput;
