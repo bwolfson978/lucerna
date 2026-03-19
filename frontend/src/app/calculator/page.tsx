@@ -46,9 +46,9 @@ export default function CalculatorPage() {
               Run your scenario
             </h1>
             <p className="text-body text-text-secondary leading-relaxed">
-              Enter your income trajectory and retirement account details.
-              The optimizer will find the conversion schedule that maximizes
-              your after-tax wealth.
+              Enter your details and the optimizer will find the conversion
+              schedule that maximizes your after-tax wealth. You can
+              fine-tune individual years in the results.
             </p>
           </div>
 

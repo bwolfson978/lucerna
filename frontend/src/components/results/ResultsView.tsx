@@ -109,6 +109,11 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
     onReRun(updatedInput);
   }, [result.input, overrides, onReRun]);
 
+  const isAtOptimal =
+    Math.abs(sliderValue - result.total_conversion) < 100;
+  const savingsDifference =
+    result.estimated_lifetime_tax_savings - estimatedSavings;
+
   return (
     <div className="flex flex-col gap-section">
       {/* Hero metric + slider */}
@@ -125,6 +130,29 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
             <span className="metric-value-hero">
               {formatCurrency(estimatedSavings)}
             </span>
+            {!isAtOptimal && savingsDifference > 0 && (
+              <span
+                className="flex items-center gap-1 text-body-sm text-negative font-medium"
+                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M6 2v8M6 10l-3-3M6 10l3-3"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                {formatCurrency(savingsDifference)} less than optimal
+              </span>
+            )}
             <span className="text-body-sm text-text-secondary">
               vs. not converting — in today&apos;s dollars
               <Tooltip content="This is the difference in after-tax wealth between the optimal conversion schedule and doing nothing, expressed in today's dollars using your discount rate." />
@@ -171,6 +199,11 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
       />
 
       {/* Transposed detail table */}
+      {onReRun && (
+        <p className="text-body-sm text-text-tertiary">
+          Adjust income or life events below, then re-run the analysis.
+        </p>
+      )}
       <div className="card p-0">
         <TransposedDetailTable
           details={yearlyDetail}
