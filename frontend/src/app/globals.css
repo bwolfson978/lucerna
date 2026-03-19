@@ -15,18 +15,42 @@
 
 @layer components {
   .card {
-    @apply border border-border rounded-md bg-bg p-comfortable;
+    @apply border border-border rounded-lg bg-bg p-comfortable shadow-card;
   }
 
   .card-recommended {
-    @apply border-2 border-accent rounded-md bg-bg p-comfortable relative;
+    @apply border-2 border-accent rounded-lg bg-bg p-comfortable relative shadow-card;
+  }
+
+  .card-elevated {
+    @apply rounded-lg bg-bg p-comfortable shadow-elevated;
   }
 
   .metric-label {
-    @apply text-caption text-text-tertiary uppercase;
+    @apply text-caption text-text-tertiary uppercase tracking-wide;
   }
 
   .metric-value {
     @apply text-data-lg font-mono text-text-primary;
+  }
+
+  .metric-value-hero {
+    @apply text-data-hero font-sans font-extrabold text-text-primary;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium uppercase tracking-wide;
+  }
+
+  .badge-positive {
+    @apply badge border border-optimal/20 text-optimal bg-optimal/5;
+  }
+
+  .badge-negative {
+    @apply badge border border-negative/20 text-negative bg-negative/5;
+  }
+
+  .badge-neutral {
+    @apply badge border border-border-emphasis text-text-secondary bg-bg-alt;
   }
 }

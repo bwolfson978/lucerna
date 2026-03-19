@@ -19,7 +19,7 @@ export function BalanceProjections({
   const wealthGain = npvAtOptimal - npvAtZero;
 
   return (
-    <div className="flex flex-col gap-tight">
+    <div className="flex flex-col gap-default">
       <div className="flex items-center gap-2">
         <h3 className="text-h3 text-text-primary">
           Projected balances at retirement

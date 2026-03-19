@@ -14,7 +14,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const selectId = id || label?.toLowerCase().replace(/\s+/g, "-");
 
     return (
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1.5">
         {label && (
           <label
             htmlFor={selectId}
@@ -28,11 +28,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           id={selectId}
           className={`
             h-9 min-h-[44px] px-3
-            rounded bg-bg-alt
+            rounded-md bg-bg-alt
             border border-border
             text-body text-text-primary
-            focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/15
-            transition-colors duration-100
+            focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10
+            transition-all duration-150
             ${error ? "border-negative" : ""}
             ${className}
           `}

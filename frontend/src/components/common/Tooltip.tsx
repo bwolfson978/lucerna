@@ -21,7 +21,7 @@ export function Tooltip({ content, children }: TooltipProps) {
       {children || (
         <button
           type="button"
-          className="inline-flex items-center justify-center w-4 h-4 text-text-tertiary hover:text-text-secondary transition-colors duration-100"
+          className="inline-flex items-center justify-center w-4 h-4 text-text-tertiary hover:text-text-secondary transition-colors duration-150"
           aria-label="More info"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -42,7 +42,7 @@ export function Tooltip({ content, children }: TooltipProps) {
       {visible && (
         <span
           role="tooltip"
-          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 px-3 py-2 bg-[#1A1A1A] text-white text-body-sm rounded-md max-w-[280px] whitespace-normal pointer-events-none"
+          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 px-3 py-2 bg-[#1F2937] text-white text-body-sm rounded-md max-w-[280px] whitespace-normal pointer-events-none shadow-elevated"
         >
           {content}
         </span>
