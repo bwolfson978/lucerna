@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import type { ScenarioInput, YearlyIncome, FilingStatus } from "@/lib/types";
+import type { ScenarioInput, YearlyIncome, FilingStatus, HealthcareInput } from "@/lib/types";
 import { Input } from "@/components/common/Input";
 import { Select } from "@/components/common/Select";
 import { GlowButton } from "@/components/common/GlowButton";
@@ -54,6 +54,14 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
   const [growthRate, setGrowthRate] = useState<number>(7);
   const [discountRate, setDiscountRate] = useState<number>(5);
 
+  // ACA healthcare inputs
+  const [includeAca, setIncludeAca] = useState(false);
+  const [householdSize, setHouseholdSize] = useState<number>(1);
+  const [monthlySlcspPremium, setMonthlySlcspPremium] = useState<number>(620);
+  const [employerCoverageYear, setEmployerCoverageYear] = useState<
+    number | null
+  >(null);
+
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const errs: Record<string, string> = {};
@@ -73,6 +81,14 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
       incomeGrowthRate
     );
 
+    const healthcare: HealthcareInput | null = includeAca
+      ? {
+          household_size: householdSize,
+          monthly_slcsp_premium: monthlySlcspPremium,
+          has_employer_coverage_after: employerCoverageYear,
+        }
+      : null;
+
     const input: ScenarioInput = {
       age,
       filing_status: filingStatus,
@@ -84,6 +100,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
       annual_retirement_spending: retirementSpending,
       annual_growth_rate: growthRate / 100,
       discount_rate: discountRate / 100,
+      healthcare,
     };
     onSubmit(input);
   }
@@ -243,6 +260,80 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           />
         </div>
       )}
+
+      {/* ACA marketplace coverage */}
+      <div className="flex flex-col gap-default">
+        <label className="flex items-center gap-3 cursor-pointer group">
+          <span
+            className={`relative inline-flex h-5 w-9 items-center rounded-[4px] transition-colors duration-150 ${
+              includeAca ? "bg-accent" : "bg-border-emphasis"
+            }`}
+            onClick={(e) => {
+              e.preventDefault();
+              setIncludeAca(!includeAca);
+            }}
+            role="switch"
+            aria-checked={includeAca}
+          >
+            <span
+              className={`inline-block h-3.5 w-3.5 transform rounded-[3px] bg-white transition-transform duration-150 ${
+                includeAca ? "translate-x-4" : "translate-x-0.5"
+              }`}
+            />
+          </span>
+          <span className="text-body text-text-primary group-hover:text-text-primary transition-colors duration-150">
+            I buy health insurance on the ACA marketplace
+          </span>
+        </label>
+        <p className="text-body-sm text-text-tertiary -mt-1">
+          Accounts for how Roth conversions affect your premium subsidy
+        </p>
+
+        {includeAca && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-default">
+            <Input
+              label="Household size"
+              type="number"
+              value={householdSize}
+              numeric
+              min={1}
+              max={10}
+              helper="People in your tax household"
+              onChange={(e) =>
+                setHouseholdSize(parseInt(e.target.value) || 1)
+              }
+            />
+            <Input
+              label="Monthly benchmark premium"
+              type="number"
+              value={monthlySlcspPremium || ""}
+              placeholder="620"
+              numeric
+              min={0}
+              step={10}
+              helper="2nd-lowest Silver plan on healthcare.gov"
+              onChange={(e) =>
+                setMonthlySlcspPremium(parseFloat(e.target.value) || 620)
+              }
+            />
+            <Input
+              label="Employer coverage resumes"
+              type="number"
+              value={employerCoverageYear || ""}
+              placeholder="e.g. 2028"
+              numeric
+              min={CURRENT_YEAR}
+              max={CURRENT_YEAR + 40}
+              helper="Year you get employer insurance back (optional)"
+              onChange={(e) =>
+                setEmployerCoverageYear(
+                  e.target.value ? parseInt(e.target.value) : null
+                )
+              }
+            />
+          </div>
+        )}
+      </div>
 
       {/* Submit */}
       <div className="pt-comfortable border-t border-border">

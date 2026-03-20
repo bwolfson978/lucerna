@@ -25,6 +25,13 @@ export interface ConversionPreferences {
   max_conversion_total?: number | null;
 }
 
+export interface HealthcareInput {
+  household_size?: number;
+  monthly_slcsp_premium?: number;
+  aca_coverage_years?: number[] | null;
+  has_employer_coverage_after?: number | null;
+}
+
 export interface ScenarioInput {
   age: number;
   filing_status: FilingStatus;
@@ -37,6 +44,7 @@ export interface ScenarioInput {
   annual_growth_rate?: number;
   discount_rate?: number;
   conversion_preferences?: ConversionPreferences | null;
+  healthcare?: HealthcareInput | null;
 }
 
 export interface BracketFillResult {
@@ -56,6 +64,20 @@ export interface ScenarioComparison {
   npv: number;
   tax_on_conversion: number;
   difference_from_optimal: number;
+}
+
+export interface AcaSubsidyDetail {
+  year: number;
+  magi_without_conversion: number;
+  magi_with_conversion: number;
+  subsidy_without_conversion: number;
+  subsidy_with_conversion: number;
+  subsidy_lost: number;
+  federal_tax_cost: number;
+  combined_cost: number;
+  combined_marginal_rate: number;
+  income_pct_fpl: number;
+  hits_cliff: boolean;
 }
 
 export interface ReasoningTrace {
@@ -79,6 +101,17 @@ export interface ReasoningTrace {
     howMuchYouSave: string;
     keyTradeoff: string;
   };
+  aca_impact?: AcaSubsidyDetail[] | null;
+  aca_summary?: {
+    total_subsidy_lost: number;
+    total_federal_tax: number;
+    total_combined_cost: number;
+    effective_combined_rate: number;
+    years_with_subsidy_loss: number;
+    years_hitting_cliff: number;
+    explanation: string;
+    worst_year_note?: string;
+  } | null;
 }
 
 export interface YearlyDetail {
@@ -124,6 +157,10 @@ export interface OptimizationResult {
   conversion_curve: ConversionCurvePoint[];
   unconstrained_npv?: number | null;
   unconstrained_conversions?: number[] | null;
+  aca_subsidy_impact?: AcaSubsidyDetail[] | null;
+  total_subsidy_lost?: number | null;
+  subsidy_cliff_income?: number | null;
+  npv_without_aca?: number | null;
   input: ScenarioInput;
 }
 
