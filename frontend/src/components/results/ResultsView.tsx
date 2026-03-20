@@ -15,6 +15,7 @@ import { ConversionSlider } from "./ConversionSlider";
 import { TransposedDetailTable } from "./TransposedDetailTable";
 import { ScenarioCards } from "./ScenarioCards";
 import { BalanceProjections } from "./BalanceProjections";
+import { AcaSubsidyImpact } from "./AcaSubsidyImpact";
 import { useConversionSlider } from "@/hooks/useConversionSlider";
 
 interface YearOverride {
@@ -231,6 +232,11 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
       {/* Scenario comparison */}
       <ScenarioCards scenarios={result.scenarios} />
 
+      {/* ACA subsidy impact (only when healthcare inputs provided) */}
+      {result.aca_subsidy_impact && (
+        <AcaSubsidyImpact result={result} />
+      )}
+
       {/* Balance projections */}
       <BalanceProjections
         traditionalAtRetirement={result.traditional_at_retirement}
@@ -242,11 +248,14 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
       {/* Assumptions disclaimer */}
       <div className="text-body-sm text-text-tertiary border-t border-border pt-section">
         <p>
-          This analysis uses federal tax brackets only (2025 rates). State
-          taxes, ACA subsidies, Social Security taxation, and RMDs are not
-          modeled. The model assumes all remaining balances are withdrawn at
-          the end of the retirement period. This is educational scenario
-          analysis, not financial advice.
+          This analysis uses federal tax brackets only (2025 rates).
+          {result.aca_subsidy_impact
+            ? " ACA marketplace subsidy impact is included based on your healthcare inputs (2026 rules, 2025 FPL guidelines)."
+            : " ACA subsidies are not modeled — enable the marketplace toggle to include them."}{" "}
+          State taxes, Social Security taxation, and RMDs are not modeled.
+          The model assumes all remaining balances are withdrawn at the end
+          of the retirement period. This is educational scenario analysis,
+          not financial advice.
         </p>
       </div>
     </div>

@@ -4,10 +4,34 @@ from scipy.optimize import minimize
 from app.engine.types import (
     ScenarioInput, OptimizationResult, ScenarioComparison,
     NPVCurvePoint, BracketFillResult, ConversionCurvePoint,
-    ConversionPreferences,
+    ConversionPreferences, AcaSubsidyDetail,
 )
 from app.engine.tax import calculate_federal_tax, get_marginal_rate, analyze_bracket_fill
 from app.engine.heuristic import greedy_bracket_fill
+from app.engine.aca import calculate_subsidy_loss, calculate_aca_subsidy, find_subsidy_cliff_income
+
+
+def _aca_coverage_years(scenario: ScenarioInput) -> set[int]:
+    """Determine which calendar years the user needs ACA marketplace coverage.
+
+    If healthcare inputs specify explicit years, use those. If
+    has_employer_coverage_after is set, only model ACA for years before it.
+    Otherwise, defaults to all trajectory years (conservative — optimizer
+    will find the right balance).
+    """
+    hc = scenario.healthcare
+    if hc is None:
+        return set()
+
+    trajectory_years = {y.year for y in scenario.income_trajectory}
+
+    if hc.aca_coverage_years is not None:
+        return set(hc.aca_coverage_years) & trajectory_years
+
+    if hc.has_employer_coverage_after is not None:
+        return {y for y in trajectory_years if y < hc.has_employer_coverage_after}
+
+    return trajectory_years
 
 
 def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> float:
@@ -18,6 +42,9 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
     2. Post-trajectory growth: grow both accounts until retirement
     3. Retirement: withdraw from traditional (taxed), Roth grows tax-free
     4. Terminal liquidation: remaining balances distributed
+
+    When healthcare inputs are provided, subsidy loss from conversions
+    is included as an additional cost in Phase 1.
     """
     n_years = len(scenario.income_trajectory)
     g = scenario.annual_growth_rate
@@ -28,6 +55,10 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
     roth_balance = scenario.roth_ira_balance
     npv = 0.0
 
+    # Determine ACA coverage years
+    aca_years = _aca_coverage_years(scenario)
+    hc = scenario.healthcare
+
     # Phase 1: Conversion years
     for t in range(n_years):
         income = scenario.income_trajectory[t].gross_income
@@ -37,9 +68,19 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
         tax_without = calculate_federal_tax(income, filing_status)
         conversion_tax = tax_with - tax_without
 
-        # Conversion tax is paid now (discounted to year t)
+        # ACA subsidy loss (if healthcare inputs provided and this is a coverage year)
+        subsidy_loss = 0.0
+        if hc and scenario.income_trajectory[t].year in aca_years:
+            subsidy_loss = calculate_subsidy_loss(
+                income, c_t, hc.household_size, hc.monthly_slcsp_premium,
+            )
+
+        # Total conversion cost = federal tax + subsidy loss
+        total_cost = conversion_tax + subsidy_loss
+
+        # Conversion cost is paid now (discounted to year t)
         discount_factor = (1 + d) ** (-t)
-        npv -= conversion_tax * discount_factor
+        npv -= total_cost * discount_factor
 
         # Shift balances
         trad_balance -= c_t
@@ -310,16 +351,27 @@ def _run_scipy_light(
 def _build_year_detail(
     scenario: ScenarioInput,
     conversions: list[float],
-) -> tuple[list[dict], list[list[BracketFillResult]], float]:
-    """Build per-year detail and bracket fill data for a given conversion schedule."""
+) -> tuple[list[dict], list[list[BracketFillResult]], float, list[AcaSubsidyDetail] | None]:
+    """Build per-year detail and bracket fill data for a given conversion schedule.
+
+    Returns (yearly_detail, yearly_bracket_fill, total_tax, aca_details).
+    aca_details is None when healthcare inputs are not provided.
+    """
     n_years = len(scenario.income_trajectory)
     yearly_detail = []
     yearly_bracket_fill: list[list[BracketFillResult]] = []
     total_tax = 0.0
 
+    hc = scenario.healthcare
+    aca_years = _aca_coverage_years(scenario)
+    aca_details: list[AcaSubsidyDetail] | None = [] if hc else None
+
+    from app.engine.aca import federal_poverty_level
+
     for t in range(n_years):
         income = scenario.income_trajectory[t].gross_income
         c_t = conversions[t]
+        year = scenario.income_trajectory[t].year
 
         tax_with = calculate_federal_tax(income + c_t, scenario.filing_status)
         tax_without = calculate_federal_tax(income, scenario.filing_status)
@@ -329,19 +381,54 @@ def _build_year_detail(
         eff_rate = tax_cost / c_t if c_t > 0 else 0.0
         marginal = get_marginal_rate(income + c_t, scenario.filing_status)
 
-        yearly_detail.append({
-            "year": scenario.income_trajectory[t].year,
+        detail = {
+            "year": year,
             "income": income,
             "conversion": c_t,
             "tax_cost": round(tax_cost, 2),
             "effective_rate": round(eff_rate, 4),
             "marginal_bracket": f"{marginal:.0%}",
-        })
+        }
+
+        # Add ACA subsidy detail if applicable
+        if hc and year in aca_years:
+            subsidy_without = calculate_aca_subsidy(
+                income, hc.household_size, hc.monthly_slcsp_premium,
+            )
+            subsidy_with = calculate_aca_subsidy(
+                income + c_t, hc.household_size, hc.monthly_slcsp_premium,
+            )
+            subsidy_lost = max(0.0, subsidy_without - subsidy_with)
+            combined_cost = tax_cost + subsidy_lost
+            combined_rate = combined_cost / c_t if c_t > 0 else 0.0
+            fpl = federal_poverty_level(hc.household_size)
+            income_pct_fpl = ((income + c_t) / fpl) * 100
+            hits_cliff = income_pct_fpl > 400
+
+            detail["subsidy_lost"] = round(subsidy_lost, 2)
+            detail["combined_cost"] = round(combined_cost, 2)
+            detail["combined_rate"] = round(combined_rate, 4)
+
+            aca_details.append(AcaSubsidyDetail(
+                year=year,
+                magi_without_conversion=income,
+                magi_with_conversion=income + c_t,
+                subsidy_without_conversion=round(subsidy_without, 2),
+                subsidy_with_conversion=round(subsidy_with, 2),
+                subsidy_lost=round(subsidy_lost, 2),
+                federal_tax_cost=round(tax_cost, 2),
+                combined_cost=round(combined_cost, 2),
+                combined_marginal_rate=round(combined_rate, 4),
+                income_pct_fpl=round(income_pct_fpl, 1),
+                hits_cliff=hits_cliff,
+            ))
+
+        yearly_detail.append(detail)
 
         bracket_fill = analyze_bracket_fill(income, c_t, scenario.filing_status)
         yearly_bracket_fill.append(bracket_fill)
 
-    return yearly_detail, yearly_bracket_fill, total_tax
+    return yearly_detail, yearly_bracket_fill, total_tax, aca_details
 
 
 def compute_conversion_curve(
@@ -377,7 +464,7 @@ def compute_conversion_curve(
         else:
             conversions = _run_scipy_light(scenario, cap, cached_greedy=cached_greedy)
 
-        yearly_detail, yearly_bracket_fill, total_tax = _build_year_detail(
+        yearly_detail, yearly_bracket_fill, total_tax, _ = _build_year_detail(
             scenario, conversions,
         )
         npv = calculate_npv(scenario, conversions)
@@ -430,7 +517,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
     npv_at_zero = calculate_npv(scenario, [0.0] * n_years)
 
     # Per-year detail and bracket fill
-    yearly_detail, yearly_bracket_fill, total_tax = _build_year_detail(
+    yearly_detail, yearly_bracket_fill, total_tax, aca_details = _build_year_detail(
         scenario, final_conversions,
     )
 
@@ -516,7 +603,8 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
     # Generate reasoning trace
     from app.engine.trace import generate_reasoning_trace
     reasoning = generate_reasoning_trace(
-        scenario, final_conversions, yearly_bracket_fill, npv_curve
+        scenario, final_conversions, yearly_bracket_fill, npv_curve,
+        aca_details=aca_details,
     )
 
     # Unconstrained comparison (only when preferences are active and changed the result)
@@ -525,6 +613,18 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
     if _has_active_preferences(scenario) and unconstrained_conversions != final_conversions:
         result_unconstrained_npv = round(unconstrained_npv, 2)
         result_unconstrained_conversions = unconstrained_conversions
+
+    # ACA comparison: if healthcare inputs are active, also compute tax-only NPV
+    # so the user can see the impact of including subsidy awareness
+    npv_without_aca = None
+    total_subsidy_lost = None
+    cliff_income = None
+    if scenario.healthcare and aca_details:
+        # Run NPV without ACA by temporarily removing healthcare inputs
+        scenario_no_aca = scenario.model_copy(update={"healthcare": None})
+        npv_without_aca = round(calculate_npv(scenario_no_aca, final_conversions), 2)
+        total_subsidy_lost = round(sum(d.subsidy_lost for d in aca_details), 2)
+        cliff_income = round(find_subsidy_cliff_income(scenario.healthcare.household_size), 2)
 
     # Pre-compute conversion curve for interactive slider
     conversion_curve = compute_conversion_curve(scenario)
@@ -547,5 +647,9 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         conversion_curve=conversion_curve,
         unconstrained_npv=result_unconstrained_npv,
         unconstrained_conversions=result_unconstrained_conversions,
+        aca_subsidy_impact=aca_details,
+        total_subsidy_lost=total_subsidy_lost,
+        subsidy_cliff_income=cliff_income,
+        npv_without_aca=npv_without_aca,
         input=scenario,
     )

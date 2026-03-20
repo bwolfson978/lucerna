@@ -48,6 +48,43 @@ class ConversionPreferences(BaseModel):
     )
 
 
+class HealthcareInput(BaseModel):
+    """ACA marketplace healthcare inputs for subsidy-aware optimization.
+
+    Most users know their household size. The SLCSP premium can be looked
+    up on healthcare.gov — we provide a reasonable default (~$620/month
+    for a single 40-year-old, 2026 national average estimate) so users
+    can get started immediately and refine later.
+    """
+    household_size: int = Field(
+        default=1, ge=1, le=10,
+        description="Number of people in the tax household"
+    )
+    monthly_slcsp_premium: float = Field(
+        default=620.0, ge=0,
+        description=(
+            "Monthly premium for the Second Lowest Cost Silver Plan. "
+            "Look this up on healthcare.gov or your 1095-A form."
+        )
+    )
+    aca_coverage_years: Optional[list[int]] = Field(
+        default=None,
+        description=(
+            "Calendar years when ACA marketplace coverage is needed. "
+            "If not provided, defaults to all years in the income trajectory "
+            "where income is below the employer-coverage threshold."
+        )
+    )
+    has_employer_coverage_after: Optional[int] = Field(
+        default=None,
+        description=(
+            "Calendar year when employer coverage resumes. ACA subsidy "
+            "impact is only modeled for years before this. If not provided, "
+            "ACA impact is modeled for all trajectory years."
+        )
+    )
+
+
 class ScenarioInput(BaseModel):
     """All inputs needed to run the multi-year optimization."""
 
@@ -80,6 +117,9 @@ class ScenarioInput(BaseModel):
     # Conversion preferences (optional constraints)
     conversion_preferences: Optional[ConversionPreferences] = None
 
+    # Healthcare / ACA subsidy inputs (optional — enables subsidy-aware optimization)
+    healthcare: Optional[HealthcareInput] = None
+
 
 class BracketFillResult(BaseModel):
     """How a single tax bracket is filled by income and conversion."""
@@ -102,6 +142,21 @@ class ScenarioComparison(BaseModel):
     difference_from_optimal: float
 
 
+class AcaSubsidyDetail(BaseModel):
+    """Per-year ACA subsidy impact for a given conversion schedule."""
+    year: int
+    magi_without_conversion: float
+    magi_with_conversion: float
+    subsidy_without_conversion: float
+    subsidy_with_conversion: float
+    subsidy_lost: float
+    federal_tax_cost: float
+    combined_cost: float
+    combined_marginal_rate: float
+    income_pct_fpl: float
+    hits_cliff: bool
+
+
 class ReasoningTrace(BaseModel):
     """Structured explanation of WHY the optimal amount is what it is.
     This feeds the AI explanation layer."""
@@ -116,6 +171,10 @@ class ReasoningTrace(BaseModel):
     sensitivity_notes: list[str]
 
     summary_points: dict  # whatToConvert, whyThisAmount, howMuchYouSave, keyTradeoff
+
+    # ACA subsidy impact (populated when healthcare inputs are provided)
+    aca_impact: Optional[list[AcaSubsidyDetail]] = None
+    aca_summary: Optional[dict] = None
 
 
 class NPVCurvePoint(BaseModel):
@@ -173,6 +232,12 @@ class OptimizationResult(BaseModel):
     # Unconstrained comparison (populated when conversion_preferences are active)
     unconstrained_npv: Optional[float] = None
     unconstrained_conversions: Optional[list[float]] = None
+
+    # ACA subsidy impact (populated when healthcare inputs are provided)
+    aca_subsidy_impact: Optional[list[AcaSubsidyDetail]] = None
+    total_subsidy_lost: Optional[float] = None
+    subsidy_cliff_income: Optional[float] = None
+    npv_without_aca: Optional[float] = None  # NPV from tax-only optimization for comparison
 
     # Input echo
     input: ScenarioInput
