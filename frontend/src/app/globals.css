@@ -55,24 +55,17 @@
   }
 }
 
-/* Glow button — rotating conic-gradient border + inner shimmer */
+/* Glow button — rotating conic-gradient border */
 @keyframes glow-rotate {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
-}
-
-@keyframes glow-shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
 }
 
 .glow-button {
   position: relative;
   z-index: 1;
   overflow: hidden;
-  background: linear-gradient(110deg, #4F46E5 45%, #7c6ff7 50%, #4F46E5 55%);
-  background-size: 200% 100%;
-  animation: glow-shimmer 5s infinite linear;
+  background: #4F46E5;
 }
 
 .glow-button::before {
@@ -98,27 +91,19 @@
   content: '';
   position: absolute;
   inset: 2px;
-  background: linear-gradient(110deg, #4F46E5 45%, #6366f1 50%, #4F46E5 55%);
-  background-size: 200% 100%;
-  animation: glow-shimmer 5s infinite linear;
+  background: #4F46E5;
   border-radius: inherit;
   z-index: -1;
 }
 
 .glow-button:hover::after {
-  background: linear-gradient(110deg, #4338CA 45%, #5b5bd6 50%, #4338CA 55%);
-  background-size: 200% 100%;
-  animation: glow-shimmer 5s infinite linear;
+  background: #4338CA;
 }
 
 .glow-button:disabled {
-  animation: none;
+  opacity: 0.5;
 }
 
 .glow-button:disabled::before {
-  animation: none;
-}
-
-.glow-button:disabled::after {
   animation: none;
 }
