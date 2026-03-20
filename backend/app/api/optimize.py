@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter
 
 from app.engine.types import ScenarioInput, OptimizationResult
@@ -9,4 +11,4 @@ router = APIRouter()
 @router.post("/optimize", response_model=OptimizationResult)
 async def run_optimize(scenario: ScenarioInput):
     """Run the multi-year Roth conversion optimizer."""
-    return optimize(scenario)
+    return await asyncio.to_thread(optimize, scenario)

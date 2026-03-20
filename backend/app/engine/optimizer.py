@@ -109,22 +109,28 @@ def _run_scipy(
     bounds: list[tuple[float, float]],
     constraints: list[dict],
 ) -> list[float]:
-    """Run scipy SLSQP with multiple restarts. Returns best conversion schedule."""
+    """Run scipy SLSQP with multiple restarts. Returns best conversion schedule.
+
+    Uses 3 starting points (greedy, uniform, zero) with early termination
+    when a successful result is found and subsequent restarts don't improve
+    NPV by more than 0.1%.
+    """
     n_years = len(scenario.income_trajectory)
     max_balance = scenario.traditional_ira_balance
 
     greedy = greedy_bracket_fill(scenario)
     uniform = [max_balance / n_years] * n_years
-    front_loaded = [max_balance * 0.6 / max(1, n_years - 1)] * n_years
-    if n_years > 1:
-        front_loaded[0] = max_balance * 0.4
-    back_loaded = list(reversed(front_loaded))
     zero = [0.0] * n_years
 
-    starting_points = [greedy, uniform, front_loaded, back_loaded, zero]
+    starting_points = [greedy, uniform, zero]
+
+    # Scale iterations with problem dimensionality — high-dimensional problems
+    # rarely converge within maxiter anyway, so cap the wasted effort.
+    maxiter = min(200, max(50, 300 // max(1, n_years)))
 
     best_npv = float("-inf")
     best_conversions = greedy  # fallback
+    had_success = False
 
     for x0 in starting_points:
         x0_arr = np.array(x0, dtype=float)
@@ -143,13 +149,20 @@ def _run_scipy(
                 method="SLSQP",
                 bounds=bounds,
                 constraints=constraints,
-                options={"maxiter": 200, "ftol": 1e-8},
+                options={"maxiter": maxiter, "ftol": 1e-8},
             )
-            if result.success or result.fun < -best_npv:
-                candidate_npv = -result.fun
-                if candidate_npv > best_npv:
-                    best_npv = candidate_npv
-                    best_conversions = result.x.tolist()
+            candidate_npv = -result.fun
+            if candidate_npv > best_npv:
+                # Early termination: if we already had a successful result and
+                # the improvement is < 0.1%, stop trying more starting points.
+                if had_success and best_npv > 0:
+                    improvement = (candidate_npv - best_npv) / best_npv
+                    if improvement < 0.001:
+                        break
+                best_npv = candidate_npv
+                best_conversions = result.x.tolist()
+            if result.success:
+                had_success = True
         except Exception:
             continue
 
@@ -248,8 +261,9 @@ def _has_active_preferences(scenario: ScenarioInput) -> bool:
 def _run_scipy_light(
     scenario: ScenarioInput,
     total_cap: float,
+    cached_greedy: list[float] | None = None,
 ) -> list[float]:
-    """Lighter optimizer for conversion curve: fewer restarts, lower precision."""
+    """Lighter optimizer for conversion curve: single restart, lower precision."""
     n_years = len(scenario.income_trajectory)
     max_balance = min(scenario.traditional_ira_balance, total_cap)
 
@@ -258,7 +272,7 @@ def _run_scipy_light(
         {"type": "ineq", "fun": lambda x: max_balance - np.sum(x)},
     ]
 
-    greedy = greedy_bracket_fill(scenario)
+    greedy = cached_greedy if cached_greedy is not None else greedy_bracket_fill(scenario)
     # Cap greedy to total_cap
     remaining = total_cap
     capped_greedy = []
@@ -268,36 +282,27 @@ def _run_scipy_light(
         remaining -= c
     greedy = capped_greedy
 
-    zero = [0.0] * n_years
-    starting_points = [greedy, zero]
+    maxiter = min(50, max(20, 100 // max(1, n_years)))
 
-    best_npv = float("-inf")
-    best_conversions = greedy
+    x0_arr = np.array(greedy, dtype=float)
+    for i, (lo, hi) in enumerate(bounds):
+        x0_arr[i] = np.clip(x0_arr[i], lo, hi)
+    if np.sum(x0_arr) > max_balance:
+        x0_arr = x0_arr * (max_balance / np.sum(x0_arr))
 
-    for x0 in starting_points:
-        x0_arr = np.array(x0, dtype=float)
-        for i, (lo, hi) in enumerate(bounds):
-            x0_arr[i] = np.clip(x0_arr[i], lo, hi)
-        if np.sum(x0_arr) > max_balance:
-            x0_arr = x0_arr * (max_balance / np.sum(x0_arr))
-
-        try:
-            result = minimize(
-                _objective,
-                x0_arr,
-                args=(scenario,),
-                method="SLSQP",
-                bounds=bounds,
-                constraints=constraints,
-                options={"maxiter": 50, "ftol": 1e-4},
-            )
-            if result.success or result.fun < -best_npv:
-                candidate_npv = -result.fun
-                if candidate_npv > best_npv:
-                    best_npv = candidate_npv
-                    best_conversions = result.x.tolist()
-        except Exception:
-            continue
+    try:
+        result = minimize(
+            _objective,
+            x0_arr,
+            args=(scenario,),
+            method="SLSQP",
+            bounds=bounds,
+            constraints=constraints,
+            options={"maxiter": maxiter, "ftol": 1e-4},
+        )
+        best_conversions = result.x.tolist()
+    except Exception:
+        best_conversions = greedy
 
     return _finalize_conversions(best_conversions, max_balance)
 
@@ -355,9 +360,12 @@ def compute_conversion_curve(
 
     # Scale down points for long trajectories — each scipy call is O(n_years)
     if n_years > 15:
-        n_points = min(n_points, 8)
+        n_points = min(n_points, 6)
     elif n_years > 10:
-        n_points = min(n_points, 12)
+        n_points = min(n_points, 10)
+
+    # Cache greedy once for all curve points
+    cached_greedy = greedy_bracket_fill(scenario)
 
     points = []
 
@@ -367,7 +375,7 @@ def compute_conversion_curve(
         if cap == 0:
             conversions = [0.0] * n_years
         else:
-            conversions = _run_scipy_light(scenario, cap)
+            conversions = _run_scipy_light(scenario, cap, cached_greedy=cached_greedy)
 
         yearly_detail, yearly_bracket_fill, total_tax = _build_year_detail(
             scenario, conversions,

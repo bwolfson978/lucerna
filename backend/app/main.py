@@ -1,9 +1,22 @@
 import os
+import threading
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(title="Lucerna API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Pre-warm the demo cache in a background thread so it doesn't block startup
+    def _warm():
+        from app.engine.demo import get_demo
+        get_demo()
+    threading.Thread(target=_warm, daemon=True).start()
+    yield
+
+
+app = FastAPI(title="Lucerna API", lifespan=lifespan)
 
 _default_origins = ["http://localhost:3000"]
 _env_origins = os.environ.get("ALLOWED_ORIGINS", "")
