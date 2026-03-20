@@ -1,5 +1,6 @@
 from app.engine.types import (
     ScenarioInput, ReasoningTrace, BracketFillResult, NPVCurvePoint,
+    AcaSubsidyDetail,
 )
 from app.engine.tax import get_marginal_rate
 
@@ -9,6 +10,7 @@ def generate_reasoning_trace(
     optimal_conversions: list[float],
     bracket_fill: list[list[BracketFillResult]],
     npv_curve: list[NPVCurvePoint],
+    aca_details: list[AcaSubsidyDetail] | None = None,
 ) -> ReasoningTrace:
     """Generate a structured reasoning trace for the AI explanation layer.
 
@@ -48,6 +50,13 @@ def generate_reasoning_trace(
         scenario, optimal_conversions, marginal_benefit
     )
 
+    # ACA impact analysis
+    aca_impact = None
+    aca_summary = None
+    if aca_details:
+        aca_impact = aca_details
+        aca_summary = _build_aca_summary(scenario, aca_details, optimal_conversions)
+
     return ReasoningTrace(
         binding_constraint=binding_constraint,
         marginal_tax_rate_at_optimal=round(avg_marginal, 4),
@@ -56,6 +65,8 @@ def generate_reasoning_trace(
         benefit_of_current_bracket=benefit_of_current,
         sensitivity_notes=sensitivity_notes,
         summary_points=summary_points,
+        aca_impact=aca_impact,
+        aca_summary=aca_summary,
     )
 
 
@@ -172,7 +183,69 @@ def _build_sensitivity_notes(
     if scenario.years_in_retirement >= 30:
         notes.append("Long retirement horizon amplifies the tax-free growth benefit of Roth conversions")
 
+    if scenario.healthcare:
+        notes.append(
+            "ACA subsidy impact is included — the true cost of each conversion dollar "
+            "accounts for both federal tax and any reduction in your marketplace premium subsidy"
+        )
+
     return notes
+
+
+def _build_aca_summary(
+    scenario: ScenarioInput,
+    aca_details: list[AcaSubsidyDetail],
+    conversions: list[float],
+) -> dict:
+    """Build a human-readable summary of the ACA subsidy impact."""
+    total_subsidy_lost = sum(d.subsidy_lost for d in aca_details)
+    total_federal_tax = sum(d.federal_tax_cost for d in aca_details)
+    total_combined = sum(d.combined_cost for d in aca_details)
+    total_conversion = sum(conversions)
+
+    years_with_loss = [d for d in aca_details if d.subsidy_lost > 0]
+    years_hitting_cliff = [d for d in aca_details if d.hits_cliff]
+
+    # Find the year with the highest combined marginal rate
+    worst_year = max(aca_details, key=lambda d: d.combined_marginal_rate) if aca_details else None
+
+    summary: dict = {
+        "total_subsidy_lost": round(total_subsidy_lost, 2),
+        "total_federal_tax": round(total_federal_tax, 2),
+        "total_combined_cost": round(total_combined, 2),
+        "effective_combined_rate": round(total_combined / total_conversion, 4) if total_conversion > 0 else 0.0,
+        "years_with_subsidy_loss": len(years_with_loss),
+        "years_hitting_cliff": len(years_hitting_cliff),
+    }
+
+    # Plain-English explanation for the AI layer
+    if total_subsidy_lost == 0:
+        summary["explanation"] = (
+            "The recommended conversions do not affect your ACA marketplace subsidy. "
+            "Your income with conversions stays within a range where the subsidy remains unchanged."
+        )
+    elif years_hitting_cliff:
+        cliff_years = ", ".join(str(d.year) for d in years_hitting_cliff)
+        summary["explanation"] = (
+            f"In {cliff_years}, the conversion would push your income above 400% of the "
+            f"federal poverty level, eliminating your ACA subsidy entirely. The optimizer "
+            f"accounts for this by limiting conversions in those years."
+        )
+    else:
+        summary["explanation"] = (
+            f"The recommended conversions reduce your ACA subsidy by "
+            f"${total_subsidy_lost:,.0f} total across {len(years_with_loss)} year(s). "
+            f"This subsidy loss is factored into the optimization — the recommended "
+            f"conversion amounts already balance tax savings against subsidy cost."
+        )
+
+    if worst_year and worst_year.combined_marginal_rate > 0:
+        summary["worst_year_note"] = (
+            f"In {worst_year.year}, each dollar converted has a combined cost of "
+            f"{worst_year.combined_marginal_rate:.0%} (federal tax + subsidy reduction)"
+        )
+
+    return summary
 
 
 def _build_summary_points(
