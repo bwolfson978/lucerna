@@ -8,7 +8,7 @@ import type {
 } from "@/lib/types";
 import { MetricCard } from "@/components/common/MetricCard";
 import { Tooltip } from "@/components/common/Tooltip";
-import { Button } from "@/components/common/Button";
+import { GlowButton } from "@/components/common/GlowButton";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
 import { BracketChart } from "./BracketChart";
 import { ConversionSlider } from "./ConversionSlider";
@@ -221,9 +221,9 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
             <span className="text-body-sm text-text-secondary">
               Income values modified
             </span>
-            <Button onClick={handleReRun} loading={loading}>
+            <GlowButton onClick={handleReRun} loading={loading}>
               Re-run analysis
-            </Button>
+            </GlowButton>
           </div>
         )}
       </div>
