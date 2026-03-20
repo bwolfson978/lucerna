@@ -18,7 +18,7 @@ export function Header() {
           </Link>
           <Link
             href="/calculator"
-            className="inline-flex items-center justify-center h-9 min-h-[44px] px-5 rounded-md bg-accent text-white text-body font-medium hover:bg-accent-hover active:scale-[0.98] transition-all duration-150"
+            className="glow-button inline-flex items-center justify-center h-9 min-h-[44px] px-5 rounded-md text-white text-body font-medium active:scale-[0.98] transition-all duration-150"
           >
             Run your scenario
           </Link>

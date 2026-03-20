@@ -4,7 +4,7 @@ import { useState, FormEvent } from "react";
 import type { ScenarioInput, YearlyIncome, FilingStatus } from "@/lib/types";
 import { Input } from "@/components/common/Input";
 import { Select } from "@/components/common/Select";
-import { Button } from "@/components/common/Button";
+import { GlowButton } from "@/components/common/GlowButton";
 import { CURRENT_YEAR } from "@/lib/utils/constants";
 
 interface InputFormProps {
@@ -246,9 +246,9 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
 
       {/* Submit */}
       <div className="pt-comfortable border-t border-border">
-        <Button type="submit" loading={loading}>
+        <GlowButton type="submit" loading={loading}>
           Analyze my scenario
-        </Button>
+        </GlowButton>
       </div>
     </form>
   );
