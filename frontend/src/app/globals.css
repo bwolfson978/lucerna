@@ -84,9 +84,10 @@
   height: 200%;
   background: conic-gradient(
     transparent,
-    #7c3aed,
-    #818cf8,
-    #3b82f6,
+    #f472b6,
+    #facc15,
+    #60a5fa,
+    #a78bfa,
     transparent 30%
   );
   animation: glow-rotate 4s linear infinite;
