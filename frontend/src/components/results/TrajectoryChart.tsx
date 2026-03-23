@@ -45,13 +45,24 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
     },
     plotOptions: {
       bar: {
-        borderRadius: 4,
+        borderRadius: 6,
         columnWidth: "56%",
       },
     },
-    colors: ["#6B7280", "#4F46E5"],
+    colors: ["#78716C", "#D97706"],
+    fill: {
+      type: "gradient",
+      gradient: {
+        shade: "light",
+        type: "vertical",
+        shadeIntensity: 0.15,
+        opacityFrom: 1,
+        opacityTo: 0.85,
+        stops: [0, 100],
+      },
+    },
     grid: {
-      borderColor: "rgba(0, 0, 0, 0.04)",
+      borderColor: "rgba(120, 113, 108, 0.06)",
       strokeDashArray: 3,
       padding: { left: 8, right: 8 },
     },
@@ -86,13 +97,13 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
     },
     legend: { show: false },
     states: {
-      hover: { filter: { type: "none" } },
+      hover: { filter: { type: "lighten", value: 0.08 } },
       active: { filter: { type: "none" } },
     },
     annotations: {
       yaxis: bracketBoundaries.map((boundary) => ({
         y: boundary,
-        borderColor: "rgba(0, 0, 0, 0.08)",
+        borderColor: "rgba(120, 113, 108, 0.10)",
         strokeDashArray: 4,
         label: {
           text: `$${(boundary / 1000).toFixed(0)}K`,
@@ -126,11 +137,11 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
       {/* Custom legend */}
       <div className="flex items-center gap-5 text-body-sm text-text-secondary">
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-neutral" />
+          <span className="w-3 h-3 rounded" style={{ backgroundColor: "#78716C" }} />
           Income
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-accent" />
+          <span className="w-3 h-3 rounded" style={{ backgroundColor: "#D97706" }} />
           Conversion
         </span>
       </div>
