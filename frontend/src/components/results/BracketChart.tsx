@@ -2,7 +2,7 @@
 
 import type { BracketFillResult } from "@/lib/types";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
-import { BRACKET_COLORS } from "@/lib/utils/constants";
+import { BRACKET_COLORS, CHART_COLORS } from "@/lib/utils/constants";
 import { useRef, useMemo } from "react";
 
 interface YearData {
@@ -85,11 +85,11 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
       {/* Legend */}
       <div className="flex items-center gap-5 text-body-sm text-text-secondary">
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-neutral" />
+          <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.income }} />
           Income
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-accent" />
+          <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.conversion }} />
           Conversion
         </span>
         <span className="flex items-center gap-1.5">
@@ -275,39 +275,42 @@ function BracketBar({
 
         return (
           <g key={bf.bracket_rate}>
-            {/* Remaining capacity (light background) */}
+            {/* Remaining capacity (warm light background) */}
             {remainingHeight > 1 && (
               <rect
                 x={x}
                 y={remainingTop}
                 width={barWidth}
                 height={remainingHeight}
-                fill="rgba(0,0,0,0.03)"
-                stroke="rgba(0,0,0,0.06)"
+                fill={CHART_COLORS.remaining}
+                stroke={CHART_COLORS.remainingStroke}
                 strokeWidth={0.5}
+                rx={2}
               />
             )}
 
-            {/* Income portion (gray) */}
+            {/* Income portion (warm stone gray) */}
             {incomeHeight > 1 && (
               <rect
                 x={x}
                 y={incomeTop}
                 width={barWidth}
                 height={incomeHeight}
-                fill="#6B7280"
+                fill={CHART_COLORS.income}
+                rx={2}
                 className="transition-all duration-300"
               />
             )}
 
-            {/* Conversion portion (accent blue) */}
+            {/* Conversion portion (warm amber) */}
             {convHeight > 1 && (
               <rect
                 x={x}
                 y={convTop}
                 width={barWidth}
                 height={convHeight}
-                fill="#4F46E5"
+                fill={CHART_COLORS.conversion}
+                rx={2}
                 className="transition-all duration-300"
               />
             )}

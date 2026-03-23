@@ -1,6 +1,7 @@
 "use client";
 
 import { formatCurrency } from "@/lib/utils/formatting";
+import { CHART_COLORS } from "@/lib/utils/constants";
 import { useCallback } from "react";
 
 interface ConversionSliderProps {
@@ -50,11 +51,11 @@ export function ConversionSlider({
           onChange={handleChange}
           className="w-full h-2 rounded-full appearance-none cursor-pointer accent-slider"
           style={{
-            background: `linear-gradient(to right, #2563EB 0%, #2563EB ${
+            background: `linear-gradient(to right, ${CHART_COLORS.conversion} 0%, ${CHART_COLORS.conversion} ${
               max > 0 ? ((value - min) / (max - min)) * 100 : 0
-            }%, #E5E7EB ${
+            }%, ${CHART_COLORS.sliderTrack} ${
               max > 0 ? ((value - min) / (max - min)) * 100 : 0
-            }%, #E5E7EB 100%)`,
+            }%, ${CHART_COLORS.sliderTrack} 100%)`,
           }}
         />
 
