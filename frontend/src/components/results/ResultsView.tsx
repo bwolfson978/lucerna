@@ -16,6 +16,7 @@ import { TransposedDetailTable } from "./TransposedDetailTable";
 import { ScenarioCards } from "./ScenarioCards";
 import { BalanceProjections } from "./BalanceProjections";
 import { AcaSubsidyImpact } from "./AcaSubsidyImpact";
+import { TrajectoryChart } from "./TrajectoryChart";
 import { useConversionSlider } from "@/hooks/useConversionSlider";
 
 interface YearOverride {
@@ -57,6 +58,18 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
       bracketFill: yearlyBracketFills[i] || [],
     }));
   }, [result.input, yearlyBracketFills]);
+
+  // Build trajectory chart data from client-side slider state
+  const trajectoryData = useMemo(() => {
+    return yearlyDetail.map((yd, i) => ({
+      year: yd.year,
+      income: yd.income,
+      conversion: yd.conversion,
+      bracket_boundaries: (yearlyBracketFills[i] || []).map(
+        (b) => b.bracket_max
+      ),
+    }));
+  }, [yearlyDetail, yearlyBracketFills]);
 
   // Income and life event arrays for the detail table
   const incomes = result.input.income_trajectory.map((yi) => yi.gross_income);
@@ -192,6 +205,9 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
           value={String(conversionYears)}
         />
       </div>
+
+      {/* Trajectory chart */}
+      <TrajectoryChart data={trajectoryData} />
 
       {/* Bracket chart */}
       <BracketChart
