@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import type { TrajectoryChartPoint } from "@/lib/types";
+import { CHART_COLORS } from "@/lib/utils/constants";
 import { Tooltip } from "@/components/common/Tooltip";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
@@ -49,7 +50,7 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
         columnWidth: "56%",
       },
     },
-    colors: ["#8B5CF6", "#059669"],
+    colors: [CHART_COLORS.income, CHART_COLORS.conversion],
     fill: {
       type: "gradient",
       gradient: {
@@ -139,11 +140,11 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
       {/* Custom legend */}
       <div className="flex items-center gap-5 text-body-sm text-text-secondary">
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded" style={{ backgroundColor: "#8B5CF6" }} />
+          <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.income }} />
           Income
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded" style={{ backgroundColor: "#059669" }} />
+          <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.conversion }} />
           Conversion
         </span>
       </div>

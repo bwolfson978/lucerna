@@ -2,7 +2,7 @@
 
 import type { BracketFillResult } from "@/lib/types";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
-import { BRACKET_COLORS } from "@/lib/utils/constants";
+import { BRACKET_COLORS, CHART_COLORS } from "@/lib/utils/constants";
 import { useRef, useMemo } from "react";
 
 interface YearData {
@@ -85,11 +85,11 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
       {/* Legend */}
       <div className="flex items-center gap-5 text-body-sm text-text-secondary">
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded" style={{ backgroundColor: "#8B5CF6" }} />
+          <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.income }} />
           Income
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded" style={{ backgroundColor: "#059669" }} />
+          <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.conversion }} />
           Conversion
         </span>
         <span className="flex items-center gap-1.5">
@@ -282,8 +282,8 @@ function BracketBar({
                 y={remainingTop}
                 width={barWidth}
                 height={remainingHeight}
-                fill="rgba(120, 113, 108, 0.04)"
-                stroke="rgba(120, 113, 108, 0.08)"
+                fill={CHART_COLORS.remaining}
+                stroke={CHART_COLORS.remainingStroke}
                 strokeWidth={0.5}
                 rx={2}
               />
@@ -296,7 +296,7 @@ function BracketBar({
                 y={incomeTop}
                 width={barWidth}
                 height={incomeHeight}
-                fill="#8B5CF6"
+                fill={CHART_COLORS.income}
                 rx={2}
                 className="transition-all duration-300"
               />
@@ -309,7 +309,7 @@ function BracketBar({
                 y={convTop}
                 width={barWidth}
                 height={convHeight}
-                fill="#059669"
+                fill={CHART_COLORS.conversion}
                 rx={2}
                 className="transition-all duration-300"
               />
