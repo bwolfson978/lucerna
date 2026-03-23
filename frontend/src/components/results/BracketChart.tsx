@@ -85,11 +85,11 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
       {/* Legend */}
       <div className="flex items-center gap-5 text-body-sm text-text-secondary">
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-neutral" />
+          <span className="w-3 h-3 rounded" style={{ backgroundColor: "#78716C" }} />
           Income
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-accent" />
+          <span className="w-3 h-3 rounded" style={{ backgroundColor: "#D97706" }} />
           Conversion
         </span>
         <span className="flex items-center gap-1.5">
@@ -275,39 +275,42 @@ function BracketBar({
 
         return (
           <g key={bf.bracket_rate}>
-            {/* Remaining capacity (light background) */}
+            {/* Remaining capacity (warm light background) */}
             {remainingHeight > 1 && (
               <rect
                 x={x}
                 y={remainingTop}
                 width={barWidth}
                 height={remainingHeight}
-                fill="rgba(0,0,0,0.03)"
-                stroke="rgba(0,0,0,0.06)"
+                fill="rgba(120, 113, 108, 0.04)"
+                stroke="rgba(120, 113, 108, 0.08)"
                 strokeWidth={0.5}
+                rx={2}
               />
             )}
 
-            {/* Income portion (gray) */}
+            {/* Income portion (warm stone gray) */}
             {incomeHeight > 1 && (
               <rect
                 x={x}
                 y={incomeTop}
                 width={barWidth}
                 height={incomeHeight}
-                fill="#6B7280"
+                fill="#78716C"
+                rx={2}
                 className="transition-all duration-300"
               />
             )}
 
-            {/* Conversion portion (accent blue) */}
+            {/* Conversion portion (warm amber) */}
             {convHeight > 1 && (
               <rect
                 x={x}
                 y={convTop}
                 width={barWidth}
                 height={convHeight}
-                fill="#4F46E5"
+                fill="#D97706"
+                rx={2}
                 className="transition-all duration-300"
               />
             )}
