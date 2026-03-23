@@ -85,11 +85,11 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
       {/* Legend */}
       <div className="flex items-center gap-5 text-body-sm text-text-secondary">
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded" style={{ backgroundColor: "#78716C" }} />
+          <span className="w-3 h-3 rounded" style={{ backgroundColor: "#8B5CF6" }} />
           Income
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded" style={{ backgroundColor: "#D97706" }} />
+          <span className="w-3 h-3 rounded" style={{ backgroundColor: "#059669" }} />
           Conversion
         </span>
         <span className="flex items-center gap-1.5">
@@ -296,7 +296,7 @@ function BracketBar({
                 y={incomeTop}
                 width={barWidth}
                 height={incomeHeight}
-                fill="#78716C"
+                fill="#8B5CF6"
                 rx={2}
                 className="transition-all duration-300"
               />
@@ -309,7 +309,7 @@ function BracketBar({
                 y={convTop}
                 width={barWidth}
                 height={convHeight}
-                fill="#D97706"
+                fill="#059669"
                 rx={2}
                 className="transition-all duration-300"
               />

@@ -50,11 +50,11 @@ export function ConversionSlider({
           onChange={handleChange}
           className="w-full h-2 rounded-full appearance-none cursor-pointer accent-slider"
           style={{
-            background: `linear-gradient(to right, #D97706 0%, #D97706 ${
+            background: `linear-gradient(to right, #059669 0%, #059669 ${
               max > 0 ? ((value - min) / (max - min)) * 100 : 0
-            }%, #D6D3D1 ${
+            }%, #E2E0DF ${
               max > 0 ? ((value - min) / (max - min)) * 100 : 0
-            }%, #D6D3D1 100%)`,
+            }%, #E2E0DF 100%)`,
           }}
         />
 

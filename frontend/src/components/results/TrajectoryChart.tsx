@@ -49,7 +49,7 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
         columnWidth: "56%",
       },
     },
-    colors: ["#78716C", "#D97706"],
+    colors: ["#8B5CF6", "#059669"],
     fill: {
       type: "gradient",
       gradient: {
@@ -139,11 +139,11 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
       {/* Custom legend */}
       <div className="flex items-center gap-5 text-body-sm text-text-secondary">
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded" style={{ backgroundColor: "#78716C" }} />
+          <span className="w-3 h-3 rounded" style={{ backgroundColor: "#8B5CF6" }} />
           Income
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded" style={{ backgroundColor: "#D97706" }} />
+          <span className="w-3 h-3 rounded" style={{ backgroundColor: "#059669" }} />
           Conversion
         </span>
       </div>
