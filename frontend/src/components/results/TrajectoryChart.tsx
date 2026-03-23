@@ -97,7 +97,9 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
     },
     legend: { show: false },
     states: {
-      hover: { filter: { type: "lighten", value: 0.08 } },
+      hover: {
+        filter: { type: "lighten", value: 0.08 } as unknown as { type?: string },
+      },
       active: { filter: { type: "none" } },
     },
     annotations: {
