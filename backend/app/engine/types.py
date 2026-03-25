@@ -104,7 +104,7 @@ class ScenarioInput(BaseModel):
 
     # Retirement assumptions (with defaults)
     retirement_age: int = Field(default=65, ge=30, le=80)
-    years_in_retirement: int = Field(default=25, ge=5, le=40)
+    years_in_retirement: int = Field(default=25, ge=5)
     annual_retirement_spending: Optional[float] = Field(
         default=None,
         description="If not provided, defaults to 4% rule on total balance"

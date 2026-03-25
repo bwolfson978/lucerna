@@ -231,7 +231,6 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
             value={yearsInRetirement}
             numeric
             min={5}
-            max={40}
             onChange={(e) =>
               setYearsInRetirement(parseInt(e.target.value) || 25)
             }
