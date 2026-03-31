@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import type { ScenarioInput, YearlyIncome, FilingStatus, HealthcareInput } from "@/lib/types";
-import { Input } from "@/components/common/Input";
+import { FormField } from "@/components/common/FormField";
 import { Select } from "@/components/common/Select";
 import { GlowButton } from "@/components/common/GlowButton";
 import { CURRENT_YEAR } from "@/lib/utils/constants";
@@ -108,7 +108,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-section">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-default">
-        <Input
+        <FormField
           label="Age"
           type="number"
           value={age}
@@ -124,7 +124,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           options={FILING_STATUS_OPTIONS}
           onChange={(e) => setFilingStatus(e.target.value as FilingStatus)}
         />
-        <Input
+        <FormField
           label="Current income"
           type="number"
           value={currentIncome || ""}
@@ -134,7 +134,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           error={errors.currentIncome}
           onChange={(e) => setCurrentIncome(parseFloat(e.target.value) || 0)}
         />
-        <Input
+        <FormField
           label="Traditional IRA balance"
           type="number"
           value={traditionalBalance || ""}
@@ -147,7 +147,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
             setTraditionalBalance(parseFloat(e.target.value) || 0)
           }
         />
-        <Input
+        <FormField
           label="Retirement age"
           type="number"
           value={retirementAge}
@@ -157,7 +157,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           error={errors.retirementAge}
           onChange={(e) => setRetirementAge(parseInt(e.target.value) || 65)}
         />
-        <Input
+        <FormField
           label="Roth IRA balance"
           type="number"
           value={rothBalance || ""}
@@ -170,7 +170,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-default">
-        <Input
+        <FormField
           label="Income growth rate (%)"
           type="number"
           value={incomeGrowthRate}
@@ -183,7 +183,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
             setIncomeGrowthRate(parseFloat(e.target.value) || 0)
           }
         />
-        <Input
+        <FormField
           label="Yearly spend in retirement"
           type="number"
           value={retirementSpending || ""}
@@ -225,7 +225,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
 
       {showAdvanced && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-default">
-          <Input
+          <FormField
             label="Years in retirement"
             type="number"
             value={yearsInRetirement}
@@ -235,7 +235,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
               setYearsInRetirement(parseInt(e.target.value) || 25)
             }
           />
-          <Input
+          <FormField
             label="Investment return (%)"
             type="number"
             value={growthRate}
@@ -246,7 +246,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
             helper="Expected annual return"
             onChange={(e) => setGrowthRate(parseFloat(e.target.value) || 7)}
           />
-          <Input
+          <FormField
             label="Discount rate (%)"
             type="number"
             value={discountRate}
@@ -290,7 +290,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
 
         {includeAca && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-default">
-            <Input
+            <FormField
               label="Household size"
               type="number"
               value={householdSize}
@@ -302,7 +302,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
                 setHouseholdSize(parseInt(e.target.value) || 1)
               }
             />
-            <Input
+            <FormField
               label="Monthly benchmark premium"
               type="number"
               value={monthlySlcspPremium || ""}
@@ -315,7 +315,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
                 setMonthlySlcspPremium(parseFloat(e.target.value) || 620)
               }
             />
-            <Input
+            <FormField
               label="Employer coverage resumes"
               type="number"
               value={employerCoverageYear || ""}

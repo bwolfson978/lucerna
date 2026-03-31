@@ -2,11 +2,12 @@
 
 import { useCallback } from "react";
 import type { YearlyIncome, LifeEvent } from "@/lib/types";
-import { Input } from "@/components/common/Input";
+import { FormField } from "@/components/common/FormField";
 import { Select } from "@/components/common/Select";
-import { Button } from "@/components/common/Button";
+import { Button } from "@/components/ui/button";
 import { LIFE_EVENT_LABELS, CURRENT_YEAR } from "@/lib/utils/constants";
 import { formatCurrency } from "@/lib/utils/formatting";
+import { Card } from "@/components/ui/card";
 
 interface IncomeTrajectoryEditorProps {
   trajectory: YearlyIncome[];
@@ -59,7 +60,7 @@ export function IncomeTrajectoryEditor({
       <div className="flex items-center justify-between">
         <h3 className="text-h3 text-text-primary">Income trajectory</h3>
         <Button
-          variant="secondary"
+          variant="outline"
           onClick={addYear}
           disabled={trajectory.length >= 15}
           className="text-body-sm"
@@ -75,13 +76,13 @@ export function IncomeTrajectoryEditor({
 
       <div className="flex flex-col gap-tight">
         {trajectory.map((row, index) => (
-          <div
+          <Card
             key={row.year}
-            className="card flex flex-col gap-tight sm:flex-row sm:items-end"
+            className="flex flex-col gap-tight sm:flex-row sm:items-end"
           >
             <div className="flex items-end gap-tight flex-1">
               <div className="w-16 shrink-0">
-                <Input
+                <FormField
                   label="Year"
                   type="number"
                   value={row.year}
@@ -93,7 +94,7 @@ export function IncomeTrajectoryEditor({
               </div>
 
               <div className="flex-1 min-w-0">
-                <Input
+                <FormField
                   label="Gross income"
                   type="number"
                   value={row.gross_income || ""}
@@ -160,7 +161,7 @@ export function IncomeTrajectoryEditor({
                 {formatCurrency(row.gross_income)}
               </span>
             </div>
-          </div>
+          </Card>
         ))}
       </div>
     </div>

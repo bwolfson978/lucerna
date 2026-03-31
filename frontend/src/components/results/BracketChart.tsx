@@ -4,6 +4,7 @@ import type { BracketFillResult } from "@/lib/types";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
 import { BRACKET_COLORS, CHART_COLORS } from "@/lib/utils/constants";
 import { useRef, useMemo } from "react";
+import { Card } from "@/components/ui/card";
 
 interface YearData {
   year: number;
@@ -81,7 +82,7 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
   const rightLabelWidth = 50;
 
   return (
-    <div className="card flex flex-col gap-default">
+    <Card className="flex flex-col gap-default">
       {/* Legend */}
       <div className="flex items-center gap-5 text-body-sm text-text-secondary">
         <span className="flex items-center gap-1.5">
@@ -217,7 +218,7 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
           })}
         </svg>
       </div>
-    </div>
+    </Card>
   );
 }
 

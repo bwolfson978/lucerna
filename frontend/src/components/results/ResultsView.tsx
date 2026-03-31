@@ -16,6 +16,7 @@ import { TransposedDetailTable } from "./TransposedDetailTable";
 import { ScenarioCards } from "./ScenarioCards";
 import { BalanceProjections } from "./BalanceProjections";
 import { AcaSubsidyImpact } from "./AcaSubsidyImpact";
+import { Card } from "@/components/ui/card";
 import { useConversionSlider } from "@/hooks/useConversionSlider";
 
 interface YearOverride {
@@ -120,10 +121,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
       {/* Hero metric + slider */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-default">
         {/* Headline metric */}
-        <div className="card-recommended p-section">
-          <span className="absolute -top-3 left-4 bg-accent-light text-accent-hover text-[11px] font-medium px-2.5 py-0.5 rounded-md">
-            Optimal strategy
-          </span>
+        <Card recommended className="p-section">
           <div className="flex flex-col gap-2">
             <span className="metric-label">
               Estimated lifetime tax savings
@@ -159,10 +157,10 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
               <Tooltip content="This is the difference in after-tax wealth between the optimal conversion schedule and doing nothing, expressed in today's dollars using your discount rate." />
             </span>
           </div>
-        </div>
+        </Card>
 
         {/* Slider */}
-        <div className="card p-section flex flex-col justify-center">
+        <Card className="p-section flex flex-col justify-center">
           <ConversionSlider
             value={sliderValue}
             min={0}
@@ -170,7 +168,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
             optimalValue={result.total_conversion}
             onChange={setSliderValue}
           />
-        </div>
+        </Card>
       </div>
 
       {/* Summary metrics */}
@@ -205,7 +203,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
           Adjust income or life events below, then re-run the analysis.
         </p>
       )}
-      <div className="card p-0">
+      <Card className="p-0">
         <TransposedDetailTable
           details={yearlyDetail}
           years={yearInfos}
@@ -227,7 +225,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
             </GlowButton>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Scenario comparison */}
       <ScenarioCards scenarios={result.scenarios} />

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Header } from "@/components/common/Header";
+import { Card } from "@/components/ui/card";
 
 export default function Home() {
   return (
@@ -83,7 +84,7 @@ export default function Home() {
             <h2 className="text-h1 text-text-primary">
               See it in action
             </h2>
-            <div className="card bg-bg-alt">
+            <Card className="bg-bg-alt">
               <div className="flex flex-col gap-default">
                 <span className="text-caption text-text-tertiary uppercase tracking-wider">
                   DEMO SCENARIO
@@ -101,7 +102,7 @@ export default function Home() {
                   View full analysis →
                 </Link>
               </div>
-            </div>
+            </Card>
           </div>
         </section>
 

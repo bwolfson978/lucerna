@@ -1,15 +1,5 @@
-interface SkeletonProps {
-  className?: string;
-}
-
-export function Skeleton({ className = "" }: SkeletonProps) {
-  return (
-    <div
-      className={`animate-pulse bg-bg-hover rounded-md ${className}`}
-      aria-hidden="true"
-    />
-  );
-}
+import { Skeleton } from "@/components/ui/skeleton";
+export { Skeleton };
 
 export function MetricCardSkeleton() {
   return (

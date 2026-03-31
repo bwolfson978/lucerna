@@ -11,6 +11,7 @@ import {
 } from "@/components/common/Skeleton";
 import { apiClient } from "@/lib/api/client";
 import type { ScenarioInput, OptimizationResult } from "@/lib/types";
+import { Card } from "@/components/ui/card";
 
 export default function CalculatorPage() {
   const [result, setResult] = useState<OptimizationResult | null>(null);
@@ -93,7 +94,7 @@ export default function CalculatorPage() {
           )}
 
           {error && (
-            <div className="card border-negative">
+            <Card className="border-negative">
               <p className="text-body text-negative">{error}</p>
               <button
                 type="button"
@@ -105,7 +106,7 @@ export default function CalculatorPage() {
               >
                 Try again
               </button>
-            </div>
+            </Card>
           )}
 
           {result && (
