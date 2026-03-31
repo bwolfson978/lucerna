@@ -22,24 +22,24 @@ const config: Config = {
       },
       colors: {
         bg: {
-          DEFAULT: "#FFFFFF",
-          alt: "#FAFAFA",
-          hover: "#F3F4F6",
+          DEFAULT: "hsl(var(--background))",
+          alt: "hsl(var(--background-alt))",
+          hover: "hsl(var(--background-hover))",
         },
         border: {
-          DEFAULT: "rgba(0, 0, 0, 0.06)",
-          emphasis: "rgba(0, 0, 0, 0.12)",
+          DEFAULT: "hsl(var(--border))",
+          emphasis: "hsl(var(--border-emphasis))",
         },
         text: {
-          primary: "#111827",
-          secondary: "#6B7280",
-          tertiary: "#9CA3AF",
+          primary: "hsl(var(--foreground))",
+          secondary: "hsl(var(--muted-foreground))",
+          tertiary: "hsl(var(--tertiary-foreground))",
         },
         accent: {
-          DEFAULT: "#4F46E5",
-          hover: "#4338CA",
-          light: "#EEF2FF",
-          muted: "rgba(79, 70, 229, 0.08)",
+          DEFAULT: "hsl(var(--accent))",
+          hover: "hsl(var(--accent-hover))",
+          light: "hsl(var(--accent-light))",
+          muted: "hsl(var(--accent-muted))",
         },
         bracket: {
           "10": "#22C55E",
@@ -50,16 +50,22 @@ const config: Config = {
           "35": "#EF4444",
           "37": "#DC2626",
         },
-        optimal: "#16A34A",
-        negative: "#DC2626",
-        neutral: "#6B7280",
+        optimal: "hsl(var(--optimal))",
+        negative: "hsl(var(--destructive))",
+        neutral: "hsl(var(--neutral))",
+        // shadcn semantic tokens
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        ring: "hsl(var(--ring))",
       },
       maxWidth: {
         content: "1080px",
       },
       borderRadius: {
         sm: "4px",
-        DEFAULT: "6px",
+        DEFAULT: "var(--radius)",
         md: "8px",
         lg: "12px",
       },

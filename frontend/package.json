@@ -9,17 +9,24 @@
     "lint": "next lint",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
     "apexcharts": "^5.10.4",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "next": "^14.2.0",
     "react": "^18.3.0",
     "react-apexcharts": "^2.1.0",
-    "react-dom": "^18.3.0"
+    "react-dom": "^18.3.0",
+    "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
+    "@storybook/nextjs": "^10.3.3",
+    "@storybook/react": "^10.3.3",
     "@testing-library/jest-dom": "^6.4.0",
     "@testing-library/react": "^15.0.0",
     "@testing-library/user-event": "^14.5.0",
@@ -30,6 +37,7 @@
     "jsdom": "^24.1.0",
     "msw": "^2.6.0",
     "postcss": "^8.4.0",
+    "storybook": "^10.3.3",
     "tailwindcss": "^3.4.0",
     "typescript": "^5.4.0",
     "vitest": "^1.6.0"
