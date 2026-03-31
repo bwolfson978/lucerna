@@ -1,5 +1,5 @@
 import type { ScenarioComparison } from "@/lib/types";
-import { Card } from "@/components/common/Card";
+import { Card } from "@/components/ui/card";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
 import { Tooltip } from "@/components/common/Tooltip";
 

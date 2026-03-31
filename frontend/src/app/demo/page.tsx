@@ -12,6 +12,7 @@ import {
 import { apiClient } from "@/lib/api/client";
 import { IncomeMilestonesTable } from "@/components/demo/IncomeMilestonesTable";
 import type { DemoResponse } from "@/lib/types";
+import { Card } from "@/components/ui/card";
 
 export default function DemoPage() {
   const [demo, setDemo] = useState<DemoResponse | null>(null);
@@ -38,7 +39,7 @@ export default function DemoPage() {
           <div className="flex flex-col gap-comfortable">
             <h1 className="text-h1 text-text-primary">Meet Alex</h1>
 
-            <div className="card bg-bg-alt">
+            <Card className="bg-bg-alt">
               <div className="flex flex-col gap-default">
                 <p className="text-body text-text-primary leading-relaxed">
                   <strong>Alex, 38</strong> — Senior Software Engineer who left
@@ -64,7 +65,7 @@ export default function DemoPage() {
                   )}
                 </div>
               </div>
-            </div>
+            </Card>
           </div>
 
           {/* Results */}
@@ -81,14 +82,14 @@ export default function DemoPage() {
           )}
 
           {error && (
-            <div className="card border-negative">
+            <Card className="border-negative">
               <p className="text-body text-negative">
                 Failed to load demo results: {error}
               </p>
               <p className="text-body-sm text-text-secondary mt-default">
                 Make sure the backend is running on localhost:8000.
               </p>
-            </div>
+            </Card>
           )}
 
           {demo && <ResultsView result={demo.result} />}

@@ -3,6 +3,28 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --background: 0 0% 100%;
+    --background-alt: 210 20% 98%;
+    --background-hover: 220 14% 96%;
+    --foreground: 220 39% 11%;
+    --muted-foreground: 220 9% 46%;
+    --tertiary-foreground: 218 11% 65%;
+    --border: 0 0% 0% / 0.06;
+    --border-emphasis: 0 0% 0% / 0.12;
+    --accent: 243 75% 59%;
+    --accent-hover: 243 75% 49%;
+    --accent-light: 226 100% 97%;
+    --accent-muted: 243 75% 59% / 0.08;
+    --optimal: 142 76% 36%;
+    --destructive: 0 84% 60%;
+    --neutral: 220 9% 46%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 39% 11%;
+    --ring: 243 75% 59%;
+    --radius: 6px;
+  }
+
   body {
     @apply text-body text-text-primary bg-bg font-sans antialiased;
   }
@@ -14,18 +36,7 @@
 }
 
 @layer components {
-  .card {
-    @apply border border-border rounded-lg bg-bg p-comfortable shadow-card;
-  }
-
-  .card-recommended {
-    @apply border-2 border-accent rounded-lg bg-bg p-comfortable relative shadow-card;
-  }
-
-  .card-elevated {
-    @apply rounded-lg bg-bg p-comfortable shadow-elevated;
-  }
-
+  /* Domain-specific data display tokens */
   .metric-label {
     @apply text-caption text-text-tertiary uppercase tracking-wide;
   }
@@ -38,6 +49,7 @@
     @apply text-data-hero font-sans font-extrabold text-text-primary;
   }
 
+  /* Badge variants */
   .badge {
     @apply inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium uppercase tracking-wide;
   }

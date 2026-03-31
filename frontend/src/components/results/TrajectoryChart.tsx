@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import type { TrajectoryChartPoint } from "@/lib/types";
 import { CHART_COLORS } from "@/lib/utils/constants";
 import { Tooltip } from "@/components/common/Tooltip";
+import { Card } from "@/components/ui/card";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
@@ -129,7 +130,7 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
   ];
 
   return (
-    <div className="card flex flex-col gap-default">
+    <Card className="flex flex-col gap-default">
       <div className="flex items-center gap-2">
         <h3 className="text-h3 text-text-primary">
           Income + conversion by year
@@ -158,6 +159,6 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
           width="100%"
         />
       </div>
-    </div>
+    </Card>
   );
 }

@@ -4,6 +4,7 @@ import type { BracketFillResult } from "@/lib/types";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
 import { BRACKET_COLORS } from "@/lib/utils/constants";
 import { Tooltip } from "@/components/common/Tooltip";
+import { Card } from "@/components/ui/card";
 
 interface BracketFillChartProps {
   data: BracketFillResult[];
@@ -16,7 +17,7 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
   const maxCapacity = Math.max(...data.map((b) => b.bracket_capacity));
 
   return (
-    <div className="card flex flex-col gap-default">
+    <Card className="flex flex-col gap-default">
       <div className="flex items-center gap-2">
         <h3 className="text-h3 text-text-primary">
           Bracket fill{year ? ` — ${year}` : ""}
@@ -142,6 +143,6 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
           );
         })}
       </svg>
-    </div>
+    </Card>
   );
 }
