@@ -13,6 +13,7 @@ __pycache__/
 .next/
 dist/
 build/
+storybook-static/
 
 # IDE
 .vscode/
