@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -38,7 +39,9 @@ export default function RootLayout({
         />
       </head>
       <body>
-        {children}
+        <TooltipProvider delayDuration={300}>
+          {children}
+        </TooltipProvider>
         <Analytics />
       </body>
     </html>

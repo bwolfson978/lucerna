@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import type { YearlyIncome, LifeEvent } from "@/lib/types";
 import { FormField } from "@/components/common/FormField";
-import { Select } from "@/components/common/Select";
+import { FormSelect } from "@/components/common/FormSelect";
 import { Button } from "@/components/ui/button";
 import { LIFE_EVENT_LABELS, CURRENT_YEAR } from "@/lib/utils/constants";
 import { formatCurrency } from "@/lib/utils/formatting";
@@ -111,7 +111,7 @@ export function IncomeTrajectoryEditor({
               </div>
 
               <div className="w-36 shrink-0">
-                <Select
+                <FormSelect
                   label="Life event"
                   value={row.life_event}
                   options={lifeEventOptions}

@@ -3,8 +3,11 @@
 import { useState, FormEvent } from "react";
 import type { ScenarioInput, YearlyIncome, FilingStatus, HealthcareInput } from "@/lib/types";
 import { FormField } from "@/components/common/FormField";
-import { Select } from "@/components/common/Select";
+import { FormSelect } from "@/components/common/FormSelect";
 import { GlowButton } from "@/components/common/GlowButton";
+import { Switch } from "@/components/ui/switch";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { Label } from "@/components/ui/label";
 import { CURRENT_YEAR } from "@/lib/utils/constants";
 
 interface InputFormProps {
@@ -118,7 +121,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           error={errors.age}
           onChange={(e) => setAge(parseInt(e.target.value) || 0)}
         />
-        <Select
+        <FormSelect
           label="Filing status"
           value={filingStatus}
           options={FILING_STATUS_OPTIONS}
@@ -199,91 +202,82 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
         />
       </div>
 
-      {/* Advanced settings toggle */}
-      <button
-        type="button"
-        onClick={() => setShowAdvanced(!showAdvanced)}
-        className="flex items-center gap-1.5 text-body-sm text-text-secondary hover:text-text-primary transition-colors duration-150 self-start"
-      >
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 12 12"
-          fill="none"
-          className={`transition-transform duration-150 ${showAdvanced ? "rotate-90" : ""}`}
-        >
-          <path
-            d="M4.5 2.5l3.5 3.5-3.5 3.5"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        Advanced settings
-      </button>
+      {/* Advanced settings */}
+      <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className="flex items-center gap-1.5 text-body-sm text-text-secondary hover:text-text-primary transition-colors duration-150 self-start"
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              className={`transition-transform duration-150 ${showAdvanced ? "rotate-90" : ""}`}
+            >
+              <path
+                d="M4.5 2.5l3.5 3.5-3.5 3.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Advanced settings
+          </button>
+        </CollapsibleTrigger>
 
-      {showAdvanced && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-default">
-          <FormField
-            label="Years in retirement"
-            type="number"
-            value={yearsInRetirement}
-            numeric
-            min={5}
-            onChange={(e) =>
-              setYearsInRetirement(parseInt(e.target.value) || 25)
-            }
-          />
-          <FormField
-            label="Investment return (%)"
-            type="number"
-            value={growthRate}
-            numeric
-            min={0}
-            max={20}
-            step={0.5}
-            helper="Expected annual return"
-            onChange={(e) => setGrowthRate(parseFloat(e.target.value) || 7)}
-          />
-          <FormField
-            label="Discount rate (%)"
-            type="number"
-            value={discountRate}
-            numeric
-            min={0}
-            max={15}
-            step={0.5}
-            helper="Time value of money"
-            onChange={(e) => setDiscountRate(parseFloat(e.target.value) || 5)}
-          />
-        </div>
-      )}
+        <CollapsibleContent>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-default pt-default">
+            <FormField
+              label="Years in retirement"
+              type="number"
+              value={yearsInRetirement}
+              numeric
+              min={5}
+              onChange={(e) =>
+                setYearsInRetirement(parseInt(e.target.value) || 25)
+              }
+            />
+            <FormField
+              label="Investment return (%)"
+              type="number"
+              value={growthRate}
+              numeric
+              min={0}
+              max={20}
+              step={0.5}
+              helper="Expected annual return"
+              onChange={(e) => setGrowthRate(parseFloat(e.target.value) || 7)}
+            />
+            <FormField
+              label="Discount rate (%)"
+              type="number"
+              value={discountRate}
+              numeric
+              min={0}
+              max={15}
+              step={0.5}
+              helper="Time value of money"
+              onChange={(e) => setDiscountRate(parseFloat(e.target.value) || 5)}
+            />
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* ACA marketplace coverage */}
       <div className="flex flex-col gap-default">
-        <label className="flex items-center gap-3 cursor-pointer group">
-          <span
-            className={`relative inline-flex h-5 w-9 items-center rounded-[4px] transition-colors duration-150 ${
-              includeAca ? "bg-accent" : "bg-border-emphasis"
-            }`}
-            onClick={(e) => {
-              e.preventDefault();
-              setIncludeAca(!includeAca);
-            }}
-            role="switch"
-            aria-checked={includeAca}
-          >
-            <span
-              className={`inline-block h-3.5 w-3.5 transform rounded-[3px] bg-white transition-transform duration-150 ${
-                includeAca ? "translate-x-4" : "translate-x-0.5"
-              }`}
-            />
-          </span>
-          <span className="text-body text-text-primary group-hover:text-text-primary transition-colors duration-150">
+        <div className="flex items-center gap-3">
+          <Switch
+            id="aca-toggle"
+            checked={includeAca}
+            onCheckedChange={setIncludeAca}
+          />
+          <Label htmlFor="aca-toggle" className="text-body text-text-primary cursor-pointer">
             I buy health insurance on the ACA marketplace
-          </span>
-        </label>
+          </Label>
+        </div>
         <p className="text-body-sm text-text-tertiary -mt-1">
           Accounts for how Roth conversions affect your premium subsidy
         </p>
