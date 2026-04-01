@@ -29,7 +29,7 @@ const mockScenarios: ScenarioComparison[] = [
     label: "Full conversion (year 1)",
     conversion_amount: 210000,
     npv: 510000,
-    tax_on_conversion: 45000,
+    tax_on_conversion: 48000,
     difference_from_optimal: -20000,
     estimated_savings: 10000,
     yearly_conversions: [210000, 0, 0],
@@ -76,7 +76,7 @@ describe("ScenarioCards", () => {
     expect(scheduleHeaders.length).toBeGreaterThanOrEqual(1);
     // The best scenario shows per-year amounts
     expect(screen.getByText("$50,000")).toBeInTheDocument();
-    expect(screen.getAllByText("$45,000").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("$45,000")).toBeInTheDocument();
     expect(screen.getByText("$25,000")).toBeInTheDocument();
   });
 
