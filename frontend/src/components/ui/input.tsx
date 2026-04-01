@@ -12,6 +12,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <input
         type={type}
+        inputMode={numeric ? "decimal" : undefined}
         className={cn(
           "h-9 min-h-[44px] px-3 w-full",
           "rounded-md bg-bg-alt",

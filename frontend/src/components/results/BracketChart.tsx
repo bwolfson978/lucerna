@@ -156,9 +156,10 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
         </svg>
 
         {/* Scrollable bar area */}
+        <div className="scroll-fade flex-1 min-w-0">
         <div
           ref={scrollRef}
-          className="overflow-x-auto flex-1 bracket-chart-scroll"
+          className="overflow-x-auto bracket-chart-scroll"
         >
           <svg
             width={Math.max(totalBarWidth, 200)}
@@ -221,6 +222,7 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
               );
             })}
           </svg>
+        </div>
         </div>
 
         {/* Fixed right axis: bracket rate + dollar range */}

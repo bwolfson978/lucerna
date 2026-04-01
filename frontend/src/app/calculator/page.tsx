@@ -55,10 +55,10 @@ export default function CalculatorPage() {
   return (
     <>
       <Header />
-      <main className="px-section md:px-page py-section-lg">
+      <main className="px-default md:px-page py-section-lg">
         <div className="max-w-content mx-auto flex flex-col gap-section">
           {/* Form section — not sticky so results are always accessible */}
-          <div className={`pb-section -mx-section md:-mx-page px-section md:px-page pt-section border-b border-border${!result && !loading && !error ? "" : " shadow-sm"}`}>
+          <div className={`pb-section -mx-default md:-mx-page px-default md:px-page pt-section border-b border-border${!result && !loading && !error ? "" : " shadow-sm"}`}>
             <div className="max-w-content mx-auto flex flex-col gap-default">
               <div className="flex flex-col gap-1">
                 <h1 className="text-h1 text-text-primary">
