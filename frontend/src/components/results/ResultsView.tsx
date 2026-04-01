@@ -129,7 +129,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
             <span className="metric-value-hero">
               {formatCurrency(estimatedSavings)}
             </span>
-            {!isAtOptimal && savingsDifference > 0 && (
+            {!isAtOptimal && (
               <span
                 className="flex items-center gap-1 text-body-sm text-negative font-medium"
                 style={{ fontFamily: "'JetBrains Mono', monospace" }}
@@ -149,7 +149,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
                     strokeLinejoin="round"
                   />
                 </svg>
-                {formatCurrency(savingsDifference)} less than highest savings
+                {formatCurrency(Math.max(1, Math.abs(savingsDifference)))} less than highest savings
               </span>
             )}
             <span className="text-body-sm text-text-secondary">
