@@ -71,9 +71,22 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
     if (age < 0 || age > 120) errs.age = "Age must be between 0 and 120";
     if (retirementAge <= age)
       errs.retirementAge = "Retirement age must be greater than current age";
+    if (retirementAge < 1 || retirementAge > 120)
+      errs.retirementAge = "Retirement age must be between 1 and 120";
     if (currentIncome < 0) errs.currentIncome = "Income cannot be negative";
     if (traditionalBalance <= 0)
       errs.traditionalBalance = "Enter your traditional IRA balance";
+    if (rothBalance < 0) errs.rothBalance = "Roth balance cannot be negative";
+    if (yearsInRetirement < 1)
+      errs.yearsInRetirement = "Must be at least 1 year";
+    if (retirementSpending !== null && retirementSpending < 0)
+      errs.retirementSpending = "Spending cannot be negative";
+    if (includeAca) {
+      if (householdSize < 1)
+        errs.householdSize = "Household must have at least 1 person";
+      if (monthlySlcspPremium < 0)
+        errs.monthlySlcspPremium = "Premium cannot be negative";
+    }
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
@@ -167,6 +180,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           placeholder="0"
           numeric
           min={0}
+          error={errors.rothBalance}
           helper="Existing Roth balance (optional)"
           onChange={(e) => setRothBalance(parseFloat(e.target.value) || 0)}
         />
@@ -191,6 +205,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           placeholder="Auto (4% rule)"
           numeric
           min={0}
+          error={errors.retirementSpending}
           helper="Leave blank to use the 4% rule"
           onChange={(e) =>
             setRetirementSpending(
@@ -234,6 +249,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
               value={yearsInRetirement}
               numeric
               min={1}
+              error={errors.yearsInRetirement}
               onChange={(e) =>
                 setYearsInRetirement(parseInt(e.target.value) || 25)
               }
@@ -284,6 +300,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
               value={householdSize}
               numeric
               min={1}
+              error={errors.householdSize}
               helper="People in your tax household"
               onChange={(e) =>
                 setHouseholdSize(parseInt(e.target.value) || 1)
@@ -297,6 +314,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
               numeric
               min={0}
               step={10}
+              error={errors.monthlySlcspPremium}
               helper="2nd-lowest Silver plan on healthcare.gov"
               onChange={(e) =>
                 setMonthlySlcspPremium(parseFloat(e.target.value) || 620)
