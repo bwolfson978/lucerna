@@ -42,7 +42,7 @@
   }
 
   .metric-value {
-    @apply text-data-lg font-mono text-text-primary;
+    @apply text-h2 sm:text-data-lg font-mono text-text-primary;
   }
 
   .metric-value-hero {
@@ -78,6 +78,7 @@
   z-index: 1;
   overflow: hidden;
   background: #4F46E5;
+  color: white;
 }
 
 .glow-button::before {

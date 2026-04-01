@@ -57,8 +57,8 @@ export default function CalculatorPage() {
       <Header />
       <main className="px-section md:px-page py-section-lg">
         <div className="max-w-content mx-auto flex flex-col gap-section">
-          {/* Sticky form section — always visible at top for easy re-runs */}
-          <div className="sticky top-14 z-30 bg-bg/95 backdrop-blur-sm pb-section -mx-section md:-mx-page px-section md:px-page pt-section border-b border-border shadow-sm">
+          {/* Form section — not sticky so results are always accessible */}
+          <div className={`pb-section -mx-section md:-mx-page px-section md:px-page pt-section border-b border-border${!result && !loading && !error ? "" : " shadow-sm"}`}>
             <div className="max-w-content mx-auto flex flex-col gap-default">
               <div className="flex flex-col gap-1">
                 <h1 className="text-h1 text-text-primary">

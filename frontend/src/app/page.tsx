@@ -12,7 +12,7 @@ export default function Home() {
           <div className="max-w-content mx-auto flex flex-col gap-section">
             <div className="flex flex-col gap-comfortable max-w-2xl">
               <h1 className="text-display md:text-display-lg text-text-primary tracking-tight">
-                Find the optimal Roth conversion schedule across your income trajectory
+                Compare multi-year Roth conversion scenarios to see what works for your situation
               </h1>
               <p className="text-body text-text-secondary max-w-lg leading-relaxed">
                 Most tools tell you <em>whether</em> to convert. Lucerna tells you{" "}
@@ -91,7 +91,7 @@ export default function Home() {
                 </span>
                 <p className="text-body text-text-primary leading-relaxed">
                   <strong>Alex, 38</strong> — Senior SWE who left to co-found a
-                  startup. $210K traditional IRA, 3-year income trajectory:
+                  startup. $210K traditional IRA/401(k), 3-year income trajectory:
                   $35K → $30K → $150K. Two low-income years create a window
                   to convert at lower brackets.
                 </p>

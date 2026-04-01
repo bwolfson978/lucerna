@@ -10,17 +10,13 @@ const Card = React.forwardRef<
     className={cn(
       "rounded-lg bg-bg shadow-card transition-shadow duration-150 hover:shadow-card-hover",
       recommended
-        ? "border-2 border-accent p-comfortable relative"
+        ? "border-2 border-accent p-comfortable"
         : "border border-border p-comfortable",
       className
     )}
     {...props}
   >
-    {recommended && (
-      <span className="absolute -top-3 left-4 bg-accent-light text-accent-hover text-[11px] font-medium px-2.5 py-0.5 rounded-md">
-        Recommended
-      </span>
-    )}
+    {/* Blue border only — no badge text */}
     {children}
   </div>
 ));

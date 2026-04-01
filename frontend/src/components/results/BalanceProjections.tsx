@@ -1,5 +1,5 @@
 import { MetricCard } from "@/components/common/MetricCard";
-import { formatCurrency } from "@/lib/utils/formatting";
+import { formatCompactCurrency } from "@/lib/utils/formatting";
 import { Tooltip } from "@/components/common/Tooltip";
 
 interface BalanceProjectionsProps {
@@ -24,25 +24,25 @@ export function BalanceProjections({
         <h3 className="text-h3 text-text-primary">
           Projected balances at retirement
         </h3>
-        <Tooltip content="Projected account balances at your retirement age, assuming the optimal conversion schedule and expected growth rate." />
+        <Tooltip content="Projected account balances at your retirement age, assuming the selected conversion schedule and expected growth rate." />
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-default">
         <MetricCard
-          label="Traditional IRA"
-          value={formatCurrency(traditionalAtRetirement)}
+          label="Traditional IRA/401(k)"
+          value={formatCompactCurrency(traditionalAtRetirement)}
         />
         <MetricCard
-          label="Roth IRA"
-          value={formatCurrency(rothAtRetirement)}
+          label="Roth IRA/401(k)"
+          value={formatCompactCurrency(rothAtRetirement)}
         />
         <MetricCard
           label="Total at retirement"
-          value={formatCurrency(totalAtRetirement)}
+          value={formatCompactCurrency(totalAtRetirement)}
         />
         <MetricCard
           label="Impact on after-tax wealth"
-          value={formatCurrency(wealthGain)}
+          value={formatCompactCurrency(wealthGain)}
           delta={wealthGain > 0 ? "vs. no conversion" : undefined}
           deltaType={wealthGain > 0 ? "positive" : "neutral"}
         />

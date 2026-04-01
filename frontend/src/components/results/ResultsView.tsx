@@ -129,7 +129,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
             <span className="metric-value-hero">
               {formatCurrency(estimatedSavings)}
             </span>
-            {!isAtOptimal && savingsDifference > 0 && (
+            {!isAtOptimal && (
               <span
                 className="flex items-center gap-1 text-body-sm text-negative font-medium"
                 style={{ fontFamily: "'JetBrains Mono', monospace" }}
@@ -149,12 +149,12 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
                     strokeLinejoin="round"
                   />
                 </svg>
-                {formatCurrency(savingsDifference)} less than optimal
+                {formatCurrency(Math.max(1, Math.abs(savingsDifference)))} less than highest savings
               </span>
             )}
             <span className="text-body-sm text-text-secondary">
               vs. not converting — in today&apos;s dollars
-              <Tooltip content="This is the difference in after-tax wealth between the optimal conversion schedule and doing nothing, expressed in today's dollars using your discount rate." />
+              <Tooltip content="This is the difference in after-tax wealth between the selected conversion schedule and doing nothing, expressed in today's dollars using your discount rate." />
             </span>
           </div>
         </Card>
@@ -184,6 +184,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
         <MetricCard
           label="Effective rate"
           value={formatPercent(effectiveRate)}
+          tooltip="The average tax rate on your total conversion amount — total tax paid divided by total converted."
         />
         <MetricCard
           label="Conversion years"

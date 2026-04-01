@@ -140,6 +140,9 @@ class ScenarioComparison(BaseModel):
     npv: float
     tax_on_conversion: float
     difference_from_optimal: float
+    estimated_savings: float = 0.0
+    yearly_conversions: list[float] = Field(default_factory=list)
+    years: list[int] = Field(default_factory=list)
 
 
 class AcaSubsidyDetail(BaseModel):

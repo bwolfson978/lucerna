@@ -65,6 +65,7 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
           value={formatPercent(acaSummary.effective_combined_rate)}
           delta="tax + subsidy per dollar converted"
           deltaType="neutral"
+          tooltip="The blended rate including both federal tax and ACA subsidy reduction per dollar converted."
         />
       </div>
 
