@@ -57,7 +57,7 @@ class HealthcareInput(BaseModel):
     can get started immediately and refine later.
     """
     household_size: int = Field(
-        default=1, ge=1, le=10,
+        default=1, ge=1,
         description="Number of people in the tax household"
     )
     monthly_slcsp_premium: float = Field(
@@ -104,15 +104,15 @@ class ScenarioInput(BaseModel):
 
     # Retirement assumptions (with defaults)
     retirement_age: int = Field(default=65, ge=1, le=120)
-    years_in_retirement: int = Field(default=25, ge=5)
+    years_in_retirement: int = Field(default=25, ge=1)
     annual_retirement_spending: Optional[float] = Field(
         default=None,
         description="If not provided, defaults to 4% rule on total balance"
     )
 
     # Growth/discount rates (with defaults)
-    annual_growth_rate: float = Field(default=0.07, ge=0.0, le=0.20)
-    discount_rate: float = Field(default=0.05, ge=0.0, le=0.15)
+    annual_growth_rate: float = Field(default=0.07)
+    discount_rate: float = Field(default=0.05)
 
     # Conversion preferences (optional constraints)
     conversion_preferences: Optional[ConversionPreferences] = None

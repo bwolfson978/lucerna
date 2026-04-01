@@ -178,8 +178,6 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           type="number"
           value={incomeGrowthRate}
           numeric
-          min={0}
-          max={15}
           step={0.5}
           helper="Annual income growth assumption"
           onChange={(e) =>
@@ -235,7 +233,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
               type="number"
               value={yearsInRetirement}
               numeric
-              min={5}
+              min={1}
               onChange={(e) =>
                 setYearsInRetirement(parseInt(e.target.value) || 25)
               }
@@ -245,8 +243,6 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
               type="number"
               value={growthRate}
               numeric
-              min={0}
-              max={20}
               step={0.5}
               helper="Expected annual return"
               onChange={(e) => setGrowthRate(parseFloat(e.target.value) || 7)}
@@ -256,8 +252,6 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
               type="number"
               value={discountRate}
               numeric
-              min={0}
-              max={15}
               step={0.5}
               helper="Time value of money"
               onChange={(e) => setDiscountRate(parseFloat(e.target.value) || 5)}
@@ -290,7 +284,6 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
               value={householdSize}
               numeric
               min={1}
-              max={10}
               helper="People in your tax household"
               onChange={(e) =>
                 setHouseholdSize(parseInt(e.target.value) || 1)

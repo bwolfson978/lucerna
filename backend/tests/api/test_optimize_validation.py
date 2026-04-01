@@ -284,39 +284,43 @@ class TestRetirementAgeValidation:
 # ---------------------------------------------------------------------------
 
 class TestRateValidation:
+    """Growth and discount rates are unconstrained — users can experiment freely."""
 
-    async def test_growth_rate_above_max(self, async_client):
-        """Growth rate > 20% should return 422 (le=0.20)."""
+    async def test_extreme_growth_rate_accepted(self, async_client):
+        """Very high growth rate (500%) should be accepted — user can experiment."""
         payload = dict(
             age=40, filing_status="single",
             income_trajectory=[{"year": 2026, "gross_income": 80000, "life_event": "none"}],
             traditional_ira_balance=200000,
-            annual_growth_rate=0.25,
+            retirement_age=65,
+            annual_growth_rate=5.0,
         )
         resp = await async_client.post("/api/optimize", json=payload)
-        assert resp.status_code == 422
+        assert resp.status_code == 200
 
-    async def test_negative_growth_rate(self, async_client):
-        """Negative growth rate should return 422 (ge=0.0)."""
+    async def test_negative_growth_rate_accepted(self, async_client):
+        """Negative growth rate (-50%) should be accepted — user can experiment."""
         payload = dict(
             age=40, filing_status="single",
             income_trajectory=[{"year": 2026, "gross_income": 80000, "life_event": "none"}],
             traditional_ira_balance=200000,
-            annual_growth_rate=-0.05,
+            retirement_age=65,
+            annual_growth_rate=-0.50,
         )
         resp = await async_client.post("/api/optimize", json=payload)
-        assert resp.status_code == 422
+        assert resp.status_code == 200
 
-    async def test_discount_rate_above_max(self, async_client):
-        """Discount rate > 15% should return 422 (le=0.15)."""
+    async def test_extreme_discount_rate_accepted(self, async_client):
+        """Very high discount rate (200%) should be accepted — user can experiment."""
         payload = dict(
             age=40, filing_status="single",
             income_trajectory=[{"year": 2026, "gross_income": 80000, "life_event": "none"}],
             traditional_ira_balance=200000,
-            discount_rate=0.20,
+            retirement_age=65,
+            discount_rate=2.0,
         )
         resp = await async_client.post("/api/optimize", json=payload)
-        assert resp.status_code == 422
+        assert resp.status_code == 200
 
     async def test_zero_rates_accepted(self, async_client):
         """Zero growth and discount rates should be accepted."""
@@ -339,12 +343,12 @@ class TestRateValidation:
 class TestYearsInRetirementValidation:
 
     async def test_below_minimum(self, async_client):
-        """years_in_retirement < 5 should return 422 (ge=5)."""
+        """years_in_retirement < 1 should return 422 (ge=1)."""
         payload = dict(
             age=40, filing_status="single",
             income_trajectory=[{"year": 2026, "gross_income": 80000, "life_event": "none"}],
             traditional_ira_balance=200000,
-            years_in_retirement=3,
+            years_in_retirement=0,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 422
@@ -379,17 +383,17 @@ class TestHealthcareValidation:
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 422
 
-    async def test_household_size_above_max(self, async_client):
-        """Household size 11 should return 422 (le=10)."""
+    async def test_large_household_accepted(self, async_client):
+        """Large household (size 20) should be accepted — no real-world cap."""
         payload = dict(
             age=40, filing_status="single",
             income_trajectory=[{"year": 2026, "gross_income": 50000, "life_event": "none"}],
             traditional_ira_balance=200000,
             retirement_age=65,
-            healthcare={"household_size": 11, "monthly_slcsp_premium": 620},
+            healthcare={"household_size": 20, "monthly_slcsp_premium": 620},
         )
         resp = await async_client.post("/api/optimize", json=payload)
-        assert resp.status_code == 422
+        assert resp.status_code == 200
 
     async def test_negative_slcsp_premium(self, async_client):
         """Negative SLCSP premium should return 422 (ge=0)."""
