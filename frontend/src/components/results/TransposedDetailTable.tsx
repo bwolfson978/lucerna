@@ -74,7 +74,8 @@ export function TransposedDetailTable({
       </div>
 
       {/* Scrollable columns (synced with chart scroll) */}
-      <div ref={scrollRef} className="overflow-x-auto flex-1 bracket-chart-scroll">
+      <div className="scroll-fade flex-1 min-w-0">
+      <div ref={scrollRef} className="overflow-x-auto bracket-chart-scroll">
         <div className="flex" style={{ width: `${years.length * colWidth}px` }}>
           {years.map((yearInfo, i) => {
             const detail = details[i];
@@ -167,6 +168,7 @@ export function TransposedDetailTable({
             );
           })}
         </div>
+      </div>
       </div>
     </div>
   );

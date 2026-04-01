@@ -86,10 +86,10 @@ describe("ScenarioCards", () => {
     expect(screen.queryByText(/vs\. optimal/)).not.toBeInTheDocument();
   });
 
-  it("shows difference for non-best scenarios", () => {
+  it("shows impact on wealth for non-best scenarios", () => {
     renderWithProviders(<ScenarioCards scenarios={mockScenarios} />);
-    const differenceLabels = screen.getAllByText("Difference");
-    expect(differenceLabels).toHaveLength(2);
+    const impactLabels = screen.getAllByText("Impact on wealth");
+    expect(impactLabels).toHaveLength(2);
   });
 
   it("returns null when scenarios is empty", () => {

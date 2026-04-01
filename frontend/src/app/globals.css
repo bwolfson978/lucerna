@@ -120,3 +120,24 @@
 .glow-button:disabled::before {
   animation: none;
 }
+
+/* Horizontal scroll fade indicator — signals more content off-screen */
+.scroll-fade {
+  position: relative;
+}
+
+.scroll-fade::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 24px;
+  background: linear-gradient(to right, transparent, hsl(var(--card)));
+  pointer-events: none;
+  z-index: 1;
+}
+
+.scroll-fade[data-scrolled-end]::after {
+  display: none;
+}
