@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import posthog from "posthog-js";
 import { Header } from "@/components/common/Header";
 import { InputForm } from "@/components/calculator/InputForm";
 import { ResultsView } from "@/components/results/ResultsView";
@@ -23,11 +24,17 @@ export default function CalculatorPage() {
     setError(null);
     setResult(null);
 
+    posthog.capture("scenario_submitted", {
+      filing_status: input.filing_status,
+      num_years: input.income_trajectory?.length ?? 1,
+    });
+
     try {
       const data = await apiClient.optimize(
         input as unknown as Record<string, unknown>
       );
       setResult(data as OptimizationResult);
+      posthog.capture("scenario_completed");
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Optimization failed"

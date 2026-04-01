@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import posthog from "posthog-js";
 import Link from "next/link";
 import { Header } from "@/components/common/Header";
 import { ResultsView } from "@/components/results/ResultsView";
@@ -98,6 +99,7 @@ export default function DemoPage() {
           <div className="flex items-center gap-3 pt-section border-t border-border">
             <Link
               href="/calculator"
+              onClick={() => posthog.capture("cta_clicked", { cta: "run_your_own_scenario", source: "demo_page" })}
               className="glow-button inline-flex items-center justify-center h-10 min-h-[44px] px-6 rounded-md text-white text-body font-medium active:scale-[0.98] transition-all duration-150"
             >
               Run your own scenario
