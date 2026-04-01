@@ -116,11 +116,11 @@ export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
                   </span>
                 </div>
 
-                {/* Difference from best */}
+                {/* Impact on wealth vs best */}
                 {scenario.difference_from_optimal !== 0 && (
                   <div className="flex justify-between text-body-sm pt-1 border-t border-border">
                     <span className="text-text-secondary">
-                      Difference
+                      Impact on wealth
                     </span>
                     <span className="font-mono text-negative">
                       {formatCurrency(scenario.difference_from_optimal)}
