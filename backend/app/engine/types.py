@@ -89,7 +89,7 @@ class ScenarioInput(BaseModel):
     """All inputs needed to run the multi-year optimization."""
 
     # Personal
-    age: int = Field(ge=18, le=80, description="Current age")
+    age: int = Field(ge=0, le=120, description="Current age")
     filing_status: FilingStatus
 
     # Income trajectory (the core input — replaces single-year income)
@@ -103,7 +103,7 @@ class ScenarioInput(BaseModel):
     roth_ira_balance: float = Field(default=0, ge=0, description="Existing Roth IRA balance")
 
     # Retirement assumptions (with defaults)
-    retirement_age: int = Field(default=65, ge=30, le=80)
+    retirement_age: int = Field(default=65, ge=1, le=120)
     years_in_retirement: int = Field(default=25, ge=5)
     annual_retirement_spending: Optional[float] = Field(
         default=None,

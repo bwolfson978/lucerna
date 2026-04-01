@@ -68,7 +68,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const errs: Record<string, string> = {};
-    if (age < 18 || age > 80) errs.age = "Age must be between 18 and 80";
+    if (age < 0 || age > 120) errs.age = "Age must be between 0 and 120";
     if (retirementAge <= age)
       errs.retirementAge = "Retirement age must be greater than current age";
     if (currentIncome < 0) errs.currentIncome = "Income cannot be negative";
@@ -116,8 +116,8 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           type="number"
           value={age}
           numeric
-          min={18}
-          max={80}
+          min={0}
+          max={120}
           error={errors.age}
           onChange={(e) => setAge(parseInt(e.target.value) || 0)}
         />
@@ -155,8 +155,8 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           type="number"
           value={retirementAge}
           numeric
-          min={30}
-          max={80}
+          min={1}
+          max={120}
           error={errors.retirementAge}
           onChange={(e) => setRetirementAge(parseInt(e.target.value) || 65)}
         />

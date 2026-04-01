@@ -21,12 +21,12 @@ from app.engine.types import (
 # ---------------------------------------------------------------------------
 
 class TestAgeValidation:
-    """Age must be 18–80 (Pydantic ge=18, le=80)."""
+    """Age must be 0–120 (Pydantic ge=0, le=120)."""
 
     async def test_age_below_minimum(self, async_client):
-        """Age 17 should return 422."""
+        """Age -1 should return 422."""
         payload = dict(
-            age=17, filing_status="single",
+            age=-1, filing_status="single",
             income_trajectory=[{"year": 2026, "gross_income": 50000, "life_event": "none"}],
             traditional_ira_balance=100000,
         )
@@ -34,9 +34,9 @@ class TestAgeValidation:
         assert resp.status_code == 422
 
     async def test_age_above_maximum(self, async_client):
-        """Age 81 should return 422."""
+        """Age 121 should return 422."""
         payload = dict(
-            age=81, filing_status="single",
+            age=121, filing_status="single",
             income_trajectory=[{"year": 2026, "gross_income": 50000, "life_event": "none"}],
             traditional_ira_balance=100000,
         )
@@ -44,23 +44,23 @@ class TestAgeValidation:
         assert resp.status_code == 422
 
     async def test_age_at_lower_bound(self, async_client):
-        """Age 18 should be accepted."""
+        """Age 0 should be accepted (custodial IRA)."""
         payload = dict(
-            age=18, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 50000, "life_event": "none"}],
-            traditional_ira_balance=100000,
+            age=0, filing_status="single",
+            income_trajectory=[{"year": 2026, "gross_income": 5000, "life_event": "none"}],
+            traditional_ira_balance=10000,
             retirement_age=65,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
 
     async def test_age_at_upper_bound(self, async_client):
-        """Age 80 at boundary — must have retirement_age >= 80 (but retirement_age max is 80)."""
+        """Age 119 with retirement_age 120 should be accepted."""
         payload = dict(
-            age=79, filing_status="single",
+            age=119, filing_status="single",
             income_trajectory=[{"year": 2026, "gross_income": 50000, "life_event": "none"}],
             traditional_ira_balance=100000,
-            retirement_age=80,
+            retirement_age=120,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
@@ -257,23 +257,23 @@ class TestRothBalanceValidation:
 class TestRetirementAgeValidation:
 
     async def test_retirement_age_below_minimum(self, async_client):
-        """Retirement age 29 should return 422 (ge=30)."""
+        """Retirement age 0 should return 422 (ge=1)."""
         payload = dict(
-            age=25, filing_status="single",
+            age=0, filing_status="single",
             income_trajectory=[{"year": 2026, "gross_income": 50000, "life_event": "none"}],
             traditional_ira_balance=100000,
-            retirement_age=29,
+            retirement_age=0,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 422
 
     async def test_retirement_age_above_maximum(self, async_client):
-        """Retirement age 81 should return 422 (le=80)."""
+        """Retirement age 121 should return 422 (le=120)."""
         payload = dict(
             age=50, filing_status="single",
             income_trajectory=[{"year": 2026, "gross_income": 80000, "life_event": "none"}],
             traditional_ira_balance=200000,
-            retirement_age=81,
+            retirement_age=121,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 422
