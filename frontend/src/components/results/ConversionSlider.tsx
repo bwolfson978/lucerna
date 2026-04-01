@@ -32,7 +32,7 @@ export function ConversionSlider({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <span className="metric-label">Conversion amount with highest estimated savings</span>
+        <span className="metric-label">Conversion amount</span>
         <span
           className="text-h3 font-medium"
           style={{ fontFamily: "'JetBrains Mono', monospace" }}
@@ -59,11 +59,13 @@ export function ConversionSlider({
           }}
         />
 
-        {/* Optimal marker */}
+        {/* Optimal marker — offset to match range thumb positioning.
+            Range thumbs don't reach container edges; the center sits
+            8px (half thumb width) inward at min/max.  */}
         <div
           className="absolute top-[-6px] w-0 h-0 pointer-events-none"
           style={{
-            left: `${optimalPercent}%`,
+            left: `calc(8px + (100% - 16px) * ${optimalPercent / 100})`,
             transform: "translateX(-50%)",
           }}
         >

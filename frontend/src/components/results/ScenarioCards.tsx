@@ -40,7 +40,7 @@ export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
                     Estimated savings
                   </span>
                   <span className="font-mono text-text-primary font-medium">
-                    {formatCurrency(scenario.estimated_savings)}
+                    {formatCurrency(scenario.estimated_savings ?? 0)}
                   </span>
                 </div>
 

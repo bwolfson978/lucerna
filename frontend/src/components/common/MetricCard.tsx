@@ -25,7 +25,7 @@ export function MetricCard({
         {label}
         {tooltip && <Tooltip content={tooltip} />}
       </span>
-      <span className="metric-value truncate">{value}</span>
+      <span className="metric-value">{value}</span>
       {delta && (
         <span
           className={cn(

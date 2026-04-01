@@ -11,11 +11,9 @@ describe("ConversionSlider", () => {
     onChange: vi.fn(),
   };
 
-  it("displays the updated label", () => {
+  it("displays the label", () => {
     render(<ConversionSlider {...defaultProps} />);
-    expect(
-      screen.getByText("Conversion amount with highest estimated savings")
-    ).toBeInTheDocument();
+    expect(screen.getByText("Conversion amount")).toBeInTheDocument();
   });
 
   it("uses 'Highest savings' instead of 'Optimal'", () => {

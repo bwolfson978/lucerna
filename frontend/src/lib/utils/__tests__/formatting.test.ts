@@ -61,10 +61,22 @@ describe('formatCompactCurrency', () => {
   })
 
   it('handles negative values above threshold', () => {
-    expect(formatCompactCurrency(-150000)).toBe('$-150K')
+    expect(formatCompactCurrency(-150000)).toBe('-$150K')
   })
 
-  it('formats millions with commas in K', () => {
-    expect(formatCompactCurrency(1500000)).toBe('$1,500K')
+  it('formats values at 1M with M notation', () => {
+    expect(formatCompactCurrency(1000000)).toBe('$1M')
+  })
+
+  it('formats values above 1M with one decimal', () => {
+    expect(formatCompactCurrency(1500000)).toBe('$1.5M')
+  })
+
+  it('formats 1.336M', () => {
+    expect(formatCompactCurrency(1336000)).toBe('$1.3M')
+  })
+
+  it('handles negative millions', () => {
+    expect(formatCompactCurrency(-2500000)).toBe('-$2.5M')
   })
 })

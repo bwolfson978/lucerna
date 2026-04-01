@@ -45,8 +45,7 @@ describe("ScenarioCards", () => {
   it("renders all scenario labels", () => {
     renderWithProviders(<ScenarioCards scenarios={mockScenarios} />);
     expect(screen.getByText("No conversion")).toBeInTheDocument();
-    // "Highest estimated savings" appears both as label and badge
-    expect(screen.getAllByText("Highest estimated savings").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("Highest estimated savings")).toBeInTheDocument();
     expect(screen.getByText("Full conversion (year 1)")).toBeInTheDocument();
   });
 
@@ -80,5 +79,35 @@ describe("ScenarioCards", () => {
       <ScenarioCards scenarios={[]} />
     );
     expect(container.textContent).toBe("");
+  });
+
+  it("handles missing estimated_savings without NaN", () => {
+    const legacyScenarios: ScenarioComparison[] = [
+      {
+        label: "No conversion",
+        conversion_amount: 0,
+        npv: 500000,
+        tax_on_conversion: 0,
+        difference_from_optimal: -30000,
+      },
+      {
+        label: "Optimal",
+        conversion_amount: 95000,
+        npv: 530000,
+        tax_on_conversion: 14200,
+        difference_from_optimal: 0,
+      },
+    ];
+    renderWithProviders(<ScenarioCards scenarios={legacyScenarios} />);
+    // Should render $0 for missing estimated_savings, not $NaN
+    expect(screen.queryByText("$NaN")).not.toBeInTheDocument();
+  });
+
+  it("does not show 'Highest estimated savings' badge on highlighted card", () => {
+    renderWithProviders(<ScenarioCards scenarios={mockScenarios} />);
+    // The card label "Highest estimated savings" should appear once as a scenario label,
+    // but NOT as a badge above the card
+    const matches = screen.getAllByText("Highest estimated savings");
+    expect(matches).toHaveLength(1); // Only the scenario label, no badge
   });
 });
