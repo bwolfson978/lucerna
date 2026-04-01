@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { PostHogProvider } from "@/components/PostHogProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -40,11 +39,9 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <PostHogProvider>
-          <TooltipProvider delayDuration={300}>
-            {children}
-          </TooltipProvider>
-        </PostHogProvider>
+        <TooltipProvider delayDuration={300}>
+          {children}
+        </TooltipProvider>
         <Analytics />
       </body>
     </html>
