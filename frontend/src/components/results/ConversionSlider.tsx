@@ -85,9 +85,9 @@ export function ConversionSlider({
       <button
         type="button"
         onClick={() => onChange(optimalValue)}
-        className="flex items-center gap-1.5 text-body-sm text-text-secondary hover:text-accent transition-colors cursor-pointer mt-1 self-start text-left"
+        className="flex items-start gap-1.5 text-body-sm text-text-secondary hover:text-accent transition-colors cursor-pointer mt-1 self-start text-left"
       >
-        <span className="inline-block w-2 h-2 bg-accent rotate-45 border border-white shadow-sm flex-shrink-0" />
+        <span className="inline-block w-2 h-2 bg-accent rotate-45 border border-white shadow-sm flex-shrink-0 mt-[5px]" />
         <span>Conversion amount with highest estimated lifetime savings</span>
       </button>
     </div>
