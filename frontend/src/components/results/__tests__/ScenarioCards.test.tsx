@@ -29,7 +29,7 @@ const mockScenarios: ScenarioComparison[] = [
     label: "Full conversion (year 1)",
     conversion_amount: 210000,
     npv: 510000,
-    tax_on_conversion: 45000,
+    tax_on_conversion: 48000,
     difference_from_optimal: -20000,
     estimated_savings: 10000,
     yearly_conversions: [210000, 0, 0],
@@ -49,17 +49,35 @@ describe("ScenarioCards", () => {
     expect(screen.getByText("Full conversion (year 1)")).toBeInTheDocument();
   });
 
-  it("shows estimated savings for each scenario", () => {
+  it("reorders cards: non-best first, best last", () => {
+    const { container } = renderWithProviders(
+      <ScenarioCards scenarios={mockScenarios} />
+    );
+    // Cards are inside the grid; each card's first span.text-h3 is its title
+    const grid = container.querySelector(".grid");
+    const cards = grid!.querySelectorAll(":scope > div");
+    const labels = Array.from(cards).map(
+      (card) => card.querySelector(".text-h3")?.textContent
+    );
+    expect(labels[0]).toBe("No conversion");
+    expect(labels[1]).toBe("Full conversion (year 1)");
+    expect(labels[2]).toBe("Highest estimated savings");
+  });
+
+  it("shows estimated savings when provided", () => {
     renderWithProviders(<ScenarioCards scenarios={mockScenarios} />);
     const savingsLabels = screen.getAllByText("Estimated savings");
     expect(savingsLabels).toHaveLength(3);
   });
 
-  it("shows per-year conversion schedule", () => {
+  it("shows per-year conversion schedule for multi-year scenario", () => {
     renderWithProviders(<ScenarioCards scenarios={mockScenarios} />);
-    expect(screen.getAllByText("2026").length).toBeGreaterThanOrEqual(3);
-    expect(screen.getAllByText("2027").length).toBeGreaterThanOrEqual(3);
-    expect(screen.getAllByText("2028").length).toBeGreaterThanOrEqual(3);
+    const scheduleHeaders = screen.getAllByText("Conversion schedule");
+    expect(scheduleHeaders.length).toBeGreaterThanOrEqual(1);
+    // The best scenario shows per-year amounts
+    expect(screen.getByText("$50,000")).toBeInTheDocument();
+    expect(screen.getByText("$45,000")).toBeInTheDocument();
+    expect(screen.getByText("$25,000")).toBeInTheDocument();
   });
 
   it("does not display 'Recommended' or 'optimal' text", () => {
@@ -81,7 +99,7 @@ describe("ScenarioCards", () => {
     expect(container.textContent).toBe("");
   });
 
-  it("handles missing estimated_savings without NaN", () => {
+  it("hides estimated savings row when field is missing", () => {
     const legacyScenarios: ScenarioComparison[] = [
       {
         label: "No conversion",
@@ -99,15 +117,23 @@ describe("ScenarioCards", () => {
       },
     ];
     renderWithProviders(<ScenarioCards scenarios={legacyScenarios} />);
-    // Should render $0 for missing estimated_savings, not $NaN
+    // No estimated savings row when field is absent
+    expect(screen.queryByText("Estimated savings")).not.toBeInTheDocument();
     expect(screen.queryByText("$NaN")).not.toBeInTheDocument();
   });
 
-  it("does not show 'Highest estimated savings' badge on highlighted card", () => {
-    renderWithProviders(<ScenarioCards scenarios={mockScenarios} />);
-    // The card label "Highest estimated savings" should appear once as a scenario label,
-    // but NOT as a badge above the card
-    const matches = screen.getAllByText("Highest estimated savings");
-    expect(matches).toHaveLength(1); // Only the scenario label, no badge
+  it("replaces 'Optimal' label from old backends", () => {
+    const legacyScenarios: ScenarioComparison[] = [
+      {
+        label: "Optimal conversion",
+        conversion_amount: 95000,
+        npv: 530000,
+        tax_on_conversion: 14200,
+        difference_from_optimal: 0,
+      },
+    ];
+    renderWithProviders(<ScenarioCards scenarios={legacyScenarios} />);
+    expect(screen.queryByText("Optimal conversion")).not.toBeInTheDocument();
+    expect(screen.getByText("Highest estimated savings")).toBeInTheDocument();
   });
 });
