@@ -47,7 +47,7 @@ export default function DemoPage() {
                   a $145K/year role 6 months ago to co-found a startup.
                 </p>
                 <p className="text-body text-text-secondary leading-relaxed">
-                  Alex has a $210,000 traditional IRA (rolled over from 14 years
+                  Alex has a $210,000 traditional IRA/401(k) (rolled over from 14 years
                   of 401k contributions) and is filing single. With two
                   low-income years ahead, there&apos;s a rare window to convert at
                   the 10-22% brackets instead of the usual 24%.

@@ -568,6 +568,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         )
     )
 
+    trajectory_years = [yi.year for yi in scenario.income_trajectory]
     scenarios = [
         ScenarioComparison(
             label="No conversion",
@@ -575,13 +576,19 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
             npv=npv_at_zero,
             tax_on_conversion=0,
             difference_from_optimal=npv_at_zero - npv_at_optimal,
+            estimated_savings=0.0,
+            yearly_conversions=[0.0] * n_years,
+            years=trajectory_years,
         ),
         ScenarioComparison(
-            label="Optimal conversion",
+            label="Highest estimated savings",
             conversion_amount=total_conversion,
             npv=npv_at_optimal,
             tax_on_conversion=total_tax,
             difference_from_optimal=0,
+            estimated_savings=npv_at_optimal - npv_at_zero,
+            yearly_conversions=list(final_conversions),
+            years=trajectory_years,
         ),
         ScenarioComparison(
             label="Full conversion (year 1)",
@@ -589,6 +596,9 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
             npv=npv_at_full,
             tax_on_conversion=tax_full,
             difference_from_optimal=npv_at_full - npv_at_optimal,
+            estimated_savings=npv_at_full - npv_at_zero,
+            yearly_conversions=[max_balance] + [0.0] * (n_years - 1),
+            years=trajectory_years,
         ),
     ]
 

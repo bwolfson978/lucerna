@@ -18,7 +18,7 @@ const Card = React.forwardRef<
   >
     {recommended && (
       <span className="absolute -top-3 left-4 bg-accent-light text-accent-hover text-[11px] font-medium px-2.5 py-0.5 rounded-md">
-        Recommended
+        Highest estimated savings
       </span>
     )}
     {children}

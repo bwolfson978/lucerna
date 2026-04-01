@@ -64,6 +64,9 @@ export interface ScenarioComparison {
   npv: number;
   tax_on_conversion: number;
   difference_from_optimal: number;
+  estimated_savings: number;
+  yearly_conversions: number[];
+  years: number[];
 }
 
 export interface AcaSubsidyDetail {

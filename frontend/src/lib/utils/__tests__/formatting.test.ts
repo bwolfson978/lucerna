@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatCurrency, formatPercent, formatAge } from '@/lib/utils/formatting'
+import { formatCurrency, formatPercent, formatAge, formatCompactCurrency } from '@/lib/utils/formatting'
 
 describe('formatCurrency', () => {
   it('formats whole dollars with commas', () => {
@@ -28,5 +28,43 @@ describe('formatPercent', () => {
 describe('formatAge', () => {
   it('returns age as string with label', () => {
     expect(formatAge(65)).toBe('Age 65')
+  })
+})
+
+describe('formatCompactCurrency', () => {
+  it('returns full format below $100,000', () => {
+    expect(formatCompactCurrency(45200)).toBe('$45,200')
+  })
+
+  it('returns full format at $99,999', () => {
+    expect(formatCompactCurrency(99999)).toBe('$99,999')
+  })
+
+  it('returns compact K format at $100,000', () => {
+    expect(formatCompactCurrency(100000)).toBe('$100K')
+  })
+
+  it('returns compact K format for large values', () => {
+    expect(formatCompactCurrency(210000)).toBe('$210K')
+  })
+
+  it('rounds to nearest thousand', () => {
+    expect(formatCompactCurrency(210500)).toBe('$211K')
+  })
+
+  it('formats zero', () => {
+    expect(formatCompactCurrency(0)).toBe('$0')
+  })
+
+  it('handles negative values below threshold', () => {
+    expect(formatCompactCurrency(-5000)).toBe('-$5,000')
+  })
+
+  it('handles negative values above threshold', () => {
+    expect(formatCompactCurrency(-150000)).toBe('$-150K')
+  })
+
+  it('formats millions with commas in K', () => {
+    expect(formatCompactCurrency(1500000)).toBe('$1,500K')
   })
 })

@@ -3,6 +3,7 @@
 import type { YearlyDetail, LifeEvent } from "@/lib/types";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
 import { LIFE_EVENT_LABELS } from "@/lib/utils/constants";
+import { Tooltip } from "@/components/common/Tooltip";
 import { useRef } from "react";
 
 interface YearOverride {
@@ -62,11 +63,13 @@ export function TransposedDetailTable({
         <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
           Tax cost
         </div>
-        <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
+        <div className="h-8 flex items-center gap-0.5 text-text-tertiary text-[10px] font-medium px-1">
           Eff. rate
+          <Tooltip content="The average tax rate on your total conversion amount — total tax paid divided by total converted." />
         </div>
-        <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
+        <div className="h-8 flex items-center gap-0.5 text-text-tertiary text-[10px] font-medium px-1">
           Marginal
+          <Tooltip content="The tax rate on the next dollar converted — determines whether converting more would still be beneficial." />
         </div>
       </div>
 

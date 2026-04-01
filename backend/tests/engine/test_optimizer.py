@@ -218,3 +218,71 @@ class TestConversionPreferences:
         assert len(result.yearly_conversions) == 3
         assert result.total_conversion >= 0
         assert all(c >= 0 for c in result.yearly_conversions)
+
+
+class TestScenarioComparisonFields:
+    """Scenarios include yearly_conversions, years, and estimated_savings."""
+
+    def test_scenarios_have_yearly_conversions(self):
+        scenario = ScenarioInput(
+            age=38, filing_status=FilingStatus.SINGLE,
+            income_trajectory=[
+                YearlyIncome(year=2026, gross_income=35000),
+                YearlyIncome(year=2027, gross_income=30000),
+                YearlyIncome(year=2028, gross_income=150000),
+            ],
+            traditional_ira_balance=210000,
+            retirement_age=65, years_in_retirement=25,
+            annual_growth_rate=0.07, discount_rate=0.05,
+        )
+        result = optimize(scenario)
+        for sc in result.scenarios:
+            assert len(sc.yearly_conversions) == 3
+            assert len(sc.years) == 3
+            assert sc.years == [2026, 2027, 2028]
+
+    def test_scenarios_have_estimated_savings(self):
+        scenario = ScenarioInput(
+            age=45, filing_status=FilingStatus.SINGLE,
+            income_trajectory=[YearlyIncome(year=2026, gross_income=25000)],
+            traditional_ira_balance=100000,
+            retirement_age=65, years_in_retirement=25,
+            annual_growth_rate=0.07, discount_rate=0.05,
+        )
+        result = optimize(scenario)
+        # "No conversion" should have 0 savings
+        no_conv = next(s for s in result.scenarios if s.label == "No conversion")
+        assert no_conv.estimated_savings == 0.0
+        # "Highest estimated savings" should be positive for low-income scenario
+        best = next(s for s in result.scenarios if s.difference_from_optimal == 0)
+        assert best.estimated_savings > 0
+        # estimated_savings should equal npv - npv_at_zero
+        assert abs(best.estimated_savings - (best.npv - no_conv.npv)) < 1
+
+    def test_no_conversion_yearly_conversions_are_zero(self):
+        scenario = ScenarioInput(
+            age=45, filing_status=FilingStatus.SINGLE,
+            income_trajectory=[YearlyIncome(year=2026, gross_income=25000)],
+            traditional_ira_balance=100000,
+            retirement_age=65, years_in_retirement=25,
+            annual_growth_rate=0.07, discount_rate=0.05,
+        )
+        result = optimize(scenario)
+        no_conv = next(s for s in result.scenarios if s.label == "No conversion")
+        assert all(c == 0.0 for c in no_conv.yearly_conversions)
+
+    def test_full_conversion_puts_all_in_year_1(self):
+        scenario = ScenarioInput(
+            age=38, filing_status=FilingStatus.SINGLE,
+            income_trajectory=[
+                YearlyIncome(year=2026, gross_income=35000),
+                YearlyIncome(year=2027, gross_income=30000),
+            ],
+            traditional_ira_balance=100000,
+            retirement_age=65, years_in_retirement=25,
+            annual_growth_rate=0.07, discount_rate=0.05,
+        )
+        result = optimize(scenario)
+        full = next(s for s in result.scenarios if "Full" in s.label)
+        assert full.yearly_conversions[0] == 100000
+        assert full.yearly_conversions[1] == 0.0

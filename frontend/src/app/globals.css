@@ -78,6 +78,7 @@
   z-index: 1;
   overflow: hidden;
   background: #4F46E5;
+  color: white;
 }
 
 .glow-button::before {

@@ -73,7 +73,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
       errs.retirementAge = "Retirement age must be greater than current age";
     if (currentIncome < 0) errs.currentIncome = "Income cannot be negative";
     if (traditionalBalance <= 0)
-      errs.traditionalBalance = "Enter your traditional IRA balance";
+      errs.traditionalBalance = "Enter your traditional IRA/401(k) balance";
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
@@ -138,7 +138,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           onChange={(e) => setCurrentIncome(parseFloat(e.target.value) || 0)}
         />
         <FormField
-          label="Traditional IRA balance"
+          label="Traditional IRA/401(k) balance"
           type="number"
           value={traditionalBalance || ""}
           placeholder="0"
@@ -161,13 +161,13 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           onChange={(e) => setRetirementAge(parseInt(e.target.value) || 65)}
         />
         <FormField
-          label="Roth IRA balance"
+          label="Roth IRA/401(k) balance"
           type="number"
           value={rothBalance || ""}
           placeholder="0"
           numeric
           min={0}
-          helper="Existing Roth balance (optional)"
+          helper="Existing Roth IRA/401(k) balance (optional)"
           onChange={(e) => setRothBalance(parseFloat(e.target.value) || 0)}
         />
       </div>

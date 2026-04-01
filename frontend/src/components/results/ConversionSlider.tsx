@@ -32,7 +32,7 @@ export function ConversionSlider({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <span className="metric-label">Total conversion amount</span>
+        <span className="metric-label">Conversion amount with highest estimated savings</span>
         <span
           className="text-h3 font-medium"
           style={{ fontFamily: "'JetBrains Mono', monospace" }}
@@ -69,7 +69,7 @@ export function ConversionSlider({
         >
           <div
             className="w-2.5 h-2.5 bg-accent rotate-45 border border-white shadow-sm"
-            title={`Optimal: ${formatCurrency(optimalValue)}`}
+            title={`Highest savings: ${formatCurrency(optimalValue)}`}
           />
         </div>
       </div>
@@ -80,7 +80,7 @@ export function ConversionSlider({
           className="text-accent cursor-pointer hover:underline"
           onClick={() => onChange(optimalValue)}
         >
-          Optimal: {formatCurrency(optimalValue)}
+          Highest savings: {formatCurrency(optimalValue)}
         </span>
         <span>{formatCurrency(max)}</span>
       </div>
