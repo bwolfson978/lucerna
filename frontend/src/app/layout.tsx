@@ -6,11 +6,11 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Lucerna — See your financial future clearly",
   description:
-    "Multi-year Roth conversion optimizer. Find the optimal conversion schedule across your income trajectory.",
+    "Multi-year Roth conversion analysis. Compare conversion schedules across your income trajectory.",
   openGraph: {
     title: "Lucerna — See your financial future clearly",
     description:
-      "Multi-year Roth conversion optimizer. Find the optimal conversion schedule across your income trajectory.",
+      "Multi-year Roth conversion analysis. Compare conversion schedules across your income trajectory.",
     type: "website",
   },
 };

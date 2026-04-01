@@ -20,7 +20,7 @@ export default meta;
 type Story = StoryObj<typeof Tooltip>;
 
 export const InfoIcon: Story = {
-  args: { content: "Estimated lifetime tax savings from the optimal Roth conversion strategy" },
+  args: { content: "Estimated lifetime tax savings from the selected Roth conversion schedule" },
 };
 
 export const WithChild: Story = {

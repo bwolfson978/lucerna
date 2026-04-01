@@ -93,8 +93,15 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
     displayTotalConversion > 0 ? totalTaxCost / displayTotalConversion : 0;
   const conversionYears = yearlyConversions.filter((c) => c > 0).length;
 
-  // Interpolate NPV-based estimated savings from pre-computed conversion curve
+  // Interpolate NPV-based estimated savings from pre-computed conversion curve.
+  // When near the optimizer's result, snap to the authoritative backend value
+  // so hero metric and scenario cards always agree.
   const estimatedSavings = useMemo(() => {
+    // Snap to backend value when at (or very near) the optimizer's answer
+    if (Math.abs(totalConversion - result.total_conversion) < 100) {
+      return result.estimated_lifetime_tax_savings;
+    }
+
     const curve = result.conversion_curve;
     if (!curve || curve.length === 0) {
       return result.estimated_lifetime_tax_savings;
@@ -132,6 +139,7 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
     result.conversion_curve,
     result.npv_at_zero,
     result.estimated_lifetime_tax_savings,
+    result.total_conversion,
     totalConversion,
   ]);
 

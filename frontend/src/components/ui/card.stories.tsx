@@ -25,7 +25,7 @@ export const Recommended: Story = {
     recommended: true,
     children: (
       <div className="flex flex-col gap-2">
-        <span className="text-h3 text-text-primary">Optimal strategy</span>
+        <span className="text-h3 text-text-primary">Highest estimated savings</span>
         <span className="text-body text-text-secondary">
           Convert $50,000 per year for 3 years
         </span>

@@ -2,7 +2,7 @@
 
 import type { BracketFillResult } from "@/lib/types";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
-import { BRACKET_COLORS } from "@/lib/utils/constants";
+
 import { Tooltip } from "@/components/common/Tooltip";
 import { Card } from "@/components/ui/card";
 
@@ -58,9 +58,6 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
           const conversionWidth = bracket.filled_by_conversion * scale;
           const remainingWidth = bracket.remaining_capacity * scale;
 
-          const color =
-            BRACKET_COLORS[bracket.bracket_rate.toFixed(2)] || "#6B7280";
-
           return (
             <g key={bracket.bracket_rate}>
               {/* Bracket rate label */}
@@ -108,16 +105,6 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
                   rx={4}
                 />
               )}
-
-              {/* Bracket color indicator */}
-              <rect
-                x={barX - 5}
-                y={y + 2}
-                width={3}
-                height={30}
-                fill={color}
-                rx={1.5}
-              />
 
               {/* Dollar amount label */}
               {bracket.filled_by_income + bracket.filled_by_conversion >
