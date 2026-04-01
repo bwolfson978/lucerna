@@ -16,9 +16,11 @@ describe("ConversionSlider", () => {
     expect(screen.getByText("Conversion amount")).toBeInTheDocument();
   });
 
-  it("uses 'Highest savings' instead of 'Optimal'", () => {
+  it("shows diamond legend instead of 'Optimal'", () => {
     render(<ConversionSlider {...defaultProps} />);
     expect(screen.queryByText(/Optimal/)).not.toBeInTheDocument();
-    expect(screen.getByText(/Highest savings/)).toBeInTheDocument();
+    expect(
+      screen.getByText("Conversion amount with highest estimated lifetime savings")
+    ).toBeInTheDocument();
   });
 });

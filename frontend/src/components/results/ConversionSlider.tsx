@@ -78,14 +78,18 @@ export function ConversionSlider({
 
       <div className="flex justify-between text-[10px] text-text-tertiary">
         <span>{formatCurrency(min)}</span>
-        <span
-          className="text-accent cursor-pointer hover:underline"
-          onClick={() => onChange(optimalValue)}
-        >
-          Highest savings: {formatCurrency(optimalValue)}
-        </span>
         <span>{formatCurrency(max)}</span>
       </div>
+
+      {/* Legend linking the diamond marker to its meaning */}
+      <button
+        type="button"
+        onClick={() => onChange(optimalValue)}
+        className="flex items-center gap-1.5 text-body-sm text-text-secondary hover:text-accent transition-colors cursor-pointer mt-1"
+      >
+        <span className="inline-block w-2 h-2 bg-accent rotate-45 border border-white shadow-sm flex-shrink-0" />
+        <span>Conversion amount with highest estimated lifetime savings</span>
+      </button>
     </div>
   );
 }

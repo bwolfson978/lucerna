@@ -302,9 +302,6 @@ function BracketBar({
         const convTop = yScale(segmentTop);
         const convHeight = convBottom - convTop;
 
-        const bracketColor =
-          BRACKET_COLORS[bf.bracket_rate.toFixed(2)] || "#6B7280";
-
         return (
           <g key={bf.bracket_rate}>
             {/* Remaining capacity (warm light background) */}
@@ -347,15 +344,6 @@ function BracketBar({
               />
             )}
 
-            {/* Left bracket color indicator */}
-            <rect
-              x={x - 3}
-              y={yScale(bracketVisibleMax)}
-              width={2}
-              height={yScale(bf.bracket_min) - yScale(bracketVisibleMax)}
-              fill={bracketColor}
-              rx={1}
-            />
           </g>
         );
       })}
