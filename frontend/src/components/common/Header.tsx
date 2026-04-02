@@ -26,7 +26,7 @@ export function Header() {
             href="/calculator"
             className="text-body-sm text-text-secondary hover:text-accent transition-colors duration-300"
           >
-            Calculator
+            Planner
           </Link>
         </nav>
       </div>
