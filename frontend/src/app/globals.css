@@ -170,6 +170,17 @@
   animation: none;
 }
 
+/* Hide native number input spinners — they don't theme on dark backgrounds */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 /* Range input styling for dark theme */
 input[type="range"] {
   -webkit-appearance: none;

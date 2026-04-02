@@ -15,22 +15,18 @@ export function Header() {
         <Link href="/" className="font-serif text-[18px] font-bold text-text-primary tracking-tight">
           Lucerna
         </Link>
-        <nav className="flex items-center gap-3">
+        <nav className="flex items-center gap-5">
           <Link
             href="/demo"
-            className="text-body text-text-secondary hover:text-accent transition-colors duration-300"
+            className="text-body-sm text-text-secondary hover:text-accent transition-colors duration-300"
           >
-            See demo
+            Demo
           </Link>
           <Link
             href="/calculator"
-            className={cn(
-              "glow-button inline-flex items-center justify-center",
-              "h-12 min-h-[44px] px-8 rounded-xl text-bg text-[15px] font-semibold tracking-[0.3px]",
-              "active:scale-[0.98] transition-all duration-300"
-            )}
+            className="text-body-sm text-text-secondary hover:text-accent transition-colors duration-300"
           >
-            Run your scenario
+            Calculator
           </Link>
         </nav>
       </div>
