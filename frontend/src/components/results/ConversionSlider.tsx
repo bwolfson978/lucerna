@@ -35,7 +35,7 @@ export function ConversionSlider({
         <span className="metric-label">Total conversion amount</span>
         <span
           className="text-h3 font-medium"
-          style={{ fontFamily: "'JetBrains Mono', monospace" }}
+          style={{ fontFamily: "'Manrope', system-ui" }}
         >
           {formatCurrency(value)}
         </span>

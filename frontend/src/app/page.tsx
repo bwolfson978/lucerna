@@ -10,7 +10,7 @@ export default function Home() {
         <section className="px-section md:px-page py-page">
           <div className="max-w-content mx-auto flex flex-col gap-section">
             <div className="flex flex-col gap-comfortable max-w-2xl">
-              <h1 className="text-display md:text-display-lg text-text-primary tracking-tight">
+              <h1 className="text-display md:text-display-lg text-text-primary tracking-tight font-serif">
                 Find the optimal Roth conversion schedule across your income trajectory
               </h1>
               <p className="text-body text-text-secondary max-w-lg leading-relaxed">
@@ -21,13 +21,13 @@ export default function Home() {
               <div className="flex items-center gap-3 mt-section">
                 <Link
                   href="/demo"
-                  className="inline-flex items-center justify-center h-10 min-h-[44px] px-6 rounded-md bg-accent text-white text-body font-medium shadow-card hover:bg-accent-hover hover:shadow-card-hover active:scale-[0.98] transition-all duration-150"
+                  className="inline-flex items-center justify-center h-10 min-h-[44px] px-6 rounded-lg bg-accent text-bg text-body font-medium shadow-card hover:bg-accent-hover hover:shadow-card-hover active:scale-[0.98] transition-all duration-300"
                 >
                   See demo
                 </Link>
                 <Link
                   href="/calculator"
-                  className="inline-flex items-center justify-center h-10 min-h-[44px] px-6 rounded-md bg-transparent border border-border-emphasis text-text-primary text-body font-medium hover:bg-bg-hover transition-all duration-150"
+                  className="inline-flex items-center justify-center h-10 min-h-[44px] px-6 rounded-lg bg-transparent border border-border-emphasis text-text-primary text-body font-medium hover:bg-bg-hover transition-all duration-300"
                 >
                   Run your scenario
                 </Link>
@@ -96,7 +96,7 @@ export default function Home() {
                 </p>
                 <Link
                   href="/demo"
-                  className="text-body text-accent hover:text-accent-hover font-medium transition-colors duration-150"
+                  className="text-body text-accent hover:text-accent-hover font-medium transition-colors duration-300"
                 >
                   View full analysis →
                 </Link>

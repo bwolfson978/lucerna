@@ -121,7 +121,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-default">
         {/* Headline metric */}
         <div className="card-recommended p-section">
-          <span className="absolute -top-3 left-4 bg-accent-light text-accent-hover text-[11px] font-medium px-2.5 py-0.5 rounded-md">
+          <span className="absolute -top-3 left-4 bg-accent-light text-accent text-[11px] font-medium px-2.5 py-0.5 rounded-lg">
             Optimal strategy
           </span>
           <div className="flex flex-col gap-2">
@@ -134,7 +134,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
             {!isAtOptimal && savingsDifference > 0 && (
               <span
                 className="flex items-center gap-1 text-body-sm text-negative font-medium"
-                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                style={{ fontFamily: "'Manrope', system-ui" }}
               >
                 <svg
                   width="12"

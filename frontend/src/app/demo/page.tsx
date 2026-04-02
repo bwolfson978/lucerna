@@ -97,7 +97,7 @@ export default function DemoPage() {
           <div className="flex items-center gap-3 pt-section border-t border-border">
             <Link
               href="/calculator"
-              className="glow-button inline-flex items-center justify-center h-10 min-h-[44px] px-6 rounded-md text-white text-body font-medium active:scale-[0.98] transition-all duration-150"
+              className="glow-button inline-flex items-center justify-center h-10 min-h-[44px] px-6 rounded-xl text-bg text-body font-medium active:scale-[0.98] transition-all duration-300"
             >
               Run your own scenario
             </Link>

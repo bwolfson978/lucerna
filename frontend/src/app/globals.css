@@ -8,26 +8,58 @@
   }
 
   .font-data {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Manrope', system-ui, sans-serif;
     font-variant-numeric: tabular-nums;
+  }
+
+  .font-serif {
+    font-family: 'DM Serif Display', Georgia, serif;
+  }
+
+  .font-ui {
+    font-family: 'Inter', system-ui, sans-serif;
   }
 }
 
 @layer components {
   .card {
-    @apply border border-border rounded-lg bg-bg p-comfortable shadow-card;
+    @apply rounded-lg border border-glass-border p-comfortable;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    transition: transform 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.12);
   }
 
   .card-recommended {
-    @apply border-2 border-accent rounded-lg bg-bg p-comfortable relative shadow-card;
+    @apply rounded-lg p-comfortable relative;
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 2px solid #F0C674;
+    box-shadow: 0 0 20px rgba(240, 198, 116, 0.1);
+    transition: transform 300ms ease, box-shadow 300ms ease;
+  }
+
+  .card-recommended:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 30px rgba(240, 198, 116, 0.15);
   }
 
   .card-elevated {
-    @apply rounded-lg bg-bg p-comfortable shadow-elevated;
+    @apply rounded-lg p-comfortable;
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    box-shadow: 0 12px 40px rgba(15, 14, 26, 0.5);
   }
 
   .metric-label {
-    @apply text-caption text-text-tertiary uppercase tracking-wide;
+    @apply text-caption font-ui text-text-tertiary uppercase tracking-wide;
   }
 
   .metric-value {
@@ -35,27 +67,30 @@
   }
 
   .metric-value-hero {
-    @apply text-data-hero font-sans font-extrabold text-text-primary;
+    @apply text-data-hero font-mono font-extrabold text-text-primary;
   }
 
   .badge {
-    @apply inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium uppercase tracking-wide;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-medium uppercase tracking-wide;
   }
 
   .badge-positive {
-    @apply badge border border-optimal/20 text-optimal bg-optimal/5;
+    @apply badge border border-optimal/30 text-optimal;
+    background: rgba(94, 189, 140, 0.1);
   }
 
   .badge-negative {
-    @apply badge border border-negative/20 text-negative bg-negative/5;
+    @apply badge border border-negative/30 text-negative;
+    background: rgba(232, 112, 112, 0.1);
   }
 
   .badge-neutral {
-    @apply badge border border-border-emphasis text-text-secondary bg-bg-alt;
+    @apply badge border border-glass-border text-text-secondary;
+    background: rgba(255, 255, 255, 0.04);
   }
 }
 
-/* Glow button — rotating conic-gradient border */
+/* Glow button — rotating conic-gradient border with gold base */
 @keyframes glow-rotate {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -65,7 +100,9 @@
   position: relative;
   z-index: 1;
   overflow: hidden;
-  background: #4F46E5;
+  background: linear-gradient(135deg, #F0C674, #E8A838);
+  color: #0F0E1A;
+  border-radius: 12px;
 }
 
 .glow-button::before {
@@ -77,10 +114,10 @@
   height: 200%;
   background: conic-gradient(
     transparent,
-    #f472b6,
-    #facc15,
-    #60a5fa,
-    #a78bfa,
+    #F0C674,
+    #6C5CE7,
+    #E8A838,
+    #B8B0D2,
     transparent 30%
   );
   animation: glow-rotate 4s linear infinite;
@@ -91,13 +128,13 @@
   content: '';
   position: absolute;
   inset: 2px;
-  background: #4F46E5;
+  background: linear-gradient(135deg, #F0C674, #E8A838);
   border-radius: inherit;
   z-index: -1;
 }
 
 .glow-button:hover::after {
-  background: #4338CA;
+  background: linear-gradient(135deg, #E8A838, #D4941F);
 }
 
 .glow-button:disabled {
@@ -106,4 +143,45 @@
 
 .glow-button:disabled::before {
   animation: none;
+}
+
+/* Range input styling for dark theme */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+}
+
+input[type="range"]::-webkit-slider-track {
+  height: 6px;
+  border-radius: 3px;
+  background: #2C2B3A;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #F0C674;
+  border: 2px solid #0F0E1A;
+  margin-top: -7px;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(240, 198, 116, 0.3);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 6px;
+  border-radius: 3px;
+  background: #2C2B3A;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #F0C674;
+  border: 2px solid #0F0E1A;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(240, 198, 116, 0.3);
 }

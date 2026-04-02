@@ -15,9 +15,9 @@ export const GlowButton = forwardRef<HTMLButtonElement, GlowButtonProps>(
         className={`
           glow-button
           inline-flex items-center justify-center
-          h-9 min-h-[44px] px-5
-          rounded-md text-body font-medium text-white
-          transition-all duration-150 ease-out
+          h-12 min-h-[44px] px-8
+          rounded-xl text-[15px] font-semibold text-bg tracking-[0.3px]
+          transition-all duration-300 ease-out
           active:scale-[0.98]
           disabled:opacity-50 disabled:cursor-not-allowed
           ${className}

@@ -2,7 +2,7 @@
 
 import type { BracketFillResult } from "@/lib/types";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
-import { BRACKET_COLORS } from "@/lib/utils/constants";
+import { BRACKET_COLORS, CHART_COLORS } from "@/lib/utils/constants";
 import { Tooltip } from "@/components/common/Tooltip";
 
 interface BracketFillChartProps {
@@ -67,7 +67,7 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
                 x={labelX}
                 y={y + 23}
                 className="text-[13px] font-medium fill-text-secondary"
-                fontFamily="'JetBrains Mono', monospace"
+                fontFamily="'Manrope', system-ui"
               >
                 {formatPercent(bracket.bracket_rate)}
               </text>
@@ -79,7 +79,7 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
                   y={y}
                   width={incomeWidth}
                   height={34}
-                  fill="#6B7280"
+                  fill={CHART_COLORS.income}
                   rx={4}
                 />
               )}
@@ -91,7 +91,7 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
                   y={y}
                   width={conversionWidth}
                   height={34}
-                  fill="#4F46E5"
+                  fill={CHART_COLORS.conversion}
                   rx={4}
                 />
               )}
@@ -103,7 +103,7 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
                   y={y}
                   width={remainingWidth}
                   height={34}
-                  fill="rgba(0,0,0,0.03)"
+                  fill="rgba(255,255,255,0.04)"
                   rx={4}
                 />
               )}
@@ -130,7 +130,7 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
                   }
                   y={y + 23}
                   className="text-[11px] fill-text-tertiary"
-                  fontFamily="'JetBrains Mono', monospace"
+                  fontFamily="'Manrope', system-ui"
                 >
                   {formatCurrency(
                     bracket.filled_by_income +

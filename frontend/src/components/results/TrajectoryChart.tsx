@@ -26,7 +26,7 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
     chart: {
       type: "bar" as const,
       stacked: true,
-      fontFamily: "'JetBrains Mono', 'Geist Sans', system-ui, sans-serif",
+      fontFamily: "'Manrope', 'DM Sans', system-ui, sans-serif",
       toolbar: { show: false },
       zoom: { enabled: false },
       background: "transparent",
@@ -46,7 +46,7 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
     },
     plotOptions: {
       bar: {
-        borderRadius: 6,
+        borderRadius: 8,
         columnWidth: "56%",
       },
     },
@@ -54,16 +54,16 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
     fill: {
       type: "gradient",
       gradient: {
-        shade: "light",
+        shade: "dark",
         type: "vertical",
-        shadeIntensity: 0.15,
-        opacityFrom: 1,
-        opacityTo: 0.85,
+        shadeIntensity: 0.3,
+        opacityFrom: 0.7,
+        opacityTo: 0.2,
         stops: [0, 100],
       },
     },
     grid: {
-      borderColor: "rgba(120, 113, 108, 0.06)",
+      borderColor: "rgba(255, 255, 255, 0.06)",
       strokeDashArray: 3,
       padding: { left: 8, right: 8 },
     },
@@ -72,8 +72,8 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
       labels: {
         style: {
           fontSize: "12px",
-          fontFamily: "'JetBrains Mono', monospace",
-          colors: "#6B7280",
+          fontFamily: "'Manrope', system-ui",
+          colors: "#B8B0D2",
         },
       },
       axisBorder: { show: false },
@@ -85,12 +85,13 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
           val >= 1000 ? `$${(val / 1000).toFixed(0)}K` : `$${val}`,
         style: {
           fontSize: "11px",
-          fontFamily: "'JetBrains Mono', monospace",
-          colors: "#9CA3AF",
+          fontFamily: "'Manrope', system-ui",
+          colors: "#8B8A99",
         },
       },
     },
     tooltip: {
+      theme: "dark",
       y: {
         formatter: (val: number) => `$${val.toLocaleString()}`,
       },
@@ -99,22 +100,22 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
     legend: { show: false },
     states: {
       hover: {
-        filter: { type: "lighten", value: 0.08 } as unknown as { type?: string },
+        filter: { type: "darken", value: 0.05 } as unknown as { type?: string },
       },
       active: { filter: { type: "none" } },
     },
     annotations: {
       yaxis: bracketBoundaries.map((boundary) => ({
         y: boundary,
-        borderColor: "rgba(120, 113, 108, 0.10)",
+        borderColor: "rgba(255, 255, 255, 0.08)",
         strokeDashArray: 4,
         label: {
           text: `$${(boundary / 1000).toFixed(0)}K`,
           position: "left" as const,
           style: {
             fontSize: "10px",
-            fontFamily: "'JetBrains Mono', monospace",
-            color: "#9CA3AF",
+            fontFamily: "'Manrope', system-ui",
+            color: "#8B8A99",
             background: "transparent",
           },
         },

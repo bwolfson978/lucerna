@@ -28,11 +28,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           id={selectId}
           className={`
             h-9 min-h-[44px] px-3
-            rounded-md bg-bg-alt
+            rounded-lg bg-bg-alt
             border border-border
             text-body text-text-primary
             focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10
-            transition-all duration-150
+            transition-all duration-300
             ${error ? "border-negative" : ""}
             ${className}
           `}

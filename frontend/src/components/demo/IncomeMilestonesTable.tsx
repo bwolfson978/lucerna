@@ -43,7 +43,7 @@ export function IncomeMilestonesTable({
               {/* Year */}
               <div
                 className="h-8 flex items-center justify-center text-[10px] text-text-secondary"
-                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                style={{ fontFamily: "'Manrope', system-ui" }}
               >
                 {yi.year}
               </div>
@@ -51,7 +51,7 @@ export function IncomeMilestonesTable({
               {/* Income */}
               <div
                 className="h-8 flex items-center justify-center text-[10px] text-text-primary"
-                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                style={{ fontFamily: "'Manrope', system-ui" }}
               >
                 {formatCurrency(yi.gross_income)}
               </div>

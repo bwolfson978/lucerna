@@ -101,7 +101,7 @@ export default function CalculatorPage() {
                   setError(null);
                   setResult(null);
                 }}
-                className="text-body-sm text-accent hover:text-accent-hover font-medium mt-default transition-colors duration-150"
+                className="text-body-sm text-accent hover:text-accent-hover font-medium mt-default transition-colors duration-300"
               >
                 Try again
               </button>
@@ -122,7 +122,7 @@ export default function CalculatorPage() {
                     setResult(null);
                     setError(null);
                   }}
-                  className="inline-flex items-center justify-center h-10 min-h-[44px] px-6 rounded-md bg-transparent border border-border-emphasis text-text-primary text-body font-medium hover:bg-bg-hover transition-all duration-150"
+                  className="inline-flex items-center justify-center h-10 min-h-[44px] px-6 rounded-lg bg-transparent border border-border-emphasis text-text-primary text-body font-medium hover:bg-bg-hover transition-all duration-300"
                 >
                   Run another scenario
                 </button>

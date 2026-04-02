@@ -203,14 +203,14 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
       <button
         type="button"
         onClick={() => setShowAdvanced(!showAdvanced)}
-        className="flex items-center gap-1.5 text-body-sm text-text-secondary hover:text-text-primary transition-colors duration-150 self-start"
+        className="flex items-center gap-1.5 text-body-sm text-text-secondary hover:text-text-primary transition-colors duration-300 self-start"
       >
         <svg
           width="12"
           height="12"
           viewBox="0 0 12 12"
           fill="none"
-          className={`transition-transform duration-150 ${showAdvanced ? "rotate-90" : ""}`}
+          className={`transition-transform duration-300 ${showAdvanced ? "rotate-90" : ""}`}
         >
           <path
             d="M4.5 2.5l3.5 3.5-3.5 3.5"
@@ -264,7 +264,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
       <div className="flex flex-col gap-default">
         <label className="flex items-center gap-3 cursor-pointer group">
           <span
-            className={`relative inline-flex h-5 w-9 items-center rounded-[4px] transition-colors duration-150 ${
+            className={`relative inline-flex h-5 w-9 items-center rounded-lg transition-colors duration-300 ${
               includeAca ? "bg-accent" : "bg-border-emphasis"
             }`}
             onClick={(e) => {
@@ -275,12 +275,12 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
             aria-checked={includeAca}
           >
             <span
-              className={`inline-block h-3.5 w-3.5 transform rounded-[3px] bg-white transition-transform duration-150 ${
+              className={`inline-block h-3.5 w-3.5 transform rounded-lg bg-white transition-transform duration-300 ${
                 includeAca ? "translate-x-4" : "translate-x-0.5"
               }`}
             />
           </span>
-          <span className="text-body text-text-primary group-hover:text-text-primary transition-colors duration-150">
+          <span className="text-body text-text-primary group-hover:text-text-primary transition-colors duration-300">
             I buy health insurance on the ACA marketplace
           </span>
         </label>

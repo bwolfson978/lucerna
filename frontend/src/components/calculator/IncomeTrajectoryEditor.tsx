@@ -128,7 +128,7 @@ export function IncomeTrajectoryEditor({
                 <button
                   type="button"
                   onClick={() => removeYear(index)}
-                  className="text-text-tertiary hover:text-negative transition-colors duration-150 p-2 min-h-[44px] flex items-center"
+                  className="text-text-tertiary hover:text-negative transition-colors duration-300 p-2 min-h-[44px] flex items-center"
                   aria-label={`Remove year ${row.year}`}
                 >
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">

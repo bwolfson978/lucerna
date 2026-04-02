@@ -115,7 +115,7 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
                 y={y + 4}
                 textAnchor="end"
                 className="text-[10px] fill-text-tertiary"
-                fontFamily="'JetBrains Mono', monospace"
+                fontFamily="'Manrope', system-ui"
               >
                 ${Math.round(b.max / 1000)}K
               </text>
@@ -182,7 +182,7 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
                   y={CHART_HEIGHT - 6}
                   textAnchor="middle"
                   className="text-[10px] fill-text-tertiary"
-                  fontFamily="'JetBrains Mono', monospace"
+                  fontFamily="'Manrope', system-ui"
                 >
                   {yearData.year}
                 </text>
@@ -208,7 +208,7 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
                 x={6}
                 y={y + 4}
                 className="text-[11px] font-medium"
-                fontFamily="'JetBrains Mono', monospace"
+                fontFamily="'Manrope', system-ui"
                 fill={color}
               >
                 {formatPercent(b.rate)}
