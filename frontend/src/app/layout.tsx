@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Lucerna — See your financial future clearly",
   description:
-    "Multi-year Roth conversion optimizer. Find the optimal conversion schedule across your income trajectory.",
+    "Multi-year Roth conversion analysis. Compare conversion schedules across your income trajectory.",
   openGraph: {
     title: "Lucerna — See your financial future clearly",
     description:
-      "Multi-year Roth conversion optimizer. Find the optimal conversion schedule across your income trajectory.",
+      "Multi-year Roth conversion analysis. Compare conversion schedules across your income trajectory.",
     type: "website",
   },
 };
@@ -34,7 +35,9 @@ export default function RootLayout({
         />
       </head>
       <body>
-        {children}
+        <TooltipProvider delayDuration={300}>
+          {children}
+        </TooltipProvider>
         <Analytics />
       </body>
     </html>

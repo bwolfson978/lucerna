@@ -3,6 +3,7 @@
 import type { YearlyDetail, LifeEvent } from "@/lib/types";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
 import { LIFE_EVENT_LABELS } from "@/lib/utils/constants";
+import { Tooltip } from "@/components/common/Tooltip";
 import { useRef } from "react";
 
 interface YearOverride {
@@ -62,16 +63,19 @@ export function TransposedDetailTable({
         <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
           Tax cost
         </div>
-        <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
+        <div className="h-8 flex items-center gap-0.5 text-text-tertiary text-[10px] font-medium px-1">
           Eff. rate
+          <Tooltip content="The average tax rate on your total conversion amount — total tax paid divided by total converted." />
         </div>
-        <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
+        <div className="h-8 flex items-center gap-0.5 text-text-tertiary text-[10px] font-medium px-1">
           Marginal
+          <Tooltip content="The tax rate on the next dollar converted — determines whether converting more would still be beneficial." />
         </div>
       </div>
 
       {/* Scrollable columns (synced with chart scroll) */}
-      <div ref={scrollRef} className="overflow-x-auto flex-1 bracket-chart-scroll">
+      <div className="scroll-fade flex-1 min-w-0">
+      <div ref={scrollRef} className="overflow-x-auto bracket-chart-scroll">
         <div className="flex" style={{ width: `${years.length * colWidth}px` }}>
           {years.map((yearInfo, i) => {
             const detail = details[i];
@@ -164,6 +168,7 @@ export function TransposedDetailTable({
             );
           })}
         </div>
+      </div>
       </div>
     </div>
   );

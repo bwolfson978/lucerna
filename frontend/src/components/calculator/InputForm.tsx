@@ -2,9 +2,12 @@
 
 import { useState, FormEvent } from "react";
 import type { ScenarioInput, YearlyIncome, FilingStatus, HealthcareInput } from "@/lib/types";
-import { Input } from "@/components/common/Input";
-import { Select } from "@/components/common/Select";
+import { FormField } from "@/components/common/FormField";
+import { FormSelect } from "@/components/common/FormSelect";
 import { GlowButton } from "@/components/common/GlowButton";
+import { Switch } from "@/components/ui/switch";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { Label } from "@/components/ui/label";
 import { CURRENT_YEAR } from "@/lib/utils/constants";
 
 interface InputFormProps {
@@ -65,12 +68,25 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const errs: Record<string, string> = {};
-    if (age < 18 || age > 80) errs.age = "Age must be between 18 and 80";
+    if (age < 0 || age > 120) errs.age = "Age must be between 0 and 120";
     if (retirementAge <= age)
       errs.retirementAge = "Retirement age must be greater than current age";
+    if (retirementAge < 1 || retirementAge > 120)
+      errs.retirementAge = "Retirement age must be between 1 and 120";
     if (currentIncome < 0) errs.currentIncome = "Income cannot be negative";
     if (traditionalBalance <= 0)
-      errs.traditionalBalance = "Enter your traditional IRA balance";
+      errs.traditionalBalance = "Enter your traditional IRA/401(k) balance";
+    if (rothBalance < 0) errs.rothBalance = "Roth balance cannot be negative";
+    if (yearsInRetirement < 1)
+      errs.yearsInRetirement = "Must be at least 1 year";
+    if (retirementSpending !== null && retirementSpending < 0)
+      errs.retirementSpending = "Spending cannot be negative";
+    if (includeAca) {
+      if (householdSize < 1)
+        errs.householdSize = "Household must have at least 1 person";
+      if (monthlySlcspPremium < 0)
+        errs.monthlySlcspPremium = "Premium cannot be negative";
+    }
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
@@ -108,23 +124,23 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-section">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-default">
-        <Input
+        <FormField
           label="Age"
           type="number"
           value={age}
           numeric
-          min={18}
-          max={80}
+          min={0}
+          max={120}
           error={errors.age}
           onChange={(e) => setAge(parseInt(e.target.value) || 0)}
         />
-        <Select
+        <FormSelect
           label="Filing status"
           value={filingStatus}
           options={FILING_STATUS_OPTIONS}
           onChange={(e) => setFilingStatus(e.target.value as FilingStatus)}
         />
-        <Input
+        <FormField
           label="Current income"
           type="number"
           value={currentIncome || ""}
@@ -134,8 +150,8 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           error={errors.currentIncome}
           onChange={(e) => setCurrentIncome(parseFloat(e.target.value) || 0)}
         />
-        <Input
-          label="Traditional IRA balance"
+        <FormField
+          label="Traditional IRA/401(k) balance"
           type="number"
           value={traditionalBalance || ""}
           placeholder="0"
@@ -147,49 +163,49 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
             setTraditionalBalance(parseFloat(e.target.value) || 0)
           }
         />
-        <Input
+        <FormField
           label="Retirement age"
           type="number"
           value={retirementAge}
           numeric
-          min={30}
-          max={80}
+          min={1}
+          max={120}
           error={errors.retirementAge}
           onChange={(e) => setRetirementAge(parseInt(e.target.value) || 65)}
         />
-        <Input
-          label="Roth IRA balance"
+        <FormField
+          label="Roth IRA/401(k) balance"
           type="number"
           value={rothBalance || ""}
           placeholder="0"
           numeric
           min={0}
-          helper="Existing Roth balance (optional)"
+          error={errors.rothBalance}
+          helper="Existing Roth IRA/401(k) balance (optional)"
           onChange={(e) => setRothBalance(parseFloat(e.target.value) || 0)}
         />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-default">
-        <Input
+        <FormField
           label="Income growth rate (%)"
           type="number"
           value={incomeGrowthRate}
           numeric
-          min={0}
-          max={15}
           step={0.5}
           helper="Annual income growth assumption"
           onChange={(e) =>
             setIncomeGrowthRate(parseFloat(e.target.value) || 0)
           }
         />
-        <Input
+        <FormField
           label="Yearly spend in retirement"
           type="number"
           value={retirementSpending || ""}
           placeholder="Auto (4% rule)"
           numeric
           min={0}
+          error={errors.retirementSpending}
           helper="Leave blank to use the 4% rule"
           onChange={(e) =>
             setRetirementSpending(
@@ -199,110 +215,98 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
         />
       </div>
 
-      {/* Advanced settings toggle */}
-      <button
-        type="button"
-        onClick={() => setShowAdvanced(!showAdvanced)}
-        className="flex items-center gap-1.5 text-body-sm text-text-secondary hover:text-text-primary transition-colors duration-300 self-start"
-      >
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 12 12"
-          fill="none"
-          className={`transition-transform duration-300 ${showAdvanced ? "rotate-90" : ""}`}
-        >
-          <path
-            d="M4.5 2.5l3.5 3.5-3.5 3.5"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        Advanced settings
-      </button>
+      {/* Advanced settings */}
+      <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className="flex items-center gap-1.5 text-body-sm text-text-secondary hover:text-text-primary transition-colors duration-300 self-start"
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              className={`transition-transform duration-300 ${showAdvanced ? "rotate-90" : ""}`}
+            >
+              <path
+                d="M4.5 2.5l3.5 3.5-3.5 3.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Advanced settings
+          </button>
+        </CollapsibleTrigger>
 
-      {showAdvanced && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-default">
-          <Input
-            label="Years in retirement"
-            type="number"
-            value={yearsInRetirement}
-            numeric
-            min={5}
-            onChange={(e) =>
-              setYearsInRetirement(parseInt(e.target.value) || 25)
-            }
-          />
-          <Input
-            label="Investment return (%)"
-            type="number"
-            value={growthRate}
-            numeric
-            min={0}
-            max={20}
-            step={0.5}
-            helper="Expected annual return"
-            onChange={(e) => setGrowthRate(parseFloat(e.target.value) || 7)}
-          />
-          <Input
-            label="Discount rate (%)"
-            type="number"
-            value={discountRate}
-            numeric
-            min={0}
-            max={15}
-            step={0.5}
-            helper="Time value of money"
-            onChange={(e) => setDiscountRate(parseFloat(e.target.value) || 5)}
-          />
-        </div>
-      )}
+        <CollapsibleContent>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-default pt-default">
+            <FormField
+              label="Years in retirement"
+              type="number"
+              value={yearsInRetirement}
+              numeric
+              min={1}
+              error={errors.yearsInRetirement}
+              onChange={(e) =>
+                setYearsInRetirement(parseInt(e.target.value) || 25)
+              }
+            />
+            <FormField
+              label="Investment return (%)"
+              type="number"
+              value={growthRate}
+              numeric
+              step={0.5}
+              helper="Expected annual return"
+              onChange={(e) => setGrowthRate(parseFloat(e.target.value) || 7)}
+            />
+            <FormField
+              label="Discount rate (%)"
+              type="number"
+              value={discountRate}
+              numeric
+              step={0.5}
+              helper="Time value of money"
+              onChange={(e) => setDiscountRate(parseFloat(e.target.value) || 5)}
+            />
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* ACA marketplace coverage */}
       <div className="flex flex-col gap-default">
-        <label className="flex items-center gap-3 cursor-pointer group">
-          <span
-            className={`relative inline-flex h-5 w-9 items-center rounded-lg transition-colors duration-300 ${
-              includeAca ? "bg-accent" : "bg-border-emphasis"
-            }`}
-            onClick={(e) => {
-              e.preventDefault();
-              setIncludeAca(!includeAca);
-            }}
-            role="switch"
-            aria-checked={includeAca}
-          >
-            <span
-              className={`inline-block h-3.5 w-3.5 transform rounded-lg bg-white transition-transform duration-300 ${
-                includeAca ? "translate-x-4" : "translate-x-0.5"
-              }`}
-            />
-          </span>
-          <span className="text-body text-text-primary group-hover:text-text-primary transition-colors duration-300">
+        <div className="flex items-center gap-3">
+          <Switch
+            id="aca-toggle"
+            checked={includeAca}
+            onCheckedChange={setIncludeAca}
+          />
+          <Label htmlFor="aca-toggle" className="text-body text-text-primary cursor-pointer">
             I buy health insurance on the ACA marketplace
-          </span>
-        </label>
+          </Label>
+        </div>
         <p className="text-body-sm text-text-tertiary -mt-1">
           Accounts for how Roth conversions affect your premium subsidy
         </p>
 
         {includeAca && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-default">
-            <Input
+            <FormField
               label="Household size"
               type="number"
               value={householdSize}
               numeric
               min={1}
-              max={10}
+              error={errors.householdSize}
               helper="People in your tax household"
               onChange={(e) =>
                 setHouseholdSize(parseInt(e.target.value) || 1)
               }
             />
-            <Input
+            <FormField
               label="Monthly benchmark premium"
               type="number"
               value={monthlySlcspPremium || ""}
@@ -310,12 +314,13 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
               numeric
               min={0}
               step={10}
+              error={errors.monthlySlcspPremium}
               helper="2nd-lowest Silver plan on healthcare.gov"
               onChange={(e) =>
                 setMonthlySlcspPremium(parseFloat(e.target.value) || 620)
               }
             />
-            <Input
+            <FormField
               label="Employer coverage resumes"
               type="number"
               value={employerCoverageYear || ""}

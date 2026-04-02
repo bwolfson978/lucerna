@@ -4,6 +4,7 @@ import type { AcaSubsidyDetail, OptimizationResult } from "@/lib/types";
 import { MetricCard } from "@/components/common/MetricCard";
 import { Tooltip } from "@/components/common/Tooltip";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
+import { Card } from "@/components/ui/card";
 
 interface AcaSubsidyImpactProps {
   result: OptimizationResult;
@@ -64,12 +65,13 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
           value={formatPercent(acaSummary.effective_combined_rate)}
           delta="tax + subsidy per dollar converted"
           deltaType="neutral"
+          tooltip="The blended rate including both federal tax and ACA subsidy reduction per dollar converted."
         />
       </div>
 
       {/* Per-year breakdown table */}
       {hasImpact && (
-        <div className="card p-0 overflow-x-auto">
+        <Card className="p-0 overflow-x-auto">
           <table className="w-full text-body-sm">
             <thead>
               <tr className="border-b border-border text-text-secondary">
@@ -161,7 +163,7 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
               ))}
             </tbody>
           </table>
-        </div>
+        </Card>
       )}
 
       {/* Explanation */}

@@ -4,6 +4,7 @@ import type { BracketFillResult } from "@/lib/types";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
 import { BRACKET_COLORS, CHART_COLORS } from "@/lib/utils/constants";
 import { Tooltip } from "@/components/common/Tooltip";
+import { Card } from "@/components/ui/card";
 
 interface BracketFillChartProps {
   data: BracketFillResult[];
@@ -16,7 +17,7 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
   const maxCapacity = Math.max(...data.map((b) => b.bracket_capacity));
 
   return (
-    <div className="card flex flex-col gap-default">
+    <Card className="flex flex-col gap-default">
       <div className="flex items-center gap-2">
         <h3 className="text-h3 text-text-primary">
           Bracket fill{year ? ` — ${year}` : ""}
@@ -56,9 +57,6 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
           const incomeWidth = bracket.filled_by_income * scale;
           const conversionWidth = bracket.filled_by_conversion * scale;
           const remainingWidth = bracket.remaining_capacity * scale;
-
-          const color =
-            BRACKET_COLORS[bracket.bracket_rate.toFixed(2)] || "#6B7280";
 
           return (
             <g key={bracket.bracket_rate}>
@@ -108,16 +106,6 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
                 />
               )}
 
-              {/* Bracket color indicator */}
-              <rect
-                x={barX - 5}
-                y={y + 2}
-                width={3}
-                height={30}
-                fill={color}
-                rx={1.5}
-              />
-
               {/* Dollar amount label */}
               {bracket.filled_by_income + bracket.filled_by_conversion >
                 0 && (
@@ -142,6 +130,6 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
           );
         })}
       </svg>
-    </div>
+    </Card>
   );
 }

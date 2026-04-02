@@ -3,6 +3,29 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --background: 245 30% 8%;
+    --background-alt: 245 35% 15%;
+    --background-elevated: 255 30% 21%;
+    --background-hover: 244 15% 20%;
+    --foreground: 39 44% 96%;
+    --muted-foreground: 254 27% 76%;
+    --tertiary-foreground: 244 7% 57%;
+    --border: 0 0% 100% / 0.08;
+    --border-emphasis: 0 0% 100% / 0.15;
+    --accent: 40 80% 70%;
+    --accent-hover: 38 79% 56%;
+    --accent-light: 40 80% 70% / 0.15;
+    --accent-muted: 40 80% 70% / 0.08;
+    --optimal: 149 42% 55%;
+    --destructive: 0 72% 67%;
+    --neutral: 244 7% 57%;
+    --card: 245 30% 8%;
+    --card-foreground: 39 44% 96%;
+    --ring: 40 80% 70%;
+    --radius: 12px;
+  }
+
   body {
     @apply text-body text-text-primary bg-bg font-sans antialiased;
   }
@@ -58,18 +81,20 @@
     box-shadow: 0 12px 40px rgba(15, 14, 26, 0.5);
   }
 
+  /* Domain-specific data display tokens */
   .metric-label {
     @apply text-caption font-ui text-text-tertiary uppercase tracking-wide;
   }
 
   .metric-value {
-    @apply text-data-lg font-mono text-text-primary;
+    @apply text-h2 sm:text-data-lg font-mono text-text-primary;
   }
 
   .metric-value-hero {
     @apply text-data-hero font-mono font-extrabold text-text-primary;
   }
 
+  /* Badge variants */
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-medium uppercase tracking-wide;
   }
@@ -184,4 +209,25 @@ input[type="range"]::-moz-range-thumb {
   border: 2px solid #0F0E1A;
   cursor: pointer;
   box-shadow: 0 0 8px rgba(240, 198, 116, 0.3);
+}
+
+/* Horizontal scroll fade indicator — signals more content off-screen */
+.scroll-fade {
+  position: relative;
+}
+
+.scroll-fade::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 24px;
+  background: linear-gradient(to right, transparent, hsl(var(--card)));
+  pointer-events: none;
+  z-index: 1;
+}
+
+.scroll-fade[data-scrolled-end]::after {
+  display: none;
 }

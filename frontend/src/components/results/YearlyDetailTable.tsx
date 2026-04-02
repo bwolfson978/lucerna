@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { YearlyDetail } from "@/lib/types";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
+import { Card } from "@/components/ui/card";
 
 interface YearlyDetailTableProps {
   details: YearlyDetail[];
@@ -41,7 +42,7 @@ export function YearlyDetailTable({ details }: YearlyDetailTableProps) {
       </button>
 
       {expanded && (
-        <div className="card overflow-x-auto">
+        <Card className="overflow-x-auto">
           <table className="w-full text-body-sm">
             <thead>
               <tr className="border-b border-border text-text-secondary text-left">
@@ -89,7 +90,7 @@ export function YearlyDetailTable({ details }: YearlyDetailTableProps) {
               ))}
             </tbody>
           </table>
-        </div>
+        </Card>
       )}
     </div>
   );

@@ -1,9 +1,10 @@
 "use client";
 
 import type { BracketFillResult } from "@/lib/types";
-import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
+import { formatPercent } from "@/lib/utils/formatting";
 import { BRACKET_COLORS, CHART_COLORS } from "@/lib/utils/constants";
 import { useRef, useMemo } from "react";
+import { Card } from "@/components/ui/card";
 
 interface YearData {
   year: number;
@@ -42,6 +43,19 @@ const CHART_HEIGHT = 320;
 const TOP_PADDING = 16;
 const BOTTOM_PADDING = 40;
 
+/** Pick a nice round interval for evenly spaced tick marks. */
+function niceInterval(range: number, targetTicks: number): number {
+  const rough = range / targetTicks;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rough)));
+  const residual = rough / magnitude;
+  let nice: number;
+  if (residual <= 1.5) nice = 1;
+  else if (residual <= 3) nice = 2;
+  else if (residual <= 7) nice = 5;
+  else nice = 10;
+  return nice * magnitude;
+}
+
 export function BracketChart({ years, filingStatus }: BracketChartProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const brackets = BRACKET_BOUNDARIES[filingStatus];
@@ -76,12 +90,22 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
     return CHART_HEIGHT - BOTTOM_PADDING - ratio * drawableHeight;
   };
 
+  // Evenly spaced income tick marks for left axis
+  const incomeTicks = useMemo(() => {
+    const interval = niceInterval(chartMax, 5);
+    const ticks: number[] = [];
+    for (let v = 0; v <= chartMax; v += interval) {
+      ticks.push(v);
+    }
+    return ticks;
+  }, [chartMax]);
+
   const totalBarWidth = years.length * (BAR_WIDTH + BAR_GAP);
   const leftLabelWidth = 70;
-  const rightLabelWidth = 50;
+  const rightLabelWidth = 90;
 
   return (
-    <div className="card flex flex-col gap-default">
+    <Card className="flex flex-col gap-default">
       {/* Legend */}
       <div className="flex items-center gap-5 text-body-sm text-text-secondary">
         <span className="flex items-center gap-1.5">
@@ -99,34 +123,43 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
       </div>
 
       <div className="flex">
-        {/* Fixed left axis: dollar amounts */}
+        {/* Fixed left axis: evenly spaced income tick marks */}
         <svg
           width={leftLabelWidth}
           height={CHART_HEIGHT}
           className="flex-shrink-0"
         >
-          {brackets.map((b) => {
-            if (b.max > chartMax) return null;
-            const y = yScale(b.max);
+          {incomeTicks.map((val) => {
+            const y = yScale(val);
             return (
-              <text
-                key={b.rate}
-                x={leftLabelWidth - 6}
-                y={y + 4}
-                textAnchor="end"
-                className="text-[10px] fill-text-tertiary"
-                fontFamily="'Manrope', system-ui"
-              >
-                ${Math.round(b.max / 1000)}K
-              </text>
+              <g key={`tick-${val}`}>
+                <line
+                  x1={leftLabelWidth - 4}
+                  y1={y}
+                  x2={leftLabelWidth}
+                  y2={y}
+                  stroke="rgba(255,255,255,0.15)"
+                  strokeWidth={1}
+                />
+                <text
+                  x={leftLabelWidth - 6}
+                  y={y + 4}
+                  textAnchor="end"
+                  className="text-[10px] fill-text-tertiary"
+                  fontFamily="'Manrope', system-ui"
+                >
+                  ${Math.round(val / 1000)}K
+                </text>
+              </g>
             );
           })}
         </svg>
 
         {/* Scrollable bar area */}
+        <div className="scroll-fade flex-1 min-w-0">
         <div
           ref={scrollRef}
-          className="overflow-x-auto flex-1 bracket-chart-scroll"
+          className="overflow-x-auto bracket-chart-scroll"
         >
           <svg
             width={Math.max(totalBarWidth, 200)}
@@ -190,8 +223,9 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
             })}
           </svg>
         </div>
+        </div>
 
-        {/* Fixed right axis: bracket rate labels */}
+        {/* Fixed right axis: bracket rate + dollar range */}
         <svg
           width={rightLabelWidth}
           height={CHART_HEIGHT}
@@ -211,13 +245,13 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
                 fontFamily="'Manrope', system-ui"
                 fill={color}
               >
-                {formatPercent(b.rate)}
+                {formatPercent(b.rate)} (${Math.round(b.max / 1000)}K)
               </text>
             );
           })}
         </svg>
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -270,9 +304,6 @@ function BracketBar({
         const convTop = yScale(segmentTop);
         const convHeight = convBottom - convTop;
 
-        const bracketColor =
-          BRACKET_COLORS[bf.bracket_rate.toFixed(2)] || "#6B7280";
-
         return (
           <g key={bf.bracket_rate}>
             {/* Remaining capacity (warm light background) */}
@@ -289,7 +320,7 @@ function BracketBar({
               />
             )}
 
-            {/* Income portion (warm stone gray) */}
+            {/* Income portion */}
             {incomeHeight > 1 && (
               <rect
                 x={x}
@@ -302,7 +333,7 @@ function BracketBar({
               />
             )}
 
-            {/* Conversion portion (warm amber) */}
+            {/* Conversion portion */}
             {convHeight > 1 && (
               <rect
                 x={x}
@@ -315,15 +346,6 @@ function BracketBar({
               />
             )}
 
-            {/* Left bracket color indicator */}
-            <rect
-              x={x - 3}
-              y={yScale(bracketVisibleMax)}
-              width={2}
-              height={yScale(bf.bracket_min) - yScale(bracketVisibleMax)}
-              fill={bracketColor}
-              rx={1}
-            />
           </g>
         );
       })}
