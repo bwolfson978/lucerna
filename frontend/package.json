@@ -19,6 +19,7 @@
     "@radix-ui/react-tooltip": "^1.1.0",
     "@types/react-dom": "^19.2.3",
     "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "apexcharts": "^5.10.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
