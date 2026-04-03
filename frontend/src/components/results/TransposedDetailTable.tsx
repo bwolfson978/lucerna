@@ -49,7 +49,7 @@ function CompactCurrencyCell({
   const [focused, setFocused] = useState(false);
   const display = focused
     ? value === 0 ? "" : String(value)
-    : formatTableCurrency(value).replace("$", "");
+    : formatTableCurrency(value);
 
   return (
     <input
