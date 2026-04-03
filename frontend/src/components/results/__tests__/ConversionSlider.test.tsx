@@ -16,7 +16,7 @@ describe("ConversionSlider", () => {
     expect(screen.getByText("Conversion amount")).toBeInTheDocument();
   });
 
-  it("shows diamond legend instead of 'Optimal'", () => {
+  it("shows lantern legend instead of 'Optimal'", () => {
     render(<ConversionSlider {...defaultProps} />);
     expect(screen.queryByText(/Optimal/)).not.toBeInTheDocument();
     expect(

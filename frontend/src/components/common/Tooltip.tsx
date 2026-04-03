@@ -25,7 +25,7 @@ export function Tooltip({ content, children }: TooltipProps) {
               e.preventDefault();
               setOpen((prev) => !prev);
             }}
-            className="inline-flex items-center justify-center w-5 h-5 text-text-tertiary hover:text-text-secondary transition-colors duration-150"
+            className="inline-flex items-center justify-center w-5 h-5 text-text-tertiary hover:text-text-secondary transition-colors duration-300"
             aria-label="More info"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">

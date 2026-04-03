@@ -19,14 +19,14 @@ export function YearlyDetailTable({ details }: YearlyDetailTableProps) {
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-2 text-h3 text-text-primary hover:text-accent transition-colors duration-150"
+        className="flex items-center gap-2 text-h3 text-text-primary hover:text-accent transition-colors duration-300"
       >
         <svg
           width="12"
           height="12"
           viewBox="0 0 12 12"
           fill="none"
-          className={`transition-transform duration-150 ${
+          className={`transition-transform duration-300 ${
             expanded ? "rotate-90" : ""
           }`}
         >
@@ -47,7 +47,7 @@ export function YearlyDetailTable({ details }: YearlyDetailTableProps) {
             <thead>
               <tr className="border-b border-border text-text-secondary text-left">
                 <th className="py-3 pr-4 font-medium">Year</th>
-                <th className="py-3 pr-4 font-medium text-right">Income</th>
+                <th className="py-3 pr-4 font-medium text-right">Earned Income</th>
                 <th className="py-3 pr-4 font-medium text-right">
                   Conversion
                 </th>

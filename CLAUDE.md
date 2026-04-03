@@ -23,7 +23,7 @@ Ask the user which workstream or task they're picking up.
 
 ## Design aesthetic
 
-When working on any frontend code, follow the design spec in `docs/design-aesthetic.md`. It defines Lucerna's visual language — colors, typography, spacing, component patterns, chart styling, and anti-patterns. Read it before building or modifying UI.
+The current aesthetic is **"Warm Midnight"** — a dark-mode, warm, premium design with glassmorphic cards, gold accents (#F0C674), and four-font typography (DM Serif Display, DM Sans, Inter, Manrope). When working on any frontend code, follow the design spec in `docs/design-aesthetic.md`. It defines Lucerna's visual language — colors, typography, spacing, component patterns, chart styling, and anti-patterns. Read it before building or modifying UI.
 
 ## Frontend guidelines
 

@@ -11,7 +11,7 @@ interface FormSelectProps extends SelectProps {
   error?: string;
 }
 
-const FormSelect = React.forwardRef<HTMLSelectElement, FormSelectProps>(
+const FormSelect = React.forwardRef<HTMLButtonElement, FormSelectProps>(
   ({ label, helper, error, className, id, ...props }, ref) => {
     const selectId = id || label?.toLowerCase().replace(/\s+/g, "-");
 

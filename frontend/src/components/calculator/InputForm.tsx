@@ -220,14 +220,14 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
         <CollapsibleTrigger asChild>
           <button
             type="button"
-            className="flex items-center gap-1.5 text-body-sm text-text-secondary hover:text-text-primary transition-colors duration-150 self-start"
+            className="flex items-center gap-1.5 text-body-sm text-text-secondary hover:text-text-primary transition-colors duration-300 self-start"
           >
             <svg
               width="12"
               height="12"
               viewBox="0 0 12 12"
               fill="none"
-              className={`transition-transform duration-150 ${showAdvanced ? "rotate-90" : ""}`}
+              className={`transition-transform duration-300 ${showAdvanced ? "rotate-90" : ""}`}
             >
               <path
                 d="M4.5 2.5l3.5 3.5-3.5 3.5"
@@ -342,7 +342,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
       {/* Submit */}
       <div className="pt-comfortable border-t border-border">
         <GlowButton type="submit" loading={loading}>
-          Analyze my scenario
+          Run my scenario
         </GlowButton>
       </div>
     </form>

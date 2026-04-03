@@ -114,7 +114,7 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
                   </td>
                   <td
                     className="px-3 py-2.5 text-right text-text-primary"
-                    style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                    style={{ fontFamily: "'Manrope', system-ui" }}
                   >
                     {formatCurrency(d.magi_with_conversion)}
                   </td>
@@ -126,19 +126,19 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
                           ? "text-caution"
                           : "text-text-primary"
                     }`}
-                    style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                    style={{ fontFamily: "'Manrope', system-ui" }}
                   >
                     {Math.round(d.income_pct_fpl)}%
                   </td>
                   <td
                     className="px-3 py-2.5 text-right text-text-secondary"
-                    style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                    style={{ fontFamily: "'Manrope', system-ui" }}
                   >
                     {formatCurrency(d.subsidy_without_conversion)}
                   </td>
                   <td
                     className="px-3 py-2.5 text-right text-text-primary"
-                    style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                    style={{ fontFamily: "'Manrope', system-ui" }}
                   >
                     {formatCurrency(d.subsidy_with_conversion)}
                   </td>
@@ -146,14 +146,14 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
                     className={`px-3 py-2.5 text-right font-medium ${
                       d.subsidy_lost > 0 ? "text-negative" : "text-text-primary"
                     }`}
-                    style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                    style={{ fontFamily: "'Manrope', system-ui" }}
                   >
                     {d.subsidy_lost > 0 ? "-" : ""}
                     {formatCurrency(d.subsidy_lost)}
                   </td>
                   <td
                     className="px-3 py-2.5 text-right text-text-primary"
-                    style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                    style={{ fontFamily: "'Manrope', system-ui" }}
                   >
                     {d.combined_marginal_rate > 0
                       ? formatPercent(d.combined_marginal_rate)

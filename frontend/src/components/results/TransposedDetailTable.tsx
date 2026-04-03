@@ -55,7 +55,7 @@ export function TransposedDetailTable({
           Life event
         </div>
         <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
-          Income
+          Earned Income
         </div>
         <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
           Conversion
@@ -125,14 +125,14 @@ export function TransposedDetailTable({
                         ? "text-accent font-medium"
                         : "text-text-primary"
                     }`}
-                    style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                    style={{ fontFamily: "'Manrope', system-ui" }}
                   />
                 </div>
 
                 {/* Conversion (read-only) */}
                 <div
                   className="h-8 flex items-center justify-center text-[10px] text-accent"
-                  style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                  style={{ fontFamily: "'Manrope', system-ui" }}
                 >
                   {detail ? formatCurrency(detail.conversion) : "—"}
                 </div>
@@ -140,7 +140,7 @@ export function TransposedDetailTable({
                 {/* Tax cost */}
                 <div
                   className="h-8 flex items-center justify-center text-[10px] text-text-primary"
-                  style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                  style={{ fontFamily: "'Manrope', system-ui" }}
                 >
                   {detail ? formatCurrency(detail.tax_cost) : "—"}
                 </div>
@@ -148,7 +148,7 @@ export function TransposedDetailTable({
                 {/* Effective rate */}
                 <div
                   className="h-8 flex items-center justify-center text-[10px] text-text-primary"
-                  style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                  style={{ fontFamily: "'Manrope', system-ui" }}
                 >
                   {detail ? formatPercent(detail.effective_rate) : "—"}
                 </div>
@@ -156,7 +156,7 @@ export function TransposedDetailTable({
                 {/* Marginal bracket */}
                 <div
                   className="h-8 flex items-center justify-center text-[10px] text-text-primary"
-                  style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                  style={{ fontFamily: "'Manrope', system-ui" }}
                 >
                   {detail
                     ? typeof detail.marginal_bracket === "number"

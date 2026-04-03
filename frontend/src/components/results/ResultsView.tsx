@@ -132,7 +132,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
             {!isAtOptimal && (
               <span
                 className="flex items-center gap-1 text-body-sm text-negative font-medium"
-                style={{ fontFamily: "'JetBrains Mono', monospace" }}
+                style={{ fontFamily: "'Manrope', system-ui" }}
               >
                 <svg
                   width="12"

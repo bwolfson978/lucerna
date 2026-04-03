@@ -12,25 +12,22 @@ export function Header() {
       )}
     >
       <div className="w-full max-w-content mx-auto flex items-center justify-between">
-        <Link href="/" className="text-[18px] font-bold text-text-primary tracking-tight">
+        <Link href="/" className="font-serif text-[18px] font-bold tracking-tight brand-gradient">
           Lucerna
         </Link>
-        <nav className="flex items-center gap-3">
+        <nav className="flex items-center gap-5">
           <Link
             href="/demo"
-            className="text-body text-text-secondary hover:text-text-primary transition-colors duration-150"
+            className="text-body-sm text-text-secondary hover:text-accent transition-colors duration-300"
           >
-            See demo
+            Demo
           </Link>
+          <span className="text-text-tertiary opacity-40">|</span>
           <Link
             href="/calculator"
-            className={cn(
-              "glow-button inline-flex items-center justify-center",
-              "h-9 min-h-[44px] px-5 rounded-md text-white text-body font-medium",
-              "active:scale-[0.98] transition-all duration-150"
-            )}
+            className="text-body-sm text-text-secondary hover:text-accent transition-colors duration-300"
           >
-            Run your scenario
+            Run Your Own Scenario
           </Link>
         </nav>
       </div>

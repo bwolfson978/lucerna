@@ -1,127 +1,152 @@
 # Lucerna — Design Aesthetic Spec
 
-**Last updated:** March 17, 2026
+**Last updated:** April 2, 2026
 **Place in repo:** `docs/design-aesthetic.md`
 
 ---
 
-## Design Philosophy
+## Design Philosophy — "Warm Midnight"
 
-Lucerna's aesthetic sits at the intersection of **Linear's discipline** and **ProjectionLab's data richness.** The tool should feel like a serious instrument built by and for people who think analytically — sharp, fast, information-dense, and high-contrast. It should NOT feel like a consumer fintech app (no rounded-everything, no pastel illustrations, no hand-holding).
+Lucerna's aesthetic is **warm, sophisticated, and premium**. A dark-mode foundation with golden accents creates a sense of illumination — the core Lucerna metaphor (Latin for light, lamp, lantern). The design sits between institutional confidence and personal warmth: serious enough for retirement savings, but never cold or clinical.
 
-**One sentence:** Lucerna looks like what would happen if a quant built a financial planning tool and actually cared about design.
+**One sentence:** Lucerna feels like a private wealth tool that was designed by someone who understands both finance and beauty.
 
-**Core principles (in priority order):**
-1. **Clarity over decoration.** Every pixel should inform, never decorate. If it doesn't help the user understand their financial situation, remove it.
-2. **High contrast, high confidence.** Strong blacks, clean whites, sharp type. The interface should feel decisive, not tentative.
-3. **Data is the hero.** Charts, numbers, and visualizations are the primary visual elements — not illustrations, icons, or marketing copy. The data IS the design.
-4. **Dense but not cluttered.** Respect the user's intelligence. Show more information, not less — but with rigorous visual hierarchy so the eye knows where to go.
-5. **Speed and responsiveness.** Interactions should feel instant. Animations are quick and functional (150-250ms), never slow and decorative.
+**Design principles (in priority order):**
+1. **Illuminate, Don't Overwhelm.** Every piece of information should feel like it was placed there to help you see more clearly. If it doesn't illuminate a decision, it doesn't belong on screen.
+2. **Warm Precision.** Be exact with numbers but human with language. Data should be pixel-perfect; copy should feel like a knowledgeable friend explaining your options.
+3. **Progressive Complexity.** Start simple. Let users peel back layers. The first view should be "here's what to do." The deep view should satisfy Bogleheads.
+4. **Respect the Stakes.** People's retirement savings are on the line. No dark patterns, no gamification of serious decisions. Confidence comes from clarity, not persuasion.
+
+**Vibes:** Illuminated, Trustworthy, Premium, Precise, Calm, Forward-Looking.
 
 ---
 
 ## Reference Calibration
 
-| Attribute | Linear (primary ref) | ProjectionLab (secondary ref) | Lucerna target |
-|-----------|---------------------|------------------------------|----------------|
-| Whitespace | Compact, efficient | Moderate | Compact — more Linear than ProjectionLab |
-| Color usage | Near-monochromatic + one accent | Colorful charts on light bg | Monochromatic UI + colorful data visualizations |
-| Typography | Tight, sharp, medium weight | Standard, clean | Tight and sharp like Linear |
-| Borders | Subtle, 1px, low opacity | Light borders | Subtle, 0.5-1px, low opacity |
-| Border radius | Small (4-6px) | Medium (8px) | Small — 4px default, 6px for cards. NOT rounded/pill-shaped |
-| Shadows | Almost none | Subtle card shadows | None. Use borders for elevation, not shadows |
-| Information density | High | Medium-high | High — closer to Linear |
-| Animations | Snappy, functional | Smooth chart transitions | Snappy for UI, smooth for charts |
-| Overall feel | Technical, fast, serious | Polished, approachable, data-forward | Technical and data-forward |
+| Product | What to take from it |
+|---------|---------------------|
+| **ProjectionLab** | Closest competitor / gold standard. Glassmorphic chart tooltips, dark mode as default. Match this polish while differentiating with warmer aesthetics. |
+| **Wealthfront** | Deep Mirage base + purple accents. Proves dark + purple creates institutional trust. |
+| **Betterment** | Sunglow yellow on deep navy — similar energy to our gold on midnight. |
+| **Linear** | Gold standard for keyboard-driven UIs and micro-interactions. Every transition feels intentional. |
+| **Vercel** | Masterclass in dark UI. Subtle borders, perfect contrast ratios, elegant gradient usage. |
+| **Stripe** | How to make complex financial information navigable. Progressive disclosure, excellent data formatting. |
 
 ---
 
 ## Typography
 
-**Font:** Use a sharp, technical sans-serif. Recommendations (in order of preference):
-- **JetBrains Mono** for numbers/data (monospaced, designed for readability of code and numbers)
-- **Geist Sans** for body text and UI (Vercel's typeface — sharp, modern, excellent at small sizes)
-- Fallback: `system-ui, -apple-system, sans-serif`
+**Four-font system:**
 
-**DO NOT use:** Inter (overused in AI tools), Roboto (generic), or any rounded/friendly typeface.
+| Role | Font | Usage |
+|------|------|-------|
+| **Display** | DM Serif Display | Page titles, hero text, brand moments. Warm, humanist serif with subtle contrast. |
+| **Body** | DM Sans | Descriptions, explanations, tooltips. Geometric but warm, low stroke contrast. Variable 300–700. |
+| **UI** | Inter | Buttons, labels, navigation, form inputs, captions. Designed for screens, razor-sharp at small sizes. |
+| **Data** | Manrope 700 | Dashboard metrics, chart labels, financial figures. Softer terminals than Inter, generous x-height. Makes numbers feel confident. |
 
 **Type scale:**
 ```
-Display/hero:    36px / 600 weight / -0.02em tracking
-H1:              28px / 600 weight / -0.02em tracking
-H2:              22px / 600 weight / -0.01em tracking  
-H3:              17px / 600 weight / -0.01em tracking
-Body:            14px / 400 weight / normal tracking
-Body small:      13px / 400 weight / normal tracking
-Caption/label:   12px / 500 weight / 0.01em tracking (uppercase sparingly)
-Data/numbers:    Use JetBrains Mono at same sizes as body
-Large number:    28-36px / 500 weight / JetBrains Mono / -0.02em tracking
+Display XL:      48px / 800 weight / -0.02em / DM Serif Display
+Display:         36px / 700 weight / -0.02em / DM Serif Display
+Heading:         24px / 600 weight / -0.01em / DM Sans
+Subheading:      18px / 500 weight / DM Sans
+Body:            16px / 400 weight / DM Sans
+Body small:      14px / 400 weight / DM Sans
+Caption/label:   13px / 500 weight / 0.01em / Inter (uppercase sparingly)
+Data large:      28px / 700 weight / -0.02em / Manrope
+Data hero:       40px / 800 weight / -0.02em / Manrope
 ```
 
 **Key rules:**
-- Numbers should ALWAYS be in the monospaced font — this ensures columns align and dollar amounts are instantly scannable
-- Headings use negative letter-spacing (tighter) for that sharp, compressed feel
-- Body text is 14px, not 16px — this keeps information density high while remaining readable
-- Line height: 1.4 for body, 1.2 for headings, 1.0 for large display numbers
+- Financial numbers and metrics use Manrope 700 — this makes numbers feel confident without being aggressive
+- Display/brand text uses DM Serif Display — warmth and sophistication
+- UI labels and captions use Inter — precise and sharp at small sizes
+- Body text is 16px (readable on dark backgrounds)
+- Headings use negative letter-spacing for a tight, compressed feel
+- Use `font-variant-numeric: tabular-nums` on data columns for alignment
 
 ---
 
-## Color System
+## Color System — "Warm Midnight"
 
-The UI is near-monochromatic. Color is reserved almost exclusively for data visualization and semantic meaning.
-
-### UI Colors (light mode)
+### Primary — Dark Foundation
 ```
-Background:        #FFFFFF (primary surfaces)
-Background alt:    #FAFAFA (secondary surfaces, input fields)
-Background hover:  #F5F5F5
-Border:            rgba(0, 0, 0, 0.08) — very subtle
-Border emphasis:   rgba(0, 0, 0, 0.15)
-Text primary:      #0A0A0A (near-black, not pure black)
-Text secondary:    #6B6B6B
-Text tertiary:     #9B9B9B (hints, placeholders)
+Midnight:          #0F0E1A — main page background
+Deep Navy:         #1A1832 — card/surface backgrounds, input backgrounds
+Plum:              #2D2545 — elevated surfaces, tooltip backgrounds
+Charcoal:          #2C2B3A — hover states, subtle emphasis
 ```
 
-### UI Colors (dark mode — design for this eventually, not M1)
+### Accent — Warm Golds
 ```
-Background:        #0A0A0A
-Background alt:    #141414
-Border:            rgba(255, 255, 255, 0.08)
-Text primary:      #EDEDED
-Text secondary:    #8B8B8B
+Warm Gold:         #F0C674 — primary accent, CTAs, links, active states
+Amber Glow:        #E8A838 — hover/active accent, stronger emphasis
+Soft Purple:       #6C5CE7 — secondary accent, tags, secondary buttons
+Light Lavender:    #B8B0D2 — muted labels, secondary text
 ```
 
-### Accent Color
+### Text
 ```
-Accent:            #2563EB (a strong, trustworthy blue — used sparingly)
-Accent hover:      #1D4ED8
-Accent light bg:   #EFF6FF (for badges, highlights)
+Cream:             #FAF7F2 — primary text (headings, body)
+Warm White:        #F5F0EA — slightly warmer for specific highlights
+Lavender:          #B8B0D2 — secondary text
+Neutral:           #8B8A99 — tertiary text, placeholders
 ```
-Use the accent color ONLY for: primary CTA buttons, active states, links, and the "optimal" marker in charts. Everything else should be grayscale.
+
+### Supporting — Natural Tones
+```
+Soft Sage:         #A8C5A0 — growth, positive trends
+Sea Glass:         #7EC8C8 — clarity, informational
+Rose:              #E8837C — attention, warnings
+Trust Blue:        #4A6FA5 — stability, trust signals
+```
+
+### Functional
+```
+Positive:          #5EBD8C — gains, optimal markers, good outcomes
+Negative:          #E87070 — costs, losses, bad outcomes
+Neutral:           #8B8A99 — baseline, no-change
+Caution:           #FBBF24 — warnings, cliff alerts
+```
+
+### Glassmorphic Surface Tokens
+```
+Glass background:  rgba(255, 255, 255, 0.04)
+Glass border:      rgba(255, 255, 255, 0.08)
+Glass hover:       rgba(255, 255, 255, 0.07)
+Glass border hover: rgba(255, 255, 255, 0.15)
+```
 
 ### Data Visualization Colors
-These are ONLY used inside charts and the bracket visualization — never in the UI chrome:
 ```
-Bracket 10%:       #22C55E (green — low tax, good)
-Bracket 12%:       #86EFAC (lighter green)
-Bracket 22%:       #FACC15 (yellow — caution)
+Chart income/pre-tax:  #6C5CE7 (Soft Purple)
+Chart conversion/roth: #F0C674 (Warm Gold)
+Chart taxable:         #A8C5A0 (Soft Sage)
+Chart remaining:       rgba(255, 255, 255, 0.04)
+
+Bracket 10%:       #4ADE80 (bright green for dark bg)
+Bracket 12%:       #86EFAC
+Bracket 22%:       #FBBF24 (bright yellow)
 Bracket 24%:       #FB923C (orange)
 Bracket 32%:       #F87171 (red)
-Bracket 35%:       #EF4444 (darker red)
-Bracket 37%:       #DC2626 (darkest red)
+Bracket 35%:       #EF4444
+Bracket 37%:       #DC2626 (dark red)
+```
 
-Optimal marker:    #16A34A (strong green — "this is the good one")
-Negative/cost:     #DC2626 (red — tax cost, loss vs optimal)
-Neutral/baseline:  #6B7280 (gray — regular income, no-conversion scenario)
-
-Chart line:        #2563EB (accent blue)
-Chart fill:        rgba(37, 99, 235, 0.08) (very subtle area fill under curves)
+### Gradient Signatures
+```
+Brand gradient:    linear-gradient(135deg, #0F0E1A 0%, #2D2545 30%, #6C5CE7 60%, #F0C674 100%)
+Trust gradient:    linear-gradient(135deg, #1A1832 0%, #4A6FA5 40%, #7EC8C8 70%, #A8C5A0 100%)
+Gold accent:       linear-gradient(135deg, #F0C674 0%, #E8A838 100%)
 ```
 
 ### Color Philosophy
-- The UI is a quiet, neutral stage. Color appears ONLY when it carries meaning.
-- In the bracket visualization, the color gradient from green→yellow→orange→red immediately communicates "low brackets good, high brackets costly" without any text explanation needed.
-- The accent blue is used so sparingly that when it appears, it commands attention.
+- The dark foundation creates focus and premium feel. Color appears to illuminate, not decorate.
+- Gold evokes warmth, optimism, and "illumination" — the core Lucerna metaphor.
+- Purple provides secondary emphasis without competing with gold.
+- Chart colors (purple/gold/sage) carry semantic meaning: pre-tax/roth/taxable.
+- The bracket color gradient (green→red) communicates "low brackets good, high brackets costly" intuitively.
 
 ---
 
@@ -129,157 +154,163 @@ Chart fill:        rgba(37, 99, 235, 0.08) (very subtle area fill under curves)
 
 ### Spacing Scale
 ```
-4px   — micro (between icon and label, between related inline elements)
-8px   — tight (between items in a compact list, internal card padding on mobile)
-12px  — default gap (between cards in a grid, between form fields)
-16px  — comfortable (section padding on mobile, card internal padding)
-24px  — section break (between major content blocks)
-32px  — major section (between distinct page sections)
-48px  — page-level (top/bottom page padding, between hero and first section)
+4px   — micro (icon-to-label, related inline elements)
+8px   — tight (compact list items, internal mobile padding)
+16px  — default (between cards, between form fields)
+20px  — comfortable (card internal padding)
+32px  — section (between major content blocks)
+48px  — section-lg (between distinct page sections)
+64px  — page (top/bottom page padding)
 ```
 
 ### Layout Principles
-- **Max content width:** 1080px (not wider — keeps data readable without excessive eye travel)
-- **Page margins:** 24px on mobile, 48px on tablet, auto-centered on desktop
-- **Grid:** Use a simple column system. Results page: single column on mobile, sidebar + main on desktop if needed (but prefer stacked single-column for M1)
-- **Cards:** No shadow. Border only: `1px solid rgba(0,0,0,0.08)`. Border-radius: 6px. Padding: 16px (mobile) / 20px (desktop).
-- **No hero images or illustrations.** The demo results ARE the hero. The first thing a visitor sees is the data.
-
-### Information Density
-Follow Linear's approach: pack more information per screen than typical SaaS tools, but use clear visual hierarchy (font size, weight, color) to guide the eye. The target user is comfortable with dense UIs — they use terminals, spreadsheets, and data tools daily.
+- **Max content width:** 1080px (keeps data readable)
+- **Page margins:** 24px mobile, 48px tablet, auto-centered desktop
+- **Grid:** Single column mobile, stacked on desktop for M1
+- **Cards:** Glassmorphic with backdrop blur (see Component Patterns)
+- **No hero images or illustrations.** The data IS the hero.
 
 ---
 
 ## Component Patterns
 
-### Buttons
+### Cards (Glassmorphic)
 ```
-Primary:     Accent blue bg (#2563EB), white text, 4px radius, 
-             height 36px, padding 0 16px, font 14px/500
-             Hover: #1D4ED8. Active: scale(0.98).
-             
-Secondary:   Transparent bg, 1px border rgba(0,0,0,0.15), 
-             text-primary color, same sizing as primary.
-             Hover: bg #F5F5F5.
-             
-Ghost:       No border, no bg, text-secondary color.
-             Hover: bg #F5F5F5.
-             
-ALL buttons: 4px radius (NOT rounded/pill). 
-             Min-height 44px on mobile (touch target).
-             Transition: 100ms ease.
-```
-
-### Input Fields
-```
-Height:          36px (desktop), 44px (mobile)
-Border:          1px solid rgba(0,0,0,0.12)
-Border radius:   4px
-Background:      #FAFAFA
-Focus:           border-color: #2563EB, ring: 0 0 0 2px rgba(37,99,235,0.15)
-Font:            14px, same as body. Numbers in JetBrains Mono.
-Label:           12px, 500 weight, text-secondary, above the field
-Helper text:     12px, 400 weight, text-tertiary, below the field
-```
-
-### Cards (Metric Cards, Scenario Comparison Cards)
-```
-Background:      #FFFFFF
-Border:          1px solid rgba(0,0,0,0.08)
-Border radius:   6px
-Padding:         16px (mobile), 20px (desktop)
-Shadow:          NONE. Never.
-Hover (if interactive): border-color rgba(0,0,0,0.15), bg #FAFAFA
-
-Metric card layout:
-  Label:         12px, 500 weight, text-tertiary, uppercase tracking
-  Value:         28px, 500 weight, JetBrains Mono, text-primary
-  Change/delta:  13px, 500 weight, green (positive) or red (negative)
+Background:      rgba(255, 255, 255, 0.04)
+Backdrop:        blur(20px)
+Border:          1px solid rgba(255, 255, 255, 0.08)
+Border radius:   20px
+Padding:         20px
+Shadow:          none by default
+Hover:           translateY(-2px), border rgba(255,255,255,0.12), 300ms ease
 ```
 
 ### The "Recommended" Card Accent
 ```
-Border:          2px solid #2563EB (the ONLY element that gets a 2px border)
-Small badge:     "Recommended" — bg #EFF6FF, text #1D4ED8, 
-                 11px, 500 weight, 4px radius, padding 2px 8px
+Border:          2px solid #F0C674 (Warm Gold)
+Glow:            box-shadow 0 0 20px rgba(240, 198, 116, 0.1)
+Badge:           "Recommended" — bg rgba(240,198,116,0.15), text #F0C674,
+                 11px/500, 8px radius, padding 2px 10px
+```
+
+### Buttons
+```
+Primary:     Gold gradient bg (F0C674 → E8A838), midnight text (#0F0E1A),
+             12px radius, height 48px, padding 14px 32px, font 15px/600 DM Sans.
+             Hover: translateY(-2px), box-shadow 0 8px 30px rgba(240,198,116,0.25).
+
+Secondary:   Purple glass bg rgba(108,92,231,0.15), soft-purple text,
+             1px border rgba(108,92,231,0.3), same sizing.
+             Hover: bg rgba(108,92,231,0.25), translateY(-2px).
+
+Ghost:       Transparent, cream text, 1px border rgba(255,255,255,0.12).
+             Hover: border rgba(255,255,255,0.25), translateY(-2px).
+
+ALL buttons: 12px radius. Min-height 44px (touch target).
+             Transition: 300ms ease. Letter-spacing: 0.3px.
+```
+
+### Input Fields
+```
+Height:          44px
+Background:      #1A1832 (Deep Navy)
+Border:          1px solid rgba(255, 255, 255, 0.08)
+Border radius:   12px
+Text:            #FAF7F2 (Cream)
+Placeholder:     #8B8A99 (Neutral)
+Focus:           border-color #F0C674, ring 0 0 0 2px rgba(240,198,116,0.15)
+Font:            16px DM Sans. Numbers in Manrope.
+Label:           13px, 500 weight, Inter, Light Lavender, above the field
 ```
 
 ### Navigation / Header
 ```
-Minimal. Logo (text mark "Lucerna" in 18px/600) on the left.
-One or two nav items max: "How it works" | "About"
-CTA button on the right: "Try it" or "Run your scenario"
-Height: 56px. Border-bottom: 1px solid rgba(0,0,0,0.06).
-Sticky on scroll.
+Logo: "Lucerna" in DM Serif Display, 18px/600 — the only serif usage in nav.
+One or two nav items. CTA: gold glow-button "Run your scenario".
+Height: 56px. Border-bottom: 1px solid rgba(255,255,255,0.08).
+Background: rgba(15,14,26,0.8) + backdrop-filter blur(12px). Sticky.
 ```
 
-### Tooltips / Info Icons
+### Tooltips
 ```
-Trigger:         Small (?) icon in text-tertiary color, 14px
-Tooltip:         Dark bg (#1A1A1A), white text, 13px, 6px radius,
-                 max-width 280px, appears on hover/tap
-Use for:         Explaining assumptions ("Full liquidation at end of retirement"),
-                 defining terms ("Traditional IRA: a tax-deferred retirement account")
+Background:      #2D2545 (Plum)
+Text:            #FAF7F2 (Cream), 13px, DM Sans
+Border radius:   12px
+Max-width:       280px
+Border:          1px solid rgba(255,255,255,0.08)
+```
+
+### Metric Cards
+```
+Label:           13px, 500 weight, Inter, #8B8A99, uppercase tracking
+Value:           28px, 700 weight, Manrope, #FAF7F2
+Delta:           13px, 600 weight
+  Positive:      #5EBD8C with rgba(94,189,140,0.12) bg
+  Negative:      #E87070 with rgba(232,112,112,0.12) bg
+  Neutral:       #8B8A99 with rgba(255,255,255,0.04) bg
 ```
 
 ---
 
 ## Chart & Visualization Style
 
-### General Chart Rules (ApexCharts Configuration)
+### Chart Bar Gradient Treatment
+All chart bars use bottom-to-top gradient fills that feel translucent and luminous on the dark background:
+```
+Income/Pre-Tax bars:  #6C5CE7 — opacity 0.7 at bottom, fading to 0.2 at top
+Conversion/Roth bars: #F0C674 — opacity 0.7 at bottom, fading to 0.3 at top
+Taxable bars:         #A8C5A0 — opacity 0.5 at bottom, fading to 0.2 at top
+```
+Bars have 8px rounded top corners. The gradient creates depth without competing with data labels.
+
+### ApexCharts Base Config
 ```javascript
-// Base ApexCharts config that all charts should inherit
 const baseChartConfig = {
   chart: {
-    fontFamily: "'JetBrains Mono', 'Geist Sans', system-ui, sans-serif",
+    fontFamily: "'Manrope', 'DM Sans', system-ui, sans-serif",
     toolbar: { show: false },
     zoom: { enabled: false },
     background: 'transparent',
-    animations: {
-      enabled: true,
-      easing: 'easeinout',
-      speed: 600,  // fast, not slow
-    }
+    animations: { enabled: true, speed: 600 },
   },
   grid: {
-    borderColor: 'rgba(0, 0, 0, 0.06)',
-    strokeDashArray: 3,  // dashed grid lines, subtle
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+    strokeDashArray: 3,
   },
   tooltip: {
+    theme: 'dark',
     style: { fontSize: '12px' },
   },
-  legend: { show: false },  // always custom HTML legends, never ApexCharts default
-  states: {
-    hover: { filter: { type: 'none' } },
-    active: { filter: { type: 'none' } },
+  legend: { show: false },  // always custom HTML legends
+  fill: {
+    type: 'gradient',
+    gradient: {
+      shade: 'dark',
+      type: 'vertical',
+      shadeIntensity: 0.3,
+      opacityFrom: 0.7,
+      opacityTo: 0.2,
+      stops: [0, 100],
+    },
   },
 };
 ```
 
 ### Bracket Fill Visualization (Custom SVG)
-- Horizontal stacked bars on desktop, vertical stacked bars on mobile
-- Colors follow the bracket color scale (green → yellow → orange → red)
-- Regular income in neutral gray (#6B7280)
-- Conversion amount in accent blue (#2563EB)
-- Remaining capacity in very light gray (rgba(0,0,0,0.04))
-- Optimal amount marked with a dashed vertical line in green (#16A34A) with a small label
-- Bar height: 32px with 8px gaps between brackets
-- Labels (bracket rate) on the left axis in 13px/500
-- Dollar amounts as inline labels to the right of filled portions in 11px/mono
+- Horizontal stacked bars, green→red bracket color scale
+- Income segment in Soft Purple (#6C5CE7)
+- Conversion in Warm Gold (#F0C674)
+- Remaining capacity in rgba(255,255,255,0.04)
+- Bar height 34px with 8px gaps
+- Labels in 13px Manrope, dollar amounts in 11px Manrope
+- Bracket color indicator: 3px vertical bar using bracket colors
 
-### NPV / After-Tax Wealth Curve (ApexCharts Area)
-- Line: 2px stroke in accent blue (#2563EB)
-- Fill: very subtle gradient from rgba(37,99,235,0.08) to transparent
-- Optimal point: 6px solid green (#16A34A) dot with white 2px stroke
-- Dashed vertical annotation at the optimal point
-- Axis labels in 11px monospace
-- Smooth curve (tension/spline), not angular
-
-### Point-in-Time Balance Comparison
-- Simple grouped bar chart or table with "Without conversion" vs "With conversion" at each age milestone
-- Without conversion bars in neutral gray
-- With conversion bars split: traditional portion in a muted tone, Roth portion in accent blue
-- Clear labels showing the dollar difference
+### Axis & Label Styling
+```
+Axis labels:     #B8B0D2 (Lavender) or #8B8A99 (Neutral), 11-12px, Manrope
+Grid lines:      rgba(255, 255, 255, 0.06), dashed (strokeDashArray: 3)
+Annotations:     rgba(255, 255, 255, 0.08) borders, #8B8A99 label text
+```
 
 ---
 
@@ -287,29 +318,24 @@ const baseChartConfig = {
 
 ### Timing
 ```
-UI transitions:    100-150ms (button hovers, input focus, card hover)
+UI transitions:    300ms ease (button hovers, card hover, input focus)
 Chart animations:  400-600ms (data appearing, bars filling)
-Tour steps:        200-300ms (element highlighting, tooltip appearing)
-Page transitions:  150ms (if any)
+Page transitions:  200ms
+Glow rotation:     4s linear infinite (glow button border)
 ```
-Everything should feel SNAPPY. Linear's interfaces feel fast because transitions are 100-150ms, not the 300-500ms that most tools use. Lucerna should feel the same.
+Interactions should feel graceful and unhurried — calm, like retirement planning should be.
 
 ### Hover States
-- Buttons: background color shift (100ms)
-- Cards: border darkens slightly (100ms)
-- Chart elements: tooltip appears, no other visual change (no glow, no scale, no shadow)
-- Links: underline appears (not color change)
+- Buttons: translateY(-2px), shadow appears (300ms)
+- Cards: translateY(-2px), border brightens (300ms)
+- Links: color shifts to Warm Gold
+- Chart elements: tooltip appears, no other change
 
 ### Scroll Behavior
-- Smooth scroll when navigating between sections
-- Sticky header on scroll
-- No parallax, no scroll-triggered animations (too playful for this aesthetic)
-- Charts animate on first appearance (intersection observer), not on every scroll
-
-### Loading States
-- Skeleton screens (pulsing gray rectangles matching layout) while engine computes
-- Streaming text for AI responses (character by character)
-- Spinner ONLY for the optimize API call — small, subtle, in the button that triggered it
+- Smooth scroll for section navigation
+- Sticky header with backdrop blur
+- No parallax or scroll-triggered animations
+- Charts animate on first appearance (intersection observer)
 
 ---
 
@@ -320,49 +346,40 @@ Everything should feel SNAPPY. Linear's interfaces feel fast because transitions
 - Adequate spacing between tappable elements (minimum 8px gap)
 
 ### Layout Adaptations
-- Single column layout, always
+- Single column layout
 - Cards stack vertically
-- Metric cards: 2-column grid on mobile (2x2), not 4 across
-- Charts: full width, minimum height 200px
-- Bracket viz: switches to vertical stacked bars (one bar per bracket, stacked vertically)
-- Chat interface: full-width below results, with suggested question chips horizontally scrollable
-- Input form steps: one per screen, large touch-friendly inputs
-
-### Typography Adjustments
-- Body stays 14px (don't increase for mobile — density is a feature)
-- H1 drops to 24px on mobile (from 28px)
-- Large numbers drop to 24px (from 28-36px)
-- Metric card labels stay 12px
+- Metric cards: 2-column grid on mobile
+- Charts: full width, minimum 200px height
+- Body stays 16px on mobile
 
 ---
 
 ## What Lucerna Should NEVER Look Like
 
-- No gradient backgrounds (except very subtle chart area fills)
-- No drop shadows on cards or containers
-- No rounded pill-shaped buttons or inputs (4-6px radius max)
-- No illustrations, mascots, or decorative imagery
-- No pastel color schemes
-- No large hero images on the landing page
-- No "playful" animations (bounce, wobble, confetti)
-- No generic stock photography
-- No low-contrast text (everything should be crisp and readable)
-- No centered paragraph text (always left-aligned)
-- No serif fonts anywhere
-- No more than ONE accent color in the UI (blue only; other colors reserved for data)
+- No pure white backgrounds (always warm/dark tones)
+- No cold blue accents (#2563EB or similar — use warm gold instead)
+- No generic fintech aesthetic (cold, corporate, clinical)
+- No flat/unstyled cards without glass treatment
+- No harsh borders (always subtle, translucent)
+- No low-contrast text on dark backgrounds
+- No more than TWO accent colors in the UI (gold primary, purple secondary)
+- No playful animations (bounce, wobble, confetti)
+- No stock photography or illustrations
+- No gamification elements
+- No light mode (dark is the only mode for now)
 
 ---
 
 ## Quick Reference for Claude Code
 
 When building any Lucerna component, follow this checklist:
-1. Is the border-radius 4-6px? (Never larger)
-2. Are shadows absent? (Use borders for elevation)
-3. Are numbers in JetBrains Mono?
-4. Is color used ONLY for data meaning or the single accent blue?
-5. Is the spacing tight but clear? (Default to 12px gaps, 16-20px card padding)
-6. Is the font size 14px for body, 12px for labels?
-7. Is the transition speed 100-150ms for UI, 400-600ms for charts?
-8. On mobile: are all touch targets 44px+?
-9. Does it feel like Linear, not like Wealthfront?
-10. Would a software engineer look at this and think "this is a serious tool"?
+1. Is the background dark (#0F0E1A base, #1A1832 surfaces)?
+2. Is the card glassmorphic (rgba bg, backdrop blur, subtle border)?
+3. Are display/brand elements in DM Serif Display?
+4. Are data/numbers in Manrope 700?
+5. Are UI labels/captions in Inter?
+6. Is the primary accent Warm Gold (#F0C674), not blue?
+7. Is the border-radius 12-20px? (Not smaller)
+8. Are transitions 300ms ease for UI elements?
+9. Do chart bars use gradient fills (opaque at bottom, translucent at top)?
+10. Does it feel warm and premium, not cold and clinical?

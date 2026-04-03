@@ -8,15 +8,11 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-lg bg-bg shadow-card transition-shadow duration-150 hover:shadow-card-hover",
-      recommended
-        ? "border-2 border-accent p-comfortable"
-        : "border border-border p-comfortable",
+      recommended ? "card-recommended" : "card",
       className
     )}
     {...props}
   >
-    {/* Blue border only — no badge text */}
     {children}
   </div>
 ));

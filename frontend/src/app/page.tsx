@@ -8,29 +8,34 @@ export default function Home() {
       <Header />
       <main className="flex flex-col">
         {/* Hero */}
-        <section className="px-section md:px-page py-page">
-          <div className="max-w-content mx-auto flex flex-col gap-section">
+        <section className="relative overflow-hidden px-section md:px-page py-page">
+          {/* Floating gradient orbs */}
+          <div className="gradient-orb gradient-orb-purple absolute -top-[100px] -right-[100px]" />
+          <div className="gradient-orb gradient-orb-gold absolute -bottom-[100px] -left-[100px]" />
+
+          <div className="relative z-10 max-w-content mx-auto flex flex-col gap-section">
             <div className="flex flex-col gap-comfortable max-w-2xl">
-              <h1 className="text-display md:text-display-lg text-text-primary tracking-tight">
+              <h1 className="text-display md:text-display-xl text-text-primary font-serif">
                 Compare multi-year Roth conversion scenarios to see what works for your situation
               </h1>
-              <p className="text-body text-text-secondary max-w-lg leading-relaxed">
-                Most tools tell you <em>whether</em> to convert. Lucerna tells you{" "}
-                <strong className="text-text-primary font-semibold">how much to convert each year</strong> — finding the conversion
-                schedule that maximizes your after-tax wealth across multiple years.
+              <p className="text-body text-text-secondary max-w-lg" style={{ lineHeight: 1.8 }}>
+                Map out Roth conversion scenarios across your lifetime and see how each one impacts your tax bill, and your long-term wealth.
               </p>
-              <div className="flex items-center gap-3 mt-section">
+              <p className="text-body text-text-tertiary max-w-lg" style={{ lineHeight: 1.8 }}>
+                Flexible enough for your specific situation. Simple enough that you don&apos;t need a spreadsheet or a financial expert to use it.
+              </p>
+              <div className="flex items-center gap-4 mt-section">
                 <Link
                   href="/demo"
-                  className="inline-flex items-center justify-center h-10 min-h-[44px] px-6 rounded-md bg-accent text-white text-body font-medium shadow-card hover:bg-accent-hover hover:shadow-card-hover active:scale-[0.98] transition-all duration-150"
+                  className="btn-gradient-primary inline-flex items-center justify-center min-h-[44px] py-3.5 px-8 rounded-[12px] text-bg text-[15px] font-semibold tracking-[0.3px] hover:shadow-[0_8px_30px_rgba(240,198,116,0.25)] active:scale-[0.98] transition-all duration-300"
                 >
                   See demo
                 </Link>
                 <Link
                   href="/calculator"
-                  className="inline-flex items-center justify-center h-10 min-h-[44px] px-6 rounded-md bg-transparent border border-border-emphasis text-text-primary text-body font-medium hover:bg-bg-hover transition-all duration-150"
+                  className="inline-flex items-center justify-center min-h-[44px] py-3.5 px-8 rounded-[12px] bg-transparent border border-[rgba(255,255,255,0.12)] text-text-primary text-[15px] font-semibold tracking-[0.3px] hover:border-[rgba(255,255,255,0.25)] transition-all duration-300"
                 >
-                  Run your scenario
+                  Run your own scenario
                 </Link>
               </div>
             </div>
@@ -40,38 +45,42 @@ export default function Home() {
         {/* How it works */}
         <section className="px-section md:px-page py-section-lg bg-bg-alt border-y border-border">
           <div className="max-w-content mx-auto">
-            <h2 className="text-h1 text-text-primary mb-section">
+            <h2 className="text-h1 text-text-primary mb-section font-serif">
               How it works
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-section">
               <div className="flex flex-col gap-default">
                 <span className="text-caption text-accent font-semibold">01</span>
                 <h3 className="text-h3 text-text-primary">
-                  Enter your income trajectory
+                  Describe your situation
                 </h3>
                 <p className="text-body-sm text-text-secondary leading-relaxed">
-                  Tell us your expected income for the next few years —
-                  including career changes, sabbaticals, or early retirement.
+                  Share a few details — your income, retirement savings, and
+                  how you see the next few years unfolding. Career change,
+                  early retirement, sabbatical — whatever your path looks like.
                 </p>
               </div>
               <div className="flex flex-col gap-default">
                 <span className="text-caption text-accent font-semibold">02</span>
                 <h3 className="text-h3 text-text-primary">
-                  Optimizer finds conversions
+                  See what the numbers say
                 </h3>
                 <p className="text-body-sm text-text-secondary leading-relaxed">
-                  Our multi-year optimizer places conversions in your lowest-tax
-                  years, filling cheap brackets before expensive ones.
+                  Our planner searches across conversion scenarios and surfaces
+                  the schedule that keeps you in the lowest brackets —
+                  maximizing your after-tax wealth over time.
                 </p>
               </div>
               <div className="flex flex-col gap-default">
                 <span className="text-caption text-accent font-semibold">03</span>
                 <h3 className="text-h3 text-text-primary">
-                  See the full picture
+                  Explore the full picture
                 </h3>
                 <p className="text-body-sm text-text-secondary leading-relaxed">
-                  Visualize your bracket fill year-by-year, compare scenarios,
-                  and understand exactly how much you could save.
+                  See how conversions fill your brackets year by year, then
+                  adjust anything — income, conversion amounts, assumptions —
+                  and watch the impact in real time. Understand the tradeoffs
+                  and plan with confidence.
                 </p>
               </div>
             </div>
@@ -81,7 +90,7 @@ export default function Home() {
         {/* Demo teaser */}
         <section className="px-section md:px-page py-section-lg">
           <div className="max-w-content mx-auto flex flex-col gap-comfortable">
-            <h2 className="text-h1 text-text-primary">
+            <h2 className="text-h1 text-text-primary font-serif">
               See it in action
             </h2>
             <Card className="bg-bg-alt">
@@ -97,7 +106,7 @@ export default function Home() {
                 </p>
                 <Link
                   href="/demo"
-                  className="text-body text-accent hover:text-accent-hover font-medium transition-colors duration-150"
+                  className="text-body text-accent hover:text-accent-hover font-medium transition-colors duration-300"
                 >
                   View full analysis →
                 </Link>
