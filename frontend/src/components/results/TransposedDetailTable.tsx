@@ -4,7 +4,7 @@ import type { YearlyDetail, LifeEvent } from "@/lib/types";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
 import { LIFE_EVENT_LABELS } from "@/lib/utils/constants";
 import { Tooltip } from "@/components/common/Tooltip";
-import { useRef, useState } from "react";
+import { useRef, useState, type RefObject } from "react";
 import { useScrollFade } from "@/hooks/useScrollFade";
 
 interface YearOverride {
@@ -20,6 +20,8 @@ interface TransposedDetailTableProps {
   overrides: Map<number, YearOverride>;
   onIncomeChange: (yearIndex: number, income: number) => void;
   onLifeEventChange: (yearIndex: number, event: LifeEvent) => void;
+  scrollRef?: RefObject<HTMLDivElement | null>;
+  colWidth?: number;
 }
 
 const LIFE_EVENT_OPTIONS: LifeEvent[] = [
@@ -76,17 +78,21 @@ export function TransposedDetailTable({
   overrides,
   onIncomeChange,
   onLifeEventChange,
+  scrollRef: externalScrollRef,
+  colWidth = 58,
 }: TransposedDetailTableProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const internalScrollRef = useRef<HTMLDivElement>(null);
+  const scrollRef = externalScrollRef || internalScrollRef;
   const fadeRef = useRef<HTMLDivElement>(null);
   useScrollFade(scrollRef, fadeRef);
-
-  const colWidth = 58; // Matches bar width + gap in BracketChart
 
   return (
     <div className="flex text-body-sm">
       {/* Fixed row labels */}
       <div className="flex-shrink-0 w-[70px] flex flex-col border-r border-border">
+        <div className="h-7 flex items-center text-text-tertiary text-[10px] font-semibold px-1 border-b border-border">
+          Year
+        </div>
         <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
           Life event
         </div>
@@ -126,6 +132,14 @@ export function TransposedDetailTable({
                 className="flex flex-col"
                 style={{ width: `${colWidth}px` }}
               >
+                {/* Year header */}
+                <div
+                  className="h-7 flex items-center justify-center text-[10px] text-text-secondary font-semibold border-b border-border"
+                  style={{ fontFamily: "'Manrope', system-ui" }}
+                >
+                  {yearInfo.year}
+                </div>
+
                 {/* Life event */}
                 <div className="h-8 flex items-center justify-center">
                   <select

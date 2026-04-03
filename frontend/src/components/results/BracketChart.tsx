@@ -3,7 +3,7 @@
 import type { BracketFillResult } from "@/lib/types";
 import { formatPercent, formatCurrency, formatAxisCurrency } from "@/lib/utils/formatting";
 import { BRACKET_COLORS, CHART_COLORS } from "@/lib/utils/constants";
-import { useRef, useMemo, useState, useCallback, useEffect } from "react";
+import { useRef, useMemo, useState, useCallback, useEffect, type RefObject } from "react";
 import { Card } from "@/components/ui/card";
 import { useContainerWidth } from "@/hooks/useContainerWidth";
 import { useScrollFade } from "@/hooks/useScrollFade";
@@ -25,6 +25,8 @@ interface YearData {
 interface BracketChartProps {
   years: YearData[];
   filingStatus: "single" | "married_filing_jointly";
+  scrollRef?: RefObject<HTMLDivElement | null>;
+  onBarWidthChange?: (barWidth: number) => void;
 }
 
 // All bracket boundaries for axis labels
@@ -47,9 +49,9 @@ const BRACKET_BOUNDARIES: Record<string, { rate: number; max: number }[]> = {
   ],
 };
 
-const BAR_GAP = 10;
-const MIN_BAR_WIDTH = 24;
-const DEFAULT_BAR_WIDTH = 48;
+export const BAR_GAP = 10;
+export const MIN_BAR_WIDTH = 24;
+export const DEFAULT_BAR_WIDTH = 48;
 const DESKTOP_CHART_HEIGHT = 320;
 const MOBILE_CHART_HEIGHT = 260;
 const TOP_PADDING = 16;
@@ -74,8 +76,9 @@ function niceInterval(range: number, targetTicks: number): number {
   return nice * magnitude;
 }
 
-export function BracketChart({ years, filingStatus }: BracketChartProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
+export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef, onBarWidthChange }: BracketChartProps) {
+  const internalScrollRef = useRef<HTMLDivElement>(null);
+  const scrollRef = externalScrollRef || internalScrollRef;
   const fadeRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const brackets = BRACKET_BOUNDARIES[filingStatus];
@@ -129,6 +132,11 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
   }, [containerWidth, years.length]);
 
   const { isMobile, chartHeight, leftAxisWidth, rightAxisWidth, barWidth, totalBarWidth, barsFit } = layout;
+
+  // Notify parent of bar slot width for table column alignment
+  useEffect(() => {
+    onBarWidthChange?.(barWidth + BAR_GAP);
+  }, [barWidth, onBarWidthChange]);
 
   // Tooltip handler: only show if chart is already engaged
   const handleBarInteraction = useCallback((e: React.MouseEvent | React.PointerEvent, yearData: YearData) => {
