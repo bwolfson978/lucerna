@@ -94,7 +94,7 @@ export function TransposedDetailTable({
           Conversion
         </div>
         <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
-          Tax cost
+          Added tax from conversion
         </div>
         <div className="h-8 flex items-center gap-0.5 text-text-tertiary text-[10px] font-medium px-1">
           Eff. rate
