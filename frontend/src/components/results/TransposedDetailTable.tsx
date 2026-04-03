@@ -55,7 +55,7 @@ export function TransposedDetailTable({
           Life event
         </div>
         <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
-          Income
+          Earned Income
         </div>
         <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
           Conversion

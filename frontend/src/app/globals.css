@@ -46,35 +46,40 @@
 
 @layer components {
   .card {
-    @apply rounded-lg border border-glass-border p-comfortable;
+    @apply border border-glass-border;
+    border-radius: 20px;
+    padding: 32px;
     background: rgba(255, 255, 255, 0.04);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    transition: transform 300ms ease, border-color 300ms ease, box-shadow 300ms ease;
+    transition: all 300ms ease;
   }
 
   .card:hover {
-    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.07);
     border-color: rgba(255, 255, 255, 0.12);
   }
 
   .card-recommended {
-    @apply rounded-lg p-comfortable relative;
+    @apply relative;
+    border-radius: 20px;
+    padding: 32px;
     background: rgba(255, 255, 255, 0.04);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 2px solid #F0C674;
     box-shadow: 0 0 20px rgba(240, 198, 116, 0.1);
-    transition: transform 300ms ease, box-shadow 300ms ease;
+    transition: all 300ms ease;
   }
 
   .card-recommended:hover {
-    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.07);
     box-shadow: 0 0 30px rgba(240, 198, 116, 0.15);
   }
 
   .card-elevated {
-    @apply rounded-lg p-comfortable;
+    border-radius: 20px;
+    padding: 32px;
     background: rgba(255, 255, 255, 0.06);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
@@ -113,6 +118,56 @@
     @apply badge border border-glass-border text-text-secondary;
     background: rgba(255, 255, 255, 0.04);
   }
+}
+
+/* Floating gradient orbs — ambient background glow */
+@keyframes float {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(30px, -30px); }
+}
+
+.gradient-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.gradient-orb-purple {
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(108,92,231,0.25) 0%, transparent 70%);
+  animation: float 8s ease-in-out infinite;
+}
+
+.gradient-orb-gold {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(240,198,116,0.15) 0%, transparent 70%);
+  animation: float 10s ease-in-out infinite reverse;
+}
+
+/* Gradient brand text — cream→gold→amber */
+.brand-gradient {
+  background: linear-gradient(135deg, #FAF7F2 0%, #F0C674 50%, #E8A838 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Button gradient backgrounds — matching moodboard */
+.btn-gradient-primary {
+  background: linear-gradient(135deg, #F0C674 0%, #E8A838 100%);
+}
+.btn-gradient-primary:hover {
+  background: linear-gradient(135deg, #E8A838 0%, #D4941F 100%);
+}
+
+.btn-gradient-secondary {
+  background: rgba(108, 92, 231, 0.15);
+}
+.btn-gradient-secondary:hover {
+  background: rgba(108, 92, 231, 0.25);
 }
 
 /* Glow button — rotating conic-gradient border with gold base */
@@ -220,6 +275,36 @@ input[type="range"]::-moz-range-thumb {
   border: 2px solid #0F0E1A;
   cursor: pointer;
   box-shadow: 0 0 8px rgba(240, 198, 116, 0.3);
+}
+
+/* Dark-themed scrollbars for chart containers and overflow areas */
+.bracket-chart-scroll,
+.overflow-x-auto {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(240, 198, 116, 0.3) rgba(255, 255, 255, 0.04);
+}
+
+.bracket-chart-scroll::-webkit-scrollbar,
+.overflow-x-auto::-webkit-scrollbar {
+  height: 8px;
+}
+
+.bracket-chart-scroll::-webkit-scrollbar-track,
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+}
+
+.bracket-chart-scroll::-webkit-scrollbar-thumb,
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background: rgba(240, 198, 116, 0.3);
+  border-radius: 4px;
+  transition: background 0.3s ease;
+}
+
+.bracket-chart-scroll::-webkit-scrollbar-thumb:hover,
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background: rgba(240, 198, 116, 0.5);
 }
 
 /* Horizontal scroll fade indicator — signals more content off-screen */

@@ -47,7 +47,7 @@ export function YearlyDetailTable({ details }: YearlyDetailTableProps) {
             <thead>
               <tr className="border-b border-border text-text-secondary text-left">
                 <th className="py-3 pr-4 font-medium">Year</th>
-                <th className="py-3 pr-4 font-medium text-right">Income</th>
+                <th className="py-3 pr-4 font-medium text-right">Earned Income</th>
                 <th className="py-3 pr-4 font-medium text-right">
                   Conversion
                 </th>

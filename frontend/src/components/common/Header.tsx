@@ -12,7 +12,7 @@ export function Header() {
       )}
     >
       <div className="w-full max-w-content mx-auto flex items-center justify-between">
-        <Link href="/" className="font-serif text-[18px] font-bold text-text-primary tracking-tight">
+        <Link href="/" className="font-serif text-[18px] font-bold tracking-tight brand-gradient">
           Lucerna
         </Link>
         <nav className="flex items-center gap-5">

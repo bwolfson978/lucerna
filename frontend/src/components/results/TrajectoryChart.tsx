@@ -47,8 +47,9 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
     },
     plotOptions: {
       bar: {
-        borderRadius: 8,
-        columnWidth: "56%",
+        borderRadius: 6,
+        borderRadiusApplication: "end" as const,
+        columnWidth: "52%",
       },
     },
     colors: [CHART_COLORS.income, CHART_COLORS.conversion],
@@ -57,15 +58,15 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
       gradient: {
         shade: "dark",
         type: "vertical",
-        shadeIntensity: 0.3,
-        opacityFrom: 0.7,
-        opacityTo: 0.2,
-        stops: [0, 100],
+        shadeIntensity: 0.15,
+        opacityFrom: 0.85,
+        opacityTo: 0.35,
+        stops: [0, 40, 100],
       },
     },
     grid: {
-      borderColor: "rgba(255, 255, 255, 0.06)",
-      strokeDashArray: 3,
+      borderColor: "rgba(255, 255, 255, 0.04)",
+      strokeDashArray: 4,
       padding: { left: 8, right: 8 },
     },
     xaxis: {
@@ -126,7 +127,7 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
   };
 
   const series = [
-    { name: "Income", data: incomeData },
+    { name: "Earned Income", data: incomeData },
     { name: "Conversion", data: conversionData },
   ];
 
@@ -134,7 +135,7 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
     <Card className="flex flex-col gap-default">
       <div className="flex items-center gap-2">
         <h3 className="text-h3 text-text-primary">
-          Income + conversion by year
+          Earned income + conversion by year
         </h3>
         <Tooltip content="Shows how the optimizer distributes conversions across your income trajectory. Click a year to see its bracket fill detail." />
       </div>
@@ -143,7 +144,7 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
       <div className="flex items-center gap-5 text-body-sm text-text-secondary">
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.income }} />
-          Income
+          Earned Income
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.conversion }} />

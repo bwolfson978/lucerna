@@ -5,24 +5,26 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-lg text-body font-medium transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]",
+  "inline-flex items-center justify-center rounded-[12px] text-[15px] font-semibold tracking-[0.3px] transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]",
   {
     variants: {
       variant: {
         default:
-          "bg-accent text-bg shadow-card hover:bg-accent-hover hover:shadow-card-hover active:scale-[0.98]",
+          "btn-gradient-primary text-bg active:scale-[0.98]  hover:shadow-[0_8px_30px_rgba(240,198,116,0.25)]",
+        secondary:
+          "btn-gradient-secondary text-purple border border-purple/30 ",
         outline:
-          "bg-transparent border border-border-emphasis text-text-primary hover:bg-bg-hover hover:border-border-emphasis",
+          "bg-transparent border border-[rgba(255,255,255,0.15)] text-text-primary hover:border-[rgba(255,255,255,0.25)] ",
         ghost:
-          "bg-transparent text-text-secondary hover:bg-bg-hover hover:text-text-primary",
+          "bg-transparent text-text-primary border border-[rgba(255,255,255,0.12)] hover:border-[rgba(255,255,255,0.25)] ",
         destructive:
           "bg-negative text-white hover:bg-negative/90 active:scale-[0.98]",
         link: "text-accent underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-9 px-5",
-        sm: "h-8 px-3 text-body-sm",
-        lg: "h-11 px-8",
+        default: "py-3.5 px-8",
+        sm: "py-2 px-4 text-body-sm",
+        lg: "py-4 px-10",
         icon: "h-9 w-9 p-0",
       },
     },

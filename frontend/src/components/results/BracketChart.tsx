@@ -3,8 +3,17 @@
 import type { BracketFillResult } from "@/lib/types";
 import { formatPercent } from "@/lib/utils/formatting";
 import { BRACKET_COLORS, CHART_COLORS } from "@/lib/utils/constants";
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useState, useCallback } from "react";
+import { formatCurrency } from "@/lib/utils/formatting";
 import { Card } from "@/components/ui/card";
+
+interface ChartTooltip {
+  x: number;
+  y: number;
+  year: number;
+  age: number;
+  bracketFill: BracketFillResult[];
+}
 
 interface YearData {
   year: number;
@@ -58,7 +67,24 @@ function niceInterval(range: number, targetTicks: number): number {
 
 export function BracketChart({ years, filingStatus }: BracketChartProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const brackets = BRACKET_BOUNDARIES[filingStatus];
+  const [tooltip, setTooltip] = useState<ChartTooltip | null>(null);
+
+  const handleBarHover = useCallback((e: React.MouseEvent, yearData: YearData) => {
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    setTooltip({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      year: yearData.year,
+      age: yearData.age,
+      bracketFill: yearData.bracketFill,
+    });
+  }, []);
+
+  const handleBarLeave = useCallback(() => setTooltip(null), []);
 
   // Determine max Y value: highest bracket that any year reaches into, plus one
   const maxFilledBracketRate = useMemo(() => {
@@ -110,7 +136,7 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
       <div className="flex items-center gap-5 text-body-sm text-text-secondary">
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.income }} />
-          Income
+          Earned Income
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.conversion }} />
@@ -122,7 +148,21 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
         </span>
       </div>
 
-      <div className="flex">
+      <div ref={containerRef} className="flex relative">
+        {/* Left axis label */}
+        <div className="flex-shrink-0 flex items-center" style={{ width: 18 }}>
+          <span
+            className="text-[11px] text-text-tertiary tracking-wider uppercase"
+            style={{
+              writingMode: "vertical-rl",
+              transform: "rotate(180deg)",
+              fontFamily: "'Inter', system-ui",
+            }}
+          >
+            Income
+          </span>
+        </div>
+
         {/* Fixed left axis: evenly spaced income tick marks */}
         <svg
           width={leftLabelWidth}
@@ -166,6 +206,28 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
             height={CHART_HEIGHT}
             className="block"
           >
+            <defs>
+              {/* One fade mask per bar column — solid at bottom, transparent at top */}
+              <linearGradient id="barFadeGrad" x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0%" stopColor="white" stopOpacity="0.85" />
+                <stop offset="70%" stopColor="white" stopOpacity="0.6" />
+                <stop offset="100%" stopColor="white" stopOpacity="0.3" />
+              </linearGradient>
+              {years.map((yearData, i) => {
+                const maskX = i * (BAR_WIDTH + BAR_GAP) + BAR_GAP / 2;
+                return (
+                  <mask key={`mask-${yearData.year}`} id={`barMask-${i}`}>
+                    <rect
+                      x={maskX}
+                      y={0}
+                      width={BAR_WIDTH}
+                      height={CHART_HEIGHT}
+                      fill="url(#barFadeGrad)"
+                    />
+                  </mask>
+                );
+              })}
+            </defs>
             {/* Bracket boundary lines */}
             {brackets.map((b) => {
               if (b.max > chartMax) return null;
@@ -200,6 +262,9 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
                   barWidth={BAR_WIDTH}
                   chartHeight={CHART_HEIGHT}
                   bottomPadding={BOTTOM_PADDING}
+                  onHover={handleBarHover}
+                  onLeave={handleBarLeave}
+                  maskIndex={i}
                 />
               );
             })}
@@ -250,6 +315,74 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
             );
           })}
         </svg>
+
+        {/* Right axis label */}
+        <div className="flex-shrink-0 flex items-center" style={{ width: 18 }}>
+          <span
+            className="text-[11px] text-text-tertiary tracking-wider uppercase"
+            style={{
+              writingMode: "vertical-rl",
+              fontFamily: "'Inter', system-ui",
+            }}
+          >
+            Tax Brackets
+          </span>
+        </div>
+
+        {/* Hover tooltip */}
+        {tooltip && (
+          <div
+            className="absolute z-50 pointer-events-none"
+            style={{
+              left: tooltip.x + 16,
+              top: tooltip.y - 8,
+            }}
+          >
+            <div
+              className="rounded-[12px] border border-glass-border px-4 py-3 text-body-sm min-w-[180px]"
+              style={{
+                background: "rgba(26, 24, 50, 0.95)",
+                backdropFilter: "blur(20px)",
+                WebkitBackdropFilter: "blur(20px)",
+                boxShadow: "0 12px 40px rgba(15, 14, 26, 0.5)",
+              }}
+            >
+              <div className="text-text-primary font-semibold mb-2">
+                {tooltip.year} <span className="text-text-tertiary font-normal">(age {tooltip.age})</span>
+              </div>
+              {(() => {
+                const totalIncome = tooltip.bracketFill.reduce((s, bf) => s + bf.filled_by_income, 0);
+                const totalConversion = tooltip.bracketFill.reduce((s, bf) => s + bf.filled_by_conversion, 0);
+                return (
+                  <div className="flex flex-col gap-1.5">
+                    {totalIncome > 0 && (
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: CHART_COLORS.income }} />
+                          <span className="text-text-secondary">Earned Income</span>
+                        </span>
+                        <span className="text-text-primary font-medium">{formatCurrency(totalIncome)}</span>
+                      </div>
+                    )}
+                    {totalConversion > 0 && (
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: CHART_COLORS.conversion }} />
+                          <span className="text-text-secondary">Conversion</span>
+                        </span>
+                        <span className="text-text-primary font-medium">{formatCurrency(totalConversion)}</span>
+                      </div>
+                    )}
+                    <div className="border-t border-glass-border mt-1 pt-1.5 flex justify-between text-text-primary text-[12px] font-medium">
+                      <span>Total</span>
+                      <span>{formatCurrency(totalIncome + totalConversion)}</span>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        )}
       </div>
     </Card>
   );
@@ -263,6 +396,9 @@ interface BracketBarProps {
   barWidth: number;
   chartHeight: number;
   bottomPadding: number;
+  onHover: (e: React.MouseEvent, yearData: YearData) => void;
+  onLeave: () => void;
+  maskIndex: number;
 }
 
 function BracketBar({
@@ -273,11 +409,27 @@ function BracketBar({
   barWidth,
   chartHeight,
   bottomPadding,
+  onHover,
+  onLeave,
+  maskIndex,
 }: BracketBarProps) {
   const barBottom = chartHeight - bottomPadding;
 
   return (
-    <g>
+    <g
+      onMouseMove={(e) => onHover(e, yearData)}
+      onMouseLeave={onLeave}
+      className="cursor-pointer"
+      mask={`url(#barMask-${maskIndex})`}
+    >
+      {/* Invisible hit area for entire column */}
+      <rect
+        x={x}
+        y={0}
+        width={barWidth}
+        height={barBottom}
+        fill="transparent"
+      />
       {yearData.bracketFill.map((bf) => {
         if (bf.bracket_min >= chartMax) return null;
 

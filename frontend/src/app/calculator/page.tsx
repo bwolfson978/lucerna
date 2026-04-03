@@ -61,7 +61,7 @@ export default function CalculatorPage() {
           <div className={`pb-section -mx-default md:-mx-page px-default md:px-page pt-section border-b border-border${!result && !loading && !error ? "" : " shadow-sm"}`}>
             <div className="max-w-content mx-auto flex flex-col gap-default">
               <div className="flex flex-col gap-1">
-                <h1 className="text-h1 text-text-primary">
+                <h1 className="text-h1 text-text-primary font-serif">
                   Run your scenario
                 </h1>
                 <p className="text-body-sm text-text-secondary leading-relaxed">
