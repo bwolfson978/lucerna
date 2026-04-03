@@ -1,7 +1,7 @@
 "use client";
 
 import type { YearlyDetail, LifeEvent } from "@/lib/types";
-import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
+import { formatCurrency, formatPercent, formatTableCurrency } from "@/lib/utils/formatting";
 import { LIFE_EVENT_LABELS } from "@/lib/utils/constants";
 import { Tooltip } from "@/components/common/Tooltip";
 import { useRef, useState, type RefObject } from "react";
@@ -49,7 +49,7 @@ function CompactCurrencyCell({
   const [focused, setFocused] = useState(false);
   const display = focused
     ? value === 0 ? "" : String(value)
-    : value === 0 ? "0" : value.toLocaleString("en-US");
+    : formatTableCurrency(value).replace("$", "");
 
   return (
     <input
@@ -129,8 +129,8 @@ export function TransposedDetailTable({
             return (
               <div
                 key={yearInfo.year}
-                className="flex flex-col"
-                style={{ width: `${colWidth}px` }}
+                className="flex flex-col overflow-hidden"
+                style={{ width: `${colWidth}px`, minWidth: `${colWidth}px` }}
               >
                 {/* Year header */}
                 <div
@@ -176,7 +176,7 @@ export function TransposedDetailTable({
                   className="h-8 flex items-center justify-center text-[10px] text-accent"
                   style={{ fontFamily: "'Manrope', system-ui" }}
                 >
-                  {detail ? formatCurrency(detail.conversion) : "—"}
+                  {detail ? formatTableCurrency(detail.conversion) : "—"}
                 </div>
 
                 {/* Tax cost */}
@@ -184,7 +184,7 @@ export function TransposedDetailTable({
                   className="h-8 flex items-center justify-center text-[10px] text-text-primary"
                   style={{ fontFamily: "'Manrope', system-ui" }}
                 >
-                  {detail ? formatCurrency(detail.tax_cost) : "—"}
+                  {detail ? formatTableCurrency(detail.tax_cost) : "—"}
                 </div>
 
                 {/* Effective rate */}
