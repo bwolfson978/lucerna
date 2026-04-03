@@ -12,19 +12,51 @@ import {
 } from "@/lib/tax/brackets";
 import { computeSnapThreshold } from "@/lib/utils/snap";
 
-function distributeConversion(
+export function distributeConversion(
   totalConversion: number,
-  optimizerWeights: number[]
+  optimizerWeights: number[],
+  conversionCurve?: ConversionCurvePoint[]
 ): number[] {
-  const optimizerTotal = optimizerWeights.reduce((a, b) => a + b, 0);
+  if (totalConversion === 0) return optimizerWeights.map(() => 0);
 
-  if (optimizerTotal === 0 || totalConversion === 0) {
-    // Uniform distribution if optimizer allocated nothing, or slider is at 0
-    if (totalConversion === 0) return optimizerWeights.map(() => 0);
+  // Use curve interpolation when available
+  if (conversionCurve && conversionCurve.length >= 2) {
+    const sorted = [...conversionCurve].sort(
+      (a, b) => a.total_cap - b.total_cap
+    );
+
+    // Clamp to curve range
+    if (totalConversion <= sorted[0].total_cap) {
+      return sorted[0].yearly_conversions.map((c) => Math.max(0, c));
+    }
+    if (totalConversion >= sorted[sorted.length - 1].total_cap) {
+      return sorted[sorted.length - 1].yearly_conversions.map((c) =>
+        Math.max(0, c)
+      );
+    }
+
+    // Find bounding points and lerp
+    for (let i = 0; i < sorted.length - 1; i++) {
+      if (
+        sorted[i].total_cap <= totalConversion &&
+        sorted[i + 1].total_cap >= totalConversion
+      ) {
+        const range = sorted[i + 1].total_cap - sorted[i].total_cap;
+        const t = range > 0 ? (totalConversion - sorted[i].total_cap) / range : 0;
+        return sorted[i].yearly_conversions.map((low, idx) => {
+          const high = sorted[i + 1].yearly_conversions[idx] ?? 0;
+          return Math.max(0, low + t * (high - low));
+        });
+      }
+    }
+  }
+
+  // Fallback: proportional scaling
+  const optimizerTotal = optimizerWeights.reduce((a, b) => a + b, 0);
+  if (optimizerTotal === 0) {
     const perYear = totalConversion / optimizerWeights.length;
     return optimizerWeights.map(() => perYear);
   }
-
   const scale = totalConversion / optimizerTotal;
   return optimizerWeights.map((w) => Math.max(0, w * scale));
 }
@@ -45,8 +77,13 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
   );
 
   const yearlyConversions = useMemo(
-    () => distributeConversion(totalConversion, result.yearly_conversions),
-    [totalConversion, result.yearly_conversions]
+    () =>
+      distributeConversion(
+        totalConversion,
+        result.yearly_conversions,
+        result.conversion_curve
+      ),
+    [totalConversion, result.yearly_conversions, result.conversion_curve]
   );
 
   const yearlyBracketFills: BracketFillResult[][] = useMemo(

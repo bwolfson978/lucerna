@@ -434,3 +434,339 @@ def extract_conversion_curve(
         ))
 
     return points
+
+
+# ── 3D DP: budget-constrained curve ─────────────────────────────────
+
+
+def _dp_backward_3d(
+    scenario: ScenarioInput,
+    balance_grid: np.ndarray,
+    budget_grid: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Run backward induction with state = (year, balance, budget).
+
+    The budget dimension tracks the remaining total conversion cap.
+    At each step, conversion c ≤ min(balance, budget).
+
+    Returns:
+        value_table:  shape (n_years+1, G, B) — optimal NPV from year t onward.
+        policy_table: shape (n_years, G, B) — optimal conversion grid index.
+        extended_grid: the balance grid (may be extended for growth).
+        budget_grid:   the budget grid (unchanged).
+    """
+    n_years = len(scenario.income_trajectory)
+    g = scenario.annual_growth_rate
+    d = scenario.discount_rate
+    years_until_retirement = scenario.retirement_age - scenario.age
+    remaining_growth_years = years_until_retirement - n_years
+
+    if remaining_growth_years > 0:
+        growth_factor = (1 + g) ** remaining_growth_years
+    else:
+        growth_factor = 1.0
+
+    initial_balance = scenario.traditional_ira_balance
+    initial_roth = scenario.roth_ira_balance
+
+    # Extend balance grid for growth (same logic as 2D DP)
+    max_grown_balance = initial_balance * (1 + g) ** n_years
+    extended_grid = np.linspace(0, max_grown_balance, len(balance_grid))
+    G = len(extended_grid)
+    B = len(budget_grid)
+
+    value_table = np.zeros((n_years + 1, G, B))
+    policy_table = np.zeros((n_years, G, B), dtype=np.int64)
+
+    # Terminal values: budget doesn't affect retirement phase.
+    # Same terminal value for every budget level — broadcast across B.
+    total_growth = (1 + g) ** years_until_retirement
+    total_at_retirement = (initial_balance + initial_roth) * total_growth
+
+    trad_at_ret = extended_grid * growth_factor
+    roth_at_ret = np.maximum(0.0, total_at_retirement - trad_at_ret)
+
+    terminal_values = _compute_retirement_values(
+        trad_at_ret, roth_at_ret, scenario
+    )
+    # Broadcast: same terminal value for all budget levels
+    value_table[n_years] = terminal_values[:, np.newaxis]  # (G, 1) → (G, B)
+
+    # Determine ACA coverage years (same as 2D)
+    hc = scenario.healthcare
+    aca_years: set[int] = set()
+    if hc:
+        from app.engine.aca import federal_poverty_level
+        trajectory_years = {y.year for y in scenario.income_trajectory}
+        if hc.aca_coverage_years is not None:
+            aca_years = set(hc.aca_coverage_years) & trajectory_years
+        elif hc.has_employer_coverage_after is not None:
+            aca_years = {y for y in trajectory_years if y < hc.has_employer_coverage_after}
+        else:
+            aca_years = trajectory_years
+
+    # Pre-compute tax costs (same as 2D)
+    tax_without_cache = [
+        calculate_federal_tax(
+            scenario.income_trajectory[t].gross_income, scenario.filing_status
+        )
+        for t in range(n_years)
+    ]
+
+    tax_cost_by_year: list[np.ndarray] = []
+    for t in range(n_years):
+        income_t = scenario.income_trajectory[t].gross_income
+        tax_with = vectorized_federal_tax(
+            income_t + extended_grid, scenario.filing_status
+        )
+        tax_cost_by_year.append(tax_with - tax_without_cache[t])
+
+    aca_cost_by_year: list[np.ndarray | None] = [None] * n_years
+    if hc:
+        for t in range(n_years):
+            year_t = scenario.income_trajectory[t].year
+            if year_t in aca_years:
+                income_t = scenario.income_trajectory[t].gross_income
+                aca_cost_by_year[t] = vectorized_subsidy_loss(
+                    income_t, extended_grid,
+                    hc.household_size, hc.monthly_slcsp_premium,
+                )
+
+    # Backward induction — vectorized bilinear interpolation.
+    # For each balance state i, we process ALL budget states k at once
+    # using numpy broadcasting, eliminating the inner k and j loops.
+    for t in range(n_years - 1, -1, -1):
+        discount_factor = (1 + d) ** (-t)
+        future_ref = value_table[t + 1]  # shape (G, B)
+
+        # Discounted cost for each conversion amount
+        cost_row = tax_cost_by_year[t].copy()
+        if aca_cost_by_year[t] is not None:
+            cost_row += aca_cost_by_year[t]
+        cost_row *= discount_factor
+
+        for i in range(G):
+            available = extended_grid[i]
+            if available <= 0:
+                value_table[t, i, :] = value_table[t + 1, 0, :]
+                policy_table[t, i, :] = 0
+                continue
+
+            n_opts = i + 1
+            remaining_bal = (available - extended_grid[:n_opts]) * (1 + g)
+
+            # Step 1: Balance interpolation for all (j, b) pairs.
+            # For each conversion j, find balance bracket and interpolate
+            # future_ref across all budget columns at once.
+            bal_indices = np.searchsorted(extended_grid, remaining_bal, side="right") - 1
+            bal_indices = np.clip(bal_indices, 0, G - 2)
+
+            spans = extended_grid[bal_indices + 1] - extended_grid[bal_indices]
+            fracs_bal = np.where(
+                spans > 0,
+                (remaining_bal - extended_grid[bal_indices]) / spans,
+                0.0,
+            )
+
+            # bal_interp[j, b] = future value at (remaining_bal[j], budget_grid[b])
+            lo_vals = future_ref[bal_indices, :]       # (n_opts, B)
+            hi_vals = future_ref[bal_indices + 1, :]   # (n_opts, B)
+            bal_interp = lo_vals + fracs_bal[:, np.newaxis] * (hi_vals - lo_vals)
+
+            # Step 2: Budget remapping via bilinear interpolation.
+            # For conversion j at budget state k, remaining_budget = budget_grid[k] - extended_grid[j].
+            # We need to look up bal_interp[j, :] at that remaining budget position.
+            remaining_budgets = (
+                budget_grid[np.newaxis, :] - extended_grid[:n_opts, np.newaxis]
+            )  # (n_opts, B)
+
+            bud_indices = (
+                np.searchsorted(budget_grid, remaining_budgets.ravel(), side="right")
+                .reshape(n_opts, B)
+                - 1
+            )
+            bud_indices = np.clip(bud_indices, 0, B - 2)
+
+            bud_spans = budget_grid[bud_indices + 1] - budget_grid[bud_indices]
+            fracs_bud = np.where(
+                bud_spans > 0,
+                (remaining_budgets - budget_grid[bud_indices]) / bud_spans,
+                0.0,
+            )
+            fracs_bud = np.clip(fracs_bud, 0.0, 1.0)
+
+            # Fancy-index into bal_interp for budget interpolation
+            j_idx = np.arange(n_opts)[:, np.newaxis]  # (n_opts, 1)
+            future_lo = bal_interp[j_idx, bud_indices]       # (n_opts, B)
+            future_hi = bal_interp[j_idx, bud_indices + 1]   # (n_opts, B)
+            future_matrix = future_lo + fracs_bud * (future_hi - future_lo)
+
+            # Step 3: Mask invalid options (conversion > budget) and pick best.
+            invalid = (
+                extended_grid[:n_opts, np.newaxis]
+                > budget_grid[np.newaxis, :] + 1e-6
+            )
+            values_matrix = -cost_row[:n_opts, np.newaxis] + future_matrix
+            values_matrix[invalid] = -np.inf
+
+            best_indices = np.argmax(values_matrix, axis=0)  # (B,)
+            value_table[t, i, :] = values_matrix[best_indices, np.arange(B)]
+            policy_table[t, i, :] = best_indices
+
+    return value_table, policy_table, extended_grid, budget_grid
+
+
+def _forward_pass_3d(
+    scenario: ScenarioInput,
+    extended_grid: np.ndarray,
+    budget_grid: np.ndarray,
+    policy_table: np.ndarray,
+    budget_cap: float,
+) -> list[float]:
+    """Extract optimal conversion schedule for a specific budget cap.
+
+    Tracks balance and budget as continuous floats (not snapped to grid)
+    to avoid drift over many years.
+    """
+    n_years = len(scenario.income_trajectory)
+    g = scenario.annual_growth_rate
+    B = len(budget_grid)
+    conversions = []
+
+    current_balance = scenario.traditional_ira_balance
+    current_budget = budget_cap
+
+    for t in range(n_years):
+        if current_budget <= 0 or current_balance <= 0:
+            conversions.append(0.0)
+            current_balance *= (1 + g)
+            continue
+
+        # Find bracketing balance index
+        bal_idx = np.searchsorted(extended_grid, current_balance, side="right") - 1
+        bal_idx = max(0, min(bal_idx, len(extended_grid) - 1))
+
+        # Find bracketing budget index
+        bud_idx = np.searchsorted(budget_grid, current_budget, side="right") - 1
+        bud_idx = max(0, min(bud_idx, B - 2))
+
+        # Bilinear interpolation of policy: look up conversion index at
+        # the four neighboring (balance, budget) grid points, convert to
+        # dollar amounts, then interpolate.
+        b_lo, b_hi = bud_idx, bud_idx + 1
+
+        # Get conversion amounts from policy at neighboring budget points
+        conv_idx_lo = policy_table[t, bal_idx, b_lo]
+        conv_idx_hi = policy_table[t, bal_idx, b_hi]
+        conv_lo = extended_grid[conv_idx_lo] if conv_idx_lo < len(extended_grid) else 0.0
+        conv_hi = extended_grid[conv_idx_hi] if conv_idx_hi < len(extended_grid) else 0.0
+
+        # Lerp on budget dimension
+        budget_span = budget_grid[b_hi] - budget_grid[b_lo]
+        if budget_span > 0:
+            frac = (current_budget - budget_grid[b_lo]) / budget_span
+            frac = max(0.0, min(1.0, frac))
+            conversion = conv_lo + frac * (conv_hi - conv_lo)
+        else:
+            conversion = conv_lo
+
+        # Clamp to available balance and budget
+        conversion = min(conversion, current_balance, current_budget)
+        conversion = max(0.0, conversion)
+        conversions.append(round(conversion / 100) * 100)
+
+        current_balance = (current_balance - conversion) * (1 + g)
+        current_budget -= conversion
+
+    return conversions
+
+
+def extract_conversion_curve_3d(
+    scenario: ScenarioInput,
+    n_points: int = 50,
+    balance_grid_size: int = 300,
+) -> list[ConversionCurvePoint]:
+    """Build a conversion curve using 3D DP with budget constraint.
+
+    For each total conversion cap, extracts the NPV-maximizing schedule
+    via a single 3D backward pass + per-cap forward passes.
+    """
+    from app.engine.optimizer import calculate_npv
+    from app.engine.tax import get_marginal_rate
+
+    balance = scenario.traditional_ira_balance
+    n_years = len(scenario.income_trajectory)
+
+    if balance <= 0 or n_years == 0:
+        return []
+
+    # Budget grid: 0 to traditional_ira_balance
+    budget_grid = np.linspace(0, balance, n_points)
+    balance_grid = np.linspace(0, balance, balance_grid_size)
+
+    # Single 3D backward pass
+    value_table, policy_table, extended_grid, budget_grid = _dp_backward_3d(
+        scenario, balance_grid, budget_grid,
+    )
+
+    # Extract optimal schedule for each budget cap via forward pass
+    points: list[ConversionCurvePoint] = []
+
+    for cap in budget_grid:
+        cap_rounded = round(cap / 100) * 100
+
+        if cap_rounded <= 0:
+            yearly_conv = [0.0] * n_years
+        else:
+            yearly_conv = _forward_pass_3d(
+                scenario, extended_grid, budget_grid, policy_table, cap_rounded,
+            )
+
+        # Clamp to non-negative and within sequential balance
+        remaining_bal = balance
+        for i in range(n_years):
+            yearly_conv[i] = max(0.0, min(yearly_conv[i], remaining_bal))
+            remaining_bal -= yearly_conv[i]
+
+        # Compute actual NPV for this allocation (authoritative)
+        npv_val = calculate_npv(scenario, yearly_conv)
+
+        # Build per-year detail and bracket fill
+        yearly_bracket_fill: list[list[BracketFillResult]] = []
+        yearly_detail: list[dict] = []
+        total_tax = 0.0
+
+        for i in range(n_years):
+            income = scenario.income_trajectory[i].gross_income
+            c = yearly_conv[i]
+
+            tax_with = calculate_federal_tax(income + c, scenario.filing_status)
+            tax_without = calculate_federal_tax(income, scenario.filing_status)
+            tax_cost = tax_with - tax_without
+            total_tax += tax_cost
+
+            eff_rate = tax_cost / c if c > 0 else 0.0
+            marginal = get_marginal_rate(income + c, scenario.filing_status)
+
+            yearly_detail.append({
+                "year": scenario.income_trajectory[i].year,
+                "income": income,
+                "conversion": c,
+                "tax_cost": round(tax_cost, 2),
+                "effective_rate": round(eff_rate, 4),
+                "marginal_bracket": f"{marginal:.0%}",
+            })
+            yearly_bracket_fill.append(
+                analyze_bracket_fill(income, c, scenario.filing_status)
+            )
+
+        points.append(ConversionCurvePoint(
+            total_cap=cap_rounded,
+            yearly_conversions=yearly_conv,
+            yearly_bracket_fill=yearly_bracket_fill,
+            yearly_detail=yearly_detail,
+            total_tax=round(total_tax, 2),
+            npv=round(npv_val, 2),
+        ))
+
+    return points
