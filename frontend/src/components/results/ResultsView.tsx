@@ -3,7 +3,6 @@
 import { useState, useMemo, useCallback, useRef } from "react";
 import type {
   OptimizationResult,
-  LifeEvent,
   ScenarioInput,
 } from "@/lib/types";
 import { MetricCard } from "@/components/common/MetricCard";
@@ -23,7 +22,6 @@ import { useSyncedScroll } from "@/hooks/useSyncedScroll";
 
 interface YearOverride {
   income?: number;
-  life_event?: LifeEvent;
 }
 
 interface ResultsViewProps {
@@ -68,11 +66,8 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
     }));
   }, [result.input, yearlyBracketFills]);
 
-  // Income and life event arrays for the detail table
+  // Income arrays for the detail table
   const incomes = result.input.income_trajectory.map((yi) => yi.gross_income);
-  const lifeEvents = result.input.income_trajectory.map(
-    (yi) => yi.life_event
-  );
   const yearInfos = result.input.income_trajectory.map((yi, i) => ({
     year: yi.year,
     age: result.input.age + i,
@@ -90,18 +85,6 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
     []
   );
 
-  const handleLifeEventChange = useCallback(
-    (yearIndex: number, life_event: LifeEvent) => {
-      setOverrides((prev) => {
-        const next = new Map(prev);
-        const existing = next.get(yearIndex) || {};
-        next.set(yearIndex, { ...existing, life_event });
-        return next;
-      });
-    },
-    []
-  );
-
   const handleReRun = useCallback(() => {
     if (!onReRun) return;
     const updatedTrajectory = result.input.income_trajectory.map((yi, i) => {
@@ -109,7 +92,6 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
       return {
         ...yi,
         gross_income: override?.income ?? yi.gross_income,
-        life_event: override?.life_event ?? yi.life_event,
       };
     });
     const updatedInput: ScenarioInput = {
@@ -224,10 +206,8 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
           details={yearlyDetail}
           years={yearInfos}
           incomes={incomes}
-          lifeEvents={lifeEvents}
           overrides={overrides}
           onIncomeChange={handleIncomeChange}
-          onLifeEventChange={handleLifeEventChange}
           scrollRef={tableScrollRef}
           colWidth={tableColWidth}
           leftOffset={chartLayout.leftOffset}

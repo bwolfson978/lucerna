@@ -1,25 +1,17 @@
 "use client";
 
-import type { YearlyDetail, LifeEvent } from "@/lib/types";
-import { formatCurrency, formatPercent, formatTableCurrency } from "@/lib/utils/formatting";
-import { LIFE_EVENT_LABELS } from "@/lib/utils/constants";
+import type { YearlyDetail } from "@/lib/types";
+import { formatPercent, formatTableCurrency } from "@/lib/utils/formatting";
 import { Tooltip } from "@/components/common/Tooltip";
 import { useMemo, useRef, useState, type RefObject } from "react";
 import { useScrollFade } from "@/hooks/useScrollFade";
-
-interface YearOverride {
-  income?: number;
-  life_event?: LifeEvent;
-}
 
 interface TransposedDetailTableProps {
   details: YearlyDetail[];
   years: { year: number; age: number }[];
   incomes: number[];
-  lifeEvents: LifeEvent[];
-  overrides: Map<number, YearOverride>;
+  overrides: Map<number, { income?: number }>;
   onIncomeChange: (yearIndex: number, income: number) => void;
-  onLifeEventChange: (yearIndex: number, event: LifeEvent) => void;
   scrollRef?: RefObject<HTMLDivElement | null>;
   colWidth?: number;
   /** Width of fixed left area in the chart (vertical label + y-axis) */
@@ -27,19 +19,6 @@ interface TransposedDetailTableProps {
   /** Width of fixed right area in the chart (bracket labels + vertical label) */
   rightOffset?: number;
 }
-
-const LIFE_EVENT_OPTIONS: LifeEvent[] = [
-  "none",
-  "grad_school",
-  "sabbatical",
-  "startup",
-  "career_change",
-  "part_time",
-  "early_retirement",
-  "parental_leave",
-  "back_to_work",
-  "layoff",
-];
 
 function CompactCurrencyCell({
   value,
@@ -80,10 +59,8 @@ export function TransposedDetailTable({
   details,
   years,
   incomes,
-  lifeEvents,
   overrides,
   onIncomeChange,
-  onLifeEventChange,
   scrollRef: externalScrollRef,
   colWidth = 58,
   leftOffset = 88,
@@ -104,9 +81,6 @@ export function TransposedDetailTable({
       <div className="flex-shrink-0 flex flex-col border-r border-border" style={{ width: leftOffset }}>
         <div className="h-7 flex items-center justify-end text-text-tertiary text-[10px] font-semibold px-2 border-b border-border">
           Year
-        </div>
-        <div className="h-8 flex items-center justify-end text-text-tertiary text-[10px] font-medium px-2">
-          Life event
         </div>
         <div className="h-8 flex items-center justify-end text-text-tertiary text-[10px] font-medium px-2">
           Earned Income
@@ -135,8 +109,6 @@ export function TransposedDetailTable({
             const detail = details[i];
             const hasOverride = overrides.has(i);
             const effectiveIncome = overrides.get(i)?.income ?? incomes[i];
-            const effectiveEvent =
-              overrides.get(i)?.life_event ?? lifeEvents[i];
 
             return (
               <div
@@ -150,28 +122,6 @@ export function TransposedDetailTable({
                   style={{ fontFamily: "'Manrope', system-ui" }}
                 >
                   {yearInfo.year}
-                </div>
-
-                {/* Life event */}
-                <div className="h-8 flex items-center justify-center px-0.5">
-                  <select
-                    value={effectiveEvent}
-                    onChange={(e) =>
-                      onLifeEventChange(i, e.target.value as LifeEvent)
-                    }
-                    className={`w-full text-[9px] bg-transparent border-0 p-0 text-center cursor-pointer focus:outline-none ${
-                      hasOverride && overrides.get(i)?.life_event
-                        ? "text-accent font-medium"
-                        : "text-text-tertiary"
-                    }`}
-                    title={LIFE_EVENT_LABELS[effectiveEvent]}
-                  >
-                    {LIFE_EVENT_OPTIONS.map((evt) => (
-                      <option key={evt} value={evt}>
-                        {LIFE_EVENT_LABELS[evt]}
-                      </option>
-                    ))}
-                  </select>
                 </div>
 
                 {/* Income (editable) */}
