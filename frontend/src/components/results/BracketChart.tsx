@@ -3,7 +3,7 @@
 import type { BracketFillResult } from "@/lib/types";
 import { formatPercent } from "@/lib/utils/formatting";
 import { BRACKET_COLORS, CHART_COLORS } from "@/lib/utils/constants";
-import { useRef, useMemo, useState, useCallback } from "react";
+import { useRef, useMemo, useState, useCallback, useEffect } from "react";
 import { formatCurrency } from "@/lib/utils/formatting";
 import { Card } from "@/components/ui/card";
 import { useContainerWidth } from "@/hooks/useContainerWidth";
@@ -57,7 +57,8 @@ const BOTTOM_PADDING = 40;
 const MOBILE_BREAKPOINT = 500;
 const LEFT_AXIS_WIDTH_DESKTOP = 70;
 const LEFT_AXIS_WIDTH_MOBILE = 55;
-const RIGHT_AXIS_WIDTH = 90;
+const RIGHT_AXIS_WIDTH_DESKTOP = 90;
+const RIGHT_AXIS_WIDTH_MOBILE = 36;
 const VERTICAL_LABEL_WIDTH = 18;
 
 /** Pick a nice round interval for evenly spaced tick marks. */
@@ -78,19 +79,32 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const brackets = BRACKET_BOUNDARIES[filingStatus];
   const [tooltip, setTooltip] = useState<ChartTooltip | null>(null);
+  const [isEngaged, setIsEngaged] = useState(false);
 
   const containerWidth = useContainerWidth(containerRef);
+
+  // Dismiss tooltip and disengage when clicking outside the chart
+  useEffect(() => {
+    function handleOutsideClick(e: PointerEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsEngaged(false);
+        setTooltip(null);
+      }
+    }
+    document.addEventListener("pointerdown", handleOutsideClick);
+    return () => document.removeEventListener("pointerdown", handleOutsideClick);
+  }, []);
 
   // Responsive layout computation
   const layout = useMemo(() => {
     const isMobile = containerWidth !== undefined && containerWidth < MOBILE_BREAKPOINT;
     const chartHeight = isMobile ? MOBILE_CHART_HEIGHT : DESKTOP_CHART_HEIGHT;
     const leftAxisWidth = isMobile ? LEFT_AXIS_WIDTH_MOBILE : LEFT_AXIS_WIDTH_DESKTOP;
+    const rightAxisWidth = isMobile ? RIGHT_AXIS_WIDTH_MOBILE : RIGHT_AXIS_WIDTH_DESKTOP;
 
-    // On mobile, right axis moves below chart; on desktop it's inline
-    const inlineRightAxisWidth = isMobile ? 0 : RIGHT_AXIS_WIDTH + VERTICAL_LABEL_WIDTH;
-    const inlineLeftOverhead = (isMobile ? 0 : VERTICAL_LABEL_WIDTH) + leftAxisWidth;
-    const totalOverhead = inlineLeftOverhead + inlineRightAxisWidth;
+    // Right axis is always inline; vertical labels hidden on mobile
+    const verticalLabelWidth = isMobile ? 0 : VERTICAL_LABEL_WIDTH;
+    const totalOverhead = verticalLabelWidth + leftAxisWidth + rightAxisWidth + verticalLabelWidth;
 
     let barWidth = DEFAULT_BAR_WIDTH;
     let barsFit = true;
@@ -102,7 +116,6 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
         barWidth = Math.min(computed, DEFAULT_BAR_WIDTH);
         barsFit = true;
       } else {
-        // Bars don't fit — use minimum width and enable scrolling
         barWidth = MIN_BAR_WIDTH;
         barsFit = false;
       }
@@ -110,12 +123,14 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
 
     const totalBarWidth = years.length * (barWidth + BAR_GAP);
 
-    return { isMobile, chartHeight, leftAxisWidth, barWidth, totalBarWidth, barsFit };
+    return { isMobile, chartHeight, leftAxisWidth, rightAxisWidth, barWidth, totalBarWidth, barsFit };
   }, [containerWidth, years.length]);
 
-  const { isMobile, chartHeight, leftAxisWidth, barWidth, totalBarWidth, barsFit } = layout;
+  const { isMobile, chartHeight, leftAxisWidth, rightAxisWidth, barWidth, totalBarWidth, barsFit } = layout;
 
+  // Tooltip handler: only show if chart is already engaged
   const handleBarInteraction = useCallback((e: React.MouseEvent | React.PointerEvent, yearData: YearData) => {
+    if (!isEngaged) return;
     const container = containerRef.current;
     if (!container) return;
     const rect = container.getBoundingClientRect();
@@ -126,13 +141,20 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
       age: yearData.age,
       bracketFill: yearData.bracketFill,
     });
-  }, []);
+  }, [isEngaged]);
 
   const handleBarLeave = useCallback(() => setTooltip(null), []);
 
+  // First click/tap in chart area engages; subsequent interactions show tooltip
+  const handleChartPointerDown = useCallback(() => {
+    if (!isEngaged) {
+      setIsEngaged(true);
+    }
+  }, [isEngaged]);
+
   // Determine max Y value: highest bracket that any year reaches into, plus one
   const maxFilledBracketRate = useMemo(() => {
-    let maxRate = 0.12; // Show at least through 12%
+    let maxRate = 0.12;
     for (const year of years) {
       for (const bf of year.bracketFill) {
         if (bf.filled_by_income + bf.filled_by_conversion > 0) {
@@ -153,7 +175,6 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
   const chartMax = maxBracket.max;
   const drawableHeight = chartHeight - TOP_PADDING - BOTTOM_PADDING;
 
-  // Scale: dollars to pixels (y goes downward in SVG, so we invert)
   const yScale = useCallback(
     (dollars: number) => {
       const ratio = dollars / chartMax;
@@ -162,7 +183,6 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
     [chartMax, chartHeight, drawableHeight]
   );
 
-  // Evenly spaced income tick marks for left axis
   const incomeTicks = useMemo(() => {
     const interval = niceInterval(chartMax, isMobile ? 4 : 5);
     const ticks: number[] = [];
@@ -172,7 +192,6 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
     return ticks;
   }, [chartMax, isMobile]);
 
-  // Visible brackets for the legend / right axis
   const visibleBrackets = useMemo(
     () => brackets.filter((b) => b.max <= chartMax),
     [brackets, chartMax]
@@ -196,7 +215,15 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
         </span>
       </div>
 
-      <div ref={containerRef} className="flex relative">
+      <div
+        ref={containerRef}
+        className="flex relative"
+        onPointerDown={handleChartPointerDown}
+        onMouseLeave={() => {
+          setIsEngaged(false);
+          setTooltip(null);
+        }}
+      >
         {/* Left axis label (desktop only) */}
         {!isMobile && (
           <div className="flex-shrink-0 flex items-center" style={{ width: VERTICAL_LABEL_WIDTH }}>
@@ -257,7 +284,6 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
               className="block"
             >
               <defs>
-                {/* One fade mask per bar column — solid at bottom, transparent at top */}
                 <linearGradient id="barFadeGrad" x1="0" y1="1" x2="0" y2="0">
                   <stop offset="0%" stopColor="white" stopOpacity="0.85" />
                   <stop offset="70%" stopColor="white" stopOpacity="0.6" />
@@ -339,32 +365,32 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
           </div>
         </div>
 
-        {/* Fixed right axis: bracket rate + dollar range (desktop only) */}
-        {!isMobile && (
-          <svg
-            width={RIGHT_AXIS_WIDTH}
-            height={chartHeight}
-            className="flex-shrink-0"
-          >
-            {visibleBrackets.map((b) => {
-              const y = yScale(b.max);
-              const color =
-                BRACKET_COLORS[b.rate.toFixed(2)] || "#6B7280";
-              return (
-                <text
-                  key={b.rate}
-                  x={6}
-                  y={y + 4}
-                  className="text-[11px] font-medium"
-                  fontFamily="'Manrope', system-ui"
-                  fill={color}
-                >
-                  {formatPercent(b.rate)} (${Math.round(b.max / 1000)}K)
-                </text>
-              );
-            })}
-          </svg>
-        )}
+        {/* Fixed right axis: bracket rates — always visible */}
+        <svg
+          width={rightAxisWidth}
+          height={chartHeight}
+          className="flex-shrink-0"
+        >
+          {visibleBrackets.map((b) => {
+            const y = yScale(b.max);
+            const color =
+              BRACKET_COLORS[b.rate.toFixed(2)] || "#6B7280";
+            return (
+              <text
+                key={b.rate}
+                x={6}
+                y={y + 4}
+                className={`${isMobile ? "text-[9px]" : "text-[11px]"} font-medium`}
+                fontFamily="'Manrope', system-ui"
+                fill={color}
+              >
+                {isMobile
+                  ? formatPercent(b.rate)
+                  : `${formatPercent(b.rate)} ($${Math.round(b.max / 1000)}K)`}
+              </text>
+            );
+          })}
+        </svg>
 
         {/* Right axis label (desktop only) */}
         {!isMobile && (
@@ -381,7 +407,7 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
           </div>
         )}
 
-        {/* Hover tooltip */}
+        {/* Hover tooltip — only shown when chart is engaged */}
         {tooltip && (
           <div
             className="absolute z-50 pointer-events-none"
@@ -436,26 +462,6 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
           </div>
         )}
       </div>
-
-      {/* Bracket legend (mobile only) */}
-      {isMobile && (
-        <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[11px]" style={{ fontFamily: "'Manrope', system-ui" }}>
-          {visibleBrackets.map((b) => {
-            const color = BRACKET_COLORS[b.rate.toFixed(2)] || "#6B7280";
-            return (
-              <span key={b.rate} className="flex items-center gap-1.5">
-                <span
-                  className="w-2 h-2 rounded-sm flex-shrink-0"
-                  style={{ backgroundColor: color }}
-                />
-                <span style={{ color }} className="font-medium">
-                  {formatPercent(b.rate)} (${Math.round(b.max / 1000)}K)
-                </span>
-              </span>
-            );
-          })}
-        </div>
-      )}
     </Card>
   );
 }
