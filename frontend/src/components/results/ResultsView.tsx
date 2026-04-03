@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import type {
   OptimizationResult,
   LifeEvent,
@@ -19,6 +19,7 @@ import { AcaSubsidyImpact } from "./AcaSubsidyImpact";
 import { Card } from "@/components/ui/card";
 import { useConversionSlider } from "@/hooks/useConversionSlider";
 import { computeSnapThreshold } from "@/lib/utils/snap";
+import { useSyncedScroll } from "@/hooks/useSyncedScroll";
 
 interface YearOverride {
   income?: number;
@@ -37,6 +38,12 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
   );
 
   const hasUnsavedChanges = overrides.size > 0;
+
+  // Synced horizontal scroll between chart and detail table
+  const chartScrollRef = useRef<HTMLDivElement>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
+  const [tableColWidth, setTableColWidth] = useState(58);
+  useSyncedScroll(chartScrollRef, tableScrollRef);
 
   // Client-side slider: continuous bracket fill computation
   const {
@@ -198,6 +205,8 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
       <BracketChart
         years={chartYears}
         filingStatus={result.input.filing_status}
+        scrollRef={chartScrollRef}
+        onBarWidthChange={setTableColWidth}
       />
 
       {/* Transposed detail table */}
@@ -215,6 +224,8 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
           overrides={overrides}
           onIncomeChange={handleIncomeChange}
           onLifeEventChange={handleLifeEventChange}
+          scrollRef={tableScrollRef}
+          colWidth={tableColWidth}
         />
 
         {/* Re-run button */}

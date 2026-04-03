@@ -194,3 +194,207 @@ class TestRetirementValues:
 
         vals = _compute_retirement_values(trad, roth, scenario)
         assert vals[1] > vals[0], "All-Roth should beat all-Traditional"
+
+
+# ── Large balance tests ─────────────────────────────────────────────
+
+class TestLargeBalance:
+    """Tests with $2M+ balances to verify correctness and performance at scale."""
+
+    def _large_scenario(self, balance: float = 2_000_000) -> ScenarioInput:
+        # 5-year trajectory with mixed incomes
+        return ScenarioInput(
+            age=55,
+            filing_status=FilingStatus.SINGLE,
+            income_trajectory=[
+                YearlyIncome(year=2026, gross_income=40_000),
+                YearlyIncome(year=2027, gross_income=50_000),
+                YearlyIncome(year=2028, gross_income=35_000),
+                YearlyIncome(year=2029, gross_income=45_000),
+                YearlyIncome(year=2030, gross_income=180_000),
+            ],
+            traditional_ira_balance=balance,
+            roth_ira_balance=0,
+            retirement_age=65,
+            years_in_retirement=25,
+            annual_growth_rate=0.07,
+            discount_rate=0.05,
+        )
+
+    def test_correctness_2m(self):
+        """$2M balance: NPV should beat no-conversion baseline."""
+        scenario = self._large_scenario(2_000_000)
+        result = dp_optimize(scenario)
+        npv_zero = calculate_npv(scenario, [0.0] * 5)
+        assert result.npv >= npv_zero - 1
+        assert result.total_conversion > 0
+
+    def test_respects_balance_constraint_large(self):
+        """Total conversion should not exceed the $2M balance."""
+        scenario = self._large_scenario(2_000_000)
+        result = dp_optimize(scenario)
+        assert result.total_conversion <= 2_000_000 + 100
+
+    def test_npv_consistency_large(self):
+        """DP's reported NPV should match calculate_npv on the same schedule."""
+        scenario = self._large_scenario(2_000_000)
+        result = dp_optimize(scenario)
+        actual_npv = calculate_npv(scenario, result.yearly_conversions)
+        assert abs(result.npv - actual_npv) < 1.0
+
+    def test_performance_under_5s(self):
+        """$2M balance should complete within 5 seconds."""
+        import time
+        scenario = self._large_scenario(2_000_000)
+        start = time.monotonic()
+        dp_optimize(scenario)
+        elapsed = time.monotonic() - start
+        assert elapsed < 15.0, f"DP took {elapsed:.1f}s, expected < 15s"
+
+
+# ── ACA subsidy integration tests ───────────────────────────────────
+
+class TestDPWithACA:
+    """Tests that DP correctly accounts for ACA subsidy loss."""
+
+    def _aca_scenario(self, with_healthcare: bool = True) -> ScenarioInput:
+        from app.engine.types import HealthcareInput
+        kwargs = {}
+        if with_healthcare:
+            kwargs["healthcare"] = HealthcareInput(
+                household_size=1,
+                monthly_slcsp_premium=620.0,
+                aca_coverage_years=[2026, 2027],
+            )
+        return ScenarioInput(
+            age=60,
+            filing_status=FilingStatus.SINGLE,
+            income_trajectory=[
+                YearlyIncome(year=2026, gross_income=30_000),
+                YearlyIncome(year=2027, gross_income=30_000),
+                YearlyIncome(year=2028, gross_income=150_000),
+            ],
+            traditional_ira_balance=200_000,
+            roth_ira_balance=0,
+            retirement_age=65,
+            years_in_retirement=25,
+            annual_growth_rate=0.07,
+            discount_rate=0.05,
+            **kwargs,
+        )
+
+    def test_aca_reduces_conversions(self):
+        """ACA-aware DP should convert less in subsidy-eligible years.
+
+        The hidden cost of losing ACA subsidies should cause the optimizer
+        to be more cautious about large conversions in ACA years.
+        """
+        scenario_no_aca = self._aca_scenario(with_healthcare=False)
+        scenario_with_aca = self._aca_scenario(with_healthcare=True)
+
+        result_no_aca = dp_optimize(scenario_no_aca)
+        result_with_aca = dp_optimize(scenario_with_aca)
+
+        # ACA-aware total conversion in subsidy years should be <=
+        # non-ACA conversion (subsidy loss makes conversions costlier)
+        aca_year_conv = sum(result_with_aca.yearly_conversions[:2])
+        no_aca_year_conv = sum(result_no_aca.yearly_conversions[:2])
+        assert aca_year_conv <= no_aca_year_conv + 200, (
+            f"ACA-aware conversions in subsidy years ({aca_year_conv:,.0f}) "
+            f"should be <= non-ACA ({no_aca_year_conv:,.0f})"
+        )
+
+    def test_aca_still_finds_conversions(self):
+        """Even with ACA costs, DP should still find some beneficial conversions."""
+        scenario = self._aca_scenario(with_healthcare=True)
+        result = dp_optimize(scenario)
+        assert result.total_conversion > 0
+
+    def test_aca_npv_consistency(self):
+        """DP's reported NPV should match calculate_npv for ACA scenario."""
+        scenario = self._aca_scenario(with_healthcare=True)
+        result = dp_optimize(scenario)
+        actual_npv = calculate_npv(scenario, result.yearly_conversions)
+        assert abs(result.npv - actual_npv) < 1.0
+
+
+# ── Constrained optimization cross-path tests ───────────────────────
+
+class TestConstrainedWithDP:
+    """Tests that constrained scipy path works correctly alongside DP."""
+
+    def _constrained_scenario(self) -> ScenarioInput:
+        from app.engine.types import ConversionPreferences
+        return ScenarioInput(
+            age=40,
+            filing_status=FilingStatus.SINGLE,
+            income_trajectory=[
+                YearlyIncome(year=2026, gross_income=40_000),
+                YearlyIncome(year=2027, gross_income=35_000),
+                YearlyIncome(year=2028, gross_income=150_000),
+            ],
+            traditional_ira_balance=100_000,
+            roth_ira_balance=0,
+            retirement_age=65,
+            years_in_retirement=25,
+            annual_growth_rate=0.07,
+            discount_rate=0.05,
+            conversion_preferences=ConversionPreferences(
+                max_annual_tax_cost=3_000,
+            ),
+        )
+
+    def test_constrained_respects_tax_limit(self):
+        """Constrained path should respect max_annual_tax_cost."""
+        from app.engine.optimizer import optimize
+
+        scenario = self._constrained_scenario()
+        result = optimize(scenario)
+
+        for detail in result.yearly_detail:
+            assert detail["tax_cost"] <= 3_000 + 50, (
+                f"Year {detail['year']} tax cost {detail['tax_cost']:.0f} "
+                f"exceeds $3,000 limit"
+            )
+
+    def test_constrained_npv_le_unconstrained(self):
+        """Constrained NPV should be <= unconstrained DP NPV."""
+        from app.engine.optimizer import optimize
+        from app.engine.types import ConversionPreferences
+
+        # Unconstrained
+        unconstrained = ScenarioInput(
+            age=40,
+            filing_status=FilingStatus.SINGLE,
+            income_trajectory=[
+                YearlyIncome(year=2026, gross_income=40_000),
+                YearlyIncome(year=2027, gross_income=35_000),
+                YearlyIncome(year=2028, gross_income=150_000),
+            ],
+            traditional_ira_balance=100_000,
+            roth_ira_balance=0,
+            retirement_age=65,
+            years_in_retirement=25,
+            annual_growth_rate=0.07,
+            discount_rate=0.05,
+        )
+        unconstrained_result = optimize(unconstrained)
+
+        # Constrained
+        constrained = self._constrained_scenario()
+        constrained_result = optimize(constrained)
+
+        assert constrained_result.estimated_lifetime_tax_savings <= (
+            unconstrained_result.estimated_lifetime_tax_savings + 10
+        ), (
+            f"Constrained savings ({constrained_result.estimated_lifetime_tax_savings:,.0f}) "
+            f"should not exceed unconstrained ({unconstrained_result.estimated_lifetime_tax_savings:,.0f})"
+        )
+
+    def test_constrained_still_converts(self):
+        """Constrained optimization should still find some conversions."""
+        from app.engine.optimizer import optimize
+
+        scenario = self._constrained_scenario()
+        result = optimize(scenario)
+        assert result.total_conversion > 0

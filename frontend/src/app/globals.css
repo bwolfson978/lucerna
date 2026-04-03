@@ -330,11 +330,12 @@ input[type="range"]::-moz-range-thumb {
   background: rgba(240, 198, 116, 0.5);
 }
 
-/* Horizontal scroll fade indicator — signals more content off-screen */
+/* Horizontal scroll fade indicators — signal more content off-screen */
 .scroll-fade {
   position: relative;
 }
 
+/* Right fade — hidden when scrolled to end */
 .scroll-fade::after {
   content: '';
   position: absolute;
@@ -349,4 +350,32 @@ input[type="range"]::-moz-range-thumb {
 
 .scroll-fade[data-scrolled-end]::after {
   display: none;
+}
+
+/* Left fade — only shown when scrolled away from start */
+.scroll-fade::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 24px;
+  background: linear-gradient(to left, transparent, hsl(var(--card)));
+  pointer-events: none;
+  z-index: 1;
+  display: none;
+}
+
+.scroll-fade:not([data-scrolled-start])::before {
+  display: block;
+}
+
+/* Scroll hint pill animation */
+@keyframes fade-out-delayed {
+  0%, 60% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.animate-fade-out-delayed {
+  animation: fade-out-delayed 3s ease forwards;
 }

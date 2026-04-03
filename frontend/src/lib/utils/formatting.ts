@@ -40,6 +40,32 @@ export function formatAxisCurrency(amount: number): string {
   return currencyFormatter.format(amount);
 }
 
+/**
+ * Compact currency format for narrow table cells.
+ * Uses K/M suffixes with decimals for precision when needed:
+ * $0 → "$0", $800 → "$800", $11,900 → "$11.9K",
+ * $150,000 → "$150K", $1,200,000 → "$1.2M"
+ */
+export function formatTableCurrency(amount: number): string {
+  const abs = Math.abs(amount);
+  const sign = amount < 0 ? "-" : "";
+  if (abs >= 1_000_000) {
+    const m = abs / 1_000_000;
+    const formatted = m % 1 === 0 ? `${m}` : m.toFixed(1);
+    return `${sign}$${formatted}M`;
+  }
+  if (abs >= 10_000) {
+    const k = abs / 1_000;
+    const formatted = k % 1 === 0 ? `${k}` : k.toFixed(1).replace(/\.0$/, "");
+    return `${sign}$${formatted}K`;
+  }
+  if (abs >= 1_000) {
+    const k = abs / 1_000;
+    return `${sign}$${k.toFixed(1).replace(/\.0$/, "")}K`;
+  }
+  return currencyFormatter.format(amount);
+}
+
 export function formatPercent(decimal: number): string {
   return `${Math.round(decimal * 100)}%`;
 }
