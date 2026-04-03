@@ -330,6 +330,11 @@ input[type="range"]::-moz-range-thumb {
   background: rgba(240, 198, 116, 0.5);
 }
 
+.bracket-chart-scroll::-webkit-scrollbar-button,
+.overflow-x-auto::-webkit-scrollbar-button {
+  display: none;
+}
+
 /* Horizontal scroll fade indicators — signal more content off-screen */
 .scroll-fade {
   position: relative;
