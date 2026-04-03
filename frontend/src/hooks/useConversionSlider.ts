@@ -15,7 +15,8 @@ import { computeSnapThreshold } from "@/lib/utils/snap";
 export function distributeConversion(
   totalConversion: number,
   optimizerWeights: number[],
-  conversionCurve?: ConversionCurvePoint[]
+  conversionCurve?: ConversionCurvePoint[],
+  iraBalance?: number
 ): number[] {
   if (totalConversion === 0) return optimizerWeights.map(() => 0);
 
@@ -25,29 +26,51 @@ export function distributeConversion(
       (a, b) => a.total_cap - b.total_cap
     );
 
+    let interpolated: number[] | undefined;
+
     // Clamp to curve range
     if (totalConversion <= sorted[0].total_cap) {
-      return sorted[0].yearly_conversions.map((c) => Math.max(0, c));
-    }
-    if (totalConversion >= sorted[sorted.length - 1].total_cap) {
-      return sorted[sorted.length - 1].yearly_conversions.map((c) =>
+      interpolated = sorted[0].yearly_conversions.map((c) => Math.max(0, c));
+    } else if (totalConversion >= sorted[sorted.length - 1].total_cap) {
+      interpolated = sorted[sorted.length - 1].yearly_conversions.map((c) =>
         Math.max(0, c)
       );
+    } else {
+      // Find bounding points and lerp
+      for (let i = 0; i < sorted.length - 1; i++) {
+        if (
+          sorted[i].total_cap <= totalConversion &&
+          sorted[i + 1].total_cap >= totalConversion
+        ) {
+          const range = sorted[i + 1].total_cap - sorted[i].total_cap;
+          const t = range > 0 ? (totalConversion - sorted[i].total_cap) / range : 0;
+          interpolated = sorted[i].yearly_conversions.map((low, idx) => {
+            const high = sorted[i + 1].yearly_conversions[idx] ?? 0;
+            return Math.max(0, low + t * (high - low));
+          });
+          break;
+        }
+      }
     }
 
-    // Find bounding points and lerp
-    for (let i = 0; i < sorted.length - 1; i++) {
-      if (
-        sorted[i].total_cap <= totalConversion &&
-        sorted[i + 1].total_cap >= totalConversion
-      ) {
-        const range = sorted[i + 1].total_cap - sorted[i].total_cap;
-        const t = range > 0 ? (totalConversion - sorted[i].total_cap) / range : 0;
-        return sorted[i].yearly_conversions.map((low, idx) => {
-          const high = sorted[i + 1].yearly_conversions[idx] ?? 0;
-          return Math.max(0, low + t * (high - low));
-        });
+    if (interpolated) {
+      // Scale up if the interpolated total falls short of the requested amount.
+      // This happens when the optimizer plateaus (doesn't use the full cap).
+      const interpolatedTotal = interpolated.reduce((a, b) => a + b, 0);
+      if (interpolatedTotal > 0 && totalConversion > interpolatedTotal + 0.01) {
+        const scale = totalConversion / interpolatedTotal;
+        interpolated = interpolated.map((c) => c * scale);
+      } else if (interpolatedTotal === 0 && totalConversion > 0) {
+        const perYear = totalConversion / interpolated.length;
+        interpolated = interpolated.map(() => perYear);
       }
+
+      // Cap each year at IRA balance
+      if (iraBalance !== undefined) {
+        interpolated = interpolated.map((c) => Math.min(c, iraBalance));
+      }
+
+      return interpolated;
     }
   }
 
@@ -81,9 +104,10 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
       distributeConversion(
         totalConversion,
         result.yearly_conversions,
-        result.conversion_curve
+        result.conversion_curve,
+        result.input.traditional_ira_balance
       ),
-    [totalConversion, result.yearly_conversions, result.conversion_curve]
+    [totalConversion, result.yearly_conversions, result.conversion_curve, result.input.traditional_ira_balance]
   );
 
   const yearlyBracketFills: BracketFillResult[][] = useMemo(
