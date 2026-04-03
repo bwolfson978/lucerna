@@ -211,7 +211,7 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded bg-bg-hover border border-border" />
-          Remaining
+          Remaining space in tax bracket
         </span>
       </div>
 
