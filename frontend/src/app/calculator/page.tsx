@@ -57,11 +57,11 @@ export default function CalculatorPage() {
       <Header />
       <main className="px-default md:px-page py-section-lg">
         <div className="max-w-content mx-auto flex flex-col gap-section">
-          {/* Form section — not sticky so results are always accessible */}
+          {/* Form section */}
           <div className={`pb-section -mx-default md:-mx-page px-default md:px-page pt-section border-b border-border${!result && !loading && !error ? "" : " shadow-sm"}`}>
             <div className="max-w-content mx-auto flex flex-col gap-default">
               <div className="flex flex-col gap-1">
-                <h1 className="text-h1 text-text-primary">
+                <h1 className="text-h1 text-text-primary font-serif">
                   Run your scenario
                 </h1>
                 <p className="text-body-sm text-text-secondary leading-relaxed">
@@ -74,7 +74,7 @@ export default function CalculatorPage() {
             </div>
           </div>
 
-          {/* Results section — renders below the sticky form */}
+          {/* Results section */}
           <div ref={resultsRef}>
             {loading && (
               <div className="flex flex-col gap-section">
@@ -121,7 +121,7 @@ export default function CalculatorPage() {
                     setError(null);
                     setResult(null);
                   }}
-                  className="text-body-sm text-accent hover:text-accent-hover font-medium mt-default transition-colors duration-150"
+                  className="text-body-sm text-accent hover:text-accent-hover font-medium mt-default transition-colors duration-300"
                 >
                   Try again
                 </button>

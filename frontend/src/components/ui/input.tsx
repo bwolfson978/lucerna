@@ -15,12 +15,12 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         inputMode={numeric ? "decimal" : undefined}
         className={cn(
           "h-9 min-h-[44px] px-3 w-full",
-          "rounded-md bg-bg-alt",
+          "rounded-lg bg-bg-alt",
           "border border-border",
           "text-body text-text-primary",
           "placeholder:text-text-tertiary",
           "focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10",
-          "transition-all duration-150",
+          "transition-all duration-300",
           "disabled:opacity-50 disabled:cursor-not-allowed",
           numeric && "font-mono",
           className

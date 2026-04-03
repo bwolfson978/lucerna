@@ -16,7 +16,7 @@ export function ChartSkeleton() {
   return (
     <Card>
       <Skeleton className="h-4 w-48 mb-4" />
-      <Skeleton className="h-[200px] w-full rounded-md" />
+      <Skeleton className="h-[200px] w-full rounded-lg" />
     </Card>
   );
 }

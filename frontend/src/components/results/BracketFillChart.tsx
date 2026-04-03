@@ -2,7 +2,7 @@
 
 import type { BracketFillResult } from "@/lib/types";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
-
+import { BRACKET_COLORS, CHART_COLORS } from "@/lib/utils/constants";
 import { Tooltip } from "@/components/common/Tooltip";
 import { Card } from "@/components/ui/card";
 
@@ -29,7 +29,7 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
       <div className="flex items-center gap-5 text-body-sm text-text-secondary">
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded bg-neutral" />
-          Income
+          Earned Income
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded bg-accent" />
@@ -47,6 +47,16 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
         role="img"
         aria-label="Bracket fill visualization"
       >
+        <defs>
+          <linearGradient id="incomeGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor={CHART_COLORS.income} stopOpacity="0.85" />
+            <stop offset="100%" stopColor={CHART_COLORS.income} stopOpacity="0.5" />
+          </linearGradient>
+          <linearGradient id="conversionGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor={CHART_COLORS.conversion} stopOpacity="0.9" />
+            <stop offset="100%" stopColor={CHART_COLORS.conversion} stopOpacity="0.55" />
+          </linearGradient>
+        </defs>
         {data.map((bracket, i) => {
           const y = i * 44 + 4;
           const barWidth = 460;
@@ -65,7 +75,7 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
                 x={labelX}
                 y={y + 23}
                 className="text-[13px] font-medium fill-text-secondary"
-                fontFamily="'JetBrains Mono', monospace"
+                fontFamily="'Manrope', system-ui"
               >
                 {formatPercent(bracket.bracket_rate)}
               </text>
@@ -77,7 +87,7 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
                   y={y}
                   width={incomeWidth}
                   height={34}
-                  fill="#6B7280"
+                  fill="url(#incomeGrad)"
                   rx={4}
                 />
               )}
@@ -89,7 +99,7 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
                   y={y}
                   width={conversionWidth}
                   height={34}
-                  fill="#4F46E5"
+                  fill="url(#conversionGrad)"
                   rx={4}
                 />
               )}
@@ -101,7 +111,7 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
                   y={y}
                   width={remainingWidth}
                   height={34}
-                  fill="rgba(0,0,0,0.03)"
+                  fill="rgba(255,255,255,0.04)"
                   rx={4}
                 />
               )}
@@ -118,7 +128,7 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
                   }
                   y={y + 23}
                   className="text-[11px] fill-text-tertiary"
-                  fontFamily="'JetBrains Mono', monospace"
+                  fontFamily="'Manrope', system-ui"
                 >
                   {formatCurrency(
                     bracket.filled_by_income +

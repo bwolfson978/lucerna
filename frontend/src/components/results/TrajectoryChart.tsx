@@ -27,7 +27,7 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
     chart: {
       type: "bar" as const,
       stacked: true,
-      fontFamily: "'JetBrains Mono', 'Geist Sans', system-ui, sans-serif",
+      fontFamily: "'Manrope', 'DM Sans', system-ui, sans-serif",
       toolbar: { show: false },
       zoom: { enabled: false },
       background: "transparent",
@@ -48,24 +48,25 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
     plotOptions: {
       bar: {
         borderRadius: 6,
-        columnWidth: "56%",
+        borderRadiusApplication: "end" as const,
+        columnWidth: "52%",
       },
     },
     colors: [CHART_COLORS.income, CHART_COLORS.conversion],
     fill: {
       type: "gradient",
       gradient: {
-        shade: "light",
+        shade: "dark",
         type: "vertical",
         shadeIntensity: 0.15,
-        opacityFrom: 1,
-        opacityTo: 0.85,
-        stops: [0, 100],
+        opacityFrom: 0.85,
+        opacityTo: 0.35,
+        stops: [0, 40, 100],
       },
     },
     grid: {
-      borderColor: "rgba(120, 113, 108, 0.06)",
-      strokeDashArray: 3,
+      borderColor: "rgba(255, 255, 255, 0.04)",
+      strokeDashArray: 4,
       padding: { left: 8, right: 8 },
     },
     xaxis: {
@@ -73,8 +74,8 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
       labels: {
         style: {
           fontSize: "12px",
-          fontFamily: "'JetBrains Mono', monospace",
-          colors: "#6B7280",
+          fontFamily: "'Manrope', system-ui",
+          colors: "#B8B0D2",
         },
       },
       axisBorder: { show: false },
@@ -86,12 +87,13 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
           val >= 1000 ? `$${(val / 1000).toFixed(0)}K` : `$${val}`,
         style: {
           fontSize: "11px",
-          fontFamily: "'JetBrains Mono', monospace",
-          colors: "#9CA3AF",
+          fontFamily: "'Manrope', system-ui",
+          colors: "#8B8A99",
         },
       },
     },
     tooltip: {
+      theme: "dark",
       y: {
         formatter: (val: number) => `$${val.toLocaleString()}`,
       },
@@ -100,22 +102,22 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
     legend: { show: false },
     states: {
       hover: {
-        filter: { type: "lighten", value: 0.08 } as unknown as { type?: string },
+        filter: { type: "darken", value: 0.05 } as unknown as { type?: string },
       },
       active: { filter: { type: "none" } },
     },
     annotations: {
       yaxis: bracketBoundaries.map((boundary) => ({
         y: boundary,
-        borderColor: "rgba(120, 113, 108, 0.10)",
+        borderColor: "rgba(255, 255, 255, 0.08)",
         strokeDashArray: 4,
         label: {
           text: `$${(boundary / 1000).toFixed(0)}K`,
           position: "left" as const,
           style: {
             fontSize: "10px",
-            fontFamily: "'JetBrains Mono', monospace",
-            color: "#9CA3AF",
+            fontFamily: "'Manrope', system-ui",
+            color: "#8B8A99",
             background: "transparent",
           },
         },
@@ -125,7 +127,7 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
   };
 
   const series = [
-    { name: "Income", data: incomeData },
+    { name: "Earned Income", data: incomeData },
     { name: "Conversion", data: conversionData },
   ];
 
@@ -133,7 +135,7 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
     <Card className="flex flex-col gap-default">
       <div className="flex items-center gap-2">
         <h3 className="text-h3 text-text-primary">
-          Income + conversion by year
+          Earned income + conversion by year
         </h3>
         <Tooltip content="Shows how the optimizer distributes conversions across your income trajectory. Click a year to see its bracket fill detail." />
       </div>
@@ -142,7 +144,7 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
       <div className="flex items-center gap-5 text-body-sm text-text-secondary">
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.income }} />
-          Income
+          Earned Income
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.conversion }} />
