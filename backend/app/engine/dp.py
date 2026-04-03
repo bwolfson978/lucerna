@@ -386,11 +386,12 @@ def extract_conversion_curve(
         else:
             yearly_conv = [0.0] * n_years
 
-        # Clamp to non-negative and within sequential balance
+        # Clamp to non-negative and within sequential balance (with growth)
         remaining_bal = balance
+        g = scenario.annual_growth_rate
         for i in range(n_years):
             yearly_conv[i] = max(0.0, min(yearly_conv[i], remaining_bal))
-            remaining_bal -= yearly_conv[i]
+            remaining_bal = (remaining_bal - yearly_conv[i]) * (1 + g)
 
         # Compute actual NPV for this allocation
         npv_val = calculate_npv(scenario, yearly_conv)
@@ -685,11 +686,17 @@ def extract_conversion_curve_3d(
     scenario: ScenarioInput,
     n_points: int = 50,
     balance_grid_size: int = 300,
+    curve_max: float | None = None,
 ) -> list[ConversionCurvePoint]:
     """Build a conversion curve using 3D DP with budget constraint.
 
     For each total conversion cap, extracts the NPV-maximizing schedule
     via a single 3D backward pass + per-cap forward passes.
+
+    Args:
+        curve_max: Upper bound for the budget grid.  When the DP optimal
+            total exceeds the initial balance (due to inter-year growth),
+            pass that total here so the curve covers the full range.
     """
     from app.engine.optimizer import calculate_npv
     from app.engine.tax import get_marginal_rate
@@ -700,8 +707,10 @@ def extract_conversion_curve_3d(
     if balance <= 0 or n_years == 0:
         return []
 
-    # Budget grid: 0 to traditional_ira_balance
-    budget_grid = np.linspace(0, balance, n_points)
+    # Budget grid: extend to cover curve_max when inter-year growth lets
+    # total conversions exceed the initial balance.
+    upper = max(balance, curve_max or balance)
+    budget_grid = np.linspace(0, upper, n_points)
     balance_grid = np.linspace(0, balance, balance_grid_size)
 
     # Single 3D backward pass
@@ -722,11 +731,12 @@ def extract_conversion_curve_3d(
                 scenario, extended_grid, budget_grid, policy_table, cap_rounded,
             )
 
-        # Clamp to non-negative and within sequential balance
+        # Clamp to non-negative and within sequential balance (with growth)
         remaining_bal = balance
+        g = scenario.annual_growth_rate
         for i in range(n_years):
             yearly_conv[i] = max(0.0, min(yearly_conv[i], remaining_bal))
-            remaining_bal -= yearly_conv[i]
+            remaining_bal = (remaining_bal - yearly_conv[i]) * (1 + g)
 
         # Force schedule to sum to exactly the cap.  The slider value is
         # a "must-do" total, not a maximum.  The DP provides the optimal

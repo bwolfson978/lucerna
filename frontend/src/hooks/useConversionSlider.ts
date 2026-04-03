@@ -160,7 +160,7 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
   // so hero metric and scenario cards always agree.
   const estimatedSavings = useMemo(() => {
     // Snap to backend value when at (or very near) the optimizer's answer
-    const snapThreshold = computeSnapThreshold(0, result.input.traditional_ira_balance);
+    const snapThreshold = computeSnapThreshold(0, Math.max(result.input.traditional_ira_balance, result.total_conversion));
     if (Math.abs(totalConversion - result.total_conversion) <= snapThreshold) {
       return result.estimated_lifetime_tax_savings;
     }

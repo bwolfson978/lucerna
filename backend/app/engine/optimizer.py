@@ -210,8 +210,12 @@ def _run_scipy(
     return best_conversions
 
 
-def _finalize_conversions(raw: list[float], max_balance: float) -> list[float]:
-    """Round to nearest $100, enforce non-negative and within balance."""
+def _finalize_conversions(raw: list[float], max_balance: float, growth_rate: float = 0.0) -> list[float]:
+    """Round to nearest $100, enforce non-negative and within balance.
+
+    Accounts for inter-year growth so later years can access the grown
+    remainder, matching the DP forward-pass semantics.
+    """
     remaining = max_balance
     final = []
     for c in raw:
@@ -219,7 +223,7 @@ def _finalize_conversions(raw: list[float], max_balance: float) -> list[float]:
         c = round(c / 100) * 100
         c = min(c, remaining)
         final.append(c)
-        remaining -= c
+        remaining = (remaining - c) * (1 + growth_rate)
     return final
 
 
@@ -505,12 +509,16 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
             scenario, prefs, unconstrained_conversions,
         )
         raw_constrained = _run_scipy(scenario, constrained_bounds, constrained_constraints)
-        final_conversions = _finalize_conversions(raw_constrained, max_balance)
+        final_conversions = _finalize_conversions(raw_constrained, max_balance, scenario.annual_growth_rate)
     else:
         final_conversions = unconstrained_conversions
 
-    # Conversion curve: 3D DP with budget constraint for accurate per-cap schedules
-    conversion_curve = extract_conversion_curve_3d(scenario)
+    total_conversion = sum(final_conversions)
+
+    # Conversion curve: 3D DP with budget constraint for accurate per-cap schedules.
+    # Pass total_conversion so the curve extends beyond the initial balance when
+    # inter-year growth allows cumulative conversions to exceed it.
+    conversion_curve = extract_conversion_curve_3d(scenario, curve_max=total_conversion)
 
     # Recalculate NPV with final conversions
     npv_at_optimal = calculate_npv(scenario, final_conversions)
@@ -551,7 +559,6 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         trad_balance *= factor
         roth_balance *= factor
 
-    total_conversion = sum(final_conversions)
     overall_eff_rate = total_tax / total_conversion if total_conversion > 0 else 0.0
 
     # Scenarios

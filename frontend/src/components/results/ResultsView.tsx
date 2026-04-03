@@ -156,7 +156,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
           <ConversionSlider
             value={sliderValue}
             min={0}
-            max={result.input.traditional_ira_balance}
+            max={Math.max(result.input.traditional_ira_balance, result.total_conversion)}
             optimalValue={result.total_conversion}
             onChange={setSliderValue}
           />
