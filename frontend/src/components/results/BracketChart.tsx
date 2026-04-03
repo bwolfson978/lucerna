@@ -6,6 +6,7 @@ import { BRACKET_COLORS, CHART_COLORS } from "@/lib/utils/constants";
 import { useRef, useMemo, useState, useCallback, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { useContainerWidth } from "@/hooks/useContainerWidth";
+import { useScrollFade } from "@/hooks/useScrollFade";
 
 interface ChartTooltip {
   x: number;
@@ -75,12 +76,14 @@ function niceInterval(range: number, targetTicks: number): number {
 
 export function BracketChart({ years, filingStatus }: BracketChartProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fadeRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const brackets = BRACKET_BOUNDARIES[filingStatus];
   const [tooltip, setTooltip] = useState<ChartTooltip | null>(null);
   const [isEngaged, setIsEngaged] = useState(false);
 
   const containerWidth = useContainerWidth(containerRef);
+  const { hasScrolled } = useScrollFade(scrollRef, fadeRef);
 
   // Dismiss tooltip and disengage when clicking outside the chart
   useEffect(() => {
@@ -272,10 +275,21 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
         </svg>
 
         {/* Scrollable bar area */}
-        <div className={`flex-1 min-w-0 ${!barsFit ? "scroll-fade" : ""}`}>
+        <div ref={fadeRef} className={`flex-1 min-w-0 ${!barsFit ? "scroll-fade mb-2" : ""}`}>
+          {/* Scroll hint pill — shown until first scroll */}
+          {!barsFit && !hasScrolled && (
+            <div className="absolute inset-0 flex items-center justify-end pr-3 pointer-events-none z-10 animate-fade-out-delayed">
+              <div className="flex items-center gap-1 text-[10px] text-accent/70 bg-card/80 backdrop-blur-sm rounded-full px-2.5 py-1">
+                <span>Scroll</span>
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            </div>
+          )}
           <div
             ref={scrollRef}
-            className={!barsFit ? "overflow-x-auto bracket-chart-scroll" : ""}
+            className={!barsFit ? "overflow-x-auto bracket-chart-scroll pb-2" : ""}
           >
             <svg
               width={Math.max(totalBarWidth, 200)}

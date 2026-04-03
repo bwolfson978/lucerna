@@ -5,6 +5,7 @@ import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
 import { LIFE_EVENT_LABELS } from "@/lib/utils/constants";
 import { Tooltip } from "@/components/common/Tooltip";
 import { useRef, useState } from "react";
+import { useScrollFade } from "@/hooks/useScrollFade";
 
 interface YearOverride {
   income?: number;
@@ -77,6 +78,8 @@ export function TransposedDetailTable({
   onLifeEventChange,
 }: TransposedDetailTableProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const fadeRef = useRef<HTMLDivElement>(null);
+  useScrollFade(scrollRef, fadeRef);
 
   const colWidth = 58; // Matches bar width + gap in BracketChart
 
@@ -107,8 +110,8 @@ export function TransposedDetailTable({
       </div>
 
       {/* Scrollable columns (synced with chart scroll) */}
-      <div className="scroll-fade flex-1 min-w-0">
-      <div ref={scrollRef} className="overflow-x-auto bracket-chart-scroll">
+      <div ref={fadeRef} className="scroll-fade flex-1 min-w-0">
+      <div ref={scrollRef} className="overflow-x-auto bracket-chart-scroll pb-2">
         <div className="flex" style={{ width: `${years.length * colWidth}px` }}>
           {years.map((yearInfo, i) => {
             const detail = details[i];
