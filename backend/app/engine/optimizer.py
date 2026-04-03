@@ -488,7 +488,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
     Falls back to scipy SLSQP for constrained optimization when user
     preferences (max tax cost, etc.) are active.
     """
-    from app.engine.dp import dp_optimize, extract_conversion_curve
+    from app.engine.dp import dp_optimize, extract_conversion_curve_3d
 
     n_years = len(scenario.income_trajectory)
     max_balance = scenario.traditional_ira_balance
@@ -509,8 +509,8 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
     else:
         final_conversions = unconstrained_conversions
 
-    # Conversion curve: extract from DP value table (free — no extra optimization)
-    conversion_curve = extract_conversion_curve(dp_result, scenario)
+    # Conversion curve: 3D DP with budget constraint for accurate per-cap schedules
+    conversion_curve = extract_conversion_curve_3d(scenario)
 
     # Recalculate NPV with final conversions
     npv_at_optimal = calculate_npv(scenario, final_conversions)
