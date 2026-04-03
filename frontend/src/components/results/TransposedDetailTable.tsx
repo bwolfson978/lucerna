@@ -4,7 +4,7 @@ import type { YearlyDetail, LifeEvent } from "@/lib/types";
 import { formatCurrency, formatPercent, formatTableCurrency } from "@/lib/utils/formatting";
 import { LIFE_EVENT_LABELS } from "@/lib/utils/constants";
 import { Tooltip } from "@/components/common/Tooltip";
-import { useRef, useState, type RefObject } from "react";
+import { useMemo, useRef, useState, type RefObject } from "react";
 import { useScrollFade } from "@/hooks/useScrollFade";
 
 interface YearOverride {
@@ -41,15 +41,17 @@ function CompactCurrencyCell({
   value,
   onChange,
   highlighted,
+  maxChars,
 }: {
   value: number;
   onChange: (val: number) => void;
   highlighted: boolean;
+  maxChars?: number;
 }) {
   const [focused, setFocused] = useState(false);
   const display = focused
     ? value === 0 ? "" : String(value)
-    : formatTableCurrency(value);
+    : formatTableCurrency(value, maxChars);
 
   return (
     <input
@@ -62,7 +64,7 @@ function CompactCurrencyCell({
       }}
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
-      className={`w-full text-[10px] text-center bg-transparent border-0 p-0 focus:outline-none focus:bg-accent/5 rounded ${
+      className={`w-full text-[10px] text-center bg-transparent border-0 px-1 py-0 focus:outline-none focus:bg-accent/5 rounded ${
         highlighted ? "text-accent font-medium" : "text-text-primary"
       }`}
       style={{ fontFamily: "'Manrope', system-ui" }}
@@ -85,6 +87,10 @@ export function TransposedDetailTable({
   const scrollRef = externalScrollRef || internalScrollRef;
   const fadeRef = useRef<HTMLDivElement>(null);
   useScrollFade(scrollRef, fadeRef);
+
+  // Approximate max characters that fit in a column cell
+  // ~5.5px per char at 10px Manrope, minus 8px horizontal padding (px-1 each side)
+  const maxChars = useMemo(() => Math.max(4, Math.floor((colWidth - 8) / 5.5)), [colWidth]);
 
   return (
     <div className="flex text-body-sm">
@@ -134,14 +140,14 @@ export function TransposedDetailTable({
               >
                 {/* Year header */}
                 <div
-                  className="h-7 flex items-center justify-center text-[10px] text-text-secondary font-semibold border-b border-border"
+                  className="h-7 flex items-center justify-center text-[10px] text-text-secondary font-semibold border-b border-border px-1"
                   style={{ fontFamily: "'Manrope', system-ui" }}
                 >
                   {yearInfo.year}
                 </div>
 
                 {/* Life event */}
-                <div className="h-8 flex items-center justify-center">
+                <div className="h-8 flex items-center justify-center px-0.5">
                   <select
                     value={effectiveEvent}
                     onChange={(e) =>
@@ -168,28 +174,29 @@ export function TransposedDetailTable({
                     value={effectiveIncome}
                     onChange={(val) => onIncomeChange(i, val)}
                     highlighted={!!(hasOverride && overrides.get(i)?.income !== undefined)}
+                    maxChars={maxChars}
                   />
                 </div>
 
                 {/* Conversion (read-only) */}
                 <div
-                  className="h-8 flex items-center justify-center text-[10px] text-accent"
+                  className="h-8 flex items-center justify-center text-[10px] text-accent px-1"
                   style={{ fontFamily: "'Manrope', system-ui" }}
                 >
-                  {detail ? formatTableCurrency(detail.conversion) : "—"}
+                  {detail ? formatTableCurrency(detail.conversion, maxChars) : "—"}
                 </div>
 
                 {/* Tax cost */}
                 <div
-                  className="h-8 flex items-center justify-center text-[10px] text-text-primary"
+                  className="h-8 flex items-center justify-center text-[10px] text-text-primary px-1"
                   style={{ fontFamily: "'Manrope', system-ui" }}
                 >
-                  {detail ? formatTableCurrency(detail.tax_cost) : "—"}
+                  {detail ? formatTableCurrency(detail.tax_cost, maxChars) : "—"}
                 </div>
 
                 {/* Effective rate */}
                 <div
-                  className="h-8 flex items-center justify-center text-[10px] text-text-primary"
+                  className="h-8 flex items-center justify-center text-[10px] text-text-primary px-1"
                   style={{ fontFamily: "'Manrope', system-ui" }}
                 >
                   {detail ? formatPercent(detail.effective_rate) : "—"}
@@ -197,7 +204,7 @@ export function TransposedDetailTable({
 
                 {/* Marginal bracket */}
                 <div
-                  className="h-8 flex items-center justify-center text-[10px] text-text-primary"
+                  className="h-8 flex items-center justify-center text-[10px] text-text-primary px-1"
                   style={{ fontFamily: "'Manrope', system-ui" }}
                 >
                   {detail
