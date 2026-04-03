@@ -120,6 +120,20 @@
   }
 }
 
+/* Lighthouse light rotation */
+@keyframes lighthouse-rotate {
+  0% { transform: rotate(0deg); opacity: 0.3; }
+  25% { opacity: 0.7; }
+  50% { transform: rotate(180deg); opacity: 0.3; }
+  75% { opacity: 0.7; }
+  100% { transform: rotate(360deg); opacity: 0.3; }
+}
+
+.lighthouse-light {
+  transform-origin: center center;
+  animation: lighthouse-rotate 3s linear infinite;
+}
+
 /* Floating gradient orbs — ambient background glow */
 @keyframes float {
   0%, 100% { transform: translate(0, 0); }

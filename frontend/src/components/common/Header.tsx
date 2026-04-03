@@ -22,11 +22,12 @@ export function Header() {
           >
             Demo
           </Link>
+          <span className="text-text-tertiary opacity-40">|</span>
           <Link
             href="/calculator"
             className="text-body-sm text-text-secondary hover:text-accent transition-colors duration-300"
           >
-            Planner
+            Run Your Own Scenario
           </Link>
         </nav>
       </div>

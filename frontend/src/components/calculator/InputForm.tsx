@@ -342,7 +342,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
       {/* Submit */}
       <div className="pt-comfortable border-t border-border">
         <GlowButton type="submit" loading={loading}>
-          Analyze my scenario
+          Run my scenario
         </GlowButton>
       </div>
     </form>

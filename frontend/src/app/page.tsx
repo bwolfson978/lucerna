@@ -19,7 +19,7 @@ export default function Home() {
                 Compare multi-year Roth conversion scenarios to see what works for your situation
               </h1>
               <p className="text-body text-text-secondary max-w-lg" style={{ lineHeight: 1.8 }}>
-                Map out Roth conversion scenarios across your lifetime and see how each one hits your brackets, your tax bill, and your long-term wealth.
+                Map out Roth conversion scenarios across your lifetime and see how each one impacts your tax bill, and your long-term wealth.
               </p>
               <p className="text-body text-text-tertiary max-w-lg" style={{ lineHeight: 1.8 }}>
                 Flexible enough for your specific situation. Simple enough that you don&apos;t need a spreadsheet or a financial expert to use it.
@@ -35,7 +35,7 @@ export default function Home() {
                   href="/calculator"
                   className="inline-flex items-center justify-center min-h-[44px] py-3.5 px-8 rounded-[12px] bg-transparent border border-[rgba(255,255,255,0.12)] text-text-primary text-[15px] font-semibold tracking-[0.3px] hover:border-[rgba(255,255,255,0.25)] transition-all duration-300"
                 >
-                  Run your scenario
+                  Run your own scenario
                 </Link>
               </div>
             </div>

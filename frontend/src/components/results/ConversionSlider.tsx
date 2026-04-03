@@ -59,28 +59,39 @@ export function ConversionSlider({
           }}
         />
 
-        {/* Optimal marker — beacon with light rays */}
+        {/* Optimal marker — lighthouse icon with rotating light */}
         <div
-          className="absolute top-[-18px] pointer-events-none"
+          className="absolute top-[-22px] pointer-events-none"
           style={{
             left: `calc(8px + (100% - 16px) * ${optimalPercent / 100})`,
             transform: "translateX(-50%)",
-            filter: "drop-shadow(0 0 6px rgba(240,198,116,0.6))",
+            filter: "drop-shadow(0 0 5px rgba(240,198,116,0.5))",
           }}
           title={`Highest savings: ${formatCurrency(optimalValue)}`}
         >
-          <svg width="20" height="22" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-            {/* Light rays */}
-            <line x1="10" y1="0" x2="10" y2="3" stroke="#F0C674" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
-            <line x1="4" y1="2" x2="6" y2="4.5" stroke="#F0C674" strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
-            <line x1="16" y1="2" x2="14" y2="4.5" stroke="#F0C674" strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
-            {/* Flame */}
-            <path d="M10 4C10 4 7 7.5 7 9.5C7 11.2 8.3 12.5 10 12.5C11.7 12.5 13 11.2 13 9.5C13 7.5 10 4 10 4Z" fill="#F0C674" />
-            <path d="M10 6.5C10 6.5 8.5 8.5 8.5 9.5C8.5 10.3 9.2 11 10 11C10.8 11 11.5 10.3 11.5 9.5C11.5 8.5 10 6.5 10 6.5Z" fill="#FAF7F2" fillOpacity="0.7" />
+          <svg width="16" height="26" viewBox="0 0 16 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* Animated light rays */}
+            <g className="lighthouse-light">
+              <path d="M3 5L0 2.5" stroke="#F0C674" strokeWidth="1.2" strokeLinecap="round" />
+              <path d="M13 5L16 2.5" stroke="#F0C674" strokeWidth="1.2" strokeLinecap="round" />
+              <path d="M8 3V0" stroke="#F0C674" strokeWidth="1.2" strokeLinecap="round" />
+              <path d="M4.5 3.5L2 1.5" stroke="#F0C674" strokeWidth="0.8" strokeLinecap="round" opacity="0.5" />
+              <path d="M11.5 3.5L14 1.5" stroke="#F0C674" strokeWidth="0.8" strokeLinecap="round" opacity="0.5" />
+            </g>
+            {/* Lamp housing */}
+            <rect x="5" y="3" width="6" height="5" rx="1" fill="#F0C674" />
+            {/* Lamp glow */}
+            <rect x="6.5" y="4" width="3" height="3" rx="0.5" fill="#FAF7F2" fillOpacity="0.85" />
+            {/* Gallery rail */}
+            <rect x="4" y="8" width="8" height="1.5" rx="0.5" fill="#D4941F" />
+            {/* Tower upper — lighter */}
+            <path d="M5 9.5H11L10.7 14.5H5.3L5 9.5Z" fill="#E8A838" fillOpacity="0.7" />
+            {/* Tower lower — darker for contrast */}
+            <path d="M5.3 14.5H10.7L10.5 20H5.5L5.3 14.5Z" fill="#B07818" fillOpacity="0.85" />
+            {/* Tower stripe divider */}
+            <rect x="5.2" y="14" width="5.6" height="1" rx="0.25" fill="#D4941F" fillOpacity="0.6" />
             {/* Base */}
-            <path d="M7 13h6l1 2H6l1-2z" fill="#E8A838" />
-            {/* Stand */}
-            <rect x="7" y="15" width="6" height="1.5" rx="0.5" fill="#E8A838" opacity="0.8" />
+            <rect x="3.5" y="20" width="9" height="2" rx="0.5" fill="#8B6514" />
           </svg>
         </div>
       </div>
@@ -90,20 +101,24 @@ export function ConversionSlider({
         <span>{formatCurrency(max)}</span>
       </div>
 
-      {/* Legend linking the beacon marker to its meaning */}
+      {/* Legend linking the lighthouse marker to its meaning */}
       <button
         type="button"
         onClick={() => onChange(optimalValue)}
         className="flex items-center gap-1.5 text-body-sm text-text-secondary hover:text-accent transition-colors cursor-pointer mt-1 self-start text-left"
       >
-        <svg width="14" height="15" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0" style={{ filter: "drop-shadow(0 0 4px rgba(240,198,116,0.5))" }}>
-          <line x1="10" y1="0" x2="10" y2="3" stroke="#F0C674" strokeWidth="1.5" strokeLinecap="round" opacity="0.7" />
-          <line x1="4" y1="2" x2="6" y2="4.5" stroke="#F0C674" strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
-          <line x1="16" y1="2" x2="14" y2="4.5" stroke="#F0C674" strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
-          <path d="M10 4C10 4 7 7.5 7 9.5C7 11.2 8.3 12.5 10 12.5C11.7 12.5 13 11.2 13 9.5C13 7.5 10 4 10 4Z" fill="#F0C674" />
-          <path d="M10 6.5C10 6.5 8.5 8.5 8.5 9.5C8.5 10.3 9.2 11 10 11C10.8 11 11.5 10.3 11.5 9.5C11.5 8.5 10 6.5 10 6.5Z" fill="#FAF7F2" fillOpacity="0.7" />
-          <path d="M7 13h6l1 2H6l1-2z" fill="#E8A838" />
-          <rect x="7" y="15" width="6" height="1.5" rx="0.5" fill="#E8A838" opacity="0.8" />
+        <svg width="10" height="16" viewBox="0 0 16 26" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0" style={{ filter: "drop-shadow(0 0 3px rgba(240,198,116,0.4))" }}>
+          <g className="lighthouse-light">
+            <path d="M3 5L0 2.5" stroke="#F0C674" strokeWidth="1.2" strokeLinecap="round" />
+            <path d="M13 5L16 2.5" stroke="#F0C674" strokeWidth="1.2" strokeLinecap="round" />
+            <path d="M8 3V0" stroke="#F0C674" strokeWidth="1.2" strokeLinecap="round" />
+          </g>
+          <rect x="5" y="3" width="6" height="5" rx="1" fill="#F0C674" />
+          <rect x="6.5" y="4" width="3" height="3" rx="0.5" fill="#FAF7F2" fillOpacity="0.85" />
+          <rect x="4" y="8" width="8" height="1.5" rx="0.5" fill="#D4941F" />
+          <path d="M5 9.5H11L10.7 14.5H5.3L5 9.5Z" fill="#E8A838" fillOpacity="0.7" />
+          <path d="M5.3 14.5H10.7L10.5 20H5.5L5.3 14.5Z" fill="#B07818" fillOpacity="0.85" />
+          <rect x="3.5" y="20" width="9" height="2" rx="0.5" fill="#8B6514" />
         </svg>
         <span>Conversion amount with highest estimated lifetime savings</span>
       </button>
