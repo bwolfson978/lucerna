@@ -29,7 +29,9 @@ export function ConversionSlider({
   );
 
   const optimalPercent =
-    max > 0 ? ((optimalValue - min) / (max - min)) * 100 : 0;
+    max > 0
+      ? Math.min(100, Math.max(0, ((optimalValue - min) / (max - min)) * 100))
+      : 0;
 
   return (
     <div className="flex flex-col gap-2">
