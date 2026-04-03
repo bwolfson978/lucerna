@@ -53,9 +53,34 @@ describe("distributeConversion", () => {
       expect(result).toEqual([0, 0, 0]);
     });
 
-    it("clamps to last point when above range", () => {
+    it("scales up proportionally when above curve range", () => {
       const result = distributeConversion(150000, weights, curve);
-      expect(result).toEqual([60000, 40000, 0]);
+      const total = result.reduce((a, b) => a + b, 0);
+      expect(total).toBeCloseTo(150000);
+      // Shape preserved: ratio matches last curve point (60000:40000 = 3:2)
+      expect(result[0] / result[1]).toBeCloseTo(60000 / 40000);
+    });
+
+    it("scales up when curve plateaus below requested total", () => {
+      // Simulate plateau: high caps have same yearly_conversions as optimizer
+      const plateauCurve: ConversionCurvePoint[] = [
+        makeCurvePoint(0, [0, 0, 0]),
+        makeCurvePoint(50000, [30000, 20000, 0]),
+        makeCurvePoint(100000, [55000, 40000, 5000]),
+        makeCurvePoint(150000, [55000, 40000, 5000]), // plateau
+        makeCurvePoint(200000, [55000, 40000, 5000]), // plateau
+      ];
+
+      const result = distributeConversion(175000, weights, plateauCurve);
+      const total = result.reduce((a, b) => a + b, 0);
+      expect(total).toBeCloseTo(175000);
+      // Ratios preserved from the plateau point (55:40:5 = 11:8:1)
+      expect(result[0] / result[2]).toBeCloseTo(55000 / 5000);
+    });
+
+    it("caps each year at iraBalance when provided", () => {
+      const result = distributeConversion(150000, weights, curve, 50000);
+      result.forEach((c) => expect(c).toBeLessThanOrEqual(50000));
     });
 
     it("changes year ratios at different caps", () => {
