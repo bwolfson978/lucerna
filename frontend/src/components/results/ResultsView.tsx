@@ -3,7 +3,6 @@
 import { useState, useMemo, useCallback, useRef } from "react";
 import type {
   OptimizationResult,
-  LifeEvent,
   ScenarioInput,
 } from "@/lib/types";
 import { MetricCard } from "@/components/common/MetricCard";
@@ -18,11 +17,11 @@ import { BalanceProjections } from "./BalanceProjections";
 import { AcaSubsidyImpact } from "./AcaSubsidyImpact";
 import { Card } from "@/components/ui/card";
 import { useConversionSlider } from "@/hooks/useConversionSlider";
+import { computeSnapThreshold } from "@/lib/utils/snap";
 import { useSyncedScroll } from "@/hooks/useSyncedScroll";
 
 interface YearOverride {
   income?: number;
-  life_event?: LifeEvent;
 }
 
 interface ResultsViewProps {
@@ -42,6 +41,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
   const chartScrollRef = useRef<HTMLDivElement>(null);
   const tableScrollRef = useRef<HTMLDivElement>(null);
   const [tableColWidth, setTableColWidth] = useState(58);
+  const [chartLayout, setChartLayout] = useState({ leftOffset: 88, rightOffset: 108 });
   useSyncedScroll(chartScrollRef, tableScrollRef);
 
   // Client-side slider: continuous bracket fill computation
@@ -66,11 +66,8 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
     }));
   }, [result.input, yearlyBracketFills]);
 
-  // Income and life event arrays for the detail table
+  // Income arrays for the detail table
   const incomes = result.input.income_trajectory.map((yi) => yi.gross_income);
-  const lifeEvents = result.input.income_trajectory.map(
-    (yi) => yi.life_event
-  );
   const yearInfos = result.input.income_trajectory.map((yi, i) => ({
     year: yi.year,
     age: result.input.age + i,
@@ -88,18 +85,6 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
     []
   );
 
-  const handleLifeEventChange = useCallback(
-    (yearIndex: number, life_event: LifeEvent) => {
-      setOverrides((prev) => {
-        const next = new Map(prev);
-        const existing = next.get(yearIndex) || {};
-        next.set(yearIndex, { ...existing, life_event });
-        return next;
-      });
-    },
-    []
-  );
-
   const handleReRun = useCallback(() => {
     if (!onReRun) return;
     const updatedTrajectory = result.input.income_trajectory.map((yi, i) => {
@@ -107,7 +92,6 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
       return {
         ...yi,
         gross_income: override?.income ?? yi.gross_income,
-        life_event: override?.life_event ?? yi.life_event,
       };
     });
     const updatedInput: ScenarioInput = {
@@ -118,8 +102,9 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
     onReRun(updatedInput);
   }, [result.input, overrides, onReRun]);
 
+  const snapThreshold = computeSnapThreshold(0, result.input.traditional_ira_balance);
   const isAtOptimal =
-    Math.abs(sliderValue - result.total_conversion) < 100;
+    Math.abs(sliderValue - result.total_conversion) <= snapThreshold;
   const savingsDifference =
     result.estimated_lifetime_tax_savings - estimatedSavings;
 
@@ -199,36 +184,39 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
         />
       </div>
 
-      {/* Bracket chart */}
-      <BracketChart
-        years={chartYears}
-        filingStatus={result.input.filing_status}
-        scrollRef={chartScrollRef}
-        onBarWidthChange={setTableColWidth}
-      />
+      {/* Bracket chart + detail table — same Card so scroll areas align */}
+      <Card className="flex flex-col gap-default">
+        <BracketChart
+          years={chartYears}
+          filingStatus={result.input.filing_status}
+          scrollRef={chartScrollRef}
+          onBarWidthChange={setTableColWidth}
+          onLayoutChange={setChartLayout}
+        />
 
-      {/* Transposed detail table */}
-      {onReRun && (
-        <p className="text-body-sm text-text-tertiary">
-          Adjust income or life events below, then re-run the analysis.
-        </p>
-      )}
-      <Card className="p-0">
+        {/* Separator between chart and table */}
+        <div className="border-t border-border" />
+
+        {onReRun && (
+          <p className="text-body-sm text-text-tertiary -mt-1">
+            Adjust income or life events below, then re-run the analysis.
+          </p>
+        )}
         <TransposedDetailTable
           details={yearlyDetail}
           years={yearInfos}
           incomes={incomes}
-          lifeEvents={lifeEvents}
           overrides={overrides}
           onIncomeChange={handleIncomeChange}
-          onLifeEventChange={handleLifeEventChange}
           scrollRef={tableScrollRef}
           colWidth={tableColWidth}
+          leftOffset={chartLayout.leftOffset}
+          rightOffset={chartLayout.rightOffset}
         />
 
         {/* Re-run button */}
         {hasUnsavedChanges && onReRun && (
-          <div className="p-3 border-t border-border flex items-center justify-between bg-accent/5">
+          <div className="pt-3 border-t border-border flex items-center justify-between">
             <span className="text-body-sm text-text-secondary">
               Income values modified
             </span>

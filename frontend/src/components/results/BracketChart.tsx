@@ -4,7 +4,6 @@ import type { BracketFillResult } from "@/lib/types";
 import { formatPercent, formatCurrency, formatAxisCurrency } from "@/lib/utils/formatting";
 import { BRACKET_COLORS, CHART_COLORS } from "@/lib/utils/constants";
 import { useRef, useMemo, useState, useCallback, useEffect, type RefObject } from "react";
-import { Card } from "@/components/ui/card";
 import { useContainerWidth } from "@/hooks/useContainerWidth";
 import { useScrollFade } from "@/hooks/useScrollFade";
 
@@ -27,6 +26,7 @@ interface BracketChartProps {
   filingStatus: "single" | "married_filing_jointly";
   scrollRef?: RefObject<HTMLDivElement | null>;
   onBarWidthChange?: (barWidth: number) => void;
+  onLayoutChange?: (layout: { leftOffset: number; rightOffset: number }) => void;
 }
 
 // All bracket boundaries for axis labels
@@ -76,7 +76,7 @@ function niceInterval(range: number, targetTicks: number): number {
   return nice * magnitude;
 }
 
-export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef, onBarWidthChange }: BracketChartProps) {
+export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef, onBarWidthChange, onLayoutChange }: BracketChartProps) {
   const internalScrollRef = useRef<HTMLDivElement>(null);
   const scrollRef = externalScrollRef || internalScrollRef;
   const fadeRef = useRef<HTMLDivElement>(null);
@@ -137,6 +137,15 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
   useEffect(() => {
     onBarWidthChange?.(barWidth + BAR_GAP);
   }, [barWidth, onBarWidthChange]);
+
+  // Notify parent of fixed-area dimensions so the table can match
+  const verticalLabelWidth = isMobile ? 0 : VERTICAL_LABEL_WIDTH;
+  useEffect(() => {
+    onLayoutChange?.({
+      leftOffset: verticalLabelWidth + leftAxisWidth,
+      rightOffset: rightAxisWidth + verticalLabelWidth,
+    });
+  }, [onLayoutChange, verticalLabelWidth, leftAxisWidth, rightAxisWidth]);
 
   // Tooltip handler: only show if chart is already engaged
   const handleBarInteraction = useCallback((e: React.MouseEvent | React.PointerEvent, yearData: YearData) => {
@@ -208,7 +217,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
   );
 
   return (
-    <Card className="flex flex-col gap-default">
+    <div className="flex flex-col gap-default">
       {/* Legend */}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-body-sm text-text-secondary">
         <span className="flex items-center gap-1.5">
@@ -483,7 +492,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
           </div>
         )}
       </div>
-    </Card>
+    </div>
   );
 }
 

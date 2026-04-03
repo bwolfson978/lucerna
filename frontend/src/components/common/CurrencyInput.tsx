@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useCallback, useRef } from "react";
-import { Input } from "@/components/ui/input";
+import { NumericFormat } from "react-number-format";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
@@ -19,38 +18,9 @@ interface CurrencyInputProps {
   id?: string;
 }
 
-function formatDisplay(val: number | ""): string {
-  if (val === "" || val === 0) return "";
-  return val.toLocaleString("en-US");
-}
-
-function parseInput(raw: string): number {
-  const stripped = raw.replace(/[^0-9.\-]/g, "");
-  return parseFloat(stripped) || 0;
-}
-
 const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
-  ({ label, helper, error, value, placeholder, min, step, onChange, className, id }, ref) => {
+  ({ label, helper, error, value, placeholder, min, onChange, className, id }, ref) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
-    const [focused, setFocused] = useState(false);
-    const innerRef = useRef<HTMLInputElement>(null);
-    const resolvedRef = (ref as React.RefObject<HTMLInputElement>) || innerRef;
-
-    const displayValue = focused
-      ? value === 0 ? "" : String(value)
-      : formatDisplay(value);
-
-    const handleChange = useCallback(
-      (e: React.ChangeEvent<HTMLInputElement>) => {
-        const parsed = parseInput(e.target.value);
-        if (min !== undefined && parsed < min) return;
-        onChange(parsed);
-      },
-      [onChange, min]
-    );
-
-    const handleFocus = useCallback(() => setFocused(true), []);
-    const handleBlur = useCallback(() => setFocused(false), []);
 
     return (
       <div className="flex flex-col gap-1.5">
@@ -59,19 +29,38 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-body select-none pointer-events-none">
             $
           </span>
-          <Input
-            ref={resolvedRef}
+          <NumericFormat
+            getInputRef={ref}
             id={inputId}
-            type="text"
-            inputMode="decimal"
-            numeric
-            value={displayValue}
+            value={value === "" || value === 0 ? "" : value}
+            thousandSeparator=","
+            decimalScale={0}
+            allowNegative={false}
             placeholder={placeholder}
-            step={step}
-            className={cn("pl-7", error && "border-negative", className)}
-            onChange={handleChange}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
+            inputMode="decimal"
+            isAllowed={(values) => {
+              if (min !== undefined && values.floatValue !== undefined && values.floatValue < min) {
+                return false;
+              }
+              return true;
+            }}
+            onValueChange={(values) => {
+              onChange(values.floatValue ?? 0);
+            }}
+            className={cn(
+              "h-9 min-h-[44px] px-3 w-full",
+              "rounded-lg bg-bg-alt",
+              "border border-border",
+              "text-body text-text-primary",
+              "placeholder:text-text-tertiary",
+              "focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10",
+              "transition-all duration-300",
+              "disabled:opacity-50 disabled:cursor-not-allowed",
+              "font-mono",
+              "pl-7",
+              error && "border-negative",
+              className
+            )}
           />
         </div>
         {error && (

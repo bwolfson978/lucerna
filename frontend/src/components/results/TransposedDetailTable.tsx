@@ -1,55 +1,40 @@
 "use client";
 
-import type { YearlyDetail, LifeEvent } from "@/lib/types";
-import { formatCurrency, formatPercent, formatTableCurrency } from "@/lib/utils/formatting";
-import { LIFE_EVENT_LABELS } from "@/lib/utils/constants";
+import type { YearlyDetail } from "@/lib/types";
+import { formatPercent, formatTableCurrency } from "@/lib/utils/formatting";
 import { Tooltip } from "@/components/common/Tooltip";
-import { useRef, useState, type RefObject } from "react";
+import { useMemo, useRef, useState, type RefObject } from "react";
 import { useScrollFade } from "@/hooks/useScrollFade";
-
-interface YearOverride {
-  income?: number;
-  life_event?: LifeEvent;
-}
 
 interface TransposedDetailTableProps {
   details: YearlyDetail[];
   years: { year: number; age: number }[];
   incomes: number[];
-  lifeEvents: LifeEvent[];
-  overrides: Map<number, YearOverride>;
+  overrides: Map<number, { income?: number }>;
   onIncomeChange: (yearIndex: number, income: number) => void;
-  onLifeEventChange: (yearIndex: number, event: LifeEvent) => void;
   scrollRef?: RefObject<HTMLDivElement | null>;
   colWidth?: number;
+  /** Width of fixed left area in the chart (vertical label + y-axis) */
+  leftOffset?: number;
+  /** Width of fixed right area in the chart (bracket labels + vertical label) */
+  rightOffset?: number;
 }
-
-const LIFE_EVENT_OPTIONS: LifeEvent[] = [
-  "none",
-  "grad_school",
-  "sabbatical",
-  "startup",
-  "career_change",
-  "part_time",
-  "early_retirement",
-  "parental_leave",
-  "back_to_work",
-  "layoff",
-];
 
 function CompactCurrencyCell({
   value,
   onChange,
   highlighted,
+  maxChars,
 }: {
   value: number;
   onChange: (val: number) => void;
   highlighted: boolean;
+  maxChars?: number;
 }) {
   const [focused, setFocused] = useState(false);
   const display = focused
     ? value === 0 ? "" : String(value)
-    : formatTableCurrency(value);
+    : formatTableCurrency(value, maxChars);
 
   return (
     <input
@@ -62,7 +47,7 @@ function CompactCurrencyCell({
       }}
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
-      className={`w-full text-[10px] text-center bg-transparent border-0 p-0 focus:outline-none focus:bg-accent/5 rounded ${
+      className={`w-full text-[10px] text-center bg-transparent border-0 px-1 py-0 focus:outline-none focus:bg-accent/5 rounded ${
         highlighted ? "text-accent font-medium" : "text-text-primary"
       }`}
       style={{ fontFamily: "'Manrope', system-ui" }}
@@ -74,42 +59,43 @@ export function TransposedDetailTable({
   details,
   years,
   incomes,
-  lifeEvents,
   overrides,
   onIncomeChange,
-  onLifeEventChange,
   scrollRef: externalScrollRef,
   colWidth = 58,
+  leftOffset = 88,
+  rightOffset = 108,
 }: TransposedDetailTableProps) {
   const internalScrollRef = useRef<HTMLDivElement>(null);
   const scrollRef = externalScrollRef || internalScrollRef;
   const fadeRef = useRef<HTMLDivElement>(null);
   useScrollFade(scrollRef, fadeRef);
 
+  // Approximate max characters that fit in a column cell
+  // ~5.5px per char at 10px Manrope, minus 8px horizontal padding (px-1 each side)
+  const maxChars = useMemo(() => Math.max(4, Math.floor((colWidth - 8) / 5.5)), [colWidth]);
+
   return (
     <div className="flex text-body-sm">
-      {/* Fixed row labels */}
-      <div className="flex-shrink-0 w-[70px] flex flex-col border-r border-border">
-        <div className="h-7 flex items-center text-text-tertiary text-[10px] font-semibold px-1 border-b border-border">
+      {/* Fixed row labels — width matches chart's left fixed area */}
+      <div className="flex-shrink-0 flex flex-col border-r border-border" style={{ width: leftOffset }}>
+        <div className="h-7 flex items-center justify-end text-text-tertiary text-[10px] font-semibold px-2 border-b border-border">
           Year
         </div>
-        <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
-          Life event
-        </div>
-        <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
+        <div className="h-8 flex items-center justify-end text-text-tertiary text-[10px] font-medium px-2">
           Earned Income
         </div>
-        <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
+        <div className="h-8 flex items-center justify-end text-text-tertiary text-[10px] font-medium px-2">
           Conversion
         </div>
-        <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
+        <div className="h-8 flex items-center justify-end text-text-tertiary text-[10px] font-medium px-2 text-right leading-tight">
           Added tax from conversion
         </div>
-        <div className="h-8 flex items-center gap-0.5 text-text-tertiary text-[10px] font-medium px-1">
+        <div className="h-8 flex items-center justify-end gap-0.5 text-text-tertiary text-[10px] font-medium px-2">
           Eff. rate
           <Tooltip content="The average tax rate on your total conversion amount — total tax paid divided by total converted." />
         </div>
-        <div className="h-8 flex items-center gap-0.5 text-text-tertiary text-[10px] font-medium px-1">
+        <div className="h-8 flex items-center justify-end gap-0.5 text-text-tertiary text-[10px] font-medium px-2">
           Marginal
           <Tooltip content="The tax rate on the next dollar converted — determines whether converting more would still be beneficial." />
         </div>
@@ -123,8 +109,6 @@ export function TransposedDetailTable({
             const detail = details[i];
             const hasOverride = overrides.has(i);
             const effectiveIncome = overrides.get(i)?.income ?? incomes[i];
-            const effectiveEvent =
-              overrides.get(i)?.life_event ?? lifeEvents[i];
 
             return (
               <div
@@ -134,32 +118,10 @@ export function TransposedDetailTable({
               >
                 {/* Year header */}
                 <div
-                  className="h-7 flex items-center justify-center text-[10px] text-text-secondary font-semibold border-b border-border"
+                  className="h-7 flex items-center justify-center text-[10px] text-text-secondary font-semibold border-b border-border px-1"
                   style={{ fontFamily: "'Manrope', system-ui" }}
                 >
                   {yearInfo.year}
-                </div>
-
-                {/* Life event */}
-                <div className="h-8 flex items-center justify-center">
-                  <select
-                    value={effectiveEvent}
-                    onChange={(e) =>
-                      onLifeEventChange(i, e.target.value as LifeEvent)
-                    }
-                    className={`w-full text-[9px] bg-transparent border-0 p-0 text-center cursor-pointer focus:outline-none ${
-                      hasOverride && overrides.get(i)?.life_event
-                        ? "text-accent font-medium"
-                        : "text-text-tertiary"
-                    }`}
-                    title={LIFE_EVENT_LABELS[effectiveEvent]}
-                  >
-                    {LIFE_EVENT_OPTIONS.map((evt) => (
-                      <option key={evt} value={evt}>
-                        {LIFE_EVENT_LABELS[evt]}
-                      </option>
-                    ))}
-                  </select>
                 </div>
 
                 {/* Income (editable) */}
@@ -168,28 +130,29 @@ export function TransposedDetailTable({
                     value={effectiveIncome}
                     onChange={(val) => onIncomeChange(i, val)}
                     highlighted={!!(hasOverride && overrides.get(i)?.income !== undefined)}
+                    maxChars={maxChars}
                   />
                 </div>
 
                 {/* Conversion (read-only) */}
                 <div
-                  className="h-8 flex items-center justify-center text-[10px] text-accent"
+                  className="h-8 flex items-center justify-center text-[10px] text-accent px-1"
                   style={{ fontFamily: "'Manrope', system-ui" }}
                 >
-                  {detail ? formatTableCurrency(detail.conversion) : "—"}
+                  {detail ? formatTableCurrency(detail.conversion, maxChars) : "—"}
                 </div>
 
                 {/* Tax cost */}
                 <div
-                  className="h-8 flex items-center justify-center text-[10px] text-text-primary"
+                  className="h-8 flex items-center justify-center text-[10px] text-text-primary px-1"
                   style={{ fontFamily: "'Manrope', system-ui" }}
                 >
-                  {detail ? formatTableCurrency(detail.tax_cost) : "—"}
+                  {detail ? formatTableCurrency(detail.tax_cost, maxChars) : "—"}
                 </div>
 
                 {/* Effective rate */}
                 <div
-                  className="h-8 flex items-center justify-center text-[10px] text-text-primary"
+                  className="h-8 flex items-center justify-center text-[10px] text-text-primary px-1"
                   style={{ fontFamily: "'Manrope', system-ui" }}
                 >
                   {detail ? formatPercent(detail.effective_rate) : "—"}
@@ -197,7 +160,7 @@ export function TransposedDetailTable({
 
                 {/* Marginal bracket */}
                 <div
-                  className="h-8 flex items-center justify-center text-[10px] text-text-primary"
+                  className="h-8 flex items-center justify-center text-[10px] text-text-primary px-1"
                   style={{ fontFamily: "'Manrope', system-ui" }}
                 >
                   {detail
@@ -212,6 +175,9 @@ export function TransposedDetailTable({
         </div>
       </div>
       </div>
+
+      {/* Right spacer — matches chart's right fixed area so scroll windows align */}
+      <div className="flex-shrink-0" style={{ width: rightOffset }} />
     </div>
   );
 }

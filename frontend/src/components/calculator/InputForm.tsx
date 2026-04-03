@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from "react";
 import type { ScenarioInput, YearlyIncome, FilingStatus, HealthcareInput } from "@/lib/types";
-import { FormField } from "@/components/common/FormField";
+import { NumericField } from "@/components/common/NumericField";
 import { CurrencyInput } from "@/components/common/CurrencyInput";
 import { FormSelect } from "@/components/common/FormSelect";
 import { GlowButton } from "@/components/common/GlowButton";
@@ -41,26 +41,26 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  // Form state
-  const [age, setAge] = useState<number>(35);
+  // Form state — nullable so fields can be fully cleared while typing
+  const [age, setAge] = useState<number | null>(35);
   const [filingStatus, setFilingStatus] = useState<FilingStatus>("single");
   const [currentIncome, setCurrentIncome] = useState<number>(0);
   const [traditionalBalance, setTraditionalBalance] = useState<number>(0);
   const [rothBalance, setRothBalance] = useState<number>(0);
-  const [retirementAge, setRetirementAge] = useState<number>(65);
-  const [incomeGrowthRate, setIncomeGrowthRate] = useState<number>(3);
+  const [retirementAge, setRetirementAge] = useState<number | null>(65);
+  const [incomeGrowthRate, setIncomeGrowthRate] = useState<number | null>(3);
   const [retirementSpending, setRetirementSpending] = useState<number | null>(
     null
   );
 
   // Advanced settings
-  const [yearsInRetirement, setYearsInRetirement] = useState<number>(25);
-  const [growthRate, setGrowthRate] = useState<number>(7);
-  const [discountRate, setDiscountRate] = useState<number>(5);
+  const [yearsInRetirement, setYearsInRetirement] = useState<number | null>(25);
+  const [growthRate, setGrowthRate] = useState<number | null>(7);
+  const [discountRate, setDiscountRate] = useState<number | null>(5);
 
   // ACA healthcare inputs
   const [includeAca, setIncludeAca] = useState(false);
-  const [householdSize, setHouseholdSize] = useState<number>(1);
+  const [householdSize, setHouseholdSize] = useState<number | null>(1);
   const [monthlySlcspPremium, setMonthlySlcspPremium] = useState<number>(620);
   const [employerCoverageYear, setEmployerCoverageYear] = useState<
     number | null
@@ -69,21 +69,30 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const errs: Record<string, string> = {};
-    if (age < 0 || age > 120) errs.age = "Age must be between 0 and 120";
-    if (retirementAge <= age)
+
+    const ageVal = age ?? 0;
+    const retVal = retirementAge ?? 65;
+    const yrsRetVal = yearsInRetirement ?? 25;
+    const growthVal = growthRate ?? 7;
+    const discountVal = discountRate ?? 5;
+    const incGrowthVal = incomeGrowthRate ?? 0;
+    const hhSize = householdSize ?? 1;
+
+    if (ageVal < 0 || ageVal > 120) errs.age = "Age must be between 0 and 120";
+    if (retVal <= ageVal)
       errs.retirementAge = "Retirement age must be greater than current age";
-    if (retirementAge < 1 || retirementAge > 120)
+    if (retVal < 1 || retVal > 120)
       errs.retirementAge = "Retirement age must be between 1 and 120";
     if (currentIncome < 0) errs.currentIncome = "Income cannot be negative";
     if (traditionalBalance <= 0)
       errs.traditionalBalance = "Enter your traditional IRA/401(k) balance";
     if (rothBalance < 0) errs.rothBalance = "Roth balance cannot be negative";
-    if (yearsInRetirement < 1)
+    if (yrsRetVal < 1)
       errs.yearsInRetirement = "Must be at least 1 year";
     if (retirementSpending !== null && retirementSpending < 0)
       errs.retirementSpending = "Spending cannot be negative";
     if (includeAca) {
-      if (householdSize < 1)
+      if (hhSize < 1)
         errs.householdSize = "Household must have at least 1 person";
       if (monthlySlcspPremium < 0)
         errs.monthlySlcspPremium = "Premium cannot be negative";
@@ -92,31 +101,31 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
     if (Object.keys(errs).length > 0) return;
 
     const trajectory = generateTrajectory(
-      age,
-      retirementAge,
+      ageVal,
+      retVal,
       currentIncome,
-      incomeGrowthRate
+      incGrowthVal
     );
 
     const healthcare: HealthcareInput | null = includeAca
       ? {
-          household_size: householdSize,
+          household_size: hhSize,
           monthly_slcsp_premium: monthlySlcspPremium,
           has_employer_coverage_after: employerCoverageYear,
         }
       : null;
 
     const input: ScenarioInput = {
-      age,
+      age: ageVal,
       filing_status: filingStatus,
       income_trajectory: trajectory,
       traditional_ira_balance: traditionalBalance,
       roth_ira_balance: rothBalance,
-      retirement_age: retirementAge,
-      years_in_retirement: yearsInRetirement,
+      retirement_age: retVal,
+      years_in_retirement: yrsRetVal,
       annual_retirement_spending: retirementSpending,
-      annual_growth_rate: growthRate / 100,
-      discount_rate: discountRate / 100,
+      annual_growth_rate: growthVal / 100,
+      discount_rate: discountVal / 100,
       healthcare,
     };
     onSubmit(input);
@@ -125,15 +134,13 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-section">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-default">
-        <FormField
+        <NumericField
           label="Age"
-          type="number"
-          value={age}
-          numeric
+          value={age ?? ""}
           min={0}
           max={120}
           error={errors.age}
-          onChange={(e) => setAge(parseInt(e.target.value) || 0)}
+          onChange={setAge}
         />
         <FormSelect
           label="Filing status"
@@ -158,15 +165,13 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           helper="Includes 401k rollovers"
           onChange={setTraditionalBalance}
         />
-        <FormField
+        <NumericField
           label="Retirement age"
-          type="number"
-          value={retirementAge}
-          numeric
+          value={retirementAge ?? ""}
           min={1}
           max={120}
           error={errors.retirementAge}
-          onChange={(e) => setRetirementAge(parseInt(e.target.value) || 65)}
+          onChange={setRetirementAge}
         />
         <CurrencyInput
           label="Roth IRA/401(k) balance"
@@ -180,16 +185,12 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-default">
-        <FormField
+        <NumericField
           label="Income growth rate (%)"
-          type="number"
-          value={incomeGrowthRate}
-          numeric
-          step={0.5}
+          value={incomeGrowthRate ?? ""}
+          decimalScale={1}
           helper="Annual income growth assumption"
-          onChange={(e) =>
-            setIncomeGrowthRate(parseFloat(e.target.value) || 0)
-          }
+          onChange={setIncomeGrowthRate}
         />
         <CurrencyInput
           label="Yearly spend in retirement"
@@ -230,34 +231,26 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
 
         <CollapsibleContent>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-default pt-default">
-            <FormField
+            <NumericField
               label="Years in retirement"
-              type="number"
-              value={yearsInRetirement}
-              numeric
+              value={yearsInRetirement ?? ""}
               min={1}
               error={errors.yearsInRetirement}
-              onChange={(e) =>
-                setYearsInRetirement(parseInt(e.target.value) || 25)
-              }
+              onChange={setYearsInRetirement}
             />
-            <FormField
+            <NumericField
               label="Investment return (%)"
-              type="number"
-              value={growthRate}
-              numeric
-              step={0.5}
+              value={growthRate ?? ""}
+              decimalScale={1}
               helper="Expected annual return"
-              onChange={(e) => setGrowthRate(parseFloat(e.target.value) || 7)}
+              onChange={setGrowthRate}
             />
-            <FormField
+            <NumericField
               label="Discount rate (%)"
-              type="number"
-              value={discountRate}
-              numeric
-              step={0.5}
+              value={discountRate ?? ""}
+              decimalScale={1}
               helper="Time value of money"
-              onChange={(e) => setDiscountRate(parseFloat(e.target.value) || 5)}
+              onChange={setDiscountRate}
             />
           </div>
         </CollapsibleContent>
@@ -281,42 +274,31 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
 
         {includeAca && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-default">
-            <FormField
+            <NumericField
               label="Household size"
-              type="number"
-              value={householdSize}
-              numeric
+              value={householdSize ?? ""}
               min={1}
               error={errors.householdSize}
               helper="People in your tax household"
-              onChange={(e) =>
-                setHouseholdSize(parseInt(e.target.value) || 1)
-              }
+              onChange={setHouseholdSize}
             />
             <CurrencyInput
               label="Monthly benchmark premium"
               value={monthlySlcspPremium || ""}
               placeholder="620"
               min={0}
-              step={10}
               error={errors.monthlySlcspPremium}
               helper="2nd-lowest Silver plan on healthcare.gov"
               onChange={(val) => setMonthlySlcspPremium(val || 620)}
             />
-            <FormField
+            <NumericField
               label="Employer coverage resumes"
-              type="number"
-              value={employerCoverageYear || ""}
+              value={employerCoverageYear ?? ""}
               placeholder="e.g. 2028"
-              numeric
               min={CURRENT_YEAR}
               max={CURRENT_YEAR + 40}
               helper="Year you get employer insurance back (optional)"
-              onChange={(e) =>
-                setEmployerCoverageYear(
-                  e.target.value ? parseInt(e.target.value) : null
-                )
-              }
+              onChange={setEmployerCoverageYear}
             />
           </div>
         )}

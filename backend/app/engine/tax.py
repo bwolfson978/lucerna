@@ -1,3 +1,5 @@
+import numpy as np
+
 from app.engine.types import FilingStatus, BracketFillResult
 
 # ==============================================
@@ -68,6 +70,31 @@ def get_marginal_rate(
             return bracket["rate"]
 
     return brackets[-1]["rate"]
+
+
+def vectorized_federal_tax(
+    gross_incomes: np.ndarray,
+    filing_status: FilingStatus = FilingStatus.SINGLE,
+) -> np.ndarray:
+    """Calculate federal income tax for an array of gross incomes.
+
+    Vectorized equivalent of calculate_federal_tax for numpy arrays.
+    """
+    deduction = STANDARD_DEDUCTION[filing_status]
+    taxable = np.maximum(0.0, gross_incomes - deduction)
+    brackets = BRACKETS[filing_status]
+
+    tax = np.zeros_like(taxable)
+    for bracket in brackets:
+        bracket_max = bracket["max"]
+        # Use a large finite number instead of inf for numpy compatibility
+        if bracket_max == float("inf"):
+            bracket_max = 1e18
+        in_bracket = np.minimum(taxable, bracket_max) - bracket["min"]
+        in_bracket = np.maximum(0.0, in_bracket)
+        tax += in_bracket * bracket["rate"]
+
+    return tax
 
 
 def analyze_bracket_fill(
