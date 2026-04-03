@@ -41,7 +41,7 @@ export function ConversionSlider({
         </span>
       </div>
 
-      <div className="relative">
+      <div className="relative mt-4">
         <input
           type="range"
           min={min}

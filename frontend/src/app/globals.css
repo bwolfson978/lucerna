@@ -86,6 +86,15 @@
     box-shadow: 0 12px 40px rgba(15, 14, 26, 0.5);
   }
 
+  @media (max-width: 640px) {
+    .card,
+    .card-recommended,
+    .card-elevated {
+      padding: 16px;
+      border-radius: 16px;
+    }
+  }
+
   /* Domain-specific data display tokens */
   .metric-label {
     @apply text-caption font-ui text-text-tertiary uppercase tracking-wide;

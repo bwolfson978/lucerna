@@ -27,13 +27,13 @@ export default function Home() {
               <div className="flex items-center gap-4 mt-section">
                 <Link
                   href="/demo"
-                  className="btn-gradient-primary inline-flex items-center justify-center min-h-[44px] py-3.5 px-8 rounded-[12px] text-bg text-[15px] font-semibold tracking-[0.3px] hover:shadow-[0_8px_30px_rgba(240,198,116,0.25)] active:scale-[0.98] transition-all duration-300"
+                  className="btn-gradient-primary inline-flex items-center justify-center min-h-[44px] py-3.5 px-5 sm:px-8 rounded-[12px] text-bg text-[15px] font-semibold tracking-[0.3px] whitespace-nowrap hover:shadow-[0_8px_30px_rgba(240,198,116,0.25)] active:scale-[0.98] transition-all duration-300"
                 >
                   See demo
                 </Link>
                 <Link
                   href="/calculator"
-                  className="inline-flex items-center justify-center min-h-[44px] py-3.5 px-8 rounded-[12px] bg-transparent border border-[rgba(255,255,255,0.12)] text-text-primary text-[15px] font-semibold tracking-[0.3px] hover:border-[rgba(255,255,255,0.25)] transition-all duration-300"
+                  className="inline-flex items-center justify-center min-h-[44px] py-3.5 px-5 sm:px-8 rounded-[12px] bg-transparent border border-[rgba(255,255,255,0.12)] text-text-primary text-[15px] font-semibold tracking-[0.3px] whitespace-nowrap hover:border-[rgba(255,255,255,0.25)] transition-all duration-300"
                 >
                   Run your own scenario
                 </Link>
