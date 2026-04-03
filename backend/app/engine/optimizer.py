@@ -512,6 +512,19 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
     else:
         final_conversions = unconstrained_conversions
 
+    # Pre-compute conversion curve for interactive slider (done early so we
+    # can verify the optimizer's result against it).
+    conversion_curve = compute_conversion_curve(scenario)
+
+    # Verify optimizer result: SLSQP is a local optimizer and may not find
+    # the global optimum, especially for high-dimensional problems (many
+    # trajectory years).  The conversion curve samples NPV at multiple total
+    # conversion caps — if any cap yields higher NPV, adopt those conversions.
+    preliminary_npv = calculate_npv(scenario, final_conversions)
+    best_curve_point = max(conversion_curve, key=lambda p: p.npv)
+    if best_curve_point.npv > preliminary_npv + 0.01 and not _has_active_preferences(scenario):
+        final_conversions = list(best_curve_point.yearly_conversions)
+
     # Recalculate NPV with final conversions
     npv_at_optimal = calculate_npv(scenario, final_conversions)
     npv_at_zero = calculate_npv(scenario, [0.0] * n_years)
@@ -635,9 +648,6 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         npv_without_aca = round(calculate_npv(scenario_no_aca, final_conversions), 2)
         total_subsidy_lost = round(sum(d.subsidy_lost for d in aca_details), 2)
         cliff_income = round(find_subsidy_cliff_income(scenario.healthcare.household_size), 2)
-
-    # Pre-compute conversion curve for interactive slider
-    conversion_curve = compute_conversion_curve(scenario)
 
     return OptimizationResult(
         yearly_conversions=final_conversions,
