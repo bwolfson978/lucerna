@@ -482,26 +482,23 @@ def compute_conversion_curve(
 
 
 def optimize(scenario: ScenarioInput) -> OptimizationResult:
-    """Find the optimal multi-year conversion schedule using scipy SLSQP.
+    """Find the optimal multi-year conversion schedule.
 
-    Two-pass approach when conversion preferences are active:
-    1. Unconstrained pass — pure NPV maximization
-    2. Constrained pass — apply user preferences as scipy constraints/bounds
+    Uses dynamic programming for globally optimal unconstrained results.
+    Falls back to scipy SLSQP for constrained optimization when user
+    preferences (max tax cost, etc.) are active.
     """
+    from app.engine.dp import dp_optimize, extract_conversion_curve
+
     n_years = len(scenario.income_trajectory)
     max_balance = scenario.traditional_ira_balance
 
-    # --- Pass 1: Unconstrained optimization ---
-    unconstrained_bounds = [(0, max_balance) for _ in range(n_years)]
-    unconstrained_constraints = [
-        {"type": "ineq", "fun": lambda x: max_balance - np.sum(x)},
-    ]
+    # --- Unconstrained: DP (globally optimal) ---
+    dp_result = dp_optimize(scenario)
+    unconstrained_conversions = dp_result.yearly_conversions
+    unconstrained_npv = dp_result.npv
 
-    raw_unconstrained = _run_scipy(scenario, unconstrained_bounds, unconstrained_constraints)
-    unconstrained_conversions = _finalize_conversions(raw_unconstrained, max_balance)
-    unconstrained_npv = calculate_npv(scenario, unconstrained_conversions)
-
-    # --- Pass 2: Constrained optimization (if preferences active) ---
+    # --- Constrained: scipy (if preferences active) ---
     if _has_active_preferences(scenario):
         prefs = scenario.conversion_preferences
         constrained_bounds, constrained_constraints = _build_constrained_params(
@@ -512,18 +509,8 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
     else:
         final_conversions = unconstrained_conversions
 
-    # Pre-compute conversion curve for interactive slider (done early so we
-    # can verify the optimizer's result against it).
-    conversion_curve = compute_conversion_curve(scenario)
-
-    # Verify optimizer result: SLSQP is a local optimizer and may not find
-    # the global optimum, especially for high-dimensional problems (many
-    # trajectory years).  The conversion curve samples NPV at multiple total
-    # conversion caps — if any cap yields higher NPV, adopt those conversions.
-    preliminary_npv = calculate_npv(scenario, final_conversions)
-    best_curve_point = max(conversion_curve, key=lambda p: p.npv)
-    if best_curve_point.npv > preliminary_npv + 0.01 and not _has_active_preferences(scenario):
-        final_conversions = list(best_curve_point.yearly_conversions)
+    # Conversion curve: extract from DP value table (free — no extra optimization)
+    conversion_curve = extract_conversion_curve(dp_result, scenario)
 
     # Recalculate NPV with final conversions
     npv_at_optimal = calculate_npv(scenario, final_conversions)
