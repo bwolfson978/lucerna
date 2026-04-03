@@ -9,6 +9,7 @@ interface MetricCardProps {
   deltaType?: "positive" | "negative" | "neutral";
   tooltip?: string;
   className?: string;
+  valueClassName?: string;
 }
 
 export function MetricCard({
@@ -18,6 +19,7 @@ export function MetricCard({
   deltaType = "neutral",
   tooltip,
   className,
+  valueClassName,
 }: MetricCardProps) {
   return (
     <Card className={cn("flex flex-col gap-2 min-w-0", className)}>
@@ -25,7 +27,7 @@ export function MetricCard({
         {label}
         {tooltip && <Tooltip content={tooltip} />}
       </span>
-      <span className="metric-value">{value}</span>
+      <span className={cn("metric-value", valueClassName)}>{value}</span>
       {delta && (
         <span
           className={cn(

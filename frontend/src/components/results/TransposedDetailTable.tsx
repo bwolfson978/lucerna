@@ -4,7 +4,7 @@ import type { YearlyDetail, LifeEvent } from "@/lib/types";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
 import { LIFE_EVENT_LABELS } from "@/lib/utils/constants";
 import { Tooltip } from "@/components/common/Tooltip";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 interface YearOverride {
   income?: number;
@@ -34,6 +34,39 @@ const LIFE_EVENT_OPTIONS: LifeEvent[] = [
   "layoff",
 ];
 
+function CompactCurrencyCell({
+  value,
+  onChange,
+  highlighted,
+}: {
+  value: number;
+  onChange: (val: number) => void;
+  highlighted: boolean;
+}) {
+  const [focused, setFocused] = useState(false);
+  const display = focused
+    ? value === 0 ? "" : String(value)
+    : value === 0 ? "0" : value.toLocaleString("en-US");
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={display}
+      onChange={(e) => {
+        const stripped = e.target.value.replace(/[^0-9.\-]/g, "");
+        onChange(Number(stripped) || 0);
+      }}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      className={`w-full text-[10px] text-center bg-transparent border-0 p-0 focus:outline-none focus:bg-accent/5 rounded ${
+        highlighted ? "text-accent font-medium" : "text-text-primary"
+      }`}
+      style={{ fontFamily: "'Manrope', system-ui" }}
+    />
+  );
+}
+
 export function TransposedDetailTable({
   details,
   years,
@@ -61,7 +94,7 @@ export function TransposedDetailTable({
           Conversion
         </div>
         <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
-          Tax cost
+          Added tax from conversion
         </div>
         <div className="h-8 flex items-center gap-0.5 text-text-tertiary text-[10px] font-medium px-1">
           Eff. rate
@@ -114,18 +147,10 @@ export function TransposedDetailTable({
 
                 {/* Income (editable) */}
                 <div className="h-8 flex items-center justify-center">
-                  <input
-                    type="number"
+                  <CompactCurrencyCell
                     value={effectiveIncome}
-                    onChange={(e) =>
-                      onIncomeChange(i, Number(e.target.value))
-                    }
-                    className={`w-full text-[10px] text-center bg-transparent border-0 p-0 focus:outline-none focus:bg-accent/5 rounded ${
-                      hasOverride && overrides.get(i)?.income !== undefined
-                        ? "text-accent font-medium"
-                        : "text-text-primary"
-                    }`}
-                    style={{ fontFamily: "'Manrope', system-ui" }}
+                    onChange={(val) => onIncomeChange(i, val)}
+                    highlighted={!!(hasOverride && overrides.get(i)?.income !== undefined)}
                   />
                 </div>
 

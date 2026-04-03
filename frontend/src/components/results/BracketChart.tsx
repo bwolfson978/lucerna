@@ -1,10 +1,9 @@
 "use client";
 
 import type { BracketFillResult } from "@/lib/types";
-import { formatPercent } from "@/lib/utils/formatting";
+import { formatPercent, formatCurrency, formatAxisCurrency } from "@/lib/utils/formatting";
 import { BRACKET_COLORS, CHART_COLORS } from "@/lib/utils/constants";
 import { useRef, useMemo, useState, useCallback, useEffect } from "react";
-import { formatCurrency } from "@/lib/utils/formatting";
 import { Card } from "@/components/ui/card";
 import { useContainerWidth } from "@/hooks/useContainerWidth";
 
@@ -265,7 +264,7 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
                   className="text-[10px] fill-text-tertiary"
                   fontFamily="'Manrope', system-ui"
                 >
-                  ${Math.round(val / 1000)}K
+                  {formatAxisCurrency(val)}
                 </text>
               </g>
             );
@@ -386,7 +385,7 @@ export function BracketChart({ years, filingStatus }: BracketChartProps) {
               >
                 {isMobile
                   ? formatPercent(b.rate)
-                  : `${formatPercent(b.rate)} ($${Math.round(b.max / 1000)}K)`}
+                  : `${formatPercent(b.rate)} (${formatAxisCurrency(b.max)})`}
               </text>
             );
           })}

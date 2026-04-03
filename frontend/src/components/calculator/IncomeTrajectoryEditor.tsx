@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import type { YearlyIncome, LifeEvent } from "@/lib/types";
 import { FormField } from "@/components/common/FormField";
+import { CurrencyInput } from "@/components/common/CurrencyInput";
 import { FormSelect } from "@/components/common/FormSelect";
 import { Button } from "@/components/ui/button";
 import { LIFE_EVENT_LABELS, CURRENT_YEAR } from "@/lib/utils/constants";
@@ -94,19 +95,11 @@ export function IncomeTrajectoryEditor({
               </div>
 
               <div className="flex-1 min-w-0">
-                <FormField
+                <CurrencyInput
                   label="Gross income"
-                  type="number"
                   value={row.gross_income || ""}
                   placeholder="0"
-                  numeric
-                  onChange={(e) =>
-                    updateYear(
-                      index,
-                      "gross_income",
-                      parseFloat(e.target.value) || 0
-                    )
-                  }
+                  onChange={(val) => updateYear(index, "gross_income", val)}
                 />
               </div>
 

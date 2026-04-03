@@ -52,7 +52,7 @@ export function YearlyDetailTable({ details }: YearlyDetailTableProps) {
                   Conversion
                 </th>
                 <th className="py-3 pr-4 font-medium text-right">
-                  Tax cost
+                  Added tax from conversion
                 </th>
                 <th className="py-3 pr-4 font-medium text-right">
                   Effective rate

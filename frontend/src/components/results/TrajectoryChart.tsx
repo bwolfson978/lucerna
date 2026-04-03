@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import type { TrajectoryChartPoint } from "@/lib/types";
 import { CHART_COLORS } from "@/lib/utils/constants";
+import { formatAxisCurrency, formatCurrency } from "@/lib/utils/formatting";
 import { Tooltip } from "@/components/common/Tooltip";
 import { Card } from "@/components/ui/card";
 
@@ -83,8 +84,7 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
     },
     yaxis: {
       labels: {
-        formatter: (val: number) =>
-          val >= 1000 ? `$${(val / 1000).toFixed(0)}K` : `$${val}`,
+        formatter: (val: number) => formatAxisCurrency(val),
         style: {
           fontSize: "11px",
           fontFamily: "'Manrope', system-ui",
@@ -95,7 +95,7 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
     tooltip: {
       theme: "dark",
       y: {
-        formatter: (val: number) => `$${val.toLocaleString()}`,
+        formatter: (val: number) => formatCurrency(val),
       },
       style: { fontSize: "12px" },
     },
@@ -112,7 +112,7 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
         borderColor: "rgba(255, 255, 255, 0.08)",
         strokeDashArray: 4,
         label: {
-          text: `$${(boundary / 1000).toFixed(0)}K`,
+          text: formatAxisCurrency(boundary),
           position: "left" as const,
           style: {
             fontSize: "10px",
