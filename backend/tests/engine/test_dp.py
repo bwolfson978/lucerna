@@ -514,6 +514,20 @@ class TestConversionCurve3D:
         elapsed = time.monotonic() - start
         assert elapsed < 5.0, f"3D DP took {elapsed:.1f}s, expected < 5s"
 
+    def test_npv_decreases_past_optimal(self):
+        """Past optimal, forcing more conversions should reduce NPV."""
+        scenario = _simple_scenario()
+        curve = extract_conversion_curve_3d(scenario, n_points=30, balance_grid_size=150)
+        npvs = [p.npv for p in curve]
+        peak_idx = max(range(len(npvs)), key=lambda i: npvs[i])
+
+        # After peak, NPV at max cap should be noticeably lower
+        if peak_idx < len(npvs) - 2:
+            assert npvs[-1] < npvs[peak_idx] - 10, (
+                f"NPV at max cap ({npvs[-1]:,.0f}) should be lower than "
+                f"at optimal ({npvs[peak_idx]:,.0f})"
+            )
+
     def test_respects_budget_cap(self):
         """Each curve point's yearly conversions should sum to ≤ its cap."""
         scenario = _simple_scenario()
