@@ -1,5 +1,5 @@
 import { MetricCard } from "@/components/common/MetricCard";
-import { formatCompactCurrency } from "@/lib/utils/formatting";
+import { formatCompactCurrency, formatSavings } from "@/lib/utils/formatting";
 import { Tooltip } from "@/components/common/Tooltip";
 
 interface BalanceProjectionsProps {
@@ -42,9 +42,10 @@ export function BalanceProjections({
         />
         <MetricCard
           label="Impact on after-tax wealth"
-          value={formatCompactCurrency(wealthGain)}
+          value={formatSavings(wealthGain)}
+          valueClassName={wealthGain > 0 ? "text-optimal" : undefined}
           delta={wealthGain > 0 ? "vs. no conversion" : undefined}
-          deltaType={wealthGain > 0 ? "positive" : "neutral"}
+          deltaType="neutral"
         />
       </div>
     </div>

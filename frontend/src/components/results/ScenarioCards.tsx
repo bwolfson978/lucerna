@@ -1,6 +1,6 @@
 import type { ScenarioComparison } from "@/lib/types";
 import { Card } from "@/components/ui/card";
-import { formatCurrency, formatCompactCurrency } from "@/lib/utils/formatting";
+import { formatCurrency, formatCompactCurrency, formatSavings } from "@/lib/utils/formatting";
 import { Tooltip } from "@/components/common/Tooltip";
 
 interface ScenarioCardsProps {
@@ -70,8 +70,8 @@ export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
                     <span className="text-text-secondary">
                       Estimated savings
                     </span>
-                    <span className="font-mono text-text-primary font-medium">
-                      {formatCurrency(Math.round(scenario.estimated_savings!))}
+                    <span className={`font-mono font-medium ${scenario.estimated_savings! > 0 ? "text-optimal" : "text-text-primary"}`}>
+                      {formatSavings(Math.round(scenario.estimated_savings!))}
                     </span>
                   </div>
                 )}

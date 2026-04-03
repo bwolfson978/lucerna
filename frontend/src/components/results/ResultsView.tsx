@@ -9,7 +9,7 @@ import type {
 import { MetricCard } from "@/components/common/MetricCard";
 import { Tooltip } from "@/components/common/Tooltip";
 import { GlowButton } from "@/components/common/GlowButton";
-import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
+import { formatCurrency, formatPercent, formatSavings } from "@/lib/utils/formatting";
 import { BracketChart } from "./BracketChart";
 import { ConversionSlider } from "./ConversionSlider";
 import { TransposedDetailTable } from "./TransposedDetailTable";
@@ -126,8 +126,8 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
             <span className="metric-label">
               Estimated lifetime tax savings
             </span>
-            <span className="metric-value-hero">
-              {formatCurrency(estimatedSavings)}
+            <span className="metric-value-hero text-optimal">
+              {formatSavings(estimatedSavings)}
             </span>
             {!isAtOptimal && (
               <span

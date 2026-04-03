@@ -3,6 +3,7 @@
 import { useState, FormEvent } from "react";
 import type { ScenarioInput, YearlyIncome, FilingStatus, HealthcareInput } from "@/lib/types";
 import { FormField } from "@/components/common/FormField";
+import { CurrencyInput } from "@/components/common/CurrencyInput";
 import { FormSelect } from "@/components/common/FormSelect";
 import { GlowButton } from "@/components/common/GlowButton";
 import { Switch } from "@/components/ui/switch";
@@ -140,28 +141,22 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           options={FILING_STATUS_OPTIONS}
           onChange={(e) => setFilingStatus(e.target.value as FilingStatus)}
         />
-        <FormField
+        <CurrencyInput
           label="Current income"
-          type="number"
           value={currentIncome || ""}
           placeholder="0"
-          numeric
           min={0}
           error={errors.currentIncome}
-          onChange={(e) => setCurrentIncome(parseFloat(e.target.value) || 0)}
+          onChange={setCurrentIncome}
         />
-        <FormField
+        <CurrencyInput
           label="Traditional IRA/401(k) balance"
-          type="number"
           value={traditionalBalance || ""}
           placeholder="0"
-          numeric
           min={0}
           error={errors.traditionalBalance}
           helper="Includes 401k rollovers"
-          onChange={(e) =>
-            setTraditionalBalance(parseFloat(e.target.value) || 0)
-          }
+          onChange={setTraditionalBalance}
         />
         <FormField
           label="Retirement age"
@@ -173,16 +168,14 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           error={errors.retirementAge}
           onChange={(e) => setRetirementAge(parseInt(e.target.value) || 65)}
         />
-        <FormField
+        <CurrencyInput
           label="Roth IRA/401(k) balance"
-          type="number"
           value={rothBalance || ""}
           placeholder="0"
-          numeric
           min={0}
           error={errors.rothBalance}
           helper="Existing Roth IRA/401(k) balance (optional)"
-          onChange={(e) => setRothBalance(parseFloat(e.target.value) || 0)}
+          onChange={setRothBalance}
         />
       </div>
 
@@ -198,20 +191,14 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
             setIncomeGrowthRate(parseFloat(e.target.value) || 0)
           }
         />
-        <FormField
+        <CurrencyInput
           label="Yearly spend in retirement"
-          type="number"
           value={retirementSpending || ""}
           placeholder="Auto (4% rule)"
-          numeric
           min={0}
           error={errors.retirementSpending}
           helper="Leave blank to use the 4% rule"
-          onChange={(e) =>
-            setRetirementSpending(
-              e.target.value ? parseFloat(e.target.value) : null
-            )
-          }
+          onChange={(val) => setRetirementSpending(val || null)}
         />
       </div>
 
@@ -306,19 +293,15 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
                 setHouseholdSize(parseInt(e.target.value) || 1)
               }
             />
-            <FormField
+            <CurrencyInput
               label="Monthly benchmark premium"
-              type="number"
               value={monthlySlcspPremium || ""}
               placeholder="620"
-              numeric
               min={0}
               step={10}
               error={errors.monthlySlcspPremium}
               helper="2nd-lowest Silver plan on healthcare.gov"
-              onChange={(e) =>
-                setMonthlySlcspPremium(parseFloat(e.target.value) || 620)
-              }
+              onChange={(val) => setMonthlySlcspPremium(val || 620)}
             />
             <FormField
               label="Employer coverage resumes"

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatCurrency, formatPercent, formatAge, formatCompactCurrency } from '@/lib/utils/formatting'
+import { formatCurrency, formatPercent, formatAge, formatCompactCurrency, formatAxisCurrency, formatSavings } from '@/lib/utils/formatting'
 
 describe('formatCurrency', () => {
   it('formats whole dollars with commas', () => {
@@ -78,5 +78,52 @@ describe('formatCompactCurrency', () => {
 
   it('handles negative millions', () => {
     expect(formatCompactCurrency(-2500000)).toBe('-$2.5M')
+  })
+})
+
+describe('formatAxisCurrency', () => {
+  it('formats zero', () => {
+    expect(formatAxisCurrency(0)).toBe('$0')
+  })
+
+  it('formats values under $1,000 with full formatting', () => {
+    expect(formatAxisCurrency(500)).toBe('$500')
+  })
+
+  it('formats thousands with K notation', () => {
+    expect(formatAxisCurrency(1000)).toBe('$1K')
+    expect(formatAxisCurrency(11925)).toBe('$12K')
+    expect(formatAxisCurrency(48475)).toBe('$48K')
+    expect(formatAxisCurrency(103350)).toBe('$103K')
+    expect(formatAxisCurrency(210000)).toBe('$210K')
+    expect(formatAxisCurrency(626350)).toBe('$626K')
+  })
+
+  it('formats millions with M notation', () => {
+    expect(formatAxisCurrency(1000000)).toBe('$1M')
+    expect(formatAxisCurrency(1500000)).toBe('$1.5M')
+  })
+
+  it('handles negative values', () => {
+    expect(formatAxisCurrency(-50000)).toBe('-$50K')
+    expect(formatAxisCurrency(-1500000)).toBe('-$1.5M')
+  })
+})
+
+describe('formatSavings', () => {
+  it('adds + prefix for positive values', () => {
+    expect(formatSavings(5000)).toBe('+$5,000')
+  })
+
+  it('adds - prefix for negative values', () => {
+    expect(formatSavings(-5000)).toBe('-$5,000')
+  })
+
+  it('formats zero without prefix', () => {
+    expect(formatSavings(0)).toBe('$0')
+  })
+
+  it('formats large positive values', () => {
+    expect(formatSavings(150000)).toBe('+$150,000')
   })
 })
