@@ -22,6 +22,10 @@ interface TransposedDetailTableProps {
   onLifeEventChange: (yearIndex: number, event: LifeEvent) => void;
   scrollRef?: RefObject<HTMLDivElement | null>;
   colWidth?: number;
+  /** Width of fixed left area in the chart (vertical label + y-axis) */
+  leftOffset?: number;
+  /** Width of fixed right area in the chart (bracket labels + vertical label) */
+  rightOffset?: number;
 }
 
 const LIFE_EVENT_OPTIONS: LifeEvent[] = [
@@ -82,6 +86,8 @@ export function TransposedDetailTable({
   onLifeEventChange,
   scrollRef: externalScrollRef,
   colWidth = 58,
+  leftOffset = 88,
+  rightOffset = 108,
 }: TransposedDetailTableProps) {
   const internalScrollRef = useRef<HTMLDivElement>(null);
   const scrollRef = externalScrollRef || internalScrollRef;
@@ -94,28 +100,28 @@ export function TransposedDetailTable({
 
   return (
     <div className="flex text-body-sm">
-      {/* Fixed row labels */}
-      <div className="flex-shrink-0 w-[70px] flex flex-col border-r border-border">
-        <div className="h-7 flex items-center text-text-tertiary text-[10px] font-semibold px-1 border-b border-border">
+      {/* Fixed row labels — width matches chart's left fixed area */}
+      <div className="flex-shrink-0 flex flex-col border-r border-border" style={{ width: leftOffset }}>
+        <div className="h-7 flex items-center justify-end text-text-tertiary text-[10px] font-semibold px-2 border-b border-border">
           Year
         </div>
-        <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
+        <div className="h-8 flex items-center justify-end text-text-tertiary text-[10px] font-medium px-2">
           Life event
         </div>
-        <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
+        <div className="h-8 flex items-center justify-end text-text-tertiary text-[10px] font-medium px-2">
           Earned Income
         </div>
-        <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
+        <div className="h-8 flex items-center justify-end text-text-tertiary text-[10px] font-medium px-2">
           Conversion
         </div>
-        <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
+        <div className="h-8 flex items-center justify-end text-text-tertiary text-[10px] font-medium px-2 text-right leading-tight">
           Added tax from conversion
         </div>
-        <div className="h-8 flex items-center gap-0.5 text-text-tertiary text-[10px] font-medium px-1">
+        <div className="h-8 flex items-center justify-end gap-0.5 text-text-tertiary text-[10px] font-medium px-2">
           Eff. rate
           <Tooltip content="The average tax rate on your total conversion amount — total tax paid divided by total converted." />
         </div>
-        <div className="h-8 flex items-center gap-0.5 text-text-tertiary text-[10px] font-medium px-1">
+        <div className="h-8 flex items-center justify-end gap-0.5 text-text-tertiary text-[10px] font-medium px-2">
           Marginal
           <Tooltip content="The tax rate on the next dollar converted — determines whether converting more would still be beneficial." />
         </div>
@@ -219,6 +225,9 @@ export function TransposedDetailTable({
         </div>
       </div>
       </div>
+
+      {/* Right spacer — matches chart's right fixed area so scroll windows align */}
+      <div className="flex-shrink-0" style={{ width: rightOffset }} />
     </div>
   );
 }

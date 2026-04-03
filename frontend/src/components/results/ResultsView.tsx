@@ -43,6 +43,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
   const chartScrollRef = useRef<HTMLDivElement>(null);
   const tableScrollRef = useRef<HTMLDivElement>(null);
   const [tableColWidth, setTableColWidth] = useState(58);
+  const [chartLayout, setChartLayout] = useState({ leftOffset: 88, rightOffset: 108 });
   useSyncedScroll(chartScrollRef, tableScrollRef);
 
   // Client-side slider: continuous bracket fill computation
@@ -201,21 +202,24 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
         />
       </div>
 
-      {/* Bracket chart */}
-      <BracketChart
-        years={chartYears}
-        filingStatus={result.input.filing_status}
-        scrollRef={chartScrollRef}
-        onBarWidthChange={setTableColWidth}
-      />
+      {/* Bracket chart + detail table — same Card so scroll areas align */}
+      <Card className="flex flex-col gap-default">
+        <BracketChart
+          years={chartYears}
+          filingStatus={result.input.filing_status}
+          scrollRef={chartScrollRef}
+          onBarWidthChange={setTableColWidth}
+          onLayoutChange={setChartLayout}
+        />
 
-      {/* Transposed detail table */}
-      {onReRun && (
-        <p className="text-body-sm text-text-tertiary">
-          Adjust income or life events below, then re-run the analysis.
-        </p>
-      )}
-      <Card className="p-0">
+        {/* Separator between chart and table */}
+        <div className="border-t border-border" />
+
+        {onReRun && (
+          <p className="text-body-sm text-text-tertiary -mt-1">
+            Adjust income or life events below, then re-run the analysis.
+          </p>
+        )}
         <TransposedDetailTable
           details={yearlyDetail}
           years={yearInfos}
@@ -226,11 +230,13 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
           onLifeEventChange={handleLifeEventChange}
           scrollRef={tableScrollRef}
           colWidth={tableColWidth}
+          leftOffset={chartLayout.leftOffset}
+          rightOffset={chartLayout.rightOffset}
         />
 
         {/* Re-run button */}
         {hasUnsavedChanges && onReRun && (
-          <div className="p-3 border-t border-border flex items-center justify-between bg-accent/5">
+          <div className="pt-3 border-t border-border flex items-center justify-between">
             <span className="text-body-sm text-text-secondary">
               Income values modified
             </span>
