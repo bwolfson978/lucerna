@@ -2,6 +2,7 @@
 
 import { formatCurrency } from "@/lib/utils/formatting";
 import { CHART_COLORS } from "@/lib/utils/constants";
+import { maybeSnap } from "@/lib/utils/snap";
 import { useCallback } from "react";
 
 interface ConversionSliderProps {
@@ -21,9 +22,10 @@ export function ConversionSlider({
 }: ConversionSliderProps) {
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      onChange(Number(e.target.value));
+      const raw = Number(e.target.value);
+      onChange(maybeSnap(raw, optimalValue, min, max));
     },
-    [onChange]
+    [onChange, optimalValue, min, max]
   );
 
   const optimalPercent =

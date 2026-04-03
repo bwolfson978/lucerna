@@ -18,6 +18,7 @@ import { BalanceProjections } from "./BalanceProjections";
 import { AcaSubsidyImpact } from "./AcaSubsidyImpact";
 import { Card } from "@/components/ui/card";
 import { useConversionSlider } from "@/hooks/useConversionSlider";
+import { computeSnapThreshold } from "@/lib/utils/snap";
 
 interface YearOverride {
   income?: number;
@@ -111,8 +112,9 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
     onReRun(updatedInput);
   }, [result.input, overrides, onReRun]);
 
+  const snapThreshold = computeSnapThreshold(0, result.input.traditional_ira_balance);
   const isAtOptimal =
-    Math.abs(sliderValue - result.total_conversion) < 100;
+    Math.abs(sliderValue - result.total_conversion) <= snapThreshold;
   const savingsDifference =
     result.estimated_lifetime_tax_savings - estimatedSavings;
 

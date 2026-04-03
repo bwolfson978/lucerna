@@ -10,6 +10,7 @@ import {
   analyzeBracketFill,
   calculateFederalTax,
 } from "@/lib/tax/brackets";
+import { computeSnapThreshold } from "@/lib/utils/snap";
 
 function distributeConversion(
   totalConversion: number,
@@ -98,7 +99,8 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
   // so hero metric and scenario cards always agree.
   const estimatedSavings = useMemo(() => {
     // Snap to backend value when at (or very near) the optimizer's answer
-    if (Math.abs(totalConversion - result.total_conversion) < 100) {
+    const snapThreshold = computeSnapThreshold(0, result.input.traditional_ira_balance);
+    if (Math.abs(totalConversion - result.total_conversion) <= snapThreshold) {
       return result.estimated_lifetime_tax_savings;
     }
 
