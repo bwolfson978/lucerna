@@ -728,6 +728,20 @@ def extract_conversion_curve_3d(
             yearly_conv[i] = max(0.0, min(yearly_conv[i], remaining_bal))
             remaining_bal -= yearly_conv[i]
 
+        # Force schedule to sum to exactly the cap.  The slider value is
+        # a "must-do" total, not a maximum.  The DP provides the optimal
+        # allocation ratios; scaling enforces the exact total so that the
+        # curve's NPV reflects actually converting that amount.
+        total_conv = sum(yearly_conv)
+        if cap_rounded > 0 and total_conv > 0 and total_conv < cap_rounded - 1:
+            scale_factor = cap_rounded / total_conv
+            yearly_conv = [c * scale_factor for c in yearly_conv]
+            # Re-clamp to sequential balance limits
+            remaining_bal = balance
+            for i in range(n_years):
+                yearly_conv[i] = max(0.0, min(yearly_conv[i], remaining_bal))
+                remaining_bal -= yearly_conv[i]
+
         # Compute actual NPV for this allocation (authoritative)
         npv_val = calculate_npv(scenario, yearly_conv)
 
