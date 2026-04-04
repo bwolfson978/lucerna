@@ -35,6 +35,7 @@ export default function CalculatorPage() {
     posthog.capture("scenario_submitted", {
       filing_status: input.filing_status,
       num_years: input.income_trajectory?.length ?? 1,
+      has_life_events: input.income_trajectory?.some(y => y.life_event !== "none") ?? false,
     });
 
     try {

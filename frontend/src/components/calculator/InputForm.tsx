@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, useEffect, useCallback, FormEvent } from "react";
 import type { ScenarioInput, YearlyIncome, FilingStatus, HealthcareInput } from "@/lib/types";
 import { NumericField } from "@/components/common/NumericField";
 import { CurrencyInput } from "@/components/common/CurrencyInput";
@@ -9,6 +9,7 @@ import { GlowButton } from "@/components/common/GlowButton";
 import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { Label } from "@/components/ui/label";
+import { IncomeTrajectoryEditor } from "@/components/calculator/IncomeTrajectoryEditor";
 import { CURRENT_YEAR } from "@/lib/utils/constants";
 
 interface InputFormProps {
@@ -28,6 +29,7 @@ function generateTrajectory(
   annualGrowthRate: number
 ): YearlyIncome[] {
   const yearsToRetirement = retAge - currentAge;
+  if (yearsToRetirement <= 0) return [];
   return Array.from({ length: yearsToRetirement }, (_, i) => ({
     year: CURRENT_YEAR + i,
     gross_income: Math.round(
@@ -35,6 +37,23 @@ function generateTrajectory(
     ),
     life_event: "none" as const,
   }));
+}
+
+/**
+ * Smart-merge: regenerate trajectory from base inputs but preserve
+ * years where the user set a life event (the "pin" signal).
+ */
+function mergeTrajectory(
+  fresh: YearlyIncome[],
+  existing: YearlyIncome[]
+): YearlyIncome[] {
+  const pinned = new Map<number, YearlyIncome>();
+  for (const row of existing) {
+    if (row.life_event !== "none") {
+      pinned.set(row.year, row);
+    }
+  }
+  return fresh.map((row) => pinned.get(row.year) ?? row);
 }
 
 export function InputForm({ onSubmit, loading }: InputFormProps) {
@@ -66,6 +85,34 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
     number | null
   >(null);
 
+  // Income trajectory state
+  const [trajectory, setTrajectory] = useState<YearlyIncome[]>([]);
+
+  // Regenerate trajectory when base inputs change, preserving pinned years
+  useEffect(() => {
+    const ageVal = age ?? 0;
+    const retVal = retirementAge ?? 65;
+    const incGrowthVal = incomeGrowthRate ?? 0;
+
+    if (currentIncome <= 0 || ageVal >= retVal) {
+      setTrajectory([]);
+      return;
+    }
+
+    const fresh = generateTrajectory(ageVal, retVal, currentIncome, incGrowthVal);
+    setTrajectory((prev) => (prev.length === 0 ? fresh : mergeTrajectory(fresh, prev)));
+  }, [age, retirementAge, currentIncome, incomeGrowthRate]);
+
+  const handleResetTrajectory = useCallback(() => {
+    const ageVal = age ?? 0;
+    const retVal = retirementAge ?? 65;
+    const incGrowthVal = incomeGrowthRate ?? 0;
+    setTrajectory(generateTrajectory(ageVal, retVal, currentIncome, incGrowthVal));
+  }, [age, retirementAge, currentIncome, incomeGrowthRate]);
+
+  const showTrajectory = trajectory.length > 0;
+  const hasLifeEvents = trajectory.some((y) => y.life_event !== "none");
+
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
     const errs: Record<string, string> = {};
@@ -75,7 +122,6 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
     const yrsRetVal = yearsInRetirement ?? 25;
     const growthVal = growthRate ?? 7;
     const discountVal = discountRate ?? 5;
-    const incGrowthVal = incomeGrowthRate ?? 0;
     const hhSize = householdSize ?? 1;
 
     if (ageVal < 0 || ageVal > 120) errs.age = "Age must be between 0 and 120";
@@ -91,6 +137,10 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
       errs.yearsInRetirement = "Must be at least 1 year";
     if (retirementSpending !== null && retirementSpending < 0)
       errs.retirementSpending = "Spending cannot be negative";
+    if (trajectory.length === 0)
+      errs.trajectory = "Enter your income and retirement age to generate a trajectory";
+    if (trajectory.some((y) => y.gross_income < 0))
+      errs.trajectory = "Income cannot be negative";
     if (includeAca) {
       if (hhSize < 1)
         errs.householdSize = "Household must have at least 1 person";
@@ -99,13 +149,6 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
     }
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
-
-    const trajectory = generateTrajectory(
-      ageVal,
-      retVal,
-      currentIncome,
-      incGrowthVal
-    );
 
     const healthcare: HealthcareInput | null = includeAca
       ? {
@@ -163,6 +206,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           min={0}
           error={errors.traditionalBalance}
           helper="Includes 401k rollovers"
+          tooltip="Your total pre-tax retirement savings eligible for Roth conversion. Include traditional IRAs and old 401(k) rollovers. Exclude a current employer 401(k) unless eligible for in-service conversions."
           onChange={setTraditionalBalance}
         />
         <NumericField
@@ -190,6 +234,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           value={incomeGrowthRate ?? ""}
           decimalScale={1}
           helper="Annual income growth assumption"
+          tooltip="How much you expect your salary to grow each year before inflation. Most people use 2-4%. Higher growth means more taxable income later, making early conversions more valuable."
           onChange={setIncomeGrowthRate}
         />
         <CurrencyInput
@@ -202,6 +247,19 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           onChange={(val) => setRetirementSpending(val || null)}
         />
       </div>
+
+      {/* Inline income trajectory editor */}
+      {showTrajectory && (
+        <IncomeTrajectoryEditor
+          trajectory={trajectory}
+          onChange={setTrajectory}
+          onReset={hasLifeEvents ? handleResetTrajectory : undefined}
+          description="Projected from your inputs above. Change any year's income or add a life event to customize."
+        />
+      )}
+      {errors.trajectory && (
+        <span className="text-caption text-negative">{errors.trajectory}</span>
+      )}
 
       {/* Advanced settings */}
       <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
@@ -243,6 +301,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
               value={growthRate ?? ""}
               decimalScale={1}
               helper="Expected annual return"
+              tooltip="Expected annual portfolio return before inflation and fees. Stock-heavy: 7-8%. Balanced: 5-6%. Bond-heavy: 3-4%."
               onChange={setGrowthRate}
             />
             <NumericField
@@ -250,6 +309,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
               value={discountRate ?? ""}
               decimalScale={1}
               helper="Time value of money"
+              tooltip="The extra return you'd need to accept a dollar next year instead of today. Think of it as your opportunity cost — roughly match it to your expected investment return. The default of 5% works well for most people."
               onChange={setDiscountRate}
             />
           </div>
