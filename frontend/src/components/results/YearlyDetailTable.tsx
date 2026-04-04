@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { YearlyDetail } from "@/lib/types";
-import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
+import { formatCurrency } from "@/lib/utils/formatting";
 import { Card } from "@/components/ui/card";
 
 interface YearlyDetailTableProps {
@@ -54,12 +54,8 @@ export function YearlyDetailTable({ details }: YearlyDetailTableProps) {
                 <th className="py-3 pr-4 font-medium text-right">
                   Added tax from conversion
                 </th>
-                <th className="py-3 pr-4 font-medium text-right">
-                  Effective rate
-                </th>
-                <th className="py-3 font-medium text-right">
-                  Marginal bracket
-                </th>
+
+
               </tr>
             </thead>
             <tbody>
@@ -80,12 +76,8 @@ export function YearlyDetailTable({ details }: YearlyDetailTableProps) {
                   <td className="py-3 pr-4 font-mono text-right">
                     {formatCurrency(row.tax_cost)}
                   </td>
-                  <td className="py-3 pr-4 font-mono text-right">
-                    {formatPercent(row.effective_rate)}
-                  </td>
-                  <td className="py-3 font-mono text-right">
-                    {formatPercent(row.marginal_bracket)}
-                  </td>
+
+
                 </tr>
               ))}
             </tbody>

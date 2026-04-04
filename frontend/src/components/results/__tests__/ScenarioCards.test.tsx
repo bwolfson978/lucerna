@@ -88,8 +88,9 @@ describe("ScenarioCards", () => {
 
   it("shows impact on wealth for non-best scenarios", () => {
     renderWithProviders(<ScenarioCards scenarios={mockScenarios} />);
-    const impactLabels = screen.getAllByText("Impact on wealth");
+    const impactLabels = screen.getAllByText("Impact on long-term wealth");
     expect(impactLabels).toHaveLength(2);
+    expect(screen.getAllByText(/less than scenario with highest savings/)).toHaveLength(2);
   });
 
   it("returns null when scenarios is empty", () => {

@@ -122,7 +122,6 @@ export interface YearlyDetail {
   income: number;
   conversion: number;
   tax_cost: number;
-  effective_rate: number;
   marginal_bracket: number;
 }
 

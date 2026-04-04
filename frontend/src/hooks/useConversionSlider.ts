@@ -125,7 +125,6 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
         const taxWith = calculateFederalTax(income + conversion, filingStatus);
         const taxWithout = calculateFederalTax(income, filingStatus);
         const taxCost = taxWith - taxWithout;
-        const effectiveRate = conversion > 0 ? taxCost / conversion : 0;
         // Find marginal bracket rate from the bracket fill data
         const fills = yearlyBracketFills[i];
         const topFilled = fills
@@ -142,7 +141,6 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
           income,
           conversion: Math.round(conversion),
           tax_cost: Math.round(taxCost * 100) / 100,
-          effective_rate: Math.round(effectiveRate * 10000) / 10000,
           marginal_bracket: marginalRate,
         };
       }),
@@ -151,8 +149,6 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
 
   const displayTotalConversion = yearlyConversions.reduce((a, b) => a + b, 0);
   const totalTaxCost = yearlyDetail.reduce((s, d) => s + d.tax_cost, 0);
-  const effectiveRate =
-    displayTotalConversion > 0 ? totalTaxCost / displayTotalConversion : 0;
   const conversionYears = yearlyConversions.filter((c) => c > 0).length;
 
   // Interpolate NPV-based estimated savings from pre-computed conversion curve.
@@ -214,7 +210,6 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
     yearlyDetail,
     displayTotalConversion,
     totalTaxCost,
-    effectiveRate,
     conversionYears,
     estimatedSavings,
   };

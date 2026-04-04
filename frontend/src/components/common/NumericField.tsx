@@ -3,12 +3,14 @@
 import * as React from "react";
 import { NumericFormat } from "react-number-format";
 import { Label } from "@/components/ui/label";
+import { Tooltip } from "@/components/common/Tooltip";
 import { cn } from "@/lib/utils";
 
 interface NumericFieldProps {
   label?: string;
   helper?: string;
   error?: string;
+  tooltip?: string;
   value: number | "";
   placeholder?: string;
   min?: number;
@@ -21,12 +23,17 @@ interface NumericFieldProps {
 }
 
 const NumericField = React.forwardRef<HTMLInputElement, NumericFieldProps>(
-  ({ label, helper, error, value, placeholder, min, max, suffix, decimalScale = 0, onChange, className, id }, ref) => {
+  ({ label, helper, error, tooltip, value, placeholder, min, max, suffix, decimalScale = 0, onChange, className, id }, ref) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
 
     return (
       <div className="flex flex-col gap-1.5">
-        {label && <Label htmlFor={inputId}>{label}</Label>}
+        {label && (
+          <div className="flex items-center gap-1">
+            <Label htmlFor={inputId}>{label}</Label>
+            {tooltip && <Tooltip content={tooltip} />}
+          </div>
+        )}
         <NumericFormat
           getInputRef={ref}
           id={inputId}

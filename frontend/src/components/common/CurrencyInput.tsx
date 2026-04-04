@@ -3,12 +3,14 @@
 import * as React from "react";
 import { NumericFormat } from "react-number-format";
 import { Label } from "@/components/ui/label";
+import { Tooltip } from "@/components/common/Tooltip";
 import { cn } from "@/lib/utils";
 
 interface CurrencyInputProps {
   label?: string;
   helper?: string;
   error?: string;
+  tooltip?: string;
   value: number | "";
   placeholder?: string;
   min?: number;
@@ -19,12 +21,17 @@ interface CurrencyInputProps {
 }
 
 const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
-  ({ label, helper, error, value, placeholder, min, onChange, className, id }, ref) => {
+  ({ label, helper, error, tooltip, value, placeholder, min, onChange, className, id }, ref) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
 
     return (
       <div className="flex flex-col gap-1.5">
-        {label && <Label htmlFor={inputId}>{label}</Label>}
+        {label && (
+          <div className="flex items-center gap-1">
+            <Label htmlFor={inputId}>{label}</Label>
+            {tooltip && <Tooltip content={tooltip} />}
+          </div>
+        )}
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-body select-none pointer-events-none">
             $
