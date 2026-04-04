@@ -14,7 +14,6 @@ export const sampleOptimizationResult: OptimizationResult = {
       income: 35000,
       conversion: 45000,
       tax_cost: 6300,
-      effective_rate: 0.14,
       marginal_bracket: 0.22,
     },
     {
@@ -22,7 +21,6 @@ export const sampleOptimizationResult: OptimizationResult = {
       income: 30000,
       conversion: 50000,
       tax_cost: 7900,
-      effective_rate: 0.158,
       marginal_bracket: 0.22,
     },
     {
@@ -30,7 +28,6 @@ export const sampleOptimizationResult: OptimizationResult = {
       income: 150000,
       conversion: 0,
       tax_cost: 0,
-      effective_rate: 0,
       marginal_bracket: 0.24,
     },
   ],

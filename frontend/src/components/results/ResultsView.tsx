@@ -8,7 +8,7 @@ import type {
 import { MetricCard } from "@/components/common/MetricCard";
 import { Tooltip } from "@/components/common/Tooltip";
 import { GlowButton } from "@/components/common/GlowButton";
-import { formatCurrency, formatPercent, formatSavings } from "@/lib/utils/formatting";
+import { formatCurrency, formatSavings } from "@/lib/utils/formatting";
 import { BracketChart } from "./BracketChart";
 import { ConversionSlider } from "./ConversionSlider";
 import { TransposedDetailTable } from "./TransposedDetailTable";
@@ -52,7 +52,6 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
     yearlyDetail,
     displayTotalConversion,
     totalTaxCost,
-    effectiveRate,
     conversionYears,
     estimatedSavings,
   } = useConversionSlider({ result });
@@ -164,7 +163,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
       </div>
 
       {/* Summary metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-default">
+      <div className="grid grid-cols-3 gap-default">
         <MetricCard
           label="Total conversion"
           value={formatCurrency(displayTotalConversion)}
@@ -172,11 +171,6 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
         <MetricCard
           label="Tax on conversions"
           value={formatCurrency(totalTaxCost)}
-        />
-        <MetricCard
-          label="Effective rate"
-          value={formatPercent(effectiveRate)}
-          tooltip="The average tax rate on your total conversion amount — total tax paid divided by total converted."
         />
         <MetricCard
           label="Conversion years"

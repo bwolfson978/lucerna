@@ -1,8 +1,8 @@
 "use client";
 
 import type { YearlyDetail } from "@/lib/types";
-import { formatPercent, formatTableCurrency } from "@/lib/utils/formatting";
-import { Tooltip } from "@/components/common/Tooltip";
+import { formatTableCurrency } from "@/lib/utils/formatting";
+
 import { useMemo, useRef, useState, type RefObject } from "react";
 import { useScrollFade } from "@/hooks/useScrollFade";
 
@@ -91,14 +91,8 @@ export function TransposedDetailTable({
         <div className="h-8 flex items-center justify-end text-text-tertiary text-[10px] font-medium px-2 text-right leading-tight">
           Added tax from conversion
         </div>
-        <div className="h-8 flex items-center justify-end gap-0.5 text-text-tertiary text-[10px] font-medium px-2">
-          Eff. rate
-          <Tooltip content="The average tax rate on your total conversion amount — total tax paid divided by total converted." />
-        </div>
-        <div className="h-8 flex items-center justify-end gap-0.5 text-text-tertiary text-[10px] font-medium px-2">
-          Marginal
-          <Tooltip content="The tax rate on the next dollar converted — determines whether converting more would still be beneficial." />
-        </div>
+
+
       </div>
 
       {/* Scrollable columns (synced with chart scroll) */}
@@ -148,26 +142,6 @@ export function TransposedDetailTable({
                   style={{ fontFamily: "'Manrope', system-ui" }}
                 >
                   {detail ? formatTableCurrency(detail.tax_cost, maxChars) : "—"}
-                </div>
-
-                {/* Effective rate */}
-                <div
-                  className="h-8 flex items-center justify-center text-[10px] text-text-primary px-1"
-                  style={{ fontFamily: "'Manrope', system-ui" }}
-                >
-                  {detail ? formatPercent(detail.effective_rate) : "—"}
-                </div>
-
-                {/* Marginal bracket */}
-                <div
-                  className="h-8 flex items-center justify-center text-[10px] text-text-primary px-1"
-                  style={{ fontFamily: "'Manrope', system-ui" }}
-                >
-                  {detail
-                    ? typeof detail.marginal_bracket === "number"
-                      ? formatPercent(detail.marginal_bracket)
-                      : detail.marginal_bracket
-                    : "—"}
                 </div>
               </div>
             );

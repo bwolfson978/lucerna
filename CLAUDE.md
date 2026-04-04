@@ -91,3 +91,24 @@ lucerna/
 ## Current scope boundaries
 
 Check the active execution plan in `docs/planning/` for what's in scope for the current milestone. Don't build features from future milestones unless asked.
+
+## Git Operations
+
+Any time you are starting an implementation by checking out a new feature branch, make sure you've pulled the most recent changes from master branch so you're building on top of them
+
+## GitHub Issue Workflow
+
+### For scout agents (filing issues)
+- Always apply `status:open` and the appropriate `type:` label
+- Write clear reproduction steps or rationale
+
+### For builder agents (picking up issues)
+- Only pick issues labeled `status:open`
+- Immediately relabel to `status:claimed` before starting work
+- When opening a PR, relabel to `status:in-review` and link the issue
+- If blocked, relabel `status:blocked` and leave a comment explaining why
+
+### Label reference
+- status:open | status:claimed | status:in-review | status:done | status:blocked
+- type:bug | type:improvement | type:refactor
+- priority:high | priority:low
