@@ -13,6 +13,8 @@ import { Card } from "@/components/ui/card";
 interface IncomeTrajectoryEditorProps {
   trajectory: YearlyIncome[];
   onChange: (trajectory: YearlyIncome[]) => void;
+  onReset?: () => void;
+  description?: string;
 }
 
 const lifeEventOptions = Object.entries(LIFE_EVENT_LABELS).map(
@@ -22,6 +24,8 @@ const lifeEventOptions = Object.entries(LIFE_EVENT_LABELS).map(
 export function IncomeTrajectoryEditor({
   trajectory,
   onChange,
+  onReset,
+  description,
 }: IncomeTrajectoryEditorProps) {
   const addYear = useCallback(() => {
     if (trajectory.length >= 15) return;
@@ -60,19 +64,29 @@ export function IncomeTrajectoryEditor({
     <div className="flex flex-col gap-default">
       <div className="flex items-center justify-between">
         <h3 className="text-h3 text-text-primary">Income trajectory</h3>
-        <Button
-          variant="outline"
-          onClick={addYear}
-          disabled={trajectory.length >= 15}
-          className="text-body-sm"
-        >
-          + Add year
-        </Button>
+        <div className="flex items-center gap-2">
+          {onReset && (
+            <button
+              type="button"
+              onClick={onReset}
+              className="text-body-sm text-text-tertiary hover:text-text-secondary transition-colors duration-300"
+            >
+              Reset to defaults
+            </button>
+          )}
+          <Button
+            variant="outline"
+            onClick={addYear}
+            disabled={trajectory.length >= 15}
+            className="text-body-sm"
+          >
+            + Add year
+          </Button>
+        </div>
       </div>
 
       <p className="text-body-sm text-text-secondary">
-        Enter your expected income for each year. The optimizer finds the
-        best conversion schedule across all years.
+        {description ?? "Enter your expected income for each year. The optimizer finds the best conversion schedule across all years."}
       </p>
 
       <div className="flex flex-col gap-tight">
