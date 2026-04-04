@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { InputForm } from "../InputForm";
 
 // Radix UI Switch uses ResizeObserver which jsdom doesn't provide
@@ -52,6 +53,14 @@ vi.mock("../IncomeTrajectoryEditor", () => ({
   ),
 }));
 
+function renderInputForm(props: { onSubmit: ReturnType<typeof vi.fn>; loading?: boolean }) {
+  return render(
+    <TooltipProvider>
+      <InputForm {...props} />
+    </TooltipProvider>
+  );
+}
+
 describe("InputForm", () => {
   let onSubmit: ReturnType<typeof vi.fn>;
 
@@ -70,25 +79,25 @@ describe("InputForm", () => {
   }
 
   it("renders without trajectory editor when income is 0", () => {
-    render(<InputForm onSubmit={onSubmit} />);
+    renderInputForm({ onSubmit });
     expect(screen.queryByTestId("trajectory-editor")).not.toBeInTheDocument();
   });
 
   it("shows trajectory editor when income is entered", () => {
-    render(<InputForm onSubmit={onSubmit} />);
+    renderInputForm({ onSubmit });
     fillBasicInputs();
     expect(screen.getByTestId("trajectory-editor")).toBeInTheDocument();
   });
 
   it("generates correct number of trajectory years from age and retirement age", () => {
-    render(<InputForm onSubmit={onSubmit} />);
+    renderInputForm({ onSubmit });
     fillBasicInputs();
     // Default age=35, retirement=65 → 30 years
     expect(screen.getByTestId("trajectory-count").textContent).toBe("30");
   });
 
   it("shows description text on the trajectory editor", () => {
-    render(<InputForm onSubmit={onSubmit} />);
+    renderInputForm({ onSubmit });
     fillBasicInputs();
     expect(screen.getByTestId("trajectory-description").textContent).toContain(
       "Projected from your inputs above"
@@ -96,13 +105,13 @@ describe("InputForm", () => {
   });
 
   it("does not show reset button when no life events are set", () => {
-    render(<InputForm onSubmit={onSubmit} />);
+    renderInputForm({ onSubmit });
     fillBasicInputs();
     expect(screen.queryByTestId("reset-button")).not.toBeInTheDocument();
   });
 
   it("shows reset button after a life event is set", () => {
-    render(<InputForm onSubmit={onSubmit} />);
+    renderInputForm({ onSubmit });
     fillBasicInputs();
 
     // Simulate user editing a year with a life event
@@ -112,7 +121,7 @@ describe("InputForm", () => {
   });
 
   it("reset button clears life events", () => {
-    render(<InputForm onSubmit={onSubmit} />);
+    renderInputForm({ onSubmit });
     fillBasicInputs();
 
     // Set a life event
@@ -127,7 +136,7 @@ describe("InputForm", () => {
   });
 
   it("submits with trajectory data", () => {
-    render(<InputForm onSubmit={onSubmit} />);
+    renderInputForm({ onSubmit });
     fillBasicInputs();
 
     const form = screen.getByRole("button", { name: /run my scenario/i });
@@ -141,7 +150,7 @@ describe("InputForm", () => {
   });
 
   it("submits with custom life events in trajectory", () => {
-    render(<InputForm onSubmit={onSubmit} />);
+    renderInputForm({ onSubmit });
     fillBasicInputs();
 
     // Set a life event on year index 1
@@ -158,7 +167,7 @@ describe("InputForm", () => {
   });
 
   it("preserves life events when income changes", () => {
-    render(<InputForm onSubmit={onSubmit} />);
+    renderInputForm({ onSubmit });
     fillBasicInputs();
 
     // Set a life event
@@ -176,7 +185,7 @@ describe("InputForm", () => {
   });
 
   it("validates required fields before submitting", () => {
-    render(<InputForm onSubmit={onSubmit} />);
+    renderInputForm({ onSubmit });
 
     const form = screen.getByRole("button", { name: /run my scenario/i });
     fireEvent.click(form);
