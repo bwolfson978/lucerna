@@ -163,6 +163,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           min={0}
           error={errors.traditionalBalance}
           helper="Includes 401k rollovers"
+          tooltip="Your total pre-tax retirement savings eligible for Roth conversion. Include traditional IRAs and old 401(k) rollovers. Exclude a current employer 401(k) unless eligible for in-service conversions."
           onChange={setTraditionalBalance}
         />
         <NumericField
@@ -190,6 +191,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           value={incomeGrowthRate ?? ""}
           decimalScale={1}
           helper="Annual income growth assumption"
+          tooltip="How much you expect your salary to grow each year before inflation. Most people use 2-4%. Higher growth means more taxable income later, making early conversions more valuable."
           onChange={setIncomeGrowthRate}
         />
         <CurrencyInput
@@ -243,6 +245,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
               value={growthRate ?? ""}
               decimalScale={1}
               helper="Expected annual return"
+              tooltip="Expected annual portfolio return before inflation and fees. Stock-heavy: 7-8%. Balanced: 5-6%. Bond-heavy: 3-4%."
               onChange={setGrowthRate}
             />
             <NumericField
@@ -250,6 +253,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
               value={discountRate ?? ""}
               decimalScale={1}
               helper="Time value of money"
+              tooltip="The extra return you'd need to accept a dollar next year instead of today. Think of it as your opportunity cost — roughly match it to your expected investment return. The default of 5% works well for most people."
               onChange={setDiscountRate}
             />
           </div>

@@ -116,14 +116,32 @@ export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
                   </span>
                 </div>
 
-                {/* Impact on wealth vs best */}
+                {/* Impact on long-term wealth vs best */}
                 {scenario.difference_from_optimal !== 0 && (
-                  <div className="flex justify-between text-body-sm pt-1 border-t border-border">
-                    <span className="text-text-secondary">
-                      Impact on wealth
+                  <div className="flex flex-col gap-1 pt-1 border-t border-border">
+                    <span className="text-[11px] text-text-tertiary uppercase tracking-wide">
+                      Impact on long-term wealth
                     </span>
-                    <span className="font-mono text-negative">
-                      {formatCurrency(scenario.difference_from_optimal)}
+                    <span
+                      className="flex items-center gap-1 text-body-sm text-negative font-medium"
+                      style={{ fontFamily: "'Manrope', system-ui" }}
+                    >
+                      <svg
+                        width="12"
+                        height="12"
+                        viewBox="0 0 12 12"
+                        fill="none"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M6 2v8M6 10l-3-3M6 10l3-3"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      {formatCurrency(Math.abs(scenario.difference_from_optimal))} less than scenario with highest savings
                     </span>
                   </div>
                 )}
