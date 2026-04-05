@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import type { YearlyIncome, LifeEvent } from "@/lib/types";
 import { FormField } from "@/components/common/FormField";
 import { CurrencyInput } from "@/components/common/CurrencyInput";
 import { FormSelect } from "@/components/common/FormSelect";
 import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { LIFE_EVENT_LABELS, CURRENT_YEAR } from "@/lib/utils/constants";
 import { formatCurrency } from "@/lib/utils/formatting";
 import { Card } from "@/components/ui/card";
@@ -111,11 +112,44 @@ export function IncomeTrajectoryEditor({
   );
 
   const maxIncome = Math.max(...trajectory.map((y) => y.gross_income), 1);
+  const [open, setOpen] = useState(true);
+
+  const yearRange = trajectory.length > 0
+    ? `${trajectory[0].year}–${trajectory[trajectory.length - 1].year}`
+    : "";
+  const totalIncome = trajectory.reduce((sum, r) => sum + r.gross_income, 0);
 
   return (
-    <div className="flex flex-col gap-default">
+    <Collapsible open={open} onOpenChange={setOpen} className="flex flex-col gap-default">
       <div className="flex items-center justify-between">
-        <h3 className="text-h3 text-text-primary">Income trajectory</h3>
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className="flex items-center gap-2 text-h3 text-text-primary hover:text-accent transition-colors duration-300"
+          >
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              className={`text-text-tertiary transition-transform duration-300 ${open ? "rotate-0" : "-rotate-90"}`}
+            >
+              <path
+                d="M3 4.5L6 7.5L9 4.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Income trajectory
+            {!open && (
+              <span className="text-body-sm text-text-tertiary font-normal ml-1">
+                {yearRange} · {trajectory.length} yrs · {formatCurrency(totalIncome)} total
+              </span>
+            )}
+          </button>
+        </CollapsibleTrigger>
         <div className="flex items-center gap-2">
           {onReset && (
             <button
@@ -137,11 +171,13 @@ export function IncomeTrajectoryEditor({
         </div>
       </div>
 
-      <p className="text-body-sm text-text-secondary">
-        {description ?? "Enter your expected income for each year. The optimizer finds the best conversion schedule across all years."}
-      </p>
+      <CollapsibleContent>
+        <div className="flex flex-col gap-default">
+          <p className="text-body-sm text-text-secondary">
+            {description ?? "Enter your expected income for each year. The optimizer finds the best conversion schedule across all years."}
+          </p>
 
-      <div className="flex flex-col gap-tight">
+          <div className="flex flex-col gap-tight">
         {trajectory.map((row, index) => (
           <Card
             key={row.year}
@@ -239,7 +275,9 @@ export function IncomeTrajectoryEditor({
             </div>
           </Card>
         ))}
-      </div>
-    </div>
+          </div>
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
