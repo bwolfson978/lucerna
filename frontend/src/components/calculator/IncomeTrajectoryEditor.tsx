@@ -18,8 +18,8 @@ interface IncomeTrajectoryEditorProps {
   defaultState?: string;
 }
 
-const STATE_YEAR_OPTIONS = [
-  { value: "default", label: "Default" },
+const buildStateYearOptions = (defaultState?: string) => [
+  { value: "default", label: defaultState && defaultState !== "none" ? defaultState : "Default" },
   { value: "AL", label: "AL" },
   { value: "AZ", label: "AZ" },
   { value: "AR", label: "AR" },
@@ -65,6 +65,8 @@ const STATE_YEAR_OPTIONS = [
   { value: "custom", label: "Other" },
   { value: "none", label: "No tax" },
 ];
+
+const STATE_YEAR_OPTIONS = buildStateYearOptions();
 
 const lifeEventOptions = Object.entries(LIFE_EVENT_LABELS).map(
   ([value, label]) => ({ value, label })
@@ -187,7 +189,7 @@ export function IncomeTrajectoryEditor({
                   <FormSelect
                     label="State"
                     value={row.state ?? "default"}
-                    options={STATE_YEAR_OPTIONS}
+                    options={buildStateYearOptions(defaultState)}
                     onChange={(e) =>
                       updateYear(
                         index,
