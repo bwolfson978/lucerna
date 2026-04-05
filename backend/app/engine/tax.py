@@ -1,36 +1,73 @@
+"""Federal income tax bracket calculations.
+
+Loads bracket data from the static JSON configuration file
+(backend/data/tax_brackets_2025.json). The JSON is the single source of
+truth for all federal and state tax brackets.
+
+Source: IRS Revenue Procedure 2024-40 (2025 tax year)
+"""
+
+import json
 import numpy as np
+from pathlib import Path
 
 from app.engine.types import FilingStatus, BracketFillResult
 
+
 # ==============================================
-# 2025 Federal Tax Brackets
-# Source: IRS Revenue Procedure 2024-40
+# Load federal bracket data from JSON at module init
 # ==============================================
 
+_DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
+
+_FILING_STATUS_KEY = {
+    FilingStatus.SINGLE: "single",
+    FilingStatus.MFJ: "married_filing_jointly",
+}
+
+
+def _load_federal_data() -> dict:
+    """Load federal bracket data from the tax brackets JSON file."""
+    data_file = _DATA_DIR / "tax_brackets_2025.json"
+    with open(data_file, "r") as f:
+        data = json.load(f)
+
+    federal = data["federal"]
+
+    # Convert "inf" strings to float("inf") in bracket max values
+    for filing_status, bracket_list in federal["brackets"].items():
+        for bracket in bracket_list:
+            if bracket["max"] == "inf":
+                bracket["max"] = float("inf")
+
+    return federal
+
+
+_FEDERAL_DATA = _load_federal_data()
+
+
+def _get_brackets(filing_status: FilingStatus) -> list[dict]:
+    """Get the federal bracket list for a filing status."""
+    fs_key = _FILING_STATUS_KEY[filing_status]
+    return _FEDERAL_DATA["brackets"][fs_key]
+
+
+def _get_deduction(filing_status: FilingStatus) -> float:
+    """Get the federal standard deduction for a filing status."""
+    fs_key = _FILING_STATUS_KEY[filing_status]
+    return _FEDERAL_DATA["standard_deduction"][fs_key]
+
+
+# Expose as module-level dicts for backward compatibility with code that
+# imports BRACKETS and STANDARD_DEDUCTION directly (optimizer, heuristic, etc.)
 BRACKETS = {
-    FilingStatus.SINGLE: [
-        {"min": 0, "max": 11925, "rate": 0.10},
-        {"min": 11925, "max": 48475, "rate": 0.12},
-        {"min": 48475, "max": 103350, "rate": 0.22},
-        {"min": 103350, "max": 197300, "rate": 0.24},
-        {"min": 197300, "max": 250525, "rate": 0.32},
-        {"min": 250525, "max": 626350, "rate": 0.35},
-        {"min": 626350, "max": float("inf"), "rate": 0.37},
-    ],
-    FilingStatus.MFJ: [
-        {"min": 0, "max": 23850, "rate": 0.10},
-        {"min": 23850, "max": 96950, "rate": 0.12},
-        {"min": 96950, "max": 206700, "rate": 0.22},
-        {"min": 206700, "max": 394600, "rate": 0.24},
-        {"min": 394600, "max": 501050, "rate": 0.32},
-        {"min": 501050, "max": 751600, "rate": 0.35},
-        {"min": 751600, "max": float("inf"), "rate": 0.37},
-    ],
+    FilingStatus.SINGLE: _get_brackets(FilingStatus.SINGLE),
+    FilingStatus.MFJ: _get_brackets(FilingStatus.MFJ),
 }
 
 STANDARD_DEDUCTION = {
-    FilingStatus.SINGLE: 15000,
-    FilingStatus.MFJ: 30000,
+    FilingStatus.SINGLE: _get_deduction(FilingStatus.SINGLE),
+    FilingStatus.MFJ: _get_deduction(FilingStatus.MFJ),
 }
 
 

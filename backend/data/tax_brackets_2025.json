@@ -1,0 +1,932 @@
+{
+  "metadata": {
+    "tax_year": 2025,
+    "primary_source": "Tax Foundation - State Individual Income Tax Rates and Brackets",
+    "primary_source_url": "https://taxfoundation.org/data/all/state/state-income-tax-rates/",
+    "federal_source": "IRS Revenue Procedure 2024-40",
+    "last_updated": "2026-04-05",
+    "notes": "Bracket thresholds are on taxable income (after standard deduction). Rates verified against official state department of revenue publications."
+  },
+  "federal": {
+    "standard_deduction": {
+      "single": 15000,
+      "married_filing_jointly": 30000
+    },
+    "brackets": {
+      "single": [
+        { "min": 0, "max": 11925, "rate": 0.10 },
+        { "min": 11925, "max": 48475, "rate": 0.12 },
+        { "min": 48475, "max": 103350, "rate": 0.22 },
+        { "min": 103350, "max": 197300, "rate": 0.24 },
+        { "min": 197300, "max": 250525, "rate": 0.32 },
+        { "min": 250525, "max": 626350, "rate": 0.35 },
+        { "min": 626350, "max": "inf", "rate": 0.37 }
+      ],
+      "married_filing_jointly": [
+        { "min": 0, "max": 23850, "rate": 0.10 },
+        { "min": 23850, "max": 96950, "rate": 0.12 },
+        { "min": 96950, "max": 206700, "rate": 0.22 },
+        { "min": 206700, "max": 394600, "rate": 0.24 },
+        { "min": 394600, "max": 501050, "rate": 0.32 },
+        { "min": 501050, "max": 751600, "rate": 0.35 },
+        { "min": 751600, "max": "inf", "rate": 0.37 }
+      ]
+    }
+  },
+  "states": {
+    "AL": {
+      "name": "Alabama",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 3000, "married_filing_jointly": 8500 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 500, "rate": 0.02 },
+          { "min": 500, "max": 3000, "rate": 0.04 },
+          { "min": 3000, "max": "inf", "rate": 0.05 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 1000, "rate": 0.02 },
+          { "min": 1000, "max": 6000, "rate": 0.04 },
+          { "min": 6000, "max": "inf", "rate": 0.05 }
+        ]
+      },
+      "notes": "Allows deduction of federal income tax paid. Standard deduction phases down for higher AGI."
+    },
+    "AK": {
+      "name": "Alaska",
+      "has_income_tax": false
+    },
+    "AZ": {
+      "name": "Arizona",
+      "has_income_tax": true,
+      "tax_type": "flat",
+      "standard_deduction": { "single": 15000, "married_filing_jointly": 30000 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": "inf", "rate": 0.025 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": "inf", "rate": 0.025 }
+        ]
+      },
+      "notes": "Uses federal standard deduction as starting point."
+    },
+    "AR": {
+      "name": "Arkansas",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 2410, "married_filing_jointly": 4820 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 4500, "rate": 0.02 },
+          { "min": 4500, "max": "inf", "rate": 0.039 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 4500, "rate": 0.02 },
+          { "min": 4500, "max": "inf", "rate": 0.039 }
+        ]
+      },
+      "notes": "Two-bracket system for incomes above $89,600. Lower incomes use a separate schedule with more brackets."
+    },
+    "CA": {
+      "name": "California",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 5540, "married_filing_jointly": 11080 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 10756, "rate": 0.01 },
+          { "min": 10756, "max": 25499, "rate": 0.02 },
+          { "min": 25499, "max": 40245, "rate": 0.04 },
+          { "min": 40245, "max": 55866, "rate": 0.06 },
+          { "min": 55866, "max": 70606, "rate": 0.08 },
+          { "min": 70606, "max": 360659, "rate": 0.093 },
+          { "min": 360659, "max": 432787, "rate": 0.103 },
+          { "min": 432787, "max": 721314, "rate": 0.113 },
+          { "min": 721314, "max": 1000000, "rate": 0.123 },
+          { "min": 1000000, "max": "inf", "rate": 0.133 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 21512, "rate": 0.01 },
+          { "min": 21512, "max": 50998, "rate": 0.02 },
+          { "min": 50998, "max": 80490, "rate": 0.04 },
+          { "min": 80490, "max": 111732, "rate": 0.06 },
+          { "min": 111732, "max": 141732, "rate": 0.08 },
+          { "min": 141732, "max": 721318, "rate": 0.093 },
+          { "min": 721318, "max": 865574, "rate": 0.113 },
+          { "min": 865574, "max": 1442628, "rate": 0.123 },
+          { "min": 1442628, "max": 2000000, "rate": 0.123 },
+          { "min": 2000000, "max": "inf", "rate": 0.133 }
+        ]
+      },
+      "notes": "Additional 1% mental health services surtax above $1M included in top bracket rate."
+    },
+    "CO": {
+      "name": "Colorado",
+      "has_income_tax": true,
+      "tax_type": "flat",
+      "standard_deduction": { "single": 15000, "married_filing_jointly": 30000 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": "inf", "rate": 0.044 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": "inf", "rate": 0.044 }
+        ]
+      },
+      "notes": "Starts from federal taxable income; federal standard deduction already applied."
+    },
+    "CT": {
+      "name": "Connecticut",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 15000, "married_filing_jointly": 24000 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 10000, "rate": 0.02 },
+          { "min": 10000, "max": 50000, "rate": 0.045 },
+          { "min": 50000, "max": 100000, "rate": 0.055 },
+          { "min": 100000, "max": 200000, "rate": 0.06 },
+          { "min": 200000, "max": 250000, "rate": 0.065 },
+          { "min": 250000, "max": 500000, "rate": 0.069 },
+          { "min": 500000, "max": "inf", "rate": 0.0699 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 20000, "rate": 0.02 },
+          { "min": 20000, "max": 100000, "rate": 0.045 },
+          { "min": 100000, "max": 200000, "rate": 0.055 },
+          { "min": 200000, "max": 400000, "rate": 0.06 },
+          { "min": 400000, "max": 500000, "rate": 0.065 },
+          { "min": 500000, "max": 1000000, "rate": 0.069 },
+          { "min": 1000000, "max": "inf", "rate": 0.0699 }
+        ]
+      },
+      "notes": "Rates updated for 2025: lowest bracket reduced to 2%, second bracket to 4.5%."
+    },
+    "DE": {
+      "name": "Delaware",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 3250, "married_filing_jointly": 6500 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 2000, "rate": 0.0 },
+          { "min": 2000, "max": 5000, "rate": 0.022 },
+          { "min": 5000, "max": 10000, "rate": 0.039 },
+          { "min": 10000, "max": 20000, "rate": 0.048 },
+          { "min": 20000, "max": 25000, "rate": 0.052 },
+          { "min": 25000, "max": 60000, "rate": 0.0555 },
+          { "min": 60000, "max": "inf", "rate": 0.066 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 2000, "rate": 0.0 },
+          { "min": 2000, "max": 5000, "rate": 0.022 },
+          { "min": 5000, "max": 10000, "rate": 0.039 },
+          { "min": 10000, "max": 20000, "rate": 0.048 },
+          { "min": 20000, "max": 25000, "rate": 0.052 },
+          { "min": 25000, "max": 60000, "rate": 0.0555 },
+          { "min": 60000, "max": "inf", "rate": 0.066 }
+        ]
+      },
+      "notes": "Same brackets for single and MFJ."
+    },
+    "DC": {
+      "name": "District of Columbia",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 15000, "married_filing_jointly": 30000 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 10000, "rate": 0.04 },
+          { "min": 10000, "max": 40000, "rate": 0.06 },
+          { "min": 40000, "max": 60000, "rate": 0.065 },
+          { "min": 60000, "max": 250000, "rate": 0.085 },
+          { "min": 250000, "max": 500000, "rate": 0.0925 },
+          { "min": 500000, "max": 1000000, "rate": 0.0975 },
+          { "min": 1000000, "max": "inf", "rate": 0.1075 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 10000, "rate": 0.04 },
+          { "min": 10000, "max": 40000, "rate": 0.06 },
+          { "min": 40000, "max": 60000, "rate": 0.065 },
+          { "min": 60000, "max": 250000, "rate": 0.085 },
+          { "min": 250000, "max": 500000, "rate": 0.0925 },
+          { "min": 500000, "max": 1000000, "rate": 0.0975 },
+          { "min": 1000000, "max": "inf", "rate": 0.1075 }
+        ]
+      },
+      "notes": "Same brackets for single and MFJ. Uses federal standard deduction."
+    },
+    "FL": {
+      "name": "Florida",
+      "has_income_tax": false
+    },
+    "GA": {
+      "name": "Georgia",
+      "has_income_tax": true,
+      "tax_type": "flat",
+      "standard_deduction": { "single": 12000, "married_filing_jointly": 24000 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": "inf", "rate": 0.0519 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": "inf", "rate": 0.0519 }
+        ]
+      },
+      "notes": "Flat rate effective 2025 per HB 111 (signed April 2025). Reduced from 5.39%."
+    },
+    "HI": {
+      "name": "Hawaii",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 2200, "married_filing_jointly": 4400 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 2400, "rate": 0.014 },
+          { "min": 2400, "max": 4800, "rate": 0.032 },
+          { "min": 4800, "max": 9600, "rate": 0.055 },
+          { "min": 9600, "max": 14400, "rate": 0.064 },
+          { "min": 14400, "max": 19200, "rate": 0.068 },
+          { "min": 19200, "max": 24000, "rate": 0.072 },
+          { "min": 24000, "max": 36000, "rate": 0.076 },
+          { "min": 36000, "max": 48000, "rate": 0.079 },
+          { "min": 48000, "max": 150000, "rate": 0.0825 },
+          { "min": 150000, "max": 175000, "rate": 0.09 },
+          { "min": 175000, "max": 200000, "rate": 0.10 },
+          { "min": 200000, "max": "inf", "rate": 0.11 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 4800, "rate": 0.014 },
+          { "min": 4800, "max": 9600, "rate": 0.032 },
+          { "min": 9600, "max": 19200, "rate": 0.055 },
+          { "min": 19200, "max": 28800, "rate": 0.064 },
+          { "min": 28800, "max": 38400, "rate": 0.068 },
+          { "min": 38400, "max": 48000, "rate": 0.072 },
+          { "min": 48000, "max": 72000, "rate": 0.076 },
+          { "min": 72000, "max": 96000, "rate": 0.079 },
+          { "min": 96000, "max": 300000, "rate": 0.0825 },
+          { "min": 300000, "max": 350000, "rate": 0.09 },
+          { "min": 350000, "max": 400000, "rate": 0.10 },
+          { "min": 400000, "max": "inf", "rate": 0.11 }
+        ]
+      },
+      "notes": "Bracket thresholds widened per Act 46 (2024), effective Jan 1, 2025."
+    },
+    "ID": {
+      "name": "Idaho",
+      "has_income_tax": true,
+      "tax_type": "flat",
+      "standard_deduction": { "single": 15000, "married_filing_jointly": 30000 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": "inf", "rate": 0.053 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": "inf", "rate": 0.053 }
+        ]
+      },
+      "notes": "Reduced to 5.3% from 5.695% per HB 40 (March 2025), retroactive to Jan 1, 2025. Uses federal standard deduction."
+    },
+    "IL": {
+      "name": "Illinois",
+      "has_income_tax": true,
+      "tax_type": "flat",
+      "standard_deduction": { "single": 0, "married_filing_jointly": 0 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": "inf", "rate": 0.0495 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": "inf", "rate": 0.0495 }
+        ]
+      },
+      "notes": "No standard deduction. Personal exemption of $2,850 single / $5,700 MFJ not modeled as deduction."
+    },
+    "IN": {
+      "name": "Indiana",
+      "has_income_tax": true,
+      "tax_type": "flat",
+      "standard_deduction": { "single": 0, "married_filing_jointly": 0 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": "inf", "rate": 0.030 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": "inf", "rate": 0.030 }
+        ]
+      },
+      "notes": "No standard deduction. County income taxes also apply (~0.5% avg), not modeled."
+    },
+    "IA": {
+      "name": "Iowa",
+      "has_income_tax": true,
+      "tax_type": "flat",
+      "standard_deduction": { "single": 15000, "married_filing_jointly": 30000 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": "inf", "rate": 0.038 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": "inf", "rate": 0.038 }
+        ]
+      },
+      "notes": "Changed to flat 3.8% for 2025 (previously progressive). Uses federal taxable income as starting point."
+    },
+    "KS": {
+      "name": "Kansas",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 3605, "married_filing_jointly": 8240 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 23000, "rate": 0.052 },
+          { "min": 23000, "max": "inf", "rate": 0.0558 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 46000, "rate": 0.052 },
+          { "min": 46000, "max": "inf", "rate": 0.0558 }
+        ]
+      },
+      "notes": "Personal exemption: $9,160 single / $18,320 MFJ not modeled as separate deduction."
+    },
+    "KY": {
+      "name": "Kentucky",
+      "has_income_tax": true,
+      "tax_type": "flat",
+      "standard_deduction": { "single": 3270, "married_filing_jointly": 6540 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": "inf", "rate": 0.04 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": "inf", "rate": 0.04 }
+        ]
+      }
+    },
+    "LA": {
+      "name": "Louisiana",
+      "has_income_tax": true,
+      "tax_type": "flat",
+      "standard_deduction": { "single": 12500, "married_filing_jointly": 25000 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": "inf", "rate": 0.03 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": "inf", "rate": 0.03 }
+        ]
+      },
+      "notes": "Changed to flat 3.0% for 2025 (previously progressive)."
+    },
+    "ME": {
+      "name": "Maine",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 15000, "married_filing_jointly": 30000 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 26800, "rate": 0.058 },
+          { "min": 26800, "max": 63450, "rate": 0.0675 },
+          { "min": 63450, "max": "inf", "rate": 0.0715 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 53600, "rate": 0.058 },
+          { "min": 53600, "max": 126900, "rate": 0.0675 },
+          { "min": 126900, "max": "inf", "rate": 0.0715 }
+        ]
+      },
+      "notes": "Uses federal standard deduction."
+    },
+    "MD": {
+      "name": "Maryland",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 2700, "married_filing_jointly": 5450 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 1000, "rate": 0.02 },
+          { "min": 1000, "max": 2000, "rate": 0.03 },
+          { "min": 2000, "max": 3000, "rate": 0.04 },
+          { "min": 3000, "max": 100000, "rate": 0.0475 },
+          { "min": 100000, "max": 125000, "rate": 0.05 },
+          { "min": 125000, "max": 150000, "rate": 0.0525 },
+          { "min": 150000, "max": 250000, "rate": 0.055 },
+          { "min": 250000, "max": "inf", "rate": 0.0575 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 1000, "rate": 0.02 },
+          { "min": 1000, "max": 2000, "rate": 0.03 },
+          { "min": 2000, "max": 3000, "rate": 0.04 },
+          { "min": 3000, "max": 150000, "rate": 0.0475 },
+          { "min": 150000, "max": 175000, "rate": 0.05 },
+          { "min": 175000, "max": 225000, "rate": 0.0525 },
+          { "min": 225000, "max": 300000, "rate": 0.055 },
+          { "min": 300000, "max": "inf", "rate": 0.0575 }
+        ]
+      },
+      "notes": "Standard deduction is 15% of AGI (min $1,800/$3,650, max $2,700/$5,450). Using max values. Local county taxes (~2.5% avg) also apply, not modeled."
+    },
+    "MA": {
+      "name": "Massachusetts",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 4400, "married_filing_jointly": 8800 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 1083150, "rate": 0.05 },
+          { "min": 1083150, "max": "inf", "rate": 0.09 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 1083150, "rate": 0.05 },
+          { "min": 1083150, "max": "inf", "rate": 0.09 }
+        ]
+      },
+      "notes": "Effectively flat 5% for most filers. 4% millionaire surtax above inflation-adjusted threshold ($1,083,150 for 2025)."
+    },
+    "MI": {
+      "name": "Michigan",
+      "has_income_tax": true,
+      "tax_type": "flat",
+      "standard_deduction": { "single": 0, "married_filing_jointly": 0 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": "inf", "rate": 0.0425 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": "inf", "rate": 0.0425 }
+        ]
+      },
+      "notes": "No standard deduction. Personal exemption of $5,800 per person not modeled as deduction."
+    },
+    "MN": {
+      "name": "Minnesota",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 14950, "married_filing_jointly": 29900 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 32570, "rate": 0.0535 },
+          { "min": 32570, "max": 106990, "rate": 0.068 },
+          { "min": 106990, "max": 198630, "rate": 0.0785 },
+          { "min": 198630, "max": "inf", "rate": 0.0985 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 47620, "rate": 0.0535 },
+          { "min": 47620, "max": 189310, "rate": 0.068 },
+          { "min": 189310, "max": 330590, "rate": 0.0785 },
+          { "min": 330590, "max": "inf", "rate": 0.0985 }
+        ]
+      },
+      "notes": "Bracket thresholds inflation-adjusted for 2025."
+    },
+    "MS": {
+      "name": "Mississippi",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 2300, "married_filing_jointly": 4600 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 10000, "rate": 0.0 },
+          { "min": 10000, "max": "inf", "rate": 0.044 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 10000, "rate": 0.0 },
+          { "min": 10000, "max": "inf", "rate": 0.044 }
+        ]
+      },
+      "notes": "Effectively flat 4.4% on income above $10,000. $6,000/$12,000 personal exemption not modeled separately."
+    },
+    "MO": {
+      "name": "Missouri",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 15000, "married_filing_jointly": 30000 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 1313, "rate": 0.0 },
+          { "min": 1313, "max": 2626, "rate": 0.02 },
+          { "min": 2626, "max": 3939, "rate": 0.025 },
+          { "min": 3939, "max": 5252, "rate": 0.03 },
+          { "min": 5252, "max": 6565, "rate": 0.035 },
+          { "min": 6565, "max": 7878, "rate": 0.04 },
+          { "min": 7878, "max": 9191, "rate": 0.045 },
+          { "min": 9191, "max": "inf", "rate": 0.047 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 1313, "rate": 0.0 },
+          { "min": 1313, "max": 2626, "rate": 0.02 },
+          { "min": 2626, "max": 3939, "rate": 0.025 },
+          { "min": 3939, "max": 5252, "rate": 0.03 },
+          { "min": 5252, "max": 6565, "rate": 0.035 },
+          { "min": 6565, "max": 7878, "rate": 0.04 },
+          { "min": 7878, "max": 9191, "rate": 0.045 },
+          { "min": 9191, "max": "inf", "rate": 0.047 }
+        ]
+      },
+      "notes": "Same brackets for single and MFJ. Uses federal standard deduction. Allows partial deduction of federal income tax paid."
+    },
+    "MT": {
+      "name": "Montana",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 15000, "married_filing_jointly": 30000 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 21100, "rate": 0.047 },
+          { "min": 21100, "max": "inf", "rate": 0.059 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 42200, "rate": 0.047 },
+          { "min": 42200, "max": "inf", "rate": 0.059 }
+        ]
+      },
+      "notes": "Uses federal taxable income as starting point."
+    },
+    "NE": {
+      "name": "Nebraska",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 8600, "married_filing_jointly": 17200 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 4030, "rate": 0.0246 },
+          { "min": 4030, "max": 24120, "rate": 0.0351 },
+          { "min": 24120, "max": 38870, "rate": 0.0501 },
+          { "min": 38870, "max": "inf", "rate": 0.052 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 8040, "rate": 0.0246 },
+          { "min": 8040, "max": 48250, "rate": 0.0351 },
+          { "min": 48250, "max": 77730, "rate": 0.0501 },
+          { "min": 77730, "max": "inf", "rate": 0.052 }
+        ]
+      }
+    },
+    "NV": {
+      "name": "Nevada",
+      "has_income_tax": false
+    },
+    "NH": {
+      "name": "New Hampshire",
+      "has_income_tax": false,
+      "notes": "Repealed interest and dividends tax effective 2025. No tax on wages or Roth conversions."
+    },
+    "NJ": {
+      "name": "New Jersey",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 1000, "married_filing_jointly": 2000 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 20000, "rate": 0.014 },
+          { "min": 20000, "max": 35000, "rate": 0.0175 },
+          { "min": 35000, "max": 40000, "rate": 0.035 },
+          { "min": 40000, "max": 75000, "rate": 0.05525 },
+          { "min": 75000, "max": 500000, "rate": 0.0637 },
+          { "min": 500000, "max": 1000000, "rate": 0.0897 },
+          { "min": 1000000, "max": "inf", "rate": 0.1075 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 20000, "rate": 0.014 },
+          { "min": 20000, "max": 50000, "rate": 0.0175 },
+          { "min": 50000, "max": 70000, "rate": 0.0245 },
+          { "min": 70000, "max": 80000, "rate": 0.035 },
+          { "min": 80000, "max": 150000, "rate": 0.05525 },
+          { "min": 150000, "max": 500000, "rate": 0.0637 },
+          { "min": 500000, "max": 1000000, "rate": 0.0897 },
+          { "min": 1000000, "max": "inf", "rate": 0.1075 }
+        ]
+      },
+      "notes": "NJ uses personal exemptions ($1,000/$2,000) rather than a traditional standard deduction."
+    },
+    "NM": {
+      "name": "New Mexico",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 15000, "married_filing_jointly": 30000 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 5500, "rate": 0.015 },
+          { "min": 5500, "max": 16500, "rate": 0.032 },
+          { "min": 16500, "max": 33500, "rate": 0.043 },
+          { "min": 33500, "max": 66500, "rate": 0.047 },
+          { "min": 66500, "max": 210000, "rate": 0.049 },
+          { "min": 210000, "max": "inf", "rate": 0.059 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 8000, "rate": 0.015 },
+          { "min": 8000, "max": 25000, "rate": 0.032 },
+          { "min": 25000, "max": 50000, "rate": 0.043 },
+          { "min": 50000, "max": 100000, "rate": 0.047 },
+          { "min": 100000, "max": 315000, "rate": 0.049 },
+          { "min": 315000, "max": "inf", "rate": 0.059 }
+        ]
+      },
+      "notes": "Uses federal standard deduction."
+    },
+    "NY": {
+      "name": "New York",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 8000, "married_filing_jointly": 16050 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 8500, "rate": 0.04 },
+          { "min": 8500, "max": 11700, "rate": 0.045 },
+          { "min": 11700, "max": 13900, "rate": 0.0525 },
+          { "min": 13900, "max": 80650, "rate": 0.055 },
+          { "min": 80650, "max": 215400, "rate": 0.06 },
+          { "min": 215400, "max": 1077550, "rate": 0.0685 },
+          { "min": 1077550, "max": 5000000, "rate": 0.0965 },
+          { "min": 5000000, "max": 25000000, "rate": 0.103 },
+          { "min": 25000000, "max": "inf", "rate": 0.109 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 17150, "rate": 0.04 },
+          { "min": 17150, "max": 23600, "rate": 0.045 },
+          { "min": 23600, "max": 27900, "rate": 0.0525 },
+          { "min": 27900, "max": 161550, "rate": 0.055 },
+          { "min": 161550, "max": 323200, "rate": 0.06 },
+          { "min": 323200, "max": 2155350, "rate": 0.0685 },
+          { "min": 2155350, "max": 5000000, "rate": 0.0965 },
+          { "min": 5000000, "max": 25000000, "rate": 0.103 },
+          { "min": 25000000, "max": "inf", "rate": 0.109 }
+        ]
+      },
+      "notes": "2025 rates updated: 5.85% reduced to 5.5%, 6.25% reduced to 6%, new 5.25% bracket added. NYC local tax (3.078-3.876%) not modeled."
+    },
+    "NC": {
+      "name": "North Carolina",
+      "has_income_tax": true,
+      "tax_type": "flat",
+      "standard_deduction": { "single": 12750, "married_filing_jointly": 25500 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": "inf", "rate": 0.0425 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": "inf", "rate": 0.0425 }
+        ]
+      }
+    },
+    "ND": {
+      "name": "North Dakota",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 15000, "married_filing_jointly": 30000 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 48475, "rate": 0.0 },
+          { "min": 48475, "max": 244825, "rate": 0.0195 },
+          { "min": 244825, "max": "inf", "rate": 0.025 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 80975, "rate": 0.0 },
+          { "min": 80975, "max": 298075, "rate": 0.0195 },
+          { "min": 298075, "max": "inf", "rate": 0.025 }
+        ]
+      },
+      "notes": "Uses federal standard deduction. 0% bracket on first ~$48K/$81K of taxable income."
+    },
+    "OH": {
+      "name": "Ohio",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 0, "married_filing_jointly": 0 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 26050, "rate": 0.0 },
+          { "min": 26050, "max": 100000, "rate": 0.0275 },
+          { "min": 100000, "max": "inf", "rate": 0.035 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 26050, "rate": 0.0 },
+          { "min": 26050, "max": 100000, "rate": 0.0275 },
+          { "min": 100000, "max": "inf", "rate": 0.035 }
+        ]
+      },
+      "notes": "No standard deduction. Personal exemptions vary by AGI ($2,400 if AGI <= $40K, scaling down). Same brackets for single and MFJ."
+    },
+    "OK": {
+      "name": "Oklahoma",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 6350, "married_filing_jointly": 12700 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 1000, "rate": 0.0025 },
+          { "min": 1000, "max": 2500, "rate": 0.0075 },
+          { "min": 2500, "max": 3750, "rate": 0.0175 },
+          { "min": 3750, "max": 4900, "rate": 0.0275 },
+          { "min": 4900, "max": 7200, "rate": 0.0375 },
+          { "min": 7200, "max": "inf", "rate": 0.0475 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 2000, "rate": 0.0025 },
+          { "min": 2000, "max": 5000, "rate": 0.0075 },
+          { "min": 5000, "max": 7500, "rate": 0.0175 },
+          { "min": 7500, "max": 9800, "rate": 0.0275 },
+          { "min": 9800, "max": 14400, "rate": 0.0375 },
+          { "min": 14400, "max": "inf", "rate": 0.0475 }
+        ]
+      }
+    },
+    "OR": {
+      "name": "Oregon",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 2835, "married_filing_jointly": 5670 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 4400, "rate": 0.0475 },
+          { "min": 4400, "max": 11050, "rate": 0.0675 },
+          { "min": 11050, "max": 125000, "rate": 0.0875 },
+          { "min": 125000, "max": "inf", "rate": 0.099 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 8800, "rate": 0.0475 },
+          { "min": 8800, "max": 22100, "rate": 0.0675 },
+          { "min": 22100, "max": 250000, "rate": 0.0875 },
+          { "min": 250000, "max": "inf", "rate": 0.099 }
+        ]
+      },
+      "notes": "Bracket thresholds inflation-adjusted for 2025."
+    },
+    "PA": {
+      "name": "Pennsylvania",
+      "has_income_tax": true,
+      "tax_type": "flat",
+      "standard_deduction": { "single": 0, "married_filing_jointly": 0 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": "inf", "rate": 0.0307 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": "inf", "rate": 0.0307 }
+        ]
+      },
+      "notes": "No standard deduction or personal exemption."
+    },
+    "RI": {
+      "name": "Rhode Island",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 10900, "married_filing_jointly": 21800 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 79900, "rate": 0.0375 },
+          { "min": 79900, "max": 181650, "rate": 0.0475 },
+          { "min": 181650, "max": "inf", "rate": 0.0599 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 79900, "rate": 0.0375 },
+          { "min": 79900, "max": 181650, "rate": 0.0475 },
+          { "min": 181650, "max": "inf", "rate": 0.0599 }
+        ]
+      },
+      "notes": "Same brackets for single and MFJ."
+    },
+    "SC": {
+      "name": "South Carolina",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 15000, "married_filing_jointly": 30000 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 3560, "rate": 0.0 },
+          { "min": 3560, "max": 17830, "rate": 0.03 },
+          { "min": 17830, "max": "inf", "rate": 0.062 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 3560, "rate": 0.0 },
+          { "min": 3560, "max": 17830, "rate": 0.03 },
+          { "min": 17830, "max": "inf", "rate": 0.062 }
+        ]
+      },
+      "notes": "Uses federal standard deduction. Same brackets for single and MFJ."
+    },
+    "SD": {
+      "name": "South Dakota",
+      "has_income_tax": false
+    },
+    "TN": {
+      "name": "Tennessee",
+      "has_income_tax": false
+    },
+    "TX": {
+      "name": "Texas",
+      "has_income_tax": false
+    },
+    "UT": {
+      "name": "Utah",
+      "has_income_tax": true,
+      "tax_type": "flat",
+      "standard_deduction": { "single": 15000, "married_filing_jointly": 30000 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": "inf", "rate": 0.0465 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": "inf", "rate": 0.0465 }
+        ]
+      },
+      "notes": "Effective rate is lower due to nonrefundable credit of 6% of federal deduction. Using federal deduction as approximation."
+    },
+    "VT": {
+      "name": "Vermont",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 7400, "married_filing_jointly": 14850 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 47900, "rate": 0.0335 },
+          { "min": 47900, "max": 116000, "rate": 0.066 },
+          { "min": 116000, "max": 242000, "rate": 0.076 },
+          { "min": 242000, "max": "inf", "rate": 0.0875 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 79950, "rate": 0.0335 },
+          { "min": 79950, "max": 193300, "rate": 0.066 },
+          { "min": 193300, "max": 294600, "rate": 0.076 },
+          { "min": 294600, "max": "inf", "rate": 0.0875 }
+        ]
+      }
+    },
+    "VA": {
+      "name": "Virginia",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 8500, "married_filing_jointly": 17000 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 3000, "rate": 0.02 },
+          { "min": 3000, "max": 5000, "rate": 0.03 },
+          { "min": 5000, "max": 17000, "rate": 0.05 },
+          { "min": 17000, "max": "inf", "rate": 0.0575 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 3000, "rate": 0.02 },
+          { "min": 3000, "max": 5000, "rate": 0.03 },
+          { "min": 5000, "max": 17000, "rate": 0.05 },
+          { "min": 17000, "max": "inf", "rate": 0.0575 }
+        ]
+      },
+      "notes": "Same brackets for single and MFJ."
+    },
+    "WA": {
+      "name": "Washington",
+      "has_income_tax": false,
+      "notes": "7% tax on long-term capital gains above $270,000 only. Not applicable to Roth conversions (ordinary income)."
+    },
+    "WV": {
+      "name": "West Virginia",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 0, "married_filing_jointly": 0 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 10000, "rate": 0.0222 },
+          { "min": 10000, "max": 25000, "rate": 0.0296 },
+          { "min": 25000, "max": 40000, "rate": 0.0333 },
+          { "min": 40000, "max": 60000, "rate": 0.0444 },
+          { "min": 60000, "max": "inf", "rate": 0.0482 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 10000, "rate": 0.0222 },
+          { "min": 10000, "max": 25000, "rate": 0.0296 },
+          { "min": 25000, "max": 40000, "rate": 0.0333 },
+          { "min": 40000, "max": 60000, "rate": 0.0444 },
+          { "min": 60000, "max": "inf", "rate": 0.0482 }
+        ]
+      },
+      "notes": "No standard deduction. Personal exemption $2,000/$4,000. Same brackets for single and MFJ."
+    },
+    "WI": {
+      "name": "Wisconsin",
+      "has_income_tax": true,
+      "tax_type": "progressive",
+      "standard_deduction": { "single": 13560, "married_filing_jointly": 25110 },
+      "brackets": {
+        "single": [
+          { "min": 0, "max": 14680, "rate": 0.035 },
+          { "min": 14680, "max": 29360, "rate": 0.044 },
+          { "min": 29360, "max": 323310, "rate": 0.053 },
+          { "min": 323310, "max": "inf", "rate": 0.0765 }
+        ],
+        "married_filing_jointly": [
+          { "min": 0, "max": 19570, "rate": 0.035 },
+          { "min": 19570, "max": 39140, "rate": 0.044 },
+          { "min": 39140, "max": 430820, "rate": 0.053 },
+          { "min": 430820, "max": "inf", "rate": 0.0765 }
+        ]
+      },
+      "notes": "Bracket thresholds inflation-adjusted for 2025."
+    },
+    "WY": {
+      "name": "Wyoming",
+      "has_income_tax": false
+    }
+  }
+}

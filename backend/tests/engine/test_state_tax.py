@@ -141,7 +141,7 @@ class TestGetSupportedStates:
     def test_returns_list(self):
         states = get_supported_states()
         assert isinstance(states, list)
-        assert len(states) == 10
+        assert len(states) == 42
 
     def test_sorted_alphabetically(self):
         states = get_supported_states()
@@ -154,4 +154,6 @@ class TestGetSupportedStates:
             assert "code" in state
             assert "name" in state
             assert "top_rate" in state
+            assert "tax_type" in state
             assert isinstance(state["top_rate"], float)
+            assert state["tax_type"] in ("flat", "progressive")
