@@ -76,7 +76,7 @@ export default function CalculatorPage() {
           </div>
 
           {/* Results section */}
-          <div ref={resultsRef}>
+          <div ref={resultsRef} className="scroll-mt-16">
             {loading && (
               <div className="flex flex-col gap-section">
                 <div className="flex items-center gap-3">
