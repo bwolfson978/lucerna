@@ -1,14 +1,15 @@
 from app.engine.types import ScenarioInput, FilingStatus
 from app.engine.tax import BRACKETS, STANDARD_DEDUCTION, get_marginal_rate
+from app.engine.state_tax import get_state_marginal_rate
 
 
 def _estimate_retirement_rate(scenario: ScenarioInput) -> float:
-    """Estimate the marginal tax rate during retirement withdrawals.
+    """Estimate the combined marginal tax rate during retirement withdrawals.
 
-    Uses retirement spending to estimate the rate. For small balances where
-    the 4% rule produces very low spending, uses at minimum the 22% bracket
-    as a reasonable threshold — most people with meaningful IRA balances
-    will withdraw enough to hit 12%+ in retirement.
+    Uses retirement spending to estimate the federal rate, then adds the
+    state marginal rate at retirement (if state tax is modeled). For small
+    balances where the 4% rule produces very low spending, uses at minimum
+    the 22% bracket as a reasonable threshold.
     """
     spending = scenario.annual_retirement_spending
     if spending is None:
@@ -18,6 +19,14 @@ def _estimate_retirement_rate(scenario: ScenarioInput) -> float:
         future_balance = total_balance * (1 + scenario.annual_growth_rate) ** years_to_retire
         spending = future_balance * 0.04
     rate = get_marginal_rate(spending, scenario.filing_status)
+
+    # Add retirement state marginal rate if applicable
+    ret_state = scenario.retirement_state or scenario.state
+    if ret_state:
+        rate += get_state_marginal_rate(
+            spending, ret_state, scenario.filing_status, scenario.custom_state_rate
+        )
+
     return rate
 
 

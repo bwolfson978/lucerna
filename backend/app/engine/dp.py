@@ -19,6 +19,10 @@ import numpy as np
 from app.engine.types import ScenarioInput, ConversionCurvePoint, BracketFillResult
 from app.engine.tax import vectorized_federal_tax, calculate_federal_tax, analyze_bracket_fill
 from app.engine.aca import vectorized_subsidy_loss
+from app.engine.state_tax import (
+    vectorized_state_tax, calculate_state_tax, get_state_marginal_rate,
+    resolve_state_for_year,
+)
 
 
 @dataclass
@@ -59,6 +63,9 @@ def _compute_retirement_values(
     roth = roth_balances.copy()
     npv = np.zeros_like(trad)
 
+    # Resolve retirement state for distributions and liquidation
+    ret_state = scenario.retirement_state or scenario.state
+
     for year_offset in range(1, n_retirement + 1):
         year = years_until_retirement + year_offset
 
@@ -71,6 +78,10 @@ def _compute_retirement_values(
         trad -= distribution
 
         tax_on_dist = vectorized_federal_tax(distribution, scenario.filing_status)
+        if ret_state:
+            tax_on_dist = tax_on_dist + vectorized_state_tax(
+                distribution, ret_state, scenario.filing_status, scenario.custom_state_rate
+            )
         after_tax = distribution - tax_on_dist
 
         # Shortfall from Roth (tax-free)
@@ -87,6 +98,10 @@ def _compute_retirement_values(
     discount_factor = (1 + d) ** (-liquidation_year)
 
     tax_on_liq = vectorized_federal_tax(np.maximum(0.0, trad), scenario.filing_status)
+    if ret_state:
+        tax_on_liq = tax_on_liq + vectorized_state_tax(
+            np.maximum(0.0, trad), ret_state, scenario.filing_status, scenario.custom_state_rate
+        )
     npv += (np.maximum(0.0, trad) - tax_on_liq) * discount_factor
     npv += np.maximum(0.0, roth) * discount_factor
 
@@ -184,6 +199,20 @@ def _dp_backward(
         )
         tax_cost_by_year.append(tax_with - tax_without_cache[t])
 
+    # Pre-compute state tax costs per year
+    state_cost_by_year: list[np.ndarray | None] = [None] * n_years
+    for t in range(n_years):
+        yr_state = resolve_state_for_year(
+            scenario.income_trajectory[t].state, scenario.state
+        )
+        if yr_state:
+            income_t = scenario.income_trajectory[t].gross_income
+            st_with = vectorized_state_tax(
+                income_t + extended_grid, yr_state, scenario.filing_status, scenario.custom_state_rate
+            )
+            st_without = calculate_state_tax(income_t, yr_state, scenario.filing_status, scenario.custom_state_rate)
+            state_cost_by_year[t] = st_with - st_without
+
     # Pre-compute ACA costs if applicable
     aca_cost_by_year: list[np.ndarray | None] = [None] * n_years
     if hc:
@@ -206,6 +235,8 @@ def _dp_backward(
 
         # Discounted cost for each conversion amount (column j)
         cost_row = tax_cost_by_year[t].copy()
+        if state_cost_by_year[t] is not None:
+            cost_row += state_cost_by_year[t]
         if aca_cost_by_year[t] is not None:
             cost_row += aca_cost_by_year[t]
         cost_row *= discount_factor
@@ -408,6 +439,16 @@ def extract_conversion_curve(
             tax_with = calculate_federal_tax(income + c, scenario.filing_status)
             tax_without = calculate_federal_tax(income, scenario.filing_status)
             tax_cost = tax_with - tax_without
+
+            # Add state tax cost
+            yr_state = resolve_state_for_year(
+                scenario.income_trajectory[i].state, scenario.state
+            )
+            if yr_state:
+                st_with = calculate_state_tax(income + c, yr_state, scenario.filing_status, scenario.custom_state_rate)
+                st_without = calculate_state_tax(income, yr_state, scenario.filing_status, scenario.custom_state_rate)
+                tax_cost += st_with - st_without
+
             total_tax += tax_cost
 
             eff_rate = tax_cost / c if c > 0 else 0.0
@@ -522,6 +563,20 @@ def _dp_backward_3d(
         )
         tax_cost_by_year.append(tax_with - tax_without_cache[t])
 
+    # Pre-compute state tax costs per year (3D, same pattern as 2D)
+    state_cost_by_year_3d: list[np.ndarray | None] = [None] * n_years
+    for t in range(n_years):
+        yr_state = resolve_state_for_year(
+            scenario.income_trajectory[t].state, scenario.state
+        )
+        if yr_state:
+            income_t = scenario.income_trajectory[t].gross_income
+            st_with = vectorized_state_tax(
+                income_t + extended_grid, yr_state, scenario.filing_status, scenario.custom_state_rate
+            )
+            st_without = calculate_state_tax(income_t, yr_state, scenario.filing_status, scenario.custom_state_rate)
+            state_cost_by_year_3d[t] = st_with - st_without
+
     aca_cost_by_year: list[np.ndarray | None] = [None] * n_years
     if hc:
         for t in range(n_years):
@@ -542,6 +597,8 @@ def _dp_backward_3d(
 
         # Discounted cost for each conversion amount
         cost_row = tax_cost_by_year[t].copy()
+        if state_cost_by_year_3d[t] is not None:
+            cost_row += state_cost_by_year_3d[t]
         if aca_cost_by_year[t] is not None:
             cost_row += aca_cost_by_year[t]
         cost_row *= discount_factor
@@ -767,6 +824,16 @@ def extract_conversion_curve_3d(
             tax_with = calculate_federal_tax(income + c, scenario.filing_status)
             tax_without = calculate_federal_tax(income, scenario.filing_status)
             tax_cost = tax_with - tax_without
+
+            # Add state tax cost
+            yr_state = resolve_state_for_year(
+                scenario.income_trajectory[i].state, scenario.state
+            )
+            if yr_state:
+                st_with = calculate_state_tax(income + c, yr_state, scenario.filing_status, scenario.custom_state_rate)
+                st_without = calculate_state_tax(income, yr_state, scenario.filing_status, scenario.custom_state_rate)
+                tax_cost += st_with - st_without
+
             total_tax += tax_cost
 
             eff_rate = tax_cost / c if c > 0 else 0.0

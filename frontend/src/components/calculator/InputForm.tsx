@@ -22,6 +22,21 @@ const FILING_STATUS_OPTIONS = [
   { value: "married_filing_jointly", label: "Married filing jointly" },
 ];
 
+const STATE_OPTIONS = [
+  { value: "none", label: "Federal only (no state tax)" },
+  { value: "CA", label: "California (up to 13.3%)" },
+  { value: "CT", label: "Connecticut (up to 6.99%)" },
+  { value: "HI", label: "Hawaii (up to 11%)" },
+  { value: "IA", label: "Iowa (up to 5.7%)" },
+  { value: "MA", label: "Massachusetts (5% / 9%)" },
+  { value: "MN", label: "Minnesota (up to 9.85%)" },
+  { value: "NJ", label: "New Jersey (up to 10.75%)" },
+  { value: "NY", label: "New York (up to 10.9%)" },
+  { value: "OR", label: "Oregon (up to 9.9%)" },
+  { value: "WI", label: "Wisconsin (up to 7.65%)" },
+  { value: "custom", label: "Other (enter rate)" },
+];
+
 function generateTrajectory(
   currentAge: number,
   retAge: number,
@@ -49,7 +64,7 @@ function mergeTrajectory(
 ): YearlyIncome[] {
   const pinned = new Map<number, YearlyIncome>();
   for (const row of existing) {
-    if (row.life_event !== "none") {
+    if (row.life_event !== "none" || row.state != null) {
       pinned.set(row.year, row);
     }
   }
@@ -76,6 +91,12 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
   const [yearsInRetirement, setYearsInRetirement] = useState<number | null>(25);
   const [growthRate, setGrowthRate] = useState<number | null>(7);
   const [discountRate, setDiscountRate] = useState<number | null>(5);
+
+  // State tax inputs
+  const [state, setState] = useState<string>("none");
+  const [retirementState, setRetirementState] = useState<string>("none");
+  const [retirementStateSameAsCurrent, setRetirementStateSameAsCurrent] = useState(true);
+  const [customStateRate, setCustomStateRate] = useState<number | null>(null);
 
   // ACA healthcare inputs
   const [includeAca, setIncludeAca] = useState(false);
@@ -111,7 +132,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
   }, [age, retirementAge, currentIncome, incomeGrowthRate]);
 
   const showTrajectory = trajectory.length > 0;
-  const hasLifeEvents = trajectory.some((y) => y.life_event !== "none");
+  const hasLifeEvents = trajectory.some((y) => y.life_event !== "none" || y.state != null);
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -170,6 +191,9 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
       annual_growth_rate: growthVal / 100,
       discount_rate: discountVal / 100,
       healthcare,
+      state: state !== "none" ? state : null,
+      retirement_state: retirementStateSameAsCurrent ? null : (retirementState !== "none" ? retirementState : null),
+      custom_state_rate: state === "custom" && customStateRate ? customStateRate / 100 : null,
     };
     onSubmit(input);
   }
@@ -190,6 +214,12 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           value={filingStatus}
           options={FILING_STATUS_OPTIONS}
           onChange={(e) => setFilingStatus(e.target.value as FilingStatus)}
+        />
+        <FormSelect
+          label="State"
+          value={state}
+          options={STATE_OPTIONS}
+          onChange={(e) => setState(e.target.value)}
         />
         <CurrencyInput
           label="Current income"
@@ -217,6 +247,25 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           error={errors.retirementAge}
           onChange={setRetirementAge}
         />
+        {state !== "none" && (
+          <FormSelect
+            label="Retirement state"
+            value={retirementStateSameAsCurrent ? "same" : retirementState}
+            options={[
+              { value: "same", label: `Same as current${state !== "custom" ? ` (${STATE_OPTIONS.find(s => s.value === state)?.label.split(" (")[0] || state})` : ""}` },
+              ...STATE_OPTIONS.filter(s => s.value !== "none"),
+            ]}
+            onChange={(e) => {
+              if (e.target.value === "same") {
+                setRetirementStateSameAsCurrent(true);
+                setRetirementState("none");
+              } else {
+                setRetirementStateSameAsCurrent(false);
+                setRetirementState(e.target.value);
+              }
+            }}
+          />
+        )}
         <CurrencyInput
           label="Roth IRA/401(k) balance"
           value={rothBalance || ""}
@@ -227,6 +276,22 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           onChange={setRothBalance}
         />
       </div>
+
+      {state === "custom" && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-default">
+          <NumericField
+            label="State tax rate (%)"
+            value={customStateRate ?? ""}
+            decimalScale={2}
+            min={0}
+            max={20}
+            error={errors.customStateRate}
+            helper="Flat state income tax rate"
+            tooltip="Enter your state's approximate income tax rate. This is applied as a flat rate to your taxable income."
+            onChange={setCustomStateRate}
+          />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-default">
         <NumericField
@@ -255,6 +320,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
           onChange={setTrajectory}
           onReset={hasLifeEvents ? handleResetTrajectory : undefined}
           description="Projected from your inputs above. Change any year's income or add a life event to customize."
+          defaultState={state !== "none" ? state : undefined}
         />
       )}
       {errors.trajectory && (

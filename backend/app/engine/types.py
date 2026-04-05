@@ -26,6 +26,10 @@ class YearlyIncome(BaseModel):
     year: int
     gross_income: float = Field(ge=0)
     life_event: LifeEvent = LifeEvent.NONE
+    state: Optional[str] = Field(
+        default=None,
+        description="State override for this year. None = use scenario default."
+    )
 
 
 class ConversionPreferences(BaseModel):
@@ -119,6 +123,20 @@ class ScenarioInput(BaseModel):
 
     # Healthcare / ACA subsidy inputs (optional — enables subsidy-aware optimization)
     healthcare: Optional[HealthcareInput] = None
+
+    # State tax inputs (optional — enables state tax modeling)
+    state: Optional[str] = Field(
+        default=None,
+        description="Default state of residence for working years. None = federal only."
+    )
+    retirement_state: Optional[str] = Field(
+        default=None,
+        description="State of residence in retirement. Defaults to `state` if not set."
+    )
+    custom_state_rate: Optional[float] = Field(
+        default=None, ge=0, le=0.20,
+        description="Custom flat state tax rate (used when state='custom')"
+    )
 
 
 class BracketFillResult(BaseModel):

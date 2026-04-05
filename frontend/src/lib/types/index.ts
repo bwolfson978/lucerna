@@ -16,6 +16,7 @@ export interface YearlyIncome {
   year: number;
   gross_income: number;
   life_event: LifeEvent;
+  state?: string | null;
 }
 
 export interface ConversionPreferences {
@@ -45,6 +46,9 @@ export interface ScenarioInput {
   discount_rate?: number;
   conversion_preferences?: ConversionPreferences | null;
   healthcare?: HealthcareInput | null;
+  state?: string | null;
+  retirement_state?: string | null;
+  custom_state_rate?: number | null;
 }
 
 export interface BracketFillResult {

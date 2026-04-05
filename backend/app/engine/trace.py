@@ -3,6 +3,7 @@ from app.engine.types import (
     AcaSubsidyDetail,
 )
 from app.engine.tax import get_marginal_rate
+from app.engine.state_tax import get_state_marginal_rate, resolve_state_for_year
 
 
 def generate_reasoning_trace(
@@ -23,12 +24,19 @@ def generate_reasoning_trace(
     # Find binding constraint
     binding_constraint = _find_binding_constraint(scenario, optimal_conversions, bracket_fill)
 
-    # Marginal rates at optimal
+    # Marginal rates at optimal (combined federal + state)
     marginal_rates = []
     for t in range(n_years):
         income = scenario.income_trajectory[t].gross_income
         c_t = optimal_conversions[t]
         rate = get_marginal_rate(income + c_t, scenario.filing_status)
+        yr_state = resolve_state_for_year(
+            scenario.income_trajectory[t].state, scenario.state
+        )
+        if yr_state:
+            rate += get_state_marginal_rate(
+                income + c_t, yr_state, scenario.filing_status, scenario.custom_state_rate
+            )
         marginal_rates.append(rate)
 
     avg_marginal = sum(marginal_rates) / len(marginal_rates) if marginal_rates else 0.0
@@ -188,6 +196,28 @@ def _build_sensitivity_notes(
             "ACA subsidy impact is included — the true cost of each conversion dollar "
             "accounts for both federal tax and any reduction in your marketplace premium subsidy"
         )
+
+    if scenario.state and scenario.state != "none":
+        # Find the average state marginal rate across conversion years
+        state_rates = []
+        for t in range(len(conversions)):
+            if conversions[t] > 0:
+                yr_state = resolve_state_for_year(
+                    scenario.income_trajectory[t].state, scenario.state
+                )
+                if yr_state:
+                    income = scenario.income_trajectory[t].gross_income
+                    sr = get_state_marginal_rate(
+                        income + conversions[t], yr_state, scenario.filing_status,
+                        scenario.custom_state_rate,
+                    )
+                    state_rates.append(sr)
+        if state_rates:
+            avg_state = sum(state_rates) / len(state_rates)
+            notes.append(
+                f"State income tax adds approximately {avg_state:.1%} marginal cost "
+                f"to conversions — combined federal + state rates are used in optimization"
+            )
 
     return notes
 

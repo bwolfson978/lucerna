@@ -15,7 +15,24 @@ interface IncomeTrajectoryEditorProps {
   onChange: (trajectory: YearlyIncome[]) => void;
   onReset?: () => void;
   description?: string;
+  defaultState?: string;
 }
+
+const STATE_YEAR_OPTIONS = [
+  { value: "default", label: "Default" },
+  { value: "CA", label: "CA" },
+  { value: "CT", label: "CT" },
+  { value: "HI", label: "HI" },
+  { value: "IA", label: "IA" },
+  { value: "MA", label: "MA" },
+  { value: "MN", label: "MN" },
+  { value: "NJ", label: "NJ" },
+  { value: "NY", label: "NY" },
+  { value: "OR", label: "OR" },
+  { value: "WI", label: "WI" },
+  { value: "custom", label: "Other" },
+  { value: "none", label: "No tax" },
+];
 
 const lifeEventOptions = Object.entries(LIFE_EVENT_LABELS).map(
   ([value, label]) => ({ value, label })
@@ -26,6 +43,7 @@ export function IncomeTrajectoryEditor({
   onChange,
   onReset,
   description,
+  defaultState,
 }: IncomeTrajectoryEditorProps) {
   const addYear = useCallback(() => {
     if (trajectory.length >= 15) return;
@@ -131,6 +149,23 @@ export function IncomeTrajectoryEditor({
                   }
                 />
               </div>
+
+              {defaultState && (
+                <div className="w-24 shrink-0">
+                  <FormSelect
+                    label="State"
+                    value={row.state ?? "default"}
+                    options={STATE_YEAR_OPTIONS}
+                    onChange={(e) =>
+                      updateYear(
+                        index,
+                        "state",
+                        e.target.value === "default" ? null : e.target.value
+                      )
+                    }
+                  />
+                </div>
+              )}
 
               {trajectory.length > 1 && (
                 <button
