@@ -21,6 +21,7 @@ describe("IncomeTrajectoryEditor", () => {
     expect(screen.queryByText(/Enter your expected income/)).not.toBeInTheDocument();
     expect(screen.getByText(/click to edit/)).toBeInTheDocument();
     expect(screen.getByText(/3 yrs/)).toBeInTheDocument();
+    expect(screen.queryByText(/total/)).not.toBeInTheDocument();
   });
 
   it("renders a card for each year in the trajectory when expanded", () => {
