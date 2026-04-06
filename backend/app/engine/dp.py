@@ -8,7 +8,7 @@ grid.  Two-pass approach:
 
 The state at each stage (year) is the remaining traditional IRA balance.
 The decision is how much to convert.  The retirement phase is computed as a
-terminal value function.  Complexity is O(N × G²) where N = trajectory years
+terminal value function.  Complexity is O(N × G²) where N = timeline years
 and G = grid size, vectorized with numpy for sub-second performance.
 """
 
@@ -112,7 +112,7 @@ def _dp_backward(
     scenario: ScenarioInput,
     balance_grid: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Run backward induction over the trajectory years.
+    """Run backward induction over the timeline years.
 
     Returns:
         value_table: shape (n_years+1, G) — optimal NPV from year t onward.
@@ -120,7 +120,7 @@ def _dp_backward(
         extended_grid: the balance grid used internally (may be larger than
                        the input grid to accommodate balance growth).
     """
-    n_years = len(scenario.income_trajectory)
+    n_years = len(scenario.income_timeline)
     g = scenario.annual_growth_rate
     d = scenario.discount_rate
     years_until_retirement = max(0, scenario.retirement_age - scenario.age)
@@ -145,7 +145,7 @@ def _dp_backward(
     value_table = np.zeros((n_years + 1, G))
 
     # Terminal values: for each possible remaining trad balance at end of
-    # trajectory, compute retirement NPV.
+    # timeline, compute retirement NPV.
     #
     # Key insight: conversions shift dollars from traditional to Roth, and
     # both accounts grow at the same rate g.  So total pre-tax wealth at
@@ -172,18 +172,18 @@ def _dp_backward(
     aca_years: set[int] = set()
     if hc:
         from app.engine.aca import federal_poverty_level
-        trajectory_years = {y.year for y in scenario.income_trajectory}
+        timeline_years = {y.year for y in scenario.income_timeline}
         if hc.aca_coverage_years is not None:
-            aca_years = set(hc.aca_coverage_years) & trajectory_years
+            aca_years = set(hc.aca_coverage_years) & timeline_years
         elif hc.has_employer_coverage_after is not None:
-            aca_years = {y for y in trajectory_years if y < hc.has_employer_coverage_after}
+            aca_years = {y for y in timeline_years if y < hc.has_employer_coverage_after}
         else:
-            aca_years = trajectory_years
+            aca_years = timeline_years
 
     # Pre-compute tax without conversion for each year (scalar per year)
     tax_without_cache = [
         calculate_federal_tax(
-            scenario.income_trajectory[t].gross_income, scenario.filing_status
+            scenario.income_timeline[t].gross_income, scenario.filing_status
         )
         for t in range(n_years)
     ]
@@ -193,7 +193,7 @@ def _dp_backward(
     # extended_grid[j] dollars in year t.
     tax_cost_by_year: list[np.ndarray] = []
     for t in range(n_years):
-        income_t = scenario.income_trajectory[t].gross_income
+        income_t = scenario.income_timeline[t].gross_income
         tax_with = vectorized_federal_tax(
             income_t + extended_grid, scenario.filing_status
         )
@@ -203,10 +203,10 @@ def _dp_backward(
     state_cost_by_year: list[np.ndarray | None] = [None] * n_years
     for t in range(n_years):
         yr_state = resolve_state_for_year(
-            scenario.income_trajectory[t].state, scenario.state
+            scenario.income_timeline[t].state, scenario.state
         )
         if yr_state:
-            income_t = scenario.income_trajectory[t].gross_income
+            income_t = scenario.income_timeline[t].gross_income
             st_with = vectorized_state_tax(
                 income_t + extended_grid, yr_state, scenario.filing_status, scenario.custom_state_rate
             )
@@ -217,9 +217,9 @@ def _dp_backward(
     aca_cost_by_year: list[np.ndarray | None] = [None] * n_years
     if hc:
         for t in range(n_years):
-            year_t = scenario.income_trajectory[t].year
+            year_t = scenario.income_timeline[t].year
             if year_t in aca_years:
-                income_t = scenario.income_trajectory[t].gross_income
+                income_t = scenario.income_timeline[t].gross_income
                 aca_cost_by_year[t] = vectorized_subsidy_loss(
                     income_t, extended_grid,
                     hc.household_size, hc.monthly_slcsp_premium,
@@ -274,7 +274,7 @@ def _forward_pass(
     policy_table: np.ndarray,
 ) -> list[float]:
     """Read optimal conversion schedule by following the policy forward."""
-    n_years = len(scenario.income_trajectory)
+    n_years = len(scenario.income_timeline)
     g = scenario.annual_growth_rate
     conversions = []
 
@@ -322,7 +322,7 @@ def dp_optimize(
         DPResult with optimal conversions, NPV, and conversion curve data.
     """
     balance = scenario.traditional_ira_balance
-    n_years = len(scenario.income_trajectory)
+    n_years = len(scenario.income_timeline)
 
     if balance <= 0 or n_years == 0:
         from app.engine.optimizer import calculate_npv
@@ -388,7 +388,7 @@ def extract_conversion_curve(
     from app.engine.tax import get_marginal_rate
 
     balance = scenario.traditional_ira_balance
-    n_years = len(scenario.income_trajectory)
+    n_years = len(scenario.income_timeline)
     opt_total = dp_result.total_conversion
     opt_conversions = dp_result.yearly_conversions
 
@@ -433,7 +433,7 @@ def extract_conversion_curve(
         total_tax = 0.0
 
         for i in range(n_years):
-            income = scenario.income_trajectory[i].gross_income
+            income = scenario.income_timeline[i].gross_income
             c = yearly_conv[i]
 
             tax_with = calculate_federal_tax(income + c, scenario.filing_status)
@@ -442,7 +442,7 @@ def extract_conversion_curve(
 
             # Add state tax cost
             yr_state = resolve_state_for_year(
-                scenario.income_trajectory[i].state, scenario.state
+                scenario.income_timeline[i].state, scenario.state
             )
             if yr_state:
                 st_with = calculate_state_tax(income + c, yr_state, scenario.filing_status, scenario.custom_state_rate)
@@ -455,7 +455,7 @@ def extract_conversion_curve(
             marginal = get_marginal_rate(income + c, scenario.filing_status)
 
             yearly_detail.append({
-                "year": scenario.income_trajectory[i].year,
+                "year": scenario.income_timeline[i].year,
                 "income": income,
                 "conversion": c,
                 "tax_cost": round(tax_cost, 2),
@@ -497,7 +497,7 @@ def _dp_backward_3d(
         extended_grid: the balance grid (may be extended for growth).
         budget_grid:   the budget grid (unchanged).
     """
-    n_years = len(scenario.income_trajectory)
+    n_years = len(scenario.income_timeline)
     g = scenario.annual_growth_rate
     d = scenario.discount_rate
     years_until_retirement = max(0, scenario.retirement_age - scenario.age)
@@ -539,25 +539,25 @@ def _dp_backward_3d(
     aca_years: set[int] = set()
     if hc:
         from app.engine.aca import federal_poverty_level
-        trajectory_years = {y.year for y in scenario.income_trajectory}
+        timeline_years = {y.year for y in scenario.income_timeline}
         if hc.aca_coverage_years is not None:
-            aca_years = set(hc.aca_coverage_years) & trajectory_years
+            aca_years = set(hc.aca_coverage_years) & timeline_years
         elif hc.has_employer_coverage_after is not None:
-            aca_years = {y for y in trajectory_years if y < hc.has_employer_coverage_after}
+            aca_years = {y for y in timeline_years if y < hc.has_employer_coverage_after}
         else:
-            aca_years = trajectory_years
+            aca_years = timeline_years
 
     # Pre-compute tax costs (same as 2D)
     tax_without_cache = [
         calculate_federal_tax(
-            scenario.income_trajectory[t].gross_income, scenario.filing_status
+            scenario.income_timeline[t].gross_income, scenario.filing_status
         )
         for t in range(n_years)
     ]
 
     tax_cost_by_year: list[np.ndarray] = []
     for t in range(n_years):
-        income_t = scenario.income_trajectory[t].gross_income
+        income_t = scenario.income_timeline[t].gross_income
         tax_with = vectorized_federal_tax(
             income_t + extended_grid, scenario.filing_status
         )
@@ -567,10 +567,10 @@ def _dp_backward_3d(
     state_cost_by_year_3d: list[np.ndarray | None] = [None] * n_years
     for t in range(n_years):
         yr_state = resolve_state_for_year(
-            scenario.income_trajectory[t].state, scenario.state
+            scenario.income_timeline[t].state, scenario.state
         )
         if yr_state:
-            income_t = scenario.income_trajectory[t].gross_income
+            income_t = scenario.income_timeline[t].gross_income
             st_with = vectorized_state_tax(
                 income_t + extended_grid, yr_state, scenario.filing_status, scenario.custom_state_rate
             )
@@ -580,9 +580,9 @@ def _dp_backward_3d(
     aca_cost_by_year: list[np.ndarray | None] = [None] * n_years
     if hc:
         for t in range(n_years):
-            year_t = scenario.income_trajectory[t].year
+            year_t = scenario.income_timeline[t].year
             if year_t in aca_years:
-                income_t = scenario.income_trajectory[t].gross_income
+                income_t = scenario.income_timeline[t].gross_income
                 aca_cost_by_year[t] = vectorized_subsidy_loss(
                     income_t, extended_grid,
                     hc.household_size, hc.monthly_slcsp_premium,
@@ -686,7 +686,7 @@ def _forward_pass_3d(
     Tracks balance and budget as continuous floats (not snapped to grid)
     to avoid drift over many years.
     """
-    n_years = len(scenario.income_trajectory)
+    n_years = len(scenario.income_timeline)
     g = scenario.annual_growth_rate
     B = len(budget_grid)
     conversions = []
@@ -759,7 +759,7 @@ def extract_conversion_curve_3d(
     from app.engine.tax import get_marginal_rate
 
     balance = scenario.traditional_ira_balance
-    n_years = len(scenario.income_trajectory)
+    n_years = len(scenario.income_timeline)
 
     if balance <= 0 or n_years == 0:
         return []
@@ -818,7 +818,7 @@ def extract_conversion_curve_3d(
         total_tax = 0.0
 
         for i in range(n_years):
-            income = scenario.income_trajectory[i].gross_income
+            income = scenario.income_timeline[i].gross_income
             c = yearly_conv[i]
 
             tax_with = calculate_federal_tax(income + c, scenario.filing_status)
@@ -827,7 +827,7 @@ def extract_conversion_curve_3d(
 
             # Add state tax cost
             yr_state = resolve_state_for_year(
-                scenario.income_trajectory[i].state, scenario.state
+                scenario.income_timeline[i].state, scenario.state
             )
             if yr_state:
                 st_with = calculate_state_tax(income + c, yr_state, scenario.filing_status, scenario.custom_state_rate)
@@ -840,7 +840,7 @@ def extract_conversion_curve_3d(
             marginal = get_marginal_rate(income + c, scenario.filing_status)
 
             yearly_detail.append({
-                "year": scenario.income_trajectory[i].year,
+                "year": scenario.income_timeline[i].year,
                 "income": income,
                 "conversion": c,
                 "tax_cost": round(tax_cost, 2),

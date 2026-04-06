@@ -38,7 +38,7 @@ def short_scenario() -> ScenarioInput:
     return ScenarioInput(
         age=38,
         filing_status=FilingStatus.SINGLE,
-        income_trajectory=[
+        income_timeline=[
             YearlyIncome(year=2026, gross_income=35000),
             YearlyIncome(year=2027, gross_income=30000),
             YearlyIncome(year=2028, gross_income=150000),
@@ -55,7 +55,7 @@ def short_scenario() -> ScenarioInput:
 
 def profile_starting_points(scenario: ScenarioInput):
     """Run each starting point individually and report which wins."""
-    n_years = len(scenario.income_trajectory)
+    n_years = len(scenario.income_timeline)
     max_balance = scenario.traditional_ira_balance
 
     greedy = greedy_bracket_fill(scenario)
@@ -122,7 +122,7 @@ def run_benchmarks():
     print("=" * 60)
 
     # --- Demo scenario (27 years) ---
-    print(f"\n--- Demo scenario: {len(DEMO_SCENARIO.income_trajectory)} years ---")
+    print(f"\n--- Demo scenario: {len(DEMO_SCENARIO.income_timeline)} years ---")
 
     with timer("Full optimize(DEMO_SCENARIO)"):
         result = optimize(DEMO_SCENARIO)
@@ -133,7 +133,7 @@ def run_benchmarks():
 
     # Phase-by-phase timing
     print("\n  Phase breakdown:")
-    n_years = len(DEMO_SCENARIO.income_trajectory)
+    n_years = len(DEMO_SCENARIO.income_timeline)
     max_balance = DEMO_SCENARIO.traditional_ira_balance
 
     bounds = [(0, max_balance) for _ in range(n_years)]
@@ -161,7 +161,7 @@ def run_benchmarks():
 
     # --- Short scenario (3 years) ---
     scenario_3yr = short_scenario()
-    print(f"\n--- Short scenario: {len(scenario_3yr.income_trajectory)} years ---")
+    print(f"\n--- Short scenario: {len(scenario_3yr.income_timeline)} years ---")
 
     with timer("Full optimize(3-year)"):
         result_3yr = optimize(scenario_3yr)

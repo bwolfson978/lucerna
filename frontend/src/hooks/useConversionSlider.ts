@@ -95,8 +95,8 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
 
   const filingStatus = result.input.filing_status;
   const incomes = useMemo(
-    () => result.input.income_trajectory.map((yi) => yi.gross_income),
-    [result.input.income_trajectory]
+    () => result.input.income_timeline.map((yi) => yi.gross_income),
+    [result.input.income_timeline]
   );
 
   const yearlyConversions = useMemo(
@@ -137,14 +137,14 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
         const marginalRate = topFilled ? topFilled.bracket_rate : 0.1;
 
         return {
-          year: result.input.income_trajectory[i].year,
+          year: result.input.income_timeline[i].year,
           income,
           conversion: Math.round(conversion),
           tax_cost: Math.round(taxCost * 100) / 100,
           marginal_bracket: marginalRate,
         };
       }),
-    [incomes, yearlyConversions, yearlyBracketFills, filingStatus, result.input.income_trajectory]
+    [incomes, yearlyConversions, yearlyBracketFills, filingStatus, result.input.income_timeline]
   );
 
   const displayTotalConversion = yearlyConversions.reduce((a, b) => a + b, 0);
