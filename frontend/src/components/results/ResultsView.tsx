@@ -19,6 +19,7 @@ import { Card } from "@/components/ui/card";
 import { useConversionSlider } from "@/hooks/useConversionSlider";
 import { computeSnapThreshold } from "@/lib/utils/snap";
 import { useSyncedScroll } from "@/hooks/useSyncedScroll";
+import { InfoTrigger } from "@/components/methodology/InfoTrigger";
 
 interface YearOverride {
   income?: number;
@@ -114,9 +115,16 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
         {/* Headline metric */}
         <Card recommended className="p-section">
           <div className="flex flex-col gap-2">
-            <span className="metric-label">
-              Estimated lifetime tax savings
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="metric-label">
+                Estimated lifetime tax savings
+              </span>
+              <InfoTrigger
+                label="How is this calculated?"
+                sectionId="savings-number"
+                triggerId="hero-savings"
+              />
+            </div>
             <span className="metric-value-hero text-optimal">
               {formatSavings(estimatedSavings)}
             </span>
@@ -180,6 +188,13 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
 
       {/* Bracket chart + detail table — same Card so scroll areas align */}
       <Card className="flex flex-col gap-default">
+        <div className="flex items-center justify-end px-4 pt-2 -mb-2">
+          <InfoTrigger
+            label="Why these brackets?"
+            sectionId="bracket-filling"
+            triggerId="bracket-chart"
+          />
+        </div>
         <BracketChart
           years={chartYears}
           filingStatus={result.input.filing_status}
@@ -191,11 +206,21 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
         {/* Separator between chart and table */}
         <div className="border-t border-border" />
 
-        {onReRun && (
-          <p className="text-body-sm text-text-tertiary -mt-1">
-            Adjust income or life events below, then re-run the analysis.
-          </p>
-        )}
+        <div className="flex items-center justify-between">
+          {onReRun && (
+            <p className="text-body-sm text-text-tertiary">
+              Adjust income or life events below, then re-run the analysis.
+            </p>
+          )}
+          {result.input.income_timeline.length > 1 && (
+            <InfoTrigger
+              label="How is this allocated across years?"
+              sectionId="multi-year-allocation"
+              triggerId="detail-table"
+              className="shrink-0"
+            />
+          )}
+        </div>
         <TransposedDetailTable
           details={yearlyDetail}
           years={yearInfos}
@@ -239,17 +264,26 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
 
       {/* Assumptions disclaimer */}
       <div className="text-body-sm text-text-tertiary border-t border-border pt-section">
-        <p>
-          This analysis uses federal tax brackets only (2025 rates).
-          {result.aca_subsidy_impact
-            ? " ACA marketplace subsidy impact is included based on your healthcare inputs (2026 rules, 2025 FPL guidelines)."
-            : " ACA subsidies are not modeled — enable the marketplace toggle to include them."}{" "}
-          State taxes, Social Security taxation, and RMDs are not modeled.
-          The model assumes all remaining balances are withdrawn at the end
-          of the retirement period. This is educational scenario analysis,
-          not financial advice.
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <p>
+            This analysis uses federal tax brackets only (2025 rates).
+            {result.aca_subsidy_impact
+              ? " ACA marketplace subsidy impact is included based on your healthcare inputs (2026 rules, 2025 FPL guidelines)."
+              : " ACA subsidies are not modeled — enable the marketplace toggle to include them."}{" "}
+            State taxes, Social Security taxation, and RMDs are not modeled.
+            The model assumes all remaining balances are withdrawn at the end
+            of the retirement period. This is educational scenario analysis,
+            not financial advice.
+          </p>
+          <InfoTrigger
+            label="Are these reasonable?"
+            sectionId="assumptions-limitations"
+            triggerId="assumptions"
+            className="shrink-0"
+          />
+        </div>
       </div>
+
     </div>
   );
 }

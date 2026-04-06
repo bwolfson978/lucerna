@@ -2,6 +2,7 @@ import type { ScenarioComparison } from "@/lib/types";
 import { Card } from "@/components/ui/card";
 import { formatCurrency, formatCompactCurrency, formatSavings } from "@/lib/utils/formatting";
 import { Tooltip } from "@/components/common/Tooltip";
+import { InfoTrigger } from "@/components/methodology/InfoTrigger";
 
 interface ScenarioCardsProps {
   scenarios: ScenarioComparison[];
@@ -25,9 +26,16 @@ export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
 
   return (
     <div className="flex flex-col gap-default">
-      <div className="flex items-center gap-2">
-        <h3 className="text-h3 text-text-primary">Scenario comparison</h3>
-        <Tooltip content="Compare different conversion schedules to see how they affect your estimated lifetime tax savings." />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h3 className="text-h3 text-text-primary">Scenario comparison</h3>
+          <Tooltip content="Compare different conversion schedules to see how they affect your estimated lifetime tax savings." />
+        </div>
+        <InfoTrigger
+          label="Why is full conversion worse?"
+          sectionId="conversion-tradeoff"
+          triggerId="scenario-cards"
+        />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-default">

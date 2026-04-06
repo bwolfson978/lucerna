@@ -5,6 +5,7 @@ import { MetricCard } from "@/components/common/MetricCard";
 import { Tooltip } from "@/components/common/Tooltip";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
 import { Card } from "@/components/ui/card";
+import { InfoTrigger } from "@/components/methodology/InfoTrigger";
 
 interface AcaSubsidyImpactProps {
   result: OptimizationResult;
@@ -23,11 +24,18 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
 
   return (
     <div className="flex flex-col gap-default">
-      <div className="flex items-center gap-2">
-        <h3 className="text-h3 text-text-primary">
-          ACA marketplace subsidy impact
-        </h3>
-        <Tooltip content="Roth conversions increase your income (MAGI), which can reduce your ACA premium tax credit. This section shows how the recommended conversions affect your health insurance subsidy." />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h3 className="text-h3 text-text-primary">
+            ACA marketplace subsidy impact
+          </h3>
+          <Tooltip content="Roth conversions increase your income (MAGI), which can reduce your ACA premium tax credit. This section shows how the recommended conversions affect your health insurance subsidy." />
+        </div>
+        <InfoTrigger
+          label="How do conversions affect subsidies?"
+          sectionId="conversion-tradeoff"
+          triggerId="aca-subsidy"
+        />
       </div>
 
       {/* Summary metrics */}

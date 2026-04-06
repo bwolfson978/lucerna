@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ScenarioCards } from "../ScenarioCards";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { MethodologyProvider } from "@/components/methodology/MethodologyContext";
 import type { ScenarioComparison } from "@/lib/types";
 
 const mockScenarios: ScenarioComparison[] = [
@@ -38,7 +39,11 @@ const mockScenarios: ScenarioComparison[] = [
 ];
 
 function renderWithProviders(ui: React.ReactElement) {
-  return render(<TooltipProvider>{ui}</TooltipProvider>);
+  return render(
+    <TooltipProvider>
+      <MethodologyProvider>{ui}</MethodologyProvider>
+    </TooltipProvider>
+  );
 }
 
 describe("ScenarioCards", () => {
