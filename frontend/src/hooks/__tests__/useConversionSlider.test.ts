@@ -83,6 +83,30 @@ describe("distributeConversion", () => {
       result.forEach((c) => expect(c).toBeLessThanOrEqual(50000));
     });
 
+    it("zeroes out small spurious amounts from interpolation artifacts", () => {
+      // Regression test for GitHub issue #59: lerp between curve points
+      // with different allocation strategies can produce tiny amounts in
+      // years that shouldn't have conversions.
+      const artifactCurve: ConversionCurvePoint[] = [
+        makeCurvePoint(0, [0, 0, 0, 0]),
+        makeCurvePoint(40000, [40000, 0, 0, 0]),
+        // At 50000, allocation shifts to include year 2
+        makeCurvePoint(50000, [30000, 20000, 0, 0]),
+        makeCurvePoint(100000, [50000, 40000, 10000, 0]),
+      ];
+
+      // Just above the 40000 point — lerp produces a tiny year-2 amount
+      const result = distributeConversion(41000, weights.concat(0), artifactCurve);
+
+      // No year should have a tiny amount (< 500) — it should be 0 or >= 500
+      for (const c of result) {
+        expect(c === 0 || c >= 500).toBe(true);
+      }
+      // Total should still be approximately correct
+      const total = result.reduce((a, b) => a + b, 0);
+      expect(total).toBeCloseTo(41000, -2);
+    });
+
     it("changes year ratios at different caps", () => {
       const atLow = distributeConversion(25000, weights, curve);
       const atHigh = distributeConversion(75000, weights, curve);
