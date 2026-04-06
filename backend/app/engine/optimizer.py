@@ -9,6 +9,7 @@ from app.engine.types import (
 from app.engine.tax import calculate_federal_tax, get_marginal_rate, analyze_bracket_fill
 from app.engine.heuristic import greedy_bracket_fill
 from app.engine.aca import calculate_subsidy_loss, calculate_aca_subsidy, find_subsidy_cliff_income
+from app.engine.state_tax import calculate_state_tax, get_state_marginal_rate, resolve_state_for_year
 
 
 def _aca_coverage_years(scenario: ScenarioInput) -> set[int]:
@@ -68,6 +69,16 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
         tax_without = calculate_federal_tax(income, filing_status)
         conversion_tax = tax_with - tax_without
 
+        # State tax on conversion (additive cost layer)
+        state_tax_cost = 0.0
+        year_state = resolve_state_for_year(
+            scenario.income_trajectory[t].state, scenario.state
+        )
+        if year_state:
+            st_with = calculate_state_tax(income + c_t, year_state, filing_status, scenario.custom_state_rate)
+            st_without = calculate_state_tax(income, year_state, filing_status, scenario.custom_state_rate)
+            state_tax_cost = st_with - st_without
+
         # ACA subsidy loss (if healthcare inputs provided and this is a coverage year)
         subsidy_loss = 0.0
         if hc and scenario.income_trajectory[t].year in aca_years:
@@ -75,8 +86,8 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
                 income, c_t, hc.household_size, hc.monthly_slcsp_premium,
             )
 
-        # Total conversion cost = federal tax + subsidy loss
-        total_cost = conversion_tax + subsidy_loss
+        # Total conversion cost = federal tax + state tax + subsidy loss
+        total_cost = conversion_tax + state_tax_cost + subsidy_loss
 
         # Conversion cost is paid now (discounted to year t)
         discount_factor = (1 + d) ** (-t)
@@ -104,6 +115,9 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
         total_balance = trad_balance + roth_balance
         spending = total_balance * 0.04
 
+    # Resolve retirement state for Phase 3 and 4
+    ret_state = scenario.retirement_state or scenario.state
+
     for year in range(years_until_retirement + 1,
                       years_until_retirement + scenario.years_in_retirement + 1):
         # Grow at start of year
@@ -115,6 +129,8 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
         trad_balance -= distribution
 
         tax_on_dist = calculate_federal_tax(distribution, filing_status)
+        if ret_state:
+            tax_on_dist += calculate_state_tax(distribution, ret_state, filing_status, scenario.custom_state_rate)
         after_tax_dist = distribution - tax_on_dist
 
         # If traditional doesn't cover spending, draw from Roth (tax-free)
@@ -133,6 +149,8 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
 
     if trad_balance > 0:
         tax_on_liquidation = calculate_federal_tax(trad_balance, filing_status)
+        if ret_state:
+            tax_on_liquidation += calculate_state_tax(trad_balance, ret_state, filing_status, scenario.custom_state_rate)
         npv += (trad_balance - tax_on_liquidation) * discount_factor
 
     npv += roth_balance * discount_factor
@@ -248,17 +266,27 @@ def _build_constrained_params(
         {"type": "ineq", "fun": lambda x: max_balance - np.sum(x)},
     ]
 
-    # Max annual tax cost: tax(income_t + c_t) - tax(income_t) <= cap
+    # Max annual tax cost: combined federal+state tax <= cap
     if prefs.max_annual_tax_cost is not None:
         cap = prefs.max_annual_tax_cost
         for t in range(n_years):
             income_t = scenario.income_trajectory[t].gross_income
             fs = scenario.filing_status
+            yr_state = resolve_state_for_year(
+                scenario.income_trajectory[t].state, scenario.state
+            )
+            custom_rate = scenario.custom_state_rate
 
-            def _tax_constraint(x, _t=t, _income=income_t, _fs=fs, _cap=cap):
-                tax_with = calculate_federal_tax(_income + x[_t], _fs)
-                tax_without = calculate_federal_tax(_income, _fs)
-                return _cap - (tax_with - tax_without)
+            def _tax_constraint(x, _t=t, _income=income_t, _fs=fs, _cap=cap,
+                                _yr_state=yr_state, _custom_rate=custom_rate):
+                fed_with = calculate_federal_tax(_income + x[_t], _fs)
+                fed_without = calculate_federal_tax(_income, _fs)
+                cost = fed_with - fed_without
+                if _yr_state:
+                    st_with = calculate_state_tax(_income + x[_t], _yr_state, _fs, _custom_rate)
+                    st_without = calculate_state_tax(_income, _yr_state, _fs, _custom_rate)
+                    cost += st_with - st_without
+                return _cap - cost
 
             constraints.append({"type": "ineq", "fun": _tax_constraint})
 
@@ -379,19 +407,37 @@ def _build_year_detail(
 
         tax_with = calculate_federal_tax(income + c_t, scenario.filing_status)
         tax_without = calculate_federal_tax(income, scenario.filing_status)
-        tax_cost = tax_with - tax_without
+        federal_tax_cost = tax_with - tax_without
+
+        # State tax cost for this year
+        year_state = resolve_state_for_year(
+            scenario.income_trajectory[t].state, scenario.state
+        )
+        state_tax = 0.0
+        if year_state:
+            st_with = calculate_state_tax(income + c_t, year_state, scenario.filing_status, scenario.custom_state_rate)
+            st_without = calculate_state_tax(income, year_state, scenario.filing_status, scenario.custom_state_rate)
+            state_tax = st_with - st_without
+
+        tax_cost = federal_tax_cost + state_tax
         total_tax += tax_cost
 
         eff_rate = tax_cost / c_t if c_t > 0 else 0.0
         marginal = get_marginal_rate(income + c_t, scenario.filing_status)
+        state_marginal = get_state_marginal_rate(
+            income + c_t, year_state or "", scenario.filing_status, scenario.custom_state_rate
+        ) if year_state else 0.0
 
         detail = {
             "year": year,
             "income": income,
             "conversion": c_t,
             "tax_cost": round(tax_cost, 2),
+            "federal_tax_cost": round(federal_tax_cost, 2),
+            "state_tax_cost": round(state_tax, 2),
             "effective_rate": round(eff_rate, 4),
             "marginal_bracket": f"{marginal:.0%}",
+            "state_marginal_rate": round(state_marginal, 4),
         }
 
         # Add ACA subsidy detail if applicable
@@ -564,16 +610,20 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
     # Scenarios
     full_conversions = [max_balance] + [0.0] * (n_years - 1)
     npv_at_full = calculate_npv(scenario, full_conversions)
+    yr0_income = scenario.income_trajectory[0].gross_income
     tax_full = (
-        calculate_federal_tax(
-            scenario.income_trajectory[0].gross_income + max_balance,
-            scenario.filing_status
-        )
-        - calculate_federal_tax(
-            scenario.income_trajectory[0].gross_income,
-            scenario.filing_status
-        )
+        calculate_federal_tax(yr0_income + max_balance, scenario.filing_status)
+        - calculate_federal_tax(yr0_income, scenario.filing_status)
     )
+    # Include state tax in full-conversion scenario
+    yr0_state = resolve_state_for_year(
+        scenario.income_trajectory[0].state, scenario.state
+    )
+    if yr0_state:
+        tax_full += (
+            calculate_state_tax(yr0_income + max_balance, yr0_state, scenario.filing_status, scenario.custom_state_rate)
+            - calculate_state_tax(yr0_income, yr0_state, scenario.filing_status, scenario.custom_state_rate)
+        )
 
     trajectory_years = [yi.year for yi in scenario.income_trajectory]
     scenarios = [

@@ -286,3 +286,131 @@ class TestScenarioComparisonFields:
         full = next(s for s in result.scenarios if "Full" in s.label)
         assert full.yearly_conversions[0] == 100000
         assert full.yearly_conversions[1] == 0.0
+
+
+class TestStateTaxIntegration:
+    """Verify that state tax changes optimizer behavior vs federal-only."""
+
+    def _base_scenario(self, state=None, retirement_state=None, custom_state_rate=None,
+                       trajectory_states=None):
+        traj = [
+            YearlyIncome(year=2026, gross_income=150000,
+                         state=trajectory_states[0] if trajectory_states else None),
+            YearlyIncome(year=2027, gross_income=150000,
+                         state=trajectory_states[1] if trajectory_states else None),
+            YearlyIncome(year=2028, gross_income=150000,
+                         state=trajectory_states[2] if trajectory_states else None),
+        ]
+        return ScenarioInput(
+            age=45, filing_status=FilingStatus.SINGLE,
+            income_trajectory=traj,
+            traditional_ira_balance=300000,
+            retirement_age=65, years_in_retirement=25,
+            annual_growth_rate=0.07, discount_rate=0.05,
+            state=state,
+            retirement_state=retirement_state,
+            custom_state_rate=custom_state_rate,
+        )
+
+    def test_state_none_backward_compat(self):
+        """state=None should produce identical results to omitting state entirely."""
+        scenario_no_state = ScenarioInput(
+            age=45, filing_status=FilingStatus.SINGLE,
+            income_trajectory=[YearlyIncome(year=2026, gross_income=100000)],
+            traditional_ira_balance=200000,
+            retirement_age=65, years_in_retirement=25,
+            annual_growth_rate=0.07, discount_rate=0.05,
+        )
+        scenario_explicit_none = ScenarioInput(
+            age=45, filing_status=FilingStatus.SINGLE,
+            income_trajectory=[YearlyIncome(year=2026, gross_income=100000)],
+            traditional_ira_balance=200000,
+            retirement_age=65, years_in_retirement=25,
+            annual_growth_rate=0.07, discount_rate=0.05,
+            state=None,
+        )
+        npv1 = calculate_npv(scenario_no_state, [50000.0])
+        npv2 = calculate_npv(scenario_explicit_none, [50000.0])
+        assert npv1 == npv2
+
+    def test_ca_state_tax_increases_conversion_cost(self):
+        """CA state tax should make conversions more expensive (lower NPV for same schedule)."""
+        federal_only = self._base_scenario(state=None)
+        with_ca = self._base_scenario(state="CA")
+
+        schedule = [100000.0, 100000.0, 100000.0]
+        npv_federal = calculate_npv(federal_only, schedule)
+        npv_ca = calculate_npv(with_ca, schedule)
+
+        # CA adds ~9% marginal tax at $150K income, so NPV should be meaningfully lower
+        assert npv_ca < npv_federal
+        # The difference should be material (at least $1K for $300K of conversions)
+        assert npv_federal - npv_ca > 1000
+
+    def test_ca_optimizer_produces_different_schedule(self):
+        """Optimizer with CA state tax should produce a different optimal schedule."""
+        federal_only = self._base_scenario(state=None)
+        with_ca = self._base_scenario(state="CA")
+
+        result_federal = optimize(federal_only)
+        result_ca = optimize(with_ca)
+
+        # Both should produce valid results
+        assert isinstance(result_federal, OptimizationResult)
+        assert isinstance(result_ca, OptimizationResult)
+
+        # At least one of: different total conversion, different NPV, or different schedule
+        schedules_differ = result_federal.yearly_conversions != result_ca.yearly_conversions
+        npv_differs = abs(result_federal.npv_at_optimal - result_ca.npv_at_optimal) > 100
+        assert schedules_differ or npv_differs, (
+            f"Expected different results with CA state tax. "
+            f"Federal: {result_federal.yearly_conversions} (NPV={result_federal.npv_at_optimal}), "
+            f"CA: {result_ca.yearly_conversions} (NPV={result_ca.npv_at_optimal})"
+        )
+
+    def test_per_year_state_override_shifts_conversions(self):
+        """When one year is in a no-tax state, optimizer should favor converting that year."""
+        # Years 1-2 in CA, year 3 in TX (no state tax)
+        scenario = self._base_scenario(
+            state="CA",
+            trajectory_states=["CA", "CA", "TX"],
+        )
+        result = optimize(scenario)
+
+        # The TX year (index 2) should have at least as much conversion as either CA year
+        # because the tax cost is lower in TX
+        assert result.yearly_conversions[2] >= min(
+            result.yearly_conversions[0], result.yearly_conversions[1]
+        ) - 1, (
+            f"Expected TX year to have >= conversion than at least one CA year. "
+            f"Schedule: {result.yearly_conversions}"
+        )
+
+    def test_yearly_detail_includes_state_tax_cost(self):
+        """yearly_detail should report state_tax_cost when state is set."""
+        with_ca = self._base_scenario(state="CA")
+        result = optimize(with_ca)
+
+        # At least one year with non-zero conversion should have state_tax_cost > 0
+        has_state_tax = any(
+            d.get("state_tax_cost", 0) > 0
+            for d in result.yearly_detail
+            if d["conversion"] > 0
+        )
+        assert has_state_tax, (
+            f"Expected state_tax_cost > 0 in yearly_detail for CA scenario. "
+            f"Details: {result.yearly_detail}"
+        )
+
+    def test_custom_state_rate_applies(self):
+        """Custom flat state rate should increase tax cost proportionally."""
+        federal_only = self._base_scenario(state=None)
+        with_custom = self._base_scenario(state="custom", custom_state_rate=0.10)
+
+        schedule = [100000.0, 100000.0, 100000.0]
+        npv_federal = calculate_npv(federal_only, schedule)
+        npv_custom = calculate_npv(with_custom, schedule)
+
+        assert npv_custom < npv_federal
+        # 10% flat rate on $300K of conversions should create a significant difference
+        assert npv_federal - npv_custom > 5000

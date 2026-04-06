@@ -63,7 +63,9 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
             position="popper"
             sideOffset={4}
             className={cn(
-              "z-50 min-w-[var(--radix-select-trigger-width)] overflow-hidden",
+              "z-50 min-w-[var(--radix-select-trigger-width)]",
+              "max-h-[min(var(--radix-select-content-available-height,20rem),20rem)]",
+              "overflow-hidden",
               "rounded-lg border border-glass-border",
               "shadow-elevated",
               "animate-in fade-in-0 zoom-in-95",
@@ -75,6 +77,11 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
               WebkitBackdropFilter: "blur(20px)",
             }}
           >
+            <SelectPrimitive.ScrollUpButton className="flex items-center justify-center h-6 cursor-default text-text-tertiary">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M3 7.5L6 4.5L9 7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </SelectPrimitive.ScrollUpButton>
             <SelectPrimitive.Viewport className="p-1">
               {options.map((opt) => (
                 <SelectPrimitive.Item
@@ -94,6 +101,11 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
                 </SelectPrimitive.Item>
               ))}
             </SelectPrimitive.Viewport>
+            <SelectPrimitive.ScrollDownButton className="flex items-center justify-center h-6 cursor-default text-text-tertiary">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </SelectPrimitive.ScrollDownButton>
           </SelectPrimitive.Content>
         </SelectPrimitive.Portal>
       </SelectPrimitive.Root>
