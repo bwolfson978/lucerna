@@ -31,11 +31,14 @@ export function MethodologyLayout({ result, children }: MethodologyLayoutProps) 
         {children}
       </div>
 
-      {/* Sidebar — flex sibling on desktop, fixed overlay on mobile */}
+      {/* Sidebar — flex sibling on desktop, fixed overlay on mobile.
+          No overflow clipping on the wrapper — that would break sticky.
+          The sidebar handles its own sticky positioning. The wrapper
+          just animates width to push/pull the main content. */}
       <div
         className={cn(
           "hidden lg:block",
-          "shrink-0 overflow-hidden",
+          "shrink-0",
           "transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
           isOpen ? "w-[400px]" : "w-0"
         )}

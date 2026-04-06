@@ -160,7 +160,6 @@ export function MethodologySidebar({ result, mobile }: MethodologySidebarProps) 
         "sticky top-14 h-[calc(100vh-3.5rem)]",
         "w-[400px] shrink-0",
         "bg-background-alt border-l border-glass-border",
-        "relative"
       )}
     >
       {sidebarContent}
