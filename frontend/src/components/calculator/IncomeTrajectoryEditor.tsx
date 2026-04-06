@@ -141,7 +141,7 @@ export function IncomeTrajectoryEditor({
                 strokeLinejoin="round"
               />
             </svg>
-            Income trajectory
+            Income timeline
             {!open && (
               <span className="text-body-sm text-text-tertiary font-normal ml-1">
                 {yearRange} · {trajectory.length} yrs · <span className="text-accent/70">click to edit</span>

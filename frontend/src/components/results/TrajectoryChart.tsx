@@ -137,7 +137,7 @@ export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
         <h3 className="text-h3 text-text-primary">
           Earned income + conversion by year
         </h3>
-        <Tooltip content="Shows how the optimizer distributes conversions across your income trajectory. Click a year to see its bracket fill detail." />
+        <Tooltip content="Shows how the optimizer distributes conversions across your income timeline. Click a year to see its bracket fill detail." />
       </div>
 
       {/* Custom legend */}

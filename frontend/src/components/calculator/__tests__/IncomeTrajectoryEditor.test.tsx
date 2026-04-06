@@ -11,7 +11,7 @@ describe("IncomeTrajectoryEditor", () => {
   ];
 
   /** Click the collapsible trigger to expand the section */
-  const expand = () => fireEvent.click(screen.getByText("Income trajectory"));
+  const expand = () => fireEvent.click(screen.getByText("Income timeline"));
 
   it("renders collapsed by default with summary info", () => {
     const onChange = vi.fn();
@@ -38,7 +38,7 @@ describe("IncomeTrajectoryEditor", () => {
     render(
       <IncomeTrajectoryEditor trajectory={baseTrajectory} onChange={onChange} />
     );
-    expect(screen.getByText("Income trajectory")).toBeInTheDocument();
+    expect(screen.getByText("Income timeline")).toBeInTheDocument();
     expand();
     expect(
       screen.getByText(/Enter your expected income/)
