@@ -53,7 +53,6 @@ const BRACKET_BOUNDARIES: Record<string, { rate: number; max: number }[]> = {
 export const BAR_GAP = 10;
 export const MIN_BAR_WIDTH = 24;
 export const DEFAULT_BAR_WIDTH = 48;
-export const MAX_BAR_WIDTH = 72;
 const MIN_DESKTOP_CHART_HEIGHT = 320;
 const MAX_DESKTOP_CHART_HEIGHT = 480;
 const MOBILE_CHART_HEIGHT = 260;
@@ -136,8 +135,8 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
       const availableForBars = containerWidth - totalOverhead;
       const computed = Math.floor((availableForBars - BAR_GAP) / years.length) - BAR_GAP;
       if (computed >= MIN_BAR_WIDTH) {
-        // Allow bars to grow up to MAX_BAR_WIDTH to fill available space
-        barWidth = Math.min(computed, MAX_BAR_WIDTH);
+        // Let bars expand to fill available space — no hard cap
+        barWidth = computed;
         barsFit = true;
       } else {
         barWidth = MIN_BAR_WIDTH;
@@ -328,7 +327,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
             className={!barsFit ? "overflow-x-auto bracket-chart-scroll pb-2" : ""}
           >
             <svg
-              width={Math.max(totalBarWidth, 200)}
+              width={barsFit ? "100%" : Math.max(totalBarWidth, 200)}
               height={chartHeight}
               className="block"
             >
@@ -363,7 +362,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
                     key={`line-${b.rate}`}
                     x1={0}
                     y1={y}
-                    x2={totalBarWidth}
+                    x2={barsFit ? "100%" : totalBarWidth}
                     y2={y}
                     stroke={color}
                     strokeWidth={1}
