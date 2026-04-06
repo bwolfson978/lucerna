@@ -1,7 +1,7 @@
 "use client";
 
 import type { YearlyIncome } from "@/lib/types";
-import { formatCurrency } from "@/lib/utils/formatting";
+import { formatCompactCurrency } from "@/lib/utils/formatting";
 
 interface IncomeMilestonesTableProps {
   timeline: YearlyIncome[];
@@ -36,8 +36,8 @@ export function IncomeMilestonesTable({
           {timeline.map((yi) => (
             <div
               key={yi.year}
-              className="flex flex-col"
-              style={{ width: `${colWidth}px` }}
+              className="flex flex-col overflow-hidden"
+              style={{ width: `${colWidth}px`, minWidth: `${colWidth}px` }}
             >
               {/* Year */}
               <div
@@ -49,14 +49,14 @@ export function IncomeMilestonesTable({
 
               {/* Income */}
               <div
-                className="h-8 flex items-center justify-center text-[10px] text-text-primary"
+                className="h-8 flex items-center justify-center text-[10px] text-text-primary px-0.5"
                 style={{ fontFamily: "'Manrope', system-ui" }}
               >
-                {formatCurrency(yi.gross_income)}
+                {formatCompactCurrency(yi.gross_income)}
               </div>
 
               {/* Notes */}
-              <div className="h-8 flex items-center justify-center text-[9px] text-text-tertiary">
+              <div className="h-8 flex items-center justify-center text-[9px] text-text-tertiary px-0.5" title={yi.notes || undefined}>
                 {yi.notes || "—"}
               </div>
             </div>

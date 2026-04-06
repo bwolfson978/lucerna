@@ -171,7 +171,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
       </div>
 
       {/* Summary metrics */}
-      <div className="grid grid-cols-3 gap-default">
+      <div className="grid grid-cols-3 gap-tight sm:gap-default">
         <MetricCard
           label="Total conversion"
           value={formatCurrency(displayTotalConversion)}

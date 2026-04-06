@@ -101,11 +101,11 @@
   }
 
   .metric-value {
-    @apply text-h2 sm:text-data-lg font-mono text-text-primary;
+    @apply text-data-sm sm:text-data-lg font-mono text-text-primary;
   }
 
   .metric-value-hero {
-    @apply text-data-hero font-mono font-extrabold text-text-primary;
+    @apply text-data-hero-sm sm:text-data-hero font-mono font-extrabold text-text-primary;
   }
 
   /* Badge variants */
