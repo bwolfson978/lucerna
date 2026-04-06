@@ -111,18 +111,17 @@ describe("MethodologySidebar", () => {
     expect(bracketButton.closest("button")).toHaveAttribute("data-state", "open");
   });
 
-  // Mobile mode tests
-  it("is hidden by default in mobile mode", () => {
-    renderWithProviders(<MethodologySidebar mobile />);
+  it("is hidden by default", () => {
+    renderWithProviders(<MethodologySidebar />);
     const sidebar = screen.getByRole("complementary");
     expect(sidebar.className).toContain("translate-x-full");
   });
 
-  it("opens in mobile mode when triggered", () => {
+  it("opens when triggered", () => {
     renderWithProviders(
       <>
         <HowItWorksButton />
-        <MethodologySidebar mobile />
+        <MethodologySidebar />
       </>
     );
     fireEvent.click(screen.getByText("How does it work?"));
