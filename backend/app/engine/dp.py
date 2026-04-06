@@ -12,12 +12,6 @@ terminal value function.  Complexity is O(N × G²) where N = trajectory years
 and G = grid size, vectorized with numpy for sub-second performance.
 """
 
-# Minimum conversion amount to keep.  Amounts below this are zeroed out
-# to avoid displaying tiny spurious conversions that arise from grid
-# interpolation in the DP policy.  $500 is too small to be worth the
-# tax-reporting overhead in practice.
-MIN_CONVERSION = 500
-
 from dataclasses import dataclass
 
 import numpy as np
@@ -297,13 +291,9 @@ def _forward_pass(
 
         # Clamp to available balance
         conversion = min(conversion, current_balance)
-        rounded = round(conversion / 100) * 100
-        # Zero out tiny amounts from grid interpolation artifacts
-        if rounded < MIN_CONVERSION:
-            rounded = 0.0
-        conversions.append(rounded)
+        conversions.append(round(conversion / 100) * 100)  # Round to $100
 
-        current_balance = (current_balance - rounded) * (1 + g)
+        current_balance = (current_balance - conversion) * (1 + g)
 
     return conversions
 
@@ -741,14 +731,10 @@ def _forward_pass_3d(
         # Clamp to available balance and budget
         conversion = min(conversion, current_balance, current_budget)
         conversion = max(0.0, conversion)
-        rounded = round(conversion / 100) * 100
-        # Zero out tiny amounts from grid interpolation artifacts
-        if rounded < MIN_CONVERSION:
-            rounded = 0.0
-        conversions.append(rounded)
+        conversions.append(round(conversion / 100) * 100)
 
-        current_balance = (current_balance - rounded) * (1 + g)
-        current_budget -= rounded
+        current_balance = (current_balance - conversion) * (1 + g)
+        current_budget -= conversion
 
     return conversions
 

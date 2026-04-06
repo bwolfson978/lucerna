@@ -12,12 +12,6 @@ import {
 } from "@/lib/tax/brackets";
 import { computeSnapThreshold } from "@/lib/utils/snap";
 
-// Minimum conversion amount to display.  Amounts below this are zeroed
-// out to avoid showing tiny spurious conversions from interpolation between
-// curve points with different allocation strategies.  Matches the backend
-// MIN_CONVERSION threshold.
-const MIN_CONVERSION = 500;
-
 export function distributeConversion(
   totalConversion: number,
   optimizerWeights: number[],
@@ -60,27 +54,6 @@ export function distributeConversion(
     }
 
     if (interpolated) {
-      // Zero out tiny amounts from interpolation artifacts.  When the
-      // slider is between two curve points with different year allocations,
-      // lerp can produce small spurious values in years that shouldn't
-      // have conversions at this total.  Redistribute to the largest year.
-      let zeroed = 0;
-      let maxIdx = 0;
-      let maxVal = 0;
-      for (let i = 0; i < interpolated.length; i++) {
-        if (interpolated[i] > maxVal) {
-          maxVal = interpolated[i];
-          maxIdx = i;
-        }
-        if (interpolated[i] > 0 && interpolated[i] < MIN_CONVERSION) {
-          zeroed += interpolated[i];
-          interpolated[i] = 0;
-        }
-      }
-      if (zeroed > 0 && maxVal > 0) {
-        interpolated[maxIdx] += zeroed;
-      }
-
       // Scale up if the interpolated total falls short of the requested amount.
       // This happens when the optimizer plateaus (doesn't use the full cap).
       const interpolatedTotal = interpolated.reduce((a, b) => a + b, 0);

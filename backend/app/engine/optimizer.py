@@ -232,21 +232,14 @@ def _finalize_conversions(raw: list[float], max_balance: float, growth_rate: flo
     """Round to nearest $100, enforce non-negative and within balance.
 
     Accounts for inter-year growth so later years can access the grown
-    remainder, matching the DP forward-pass semantics.  Amounts below
-    $500 are zeroed out to avoid displaying tiny spurious conversions
-    from optimizer numerical artifacts.
+    remainder, matching the DP forward-pass semantics.
     """
-    from app.engine.dp import MIN_CONVERSION
-
     remaining = max_balance
     final = []
     for c in raw:
         c = max(0.0, min(c, remaining))
         c = round(c / 100) * 100
         c = min(c, remaining)
-        # Zero out tiny amounts from optimizer artifacts
-        if c < MIN_CONVERSION:
-            c = 0.0
         final.append(c)
         remaining = (remaining - c) * (1 + growth_rate)
     return final
