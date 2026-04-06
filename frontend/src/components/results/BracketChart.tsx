@@ -30,7 +30,7 @@ interface BracketChartProps {
   onLayoutChange?: (layout: { leftOffset: number; rightOffset: number }) => void;
 }
 
-// All bracket boundaries for axis labels
+// All bracket boundaries for axis labels (must include all 7 brackets)
 const BRACKET_BOUNDARIES: Record<string, { rate: number; max: number }[]> = {
   single: [
     { rate: 0.10, max: 11925 },
@@ -39,6 +39,7 @@ const BRACKET_BOUNDARIES: Record<string, { rate: number; max: number }[]> = {
     { rate: 0.24, max: 197300 },
     { rate: 0.32, max: 250525 },
     { rate: 0.35, max: 626350 },
+    { rate: 0.37, max: 1126350 },
   ],
   married_filing_jointly: [
     { rate: 0.10, max: 23850 },
@@ -47,6 +48,7 @@ const BRACKET_BOUNDARIES: Record<string, { rate: number; max: number }[]> = {
     { rate: 0.24, max: 394600 },
     { rate: 0.32, max: 501050 },
     { rate: 0.35, max: 751600 },
+    { rate: 0.37, max: 1251600 },
   ],
 };
 
@@ -205,7 +207,10 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
   // Find the bracket boundary to use as chart max
   const maxBracket = useMemo(() => {
     const idx = brackets.findIndex((b) => b.rate >= maxFilledBracketRate);
-    const showIdx = Math.min(idx + 1, brackets.length - 1);
+    // If rate not found (-1), show the highest bracket; otherwise show one above
+    const showIdx = idx === -1
+      ? brackets.length - 1
+      : Math.min(idx + 1, brackets.length - 1);
     return brackets[showIdx];
   }, [brackets, maxFilledBracketRate]);
 
