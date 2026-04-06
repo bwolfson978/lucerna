@@ -152,7 +152,7 @@ def _benefit_of_current_bracket(
     avg_rate = total_tax_paid / total_conversion if total_conversion > 0 else 0.0
 
     # Estimate future tax avoided (rough: retirement rate * conversion * growth)
-    years_to_retire = scenario.retirement_age - scenario.age
+    years_to_retire = max(0, scenario.retirement_age - scenario.age)
     future_value = total_conversion * (1 + scenario.annual_growth_rate) ** years_to_retire
     retirement_rate = get_marginal_rate(
         scenario.annual_retirement_spending or future_value * 0.04,

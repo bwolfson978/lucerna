@@ -85,3 +85,20 @@ class TestGreedyBracketFill:
         )
         result = greedy_bracket_fill(scenario)
         assert result[0] == 0
+
+    def test_already_retired_produces_valid_output(self):
+        """Already-retired user (retirement_age < current age) should work."""
+        scenario = ScenarioInput(
+            age=70, filing_status=FilingStatus.MFJ,
+            income_trajectory=[
+                YearlyIncome(year=2026, gross_income=50000),
+                YearlyIncome(year=2027, gross_income=50000),
+                YearlyIncome(year=2028, gross_income=50000),
+            ],
+            traditional_ira_balance=500000,
+            retirement_age=65,
+        )
+        result = greedy_bracket_fill(scenario)
+        assert len(result) == 3
+        for c in result:
+            assert c >= 0

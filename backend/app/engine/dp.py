@@ -48,7 +48,7 @@ def _compute_retirement_values(
     """
     g = scenario.annual_growth_rate
     d = scenario.discount_rate
-    years_until_retirement = scenario.retirement_age - scenario.age
+    years_until_retirement = max(0, scenario.retirement_age - scenario.age)
     n_retirement = scenario.years_in_retirement
 
     # Determine spending
@@ -123,7 +123,7 @@ def _dp_backward(
     n_years = len(scenario.income_trajectory)
     g = scenario.annual_growth_rate
     d = scenario.discount_rate
-    years_until_retirement = scenario.retirement_age - scenario.age
+    years_until_retirement = max(0, scenario.retirement_age - scenario.age)
     remaining_growth_years = years_until_retirement - n_years
 
     if remaining_growth_years > 0:
@@ -500,7 +500,7 @@ def _dp_backward_3d(
     n_years = len(scenario.income_trajectory)
     g = scenario.annual_growth_rate
     d = scenario.discount_rate
-    years_until_retirement = scenario.retirement_age - scenario.age
+    years_until_retirement = max(0, scenario.retirement_age - scenario.age)
     remaining_growth_years = years_until_retirement - n_years
 
     if remaining_growth_years > 0:
