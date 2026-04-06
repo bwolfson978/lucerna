@@ -414,3 +414,53 @@ class TestStateTaxIntegration:
         assert npv_custom < npv_federal
         # 10% flat rate on $300K of conversions should create a significant difference
         assert npv_federal - npv_custom > 5000
+
+
+class TestAlreadyRetired:
+    """Tests for users whose retirement_age <= current age (already retired)."""
+
+    def _retired_scenario(self, age=70, retirement_age=65, n_years=3):
+        return ScenarioInput(
+            age=age,
+            filing_status=FilingStatus.MFJ,
+            income_timeline=[
+                YearlyIncome(year=2026 + i, gross_income=50000)
+                for i in range(n_years)
+            ],
+            traditional_ira_balance=500000,
+            roth_ira_balance=50000,
+            retirement_age=retirement_age,
+            years_in_retirement=25,
+            annual_growth_rate=0.07,
+            discount_rate=0.05,
+        )
+
+    def test_optimize_returns_valid_result(self):
+        """optimize() should succeed when retirement_age < current age."""
+        scenario = self._retired_scenario()
+        result = optimize(scenario)
+        assert isinstance(result, OptimizationResult)
+        assert len(result.yearly_conversions) == 3
+        assert result.total_conversion >= 0
+
+    def test_retirement_age_equals_current_age(self):
+        """retirement_age == current age should work (just retired)."""
+        scenario = self._retired_scenario(age=65, retirement_age=65)
+        result = optimize(scenario)
+        assert isinstance(result, OptimizationResult)
+        assert result.total_conversion >= 0
+
+    def test_npv_positive_for_low_income_retiree(self):
+        """Already-retired user with low income should benefit from conversion."""
+        scenario = self._retired_scenario()
+        n_years = len(scenario.income_timeline)
+        npv_zero = calculate_npv(scenario, [0.0] * n_years)
+        npv_some = calculate_npv(scenario, [50000.0] * n_years)
+        # Converting at low income should produce higher NPV than not converting
+        assert npv_some > npv_zero
+
+    def test_conversions_within_balance(self):
+        """Total conversions should not exceed traditional IRA balance."""
+        scenario = self._retired_scenario()
+        result = optimize(scenario)
+        assert result.total_conversion <= scenario.traditional_ira_balance + 1

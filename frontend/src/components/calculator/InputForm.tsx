@@ -86,8 +86,10 @@ function generateTimeline(
   annualGrowthRate: number
 ): YearlyIncome[] {
   const yearsToRetirement = retAge - currentAge;
-  if (yearsToRetirement <= 0) return [];
-  return Array.from({ length: yearsToRetirement }, (_, i) => ({
+  const trajectoryLength = yearsToRetirement > 0
+    ? yearsToRetirement
+    : Math.max(1, Math.min(10, 73 - currentAge)); // already retired: plan until RMDs
+  return Array.from({ length: trajectoryLength }, (_, i) => ({
     year: CURRENT_YEAR + i,
     gross_income: Math.round(
       baseIncome * Math.pow(1 + annualGrowthRate / 100, i)
@@ -156,7 +158,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
     const retVal = retirementAge ?? 65;
     const incGrowthVal = incomeGrowthRate ?? 0;
 
-    if (currentIncome <= 0 || ageVal >= retVal) {
+    if (currentIncome <= 0) {
       setTimeline([]);
       return;
     }
@@ -187,8 +189,6 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
     const hhSize = householdSize ?? 1;
 
     if (ageVal < 0 || ageVal > 120) errs.age = "Age must be between 0 and 120";
-    if (retVal <= ageVal)
-      errs.retirementAge = "Retirement age must be greater than current age";
     if (retVal < 1 || retVal > 120)
       errs.retirementAge = "Retirement age must be between 1 and 120";
     if (currentIncome < 0) errs.currentIncome = "Income cannot be negative";

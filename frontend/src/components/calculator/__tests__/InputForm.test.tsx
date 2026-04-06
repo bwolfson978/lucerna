@@ -196,4 +196,58 @@ describe("InputForm", () => {
     ).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
   });
+
+  it("allows retirement age equal to current age (already retired)", () => {
+    renderInputForm({ onSubmit });
+
+    const ageInput = screen.getByLabelText("Age");
+    fireEvent.change(ageInput, { target: { value: "65" } });
+
+    const retInput = screen.getByLabelText("Retirement age");
+    fireEvent.change(retInput, { target: { value: "65" } });
+
+    const incomeInput = screen.getByLabelText("Current income");
+    fireEvent.change(incomeInput, { target: { value: "50000" } });
+
+    const balanceInput = screen.getByLabelText("Traditional IRA/401(k) balance");
+    fireEvent.change(balanceInput, { target: { value: "500000" } });
+
+    // Should NOT show the old validation error
+    expect(
+      screen.queryByText("Retirement age must be greater than current age")
+    ).not.toBeInTheDocument();
+
+    // Should generate a timeline (up to 8 years: 73 - 65)
+    expect(screen.getByTestId("timeline-editor")).toBeInTheDocument();
+    expect(Number(screen.getByTestId("timeline-count").textContent)).toBe(8);
+  });
+
+  it("allows retirement age less than current age and submits", () => {
+    renderInputForm({ onSubmit });
+
+    const ageInput = screen.getByLabelText("Age");
+    fireEvent.change(ageInput, { target: { value: "70" } });
+
+    const retInput = screen.getByLabelText("Retirement age");
+    fireEvent.change(retInput, { target: { value: "65" } });
+
+    const incomeInput = screen.getByLabelText("Current income");
+    fireEvent.change(incomeInput, { target: { value: "50000" } });
+
+    const balanceInput = screen.getByLabelText("Traditional IRA/401(k) balance");
+    fireEvent.change(balanceInput, { target: { value: "500000" } });
+
+    // Should generate timeline (3 years: 73 - 70)
+    expect(Number(screen.getByTestId("timeline-count").textContent)).toBe(3);
+
+    // Should submit successfully
+    const form = screen.getByRole("button", { name: /run my scenario/i });
+    fireEvent.click(form);
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+
+    const input = onSubmit.mock.calls[0][0];
+    expect(input.retirement_age).toBe(65);
+    expect(input.age).toBe(70);
+    expect(input.income_timeline.length).toBe(3);
+  });
 });

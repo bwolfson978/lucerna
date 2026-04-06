@@ -664,3 +664,34 @@ class TestFunctionalScenarios:
         assert resp.status_code == 200
         data = resp.json()
         assert data["npv_at_optimal"] >= data["npv_at_zero"] - 1  # float tolerance
+
+    async def test_already_retired_returns_200(self, async_client):
+        """retirement_age < current age (already retired) should return 200."""
+        payload = dict(
+            age=70, filing_status="married_filing_jointly",
+            income_timeline=[
+                {"year": 2026, "gross_income": 50000},
+                {"year": 2027, "gross_income": 50000},
+                {"year": 2028, "gross_income": 50000},
+            ],
+            traditional_ira_balance=500000,
+            retirement_age=65,
+        )
+        resp = await async_client.post("/api/optimize", json=payload)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total_conversion"] >= 0
+        assert len(data["yearly_conversions"]) == 3
+
+    async def test_retirement_age_equals_current_age_returns_200(self, async_client):
+        """retirement_age == current age should return 200."""
+        payload = dict(
+            age=65, filing_status="single",
+            income_timeline=[
+                {"year": 2026, "gross_income": 40000},
+            ],
+            traditional_ira_balance=300000,
+            retirement_age=65,
+        )
+        resp = await async_client.post("/api/optimize", json=payload)
+        assert resp.status_code == 200

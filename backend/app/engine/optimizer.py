@@ -102,7 +102,7 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
         roth_balance *= (1 + g)
 
     # Phase 2: Post-timeline growth until retirement
-    years_until_retirement = scenario.retirement_age - scenario.age
+    years_until_retirement = max(0, scenario.retirement_age - scenario.age)
     remaining_growth_years = years_until_retirement - n_years
     if remaining_growth_years > 0:
         growth_factor = (1 + g) ** remaining_growth_years
@@ -598,7 +598,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         roth_balance *= (1 + g)
 
     # Project to retirement
-    years_until_retirement = scenario.retirement_age - scenario.age
+    years_until_retirement = max(0, scenario.retirement_age - scenario.age)
     remaining_growth = years_until_retirement - n_years
     if remaining_growth > 0:
         factor = (1 + g) ** remaining_growth
