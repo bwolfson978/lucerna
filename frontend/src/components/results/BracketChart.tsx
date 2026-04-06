@@ -56,6 +56,8 @@ const DESKTOP_CHART_HEIGHT = 320;
 const MOBILE_CHART_HEIGHT = 260;
 const TOP_PADDING = 16;
 const BOTTOM_PADDING = 40;
+/** Minimum pixel height so small-but-nonzero segments stay visible */
+const MIN_SEGMENT_HEIGHT = 3;
 const MOBILE_BREAKPOINT = 500;
 const LEFT_AXIS_WIDTH_DESKTOP = 70;
 const LEFT_AXIS_WIDTH_MOBILE = 55;
@@ -553,22 +555,33 @@ function BracketBar({
         );
         const bracketVisibleMax = Math.min(bf.bracket_max, chartMax);
 
-        // Remaining capacity segment (background)
-        const remainingBottom = yScale(
-          bf.bracket_min + bf.filled_by_income + bf.filled_by_conversion
-        );
+        // Income segment (natural)
+        const rawIncomeBottom = yScale(bf.bracket_min);
+        const rawIncomeTop = yScale(bf.bracket_min + bf.filled_by_income);
+        const rawIncomeHeight = rawIncomeBottom - rawIncomeTop;
+
+        // Enforce minimum height for nonzero income
+        const incomeHeight =
+          bf.filled_by_income > 0
+            ? Math.max(rawIncomeHeight, MIN_SEGMENT_HEIGHT)
+            : 0;
+        const incomeBottom = rawIncomeBottom;
+        const incomeTop = incomeBottom - incomeHeight;
+
+        // Conversion segment stacks on top of (possibly expanded) income
+        const rawConvHeight = yScale(bf.bracket_min + bf.filled_by_income) - yScale(segmentTop);
+
+        const convHeight =
+          bf.filled_by_conversion > 0
+            ? Math.max(rawConvHeight, MIN_SEGMENT_HEIGHT)
+            : 0;
+        const convBottom = incomeTop;
+        const convTop = convBottom - convHeight;
+
+        // Remaining capacity sits on top of the filled segments
         const remainingTop = yScale(bracketVisibleMax);
-        const remainingHeight = remainingBottom - remainingTop;
-
-        // Income segment
-        const incomeBottom = yScale(bf.bracket_min);
-        const incomeTop = yScale(bf.bracket_min + bf.filled_by_income);
-        const incomeHeight = incomeBottom - incomeTop;
-
-        // Conversion segment
-        const convBottom = yScale(bf.bracket_min + bf.filled_by_income);
-        const convTop = yScale(segmentTop);
-        const convHeight = convBottom - convTop;
+        const remainingBottom = convHeight > 0 ? convTop : incomeTop;
+        const remainingHeight = Math.max(remainingBottom - remainingTop, 0);
 
         return (
           <g key={bf.bracket_rate}>
@@ -587,7 +600,7 @@ function BracketBar({
             )}
 
             {/* Income portion */}
-            {incomeHeight > 1 && (
+            {incomeHeight > 0 && (
               <rect
                 x={x}
                 y={incomeTop}
@@ -600,7 +613,7 @@ function BracketBar({
             )}
 
             {/* Conversion portion */}
-            {convHeight > 1 && (
+            {convHeight > 0 && (
               <rect
                 x={x}
                 y={convTop}
