@@ -20,12 +20,12 @@ export default function CalculatorPage() {
   const [loading, setLoading] = useState(false);
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to results when they appear (including loading skeleton)
+  // Scroll to results when loading starts
   useEffect(() => {
-    if ((result || error || loading) && resultsRef.current) {
+    if (loading && resultsRef.current) {
       resultsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  }, [result, error, loading]);
+  }, [loading]);
 
   async function handleSubmit(input: ScenarioInput) {
     setLoading(true);
@@ -76,7 +76,7 @@ export default function CalculatorPage() {
           </div>
 
           {/* Results section */}
-          <div ref={resultsRef}>
+          <div ref={resultsRef} className="scroll-mt-6">
             {loading && (
               <div className="flex flex-col gap-section">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-default">
