@@ -200,7 +200,7 @@ class TestOptimizerWithACA:
         return ScenarioInput(
             age=55,
             filing_status=FilingStatus.SINGLE,
-            income_trajectory=[
+            income_timeline=[
                 YearlyIncome(year=2026, gross_income=25000),
                 YearlyIncome(year=2027, gross_income=25000),
                 YearlyIncome(year=2028, gross_income=25000),
@@ -256,7 +256,7 @@ class TestOptimizerWithACA:
             healthcare=HealthcareInput(household_size=1, monthly_slcsp_premium=620),
         )
         result = optimize(scenario)
-        assert len(result.aca_subsidy_impact) == 3  # 3 trajectory years
+        assert len(result.aca_subsidy_impact) == 3  # 3 timeline years
         for detail in result.aca_subsidy_impact:
             assert detail.year in [2026, 2027, 2028]
             assert detail.magi_without_conversion >= 0
@@ -330,7 +330,7 @@ class TestOptimizerWithACA:
         scenario = ScenarioInput(
             age=55,
             filing_status=FilingStatus.MFJ,
-            income_trajectory=[
+            income_timeline=[
                 YearlyIncome(year=2026, gross_income=50000),
                 YearlyIncome(year=2027, gross_income=50000),
             ],

@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { TrajectoryChartPoint } from "@/lib/types";
+import type { TimelineChartPoint } from "@/lib/types";
 import { CHART_COLORS } from "@/lib/utils/constants";
 import { formatAxisCurrency, formatCurrency } from "@/lib/utils/formatting";
 import { Tooltip } from "@/components/common/Tooltip";
@@ -9,12 +9,12 @@ import { Card } from "@/components/ui/card";
 
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
-interface TrajectoryChartProps {
-  data: TrajectoryChartPoint[];
+interface TimelineChartProps {
+  data: TimelineChartPoint[];
   onYearClick?: (yearIndex: number) => void;
 }
 
-export function TrajectoryChart({ data, onYearClick }: TrajectoryChartProps) {
+export function TimelineChart({ data, onYearClick }: TimelineChartProps) {
   if (!data || data.length === 0) return null;
 
   const categories = data.map((d) => String(d.year));

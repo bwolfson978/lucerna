@@ -14,11 +14,11 @@ async def async_client():
 
 @pytest.fixture
 def sample_single_input():
-    """Factory — single filer, single-year trajectory."""
+    """Factory — single filer, single-year timeline."""
     def _make(**overrides):
         defaults = dict(
             age=45, filing_status=FilingStatus.SINGLE,
-            income_trajectory=[YearlyIncome(year=2026, gross_income=85000)],
+            income_timeline=[YearlyIncome(year=2026, gross_income=85000)],
             traditional_ira_balance=250000, roth_ira_balance=0,
             retirement_age=65, years_in_retirement=25,
             annual_growth_rate=0.07, discount_rate=0.05,
@@ -30,11 +30,11 @@ def sample_single_input():
 
 @pytest.fixture
 def sample_mfj_input():
-    """Factory — MFJ, multi-year trajectory."""
+    """Factory — MFJ, multi-year timeline."""
     def _make(**overrides):
         defaults = dict(
             age=50, filing_status=FilingStatus.MFJ,
-            income_trajectory=[
+            income_timeline=[
                 YearlyIncome(year=2026, gross_income=150000),
                 YearlyIncome(year=2027, gross_income=150000),
             ],

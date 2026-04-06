@@ -4,7 +4,7 @@ from app.engine.optimizer import optimize
 DEMO_SCENARIO = ScenarioInput(
     age=38,
     filing_status=FilingStatus.SINGLE,
-    income_trajectory=[
+    income_timeline=[
         # Startup window — the conversion opportunity
         YearlyIncome(year=2026, gross_income=35000, life_event=LifeEvent.STARTUP),
         YearlyIncome(year=2027, gross_income=30000, life_event=LifeEvent.STARTUP),
@@ -54,7 +54,7 @@ DEMO_PERSONA = {
     "occupation": "Senior Software Engineer",
     "previous_salary": "$145,000/year",
     "situation": "Left job 6 months ago to co-found a startup",
-    "income_trajectory": [
+    "income_timeline": [
         {"year": 2026, "income": "$35K", "event": "Startup year 1 (6 months salary before leaving)"},
         {"year": 2027, "income": "$30K", "event": "Startup year 2 (minimal founder salary)"},
         {"year": 2028, "income": "$150K", "event": "Back to work (startup acquired / new role)"},

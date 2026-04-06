@@ -124,7 +124,7 @@ export const sampleOptimizationResult: OptimizationResult = {
   },
   traditional_at_retirement: 345000,
   roth_at_retirement: 275000,
-  trajectory_chart: [
+  timeline_chart: [
     { year: 2026, income: 35000, conversion: 45000, bracket_boundaries: [11925, 48475, 103350] },
     { year: 2027, income: 30000, conversion: 50000, bracket_boundaries: [11925, 48475, 103350] },
     { year: 2028, income: 150000, conversion: 0, bracket_boundaries: [11925, 48475, 103350] },
@@ -132,7 +132,7 @@ export const sampleOptimizationResult: OptimizationResult = {
   input: {
     age: 38,
     filing_status: "single",
-    income_trajectory: [
+    income_timeline: [
       { year: 2026, gross_income: 35000, life_event: "startup" },
       { year: 2027, gross_income: 30000, life_event: "startup" },
       { year: 2028, gross_income: 150000, life_event: "back_to_work" },
@@ -153,7 +153,7 @@ export const sampleDemoResponse: DemoResponse = {
     occupation: "Senior Software Engineer",
     previous_salary: "$145,000/year",
     situation: "Left job 6 months ago to co-found a startup",
-    income_trajectory: [
+    income_timeline: [
       { year: 2026, income: "$35K", event: "Startup year 1" },
       { year: 2027, income: "$30K", event: "Startup year 2" },
       { year: 2028, income: "$150K", event: "Back to work" },

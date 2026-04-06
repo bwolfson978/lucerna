@@ -48,7 +48,7 @@ def greedy_bracket_fill(scenario: ScenarioInput) -> list[float]:
     remaining_balance = scenario.traditional_ira_balance
     conversions: list[float] = []
 
-    for year_info in scenario.income_trajectory:
+    for year_info in scenario.income_timeline:
         if remaining_balance <= 0:
             conversions.append(0.0)
             continue

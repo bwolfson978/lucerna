@@ -134,14 +134,14 @@ No tool combines: (1) comprehensive multi-variable optimization, (2) modern acce
 ## 5. Product Direction
 
 ### Core Engine: Multi-Year Optimizer
-Given a user's current situation and expected income trajectory over N years, find the conversion schedule (amount per year) that maximizes after-tax wealth. The user enters their income forecast; the engine detects income valleys and fills brackets optimally across all years. **Multi-year optimization is the MVP from day one — it IS the product thesis.**
+Given a user's current situation and expected income timeline over N years, find the conversion schedule (amount per year) that maximizes after-tax wealth. The user enters their income forecast; the engine detects income valleys and fills brackets optimally across all years. **Multi-year optimization is the MVP from day one — it IS the product thesis.**
 
 **Must-model variables (MVP):**
 - Federal tax brackets (progressive, 2025 rates)
 - Standard deduction / filing status (Single + MFJ with simplified spousal model)
 - Traditional IRA / 401k balance and growth
 - Roth balance and growth
-- **Year-by-year income trajectory** across a user-defined horizon (1–15 years)
+- **Year-by-year income timeline** across a user-defined horizon (1–15 years)
 - Optional life event tags per year (grad school, sabbatical, startup, etc.) for AI explanation context
 - Configurable: retirement age, years in retirement, annual retirement spending, growth rate, discount rate
 
@@ -308,10 +308,10 @@ Stepped input form (3 screens, filing status conditional for Single/MFJ, smart d
 **1d. Feedback, Email & Pricing Signal Collection**
 Sequenced: personalized results → email capture ("Join waitlist + 3 months free") → optional 3-question survey → behavioral pricing test (Stripe early-bird reservation, activated when traffic supports it).
 
-**Core MVP feature: Multi-year income trajectory → automatic conversion schedule.**
+**Core MVP feature: Multi-year income timeline → automatic conversion schedule.**
 The user enters their year-by-year income forecast (e.g., "$145K this year, $35K next year, $30K year after, $150K when I go back to work"), and the optimizer finds the optimal conversion amount for each year — automatically detecting income valleys and filling brackets efficiently. This is the entire product thesis from day one.
 
-**Configurable inputs in MVP:** Filing status, year-by-year income trajectory (1–15 years), traditional IRA balance, Roth IRA balance, retirement age (default 65), years in retirement (default 25), annual retirement spending (default 4% rule), growth rate (default 7%), discount rate (default 5%). Optional life event tags per year (grad school, sabbatical, startup, etc.) for AI explanation personalization.
+**Configurable inputs in MVP:** Filing status, year-by-year income timeline (1–15 years), traditional IRA balance, Roth IRA balance, retirement age (default 65), years in retirement (default 25), annual retirement spending (default 4% rule), growth rate (default 7%), discount rate (default 5%). Optional life event tags per year (grad school, sabbatical, startup, etc.) for AI explanation personalization.
 
 **Simplifying assumptions in MVP (noted transparently in UI):**
 - Full liquidation at end of retirement (no estate planning / generational wealth transfer)
@@ -342,7 +342,7 @@ These decisions were made during the planning process and are now locked for M1.
 | AI provider | Anthropic Claude Sonnet | Fast, affordable, tool use support |
 | Charts | ApexCharts + custom SVG for bracket viz | ApexCharts has modern defaults and built-in animations; custom SVG for the non-standard bracket fill |
 | Filing status (M1) | Single + MFJ (simplified) | One spouse's IRA, joint household income adjusts brackets. Minimal added complexity, covers majority of users |
-| Demo persona | Alex, 38, SWE, $145K → startup, $210K trad IRA, 3-year income trajectory ($35K, $30K, $150K) | Multi-year income valley demonstrates the core product thesis |
+| Demo persona | Alex, 38, SWE, $145K → startup, $210K trad IRA, 3-year income timeline ($35K, $30K, $150K) | Multi-year income valley demonstrates the core product thesis |
 | User-facing terminology | "After-tax wealth" and "lifetime tax savings" — never "NPV" | Plain English, avoids confusing users about what the number represents |
 | Core engine | Multi-year optimizer (scipy.optimize SLSQP) from day one | Multi-year IS the product thesis — single-year is just what free calculators already do |
 | Monetization at launch | Everything free; behavioral pricing data collected post-launch | Goal is demand validation, not revenue. 500 users + 50 feedback responses > $29 from 10 users |
@@ -360,7 +360,7 @@ These decisions were made during the planning process and are now locked for M1.
 - [ ] How to handle the 5-year rule for early conversion access in the model
 - [ ] Whether the AI conversation should be full chat or chat + inline annotations on the results
 - [ ] Exact query limit per session for AI (10? 15? 20?)
-- [ ] Income trajectory UX: editable table vs. inline chart editor vs. hybrid
+- [ ] Income timeline UX: editable table vs. inline chart editor vs. hybrid
 
 ### Business
 - [ ] Exact pricing (validated by behavioral test data post-launch)

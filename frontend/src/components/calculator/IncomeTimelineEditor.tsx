@@ -11,9 +11,9 @@ import { LIFE_EVENT_LABELS, CURRENT_YEAR } from "@/lib/utils/constants";
 import { formatCurrency } from "@/lib/utils/formatting";
 import { Card } from "@/components/ui/card";
 
-interface IncomeTrajectoryEditorProps {
-  trajectory: YearlyIncome[];
-  onChange: (trajectory: YearlyIncome[]) => void;
+interface IncomeTimelineEditorProps {
+  timeline: YearlyIncome[];
+  onChange: (timeline: YearlyIncome[]) => void;
   onReset?: () => void;
   description?: string;
   defaultState?: string;
@@ -73,49 +73,49 @@ const lifeEventOptions = Object.entries(LIFE_EVENT_LABELS).map(
   ([value, label]) => ({ value, label })
 );
 
-export function IncomeTrajectoryEditor({
-  trajectory,
+export function IncomeTimelineEditor({
+  timeline,
   onChange,
   onReset,
   description,
   defaultState,
-}: IncomeTrajectoryEditorProps) {
+}: IncomeTimelineEditorProps) {
   const addYear = useCallback(() => {
-    if (trajectory.length >= 15) return;
+    if (timeline.length >= 15) return;
     const lastYear =
-      trajectory.length > 0
-        ? trajectory[trajectory.length - 1].year
+      timeline.length > 0
+        ? timeline[timeline.length - 1].year
         : CURRENT_YEAR - 1;
     onChange([
-      ...trajectory,
+      ...timeline,
       { year: lastYear + 1, gross_income: 0, life_event: "none" },
     ]);
-  }, [trajectory, onChange]);
+  }, [timeline, onChange]);
 
   const removeYear = useCallback(
     (index: number) => {
-      if (trajectory.length <= 1) return;
-      onChange(trajectory.filter((_, i) => i !== index));
+      if (timeline.length <= 1) return;
+      onChange(timeline.filter((_, i) => i !== index));
     },
-    [trajectory, onChange]
+    [timeline, onChange]
   );
 
   const updateYear = useCallback(
     (index: number, field: keyof YearlyIncome, value: unknown) => {
-      const updated = trajectory.map((row, i) => {
+      const updated = timeline.map((row, i) => {
         if (i !== index) return row;
         return { ...row, [field]: value };
       });
       onChange(updated);
     },
-    [trajectory, onChange]
+    [timeline, onChange]
   );
 
-  const maxIncome = Math.max(...trajectory.map((y) => y.gross_income), 1);
+  const maxIncome = Math.max(...timeline.map((y) => y.gross_income), 1);
   const [open, setOpen] = useState(false);
 
-  const yearRange = trajectory.length > 0
-    ? `${trajectory[0].year}–${trajectory[trajectory.length - 1].year}`
+  const yearRange = timeline.length > 0
+    ? `${timeline[0].year}–${timeline[timeline.length - 1].year}`
     : "";
 
   return (
@@ -144,7 +144,7 @@ export function IncomeTrajectoryEditor({
             Income timeline
             {!open && (
               <span className="text-body-sm text-text-tertiary font-normal ml-1">
-                {yearRange} · {trajectory.length} yrs · <span className="text-accent/70">click to edit</span>
+                {yearRange} · {timeline.length} yrs · <span className="text-accent/70">click to edit</span>
               </span>
             )}
           </button>
@@ -162,7 +162,7 @@ export function IncomeTrajectoryEditor({
           <Button
             variant="outline"
             onClick={addYear}
-            disabled={trajectory.length >= 15}
+            disabled={timeline.length >= 15}
             className="text-body-sm"
           >
             + Add year
@@ -177,7 +177,7 @@ export function IncomeTrajectoryEditor({
           </p>
 
           <div className="flex flex-col gap-tight">
-        {trajectory.map((row, index) => (
+        {timeline.map((row, index) => (
           <Card
             key={row.year}
             className="flex flex-col gap-tight sm:flex-row sm:items-end"
@@ -236,7 +236,7 @@ export function IncomeTrajectoryEditor({
                 </div>
               )}
 
-              {trajectory.length > 1 && (
+              {timeline.length > 1 && (
                 <button
                   type="button"
                   onClick={() => removeYear(index)}

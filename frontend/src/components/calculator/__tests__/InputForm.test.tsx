@@ -12,23 +12,23 @@ beforeAll(() => {
   } as unknown as typeof ResizeObserver;
 });
 
-// Mock IncomeTrajectoryEditor to simplify testing and avoid deep rendering
-vi.mock("../IncomeTrajectoryEditor", () => ({
-  IncomeTrajectoryEditor: ({
-    trajectory,
+// Mock IncomeTimelineEditor to simplify testing and avoid deep rendering
+vi.mock("../IncomeTimelineEditor", () => ({
+  IncomeTimelineEditor: ({
+    timeline,
     onChange,
     onReset,
     description,
   }: {
-    trajectory: { year: number; gross_income: number; life_event: string }[];
-    onChange: (t: typeof trajectory) => void;
+    timeline: { year: number; gross_income: number; life_event: string }[];
+    onChange: (t: typeof timeline) => void;
     onReset?: () => void;
     description?: string;
   }) => (
-    <div data-testid="trajectory-editor">
-      <span data-testid="trajectory-count">{trajectory.length}</span>
-      <span data-testid="trajectory-description">{description}</span>
-      {trajectory.map((y) => (
+    <div data-testid="timeline-editor">
+      <span data-testid="timeline-count">{timeline.length}</span>
+      <span data-testid="timeline-description">{description}</span>
+      {timeline.map((y) => (
         <div key={y.year} data-testid={`year-${y.year}`}>
           {y.gross_income} - {y.life_event}
         </div>
@@ -36,7 +36,7 @@ vi.mock("../IncomeTrajectoryEditor", () => ({
       <button
         data-testid="simulate-edit-life-event"
         onClick={() => {
-          const updated = trajectory.map((y, i) =>
+          const updated = timeline.map((y, i) =>
             i === 1 ? { ...y, life_event: "sabbatical", gross_income: 40000 } : y
           );
           onChange(updated);
@@ -78,28 +78,28 @@ describe("InputForm", () => {
     fireEvent.change(balanceInput, { target: { value: "500000" } });
   }
 
-  it("renders without trajectory editor when income is 0", () => {
+  it("renders without timeline editor when income is 0", () => {
     renderInputForm({ onSubmit });
-    expect(screen.queryByTestId("trajectory-editor")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("timeline-editor")).not.toBeInTheDocument();
   });
 
-  it("shows trajectory editor when income is entered", () => {
+  it("shows timeline editor when income is entered", () => {
     renderInputForm({ onSubmit });
     fillBasicInputs();
-    expect(screen.getByTestId("trajectory-editor")).toBeInTheDocument();
+    expect(screen.getByTestId("timeline-editor")).toBeInTheDocument();
   });
 
-  it("generates correct number of trajectory years from age and retirement age", () => {
+  it("generates correct number of timeline years from age and retirement age", () => {
     renderInputForm({ onSubmit });
     fillBasicInputs();
     // Default age=35, retirement=65 → 30 years
-    expect(screen.getByTestId("trajectory-count").textContent).toBe("30");
+    expect(screen.getByTestId("timeline-count").textContent).toBe("30");
   });
 
-  it("shows description text on the trajectory editor", () => {
+  it("shows description text on the timeline editor", () => {
     renderInputForm({ onSubmit });
     fillBasicInputs();
-    expect(screen.getByTestId("trajectory-description").textContent).toContain(
+    expect(screen.getByTestId("timeline-description").textContent).toContain(
       "Projected from your inputs above"
     );
   });
@@ -135,7 +135,7 @@ describe("InputForm", () => {
     expect(screen.queryByTestId("reset-button")).not.toBeInTheDocument();
   });
 
-  it("submits with trajectory data", () => {
+  it("submits with timeline data", () => {
     renderInputForm({ onSubmit });
     fillBasicInputs();
 
@@ -144,12 +144,12 @@ describe("InputForm", () => {
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
     const input = onSubmit.mock.calls[0][0];
-    expect(input.income_trajectory).toBeDefined();
-    expect(input.income_trajectory.length).toBe(30);
-    expect(input.income_trajectory[0].gross_income).toBe(100000);
+    expect(input.income_timeline).toBeDefined();
+    expect(input.income_timeline.length).toBe(30);
+    expect(input.income_timeline[0].gross_income).toBe(100000);
   });
 
-  it("submits with custom life events in trajectory", () => {
+  it("submits with custom life events in timeline", () => {
     renderInputForm({ onSubmit });
     fillBasicInputs();
 
@@ -162,8 +162,8 @@ describe("InputForm", () => {
     expect(onSubmit).toHaveBeenCalled();
     // Get the last call (after editing)
     const lastCall = onSubmit.mock.calls[onSubmit.mock.calls.length - 1][0];
-    expect(lastCall.income_trajectory[1].life_event).toBe("sabbatical");
-    expect(lastCall.income_trajectory[1].gross_income).toBe(40000);
+    expect(lastCall.income_timeline[1].life_event).toBe("sabbatical");
+    expect(lastCall.income_timeline[1].gross_income).toBe(40000);
   });
 
   it("preserves life events when income changes", () => {

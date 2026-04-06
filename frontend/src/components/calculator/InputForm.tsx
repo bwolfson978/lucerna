@@ -9,7 +9,7 @@ import { GlowButton } from "@/components/common/GlowButton";
 import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { Label } from "@/components/ui/label";
-import { IncomeTrajectoryEditor } from "@/components/calculator/IncomeTrajectoryEditor";
+import { IncomeTimelineEditor } from "@/components/calculator/IncomeTimelineEditor";
 import { CURRENT_YEAR } from "@/lib/utils/constants";
 
 interface InputFormProps {
@@ -79,7 +79,7 @@ const STATE_OPTIONS = [
   { value: "custom", label: "Other (enter rate)" },
 ];
 
-function generateTrajectory(
+function generateTimeline(
   currentAge: number,
   retAge: number,
   baseIncome: number,
@@ -97,10 +97,10 @@ function generateTrajectory(
 }
 
 /**
- * Smart-merge: regenerate trajectory from base inputs but preserve
+ * Smart-merge: regenerate timeline from base inputs but preserve
  * years where the user set a life event (the "pin" signal).
  */
-function mergeTrajectory(
+function mergeTimeline(
   fresh: YearlyIncome[],
   existing: YearlyIncome[]
 ): YearlyIncome[] {
@@ -148,33 +148,33 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
     number | null
   >(null);
 
-  // Income trajectory state
-  const [trajectory, setTrajectory] = useState<YearlyIncome[]>([]);
+  // Income timeline state
+  const [timeline, setTimeline] = useState<YearlyIncome[]>([]);
 
-  // Regenerate trajectory when base inputs change, preserving pinned years
+  // Regenerate timeline when base inputs change, preserving pinned years
   useEffect(() => {
     const ageVal = age ?? 0;
     const retVal = retirementAge ?? 65;
     const incGrowthVal = incomeGrowthRate ?? 0;
 
     if (currentIncome <= 0 || ageVal >= retVal) {
-      setTrajectory([]);
+      setTimeline([]);
       return;
     }
 
-    const fresh = generateTrajectory(ageVal, retVal, currentIncome, incGrowthVal);
-    setTrajectory((prev) => (prev.length === 0 ? fresh : mergeTrajectory(fresh, prev)));
+    const fresh = generateTimeline(ageVal, retVal, currentIncome, incGrowthVal);
+    setTimeline((prev) => (prev.length === 0 ? fresh : mergeTimeline(fresh, prev)));
   }, [age, retirementAge, currentIncome, incomeGrowthRate]);
 
-  const handleResetTrajectory = useCallback(() => {
+  const handleResetTimeline = useCallback(() => {
     const ageVal = age ?? 0;
     const retVal = retirementAge ?? 65;
     const incGrowthVal = incomeGrowthRate ?? 0;
-    setTrajectory(generateTrajectory(ageVal, retVal, currentIncome, incGrowthVal));
+    setTimeline(generateTimeline(ageVal, retVal, currentIncome, incGrowthVal));
   }, [age, retirementAge, currentIncome, incomeGrowthRate]);
 
-  const showTrajectory = trajectory.length > 0;
-  const hasLifeEvents = trajectory.some((y) => y.life_event !== "none" || y.state != null);
+  const showTimeline = timeline.length > 0;
+  const hasLifeEvents = timeline.some((y) => y.life_event !== "none" || y.state != null);
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -200,10 +200,10 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
       errs.yearsInRetirement = "Must be at least 1 year";
     if (retirementSpending !== null && retirementSpending < 0)
       errs.retirementSpending = "Spending cannot be negative";
-    if (trajectory.length === 0)
-      errs.trajectory = "Enter your income and retirement age to generate a trajectory";
-    if (trajectory.some((y) => y.gross_income < 0))
-      errs.trajectory = "Income cannot be negative";
+    if (timeline.length === 0)
+      errs.timeline = "Enter your income and retirement age to generate a timeline";
+    if (timeline.some((y) => y.gross_income < 0))
+      errs.timeline = "Income cannot be negative";
     if (includeAca) {
       if (hhSize < 1)
         errs.householdSize = "Household must have at least 1 person";
@@ -224,7 +224,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
     const input: ScenarioInput = {
       age: ageVal,
       filing_status: filingStatus,
-      income_trajectory: trajectory,
+      income_timeline: timeline,
       traditional_ira_balance: traditionalBalance,
       roth_ira_balance: rothBalance,
       retirement_age: retVal,
@@ -355,18 +355,18 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
         />
       </div>
 
-      {/* Inline income trajectory editor */}
-      {showTrajectory && (
-        <IncomeTrajectoryEditor
-          trajectory={trajectory}
-          onChange={setTrajectory}
-          onReset={hasLifeEvents ? handleResetTrajectory : undefined}
+      {/* Inline income timeline editor */}
+      {showTimeline && (
+        <IncomeTimelineEditor
+          timeline={timeline}
+          onChange={setTimeline}
+          onReset={hasLifeEvents ? handleResetTimeline : undefined}
           description="Projected from your inputs above. Change any year's income or add a life event to customize."
           defaultState={state !== "none" ? state : undefined}
         />
       )}
-      {errors.trajectory && (
-        <span className="text-caption text-negative">{errors.trajectory}</span>
+      {errors.timeline && (
+        <span className="text-caption text-negative">{errors.timeline}</span>
       )}
 
       {/* Advanced settings */}

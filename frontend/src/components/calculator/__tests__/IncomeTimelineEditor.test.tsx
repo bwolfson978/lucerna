@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { IncomeTrajectoryEditor } from "../IncomeTrajectoryEditor";
+import { IncomeTimelineEditor } from "../IncomeTimelineEditor";
 import type { YearlyIncome } from "@/lib/types";
 
-describe("IncomeTrajectoryEditor", () => {
-  const baseTrajectory: YearlyIncome[] = [
+describe("IncomeTimelineEditor", () => {
+  const baseTimeline: YearlyIncome[] = [
     { year: 2026, gross_income: 100000, life_event: "none" },
     { year: 2027, gross_income: 103000, life_event: "none" },
     { year: 2028, gross_income: 106090, life_event: "none" },
@@ -16,7 +16,7 @@ describe("IncomeTrajectoryEditor", () => {
   it("renders collapsed by default with summary info", () => {
     const onChange = vi.fn();
     render(
-      <IncomeTrajectoryEditor trajectory={baseTrajectory} onChange={onChange} />
+      <IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />
     );
     expect(screen.queryByText(/Enter your expected income/)).not.toBeInTheDocument();
     expect(screen.getByText(/click to edit/)).toBeInTheDocument();
@@ -24,10 +24,10 @@ describe("IncomeTrajectoryEditor", () => {
     expect(screen.queryByText(/total/)).not.toBeInTheDocument();
   });
 
-  it("renders a card for each year in the trajectory when expanded", () => {
+  it("renders a card for each year in the timeline when expanded", () => {
     const onChange = vi.fn();
     render(
-      <IncomeTrajectoryEditor trajectory={baseTrajectory} onChange={onChange} />
+      <IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />
     );
     expand();
     expect(screen.getAllByLabelText(/Remove year/)).toHaveLength(3);
@@ -36,7 +36,7 @@ describe("IncomeTrajectoryEditor", () => {
   it("displays the header and description when expanded", () => {
     const onChange = vi.fn();
     render(
-      <IncomeTrajectoryEditor trajectory={baseTrajectory} onChange={onChange} />
+      <IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />
     );
     expect(screen.getByText("Income timeline")).toBeInTheDocument();
     expand();
@@ -48,8 +48,8 @@ describe("IncomeTrajectoryEditor", () => {
   it("shows custom description when provided", () => {
     const onChange = vi.fn();
     render(
-      <IncomeTrajectoryEditor
-        trajectory={baseTrajectory}
+      <IncomeTimelineEditor
+        timeline={baseTimeline}
         onChange={onChange}
         description="Custom description text"
       />
@@ -61,7 +61,7 @@ describe("IncomeTrajectoryEditor", () => {
   it("calls onChange with new year when + Add year is clicked", () => {
     const onChange = vi.fn();
     render(
-      <IncomeTrajectoryEditor trajectory={baseTrajectory} onChange={onChange} />
+      <IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />
     );
 
     fireEvent.click(screen.getByText("+ Add year"));
@@ -76,14 +76,14 @@ describe("IncomeTrajectoryEditor", () => {
 
   it("disables + Add year when at 15-year max", () => {
     const onChange = vi.fn();
-    const maxTrajectory: YearlyIncome[] = Array.from({ length: 15 }, (_, i) => ({
+    const maxTimeline: YearlyIncome[] = Array.from({ length: 15 }, (_, i) => ({
       year: 2026 + i,
       gross_income: 100000,
       life_event: "none" as const,
     }));
 
     render(
-      <IncomeTrajectoryEditor trajectory={maxTrajectory} onChange={onChange} />
+      <IncomeTimelineEditor timeline={maxTimeline} onChange={onChange} />
     );
 
     const addButton = screen.getByText("+ Add year");
@@ -93,7 +93,7 @@ describe("IncomeTrajectoryEditor", () => {
   it("calls onChange to remove a year when X is clicked", () => {
     const onChange = vi.fn();
     render(
-      <IncomeTrajectoryEditor trajectory={baseTrajectory} onChange={onChange} />
+      <IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />
     );
     expand();
 
@@ -107,14 +107,14 @@ describe("IncomeTrajectoryEditor", () => {
     expect(newTrajectory[1].year).toBe(2028);
   });
 
-  it("does not show remove buttons for single-year trajectory", () => {
+  it("does not show remove buttons for single-year timeline", () => {
     const onChange = vi.fn();
     const singleYear: YearlyIncome[] = [
       { year: 2026, gross_income: 100000, life_event: "none" },
     ];
 
     render(
-      <IncomeTrajectoryEditor trajectory={singleYear} onChange={onChange} />
+      <IncomeTimelineEditor timeline={singleYear} onChange={onChange} />
     );
     expand();
 
@@ -125,8 +125,8 @@ describe("IncomeTrajectoryEditor", () => {
     const onChange = vi.fn();
     const onReset = vi.fn();
     render(
-      <IncomeTrajectoryEditor
-        trajectory={baseTrajectory}
+      <IncomeTimelineEditor
+        timeline={baseTimeline}
         onChange={onChange}
         onReset={onReset}
       />
@@ -142,7 +142,7 @@ describe("IncomeTrajectoryEditor", () => {
   it("does not show reset button when onReset is not provided", () => {
     const onChange = vi.fn();
     render(
-      <IncomeTrajectoryEditor trajectory={baseTrajectory} onChange={onChange} />
+      <IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />
     );
 
     expect(screen.queryByText("Reset to defaults")).not.toBeInTheDocument();
@@ -151,7 +151,7 @@ describe("IncomeTrajectoryEditor", () => {
   it("displays income bar previews with formatted currency", () => {
     const onChange = vi.fn();
     render(
-      <IncomeTrajectoryEditor trajectory={baseTrajectory} onChange={onChange} />
+      <IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />
     );
     expand();
 

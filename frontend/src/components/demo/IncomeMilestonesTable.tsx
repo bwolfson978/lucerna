@@ -5,11 +5,11 @@ import { formatCurrency } from "@/lib/utils/formatting";
 import { LIFE_EVENT_LABELS } from "@/lib/utils/constants";
 
 interface IncomeMilestonesTableProps {
-  trajectory: YearlyIncome[];
+  timeline: YearlyIncome[];
 }
 
 export function IncomeMilestonesTable({
-  trajectory,
+  timeline,
 }: IncomeMilestonesTableProps) {
   const colWidth = 58;
 
@@ -32,9 +32,9 @@ export function IncomeMilestonesTable({
       <div className="overflow-x-auto flex-1">
         <div
           className="flex"
-          style={{ width: `${trajectory.length * colWidth}px` }}
+          style={{ width: `${timeline.length * colWidth}px` }}
         >
-          {trajectory.map((yi) => (
+          {timeline.map((yi) => (
             <div
               key={yi.year}
               className="flex flex-col"

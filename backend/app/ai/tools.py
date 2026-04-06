@@ -29,7 +29,7 @@ TOOLS = [
                     "type": "number",
                     "description": "Current traditional IRA balance in dollars",
                 },
-                "income_trajectory": {
+                "income_timeline": {
                     "type": "array",
                     "items": {
                         "type": "object",
