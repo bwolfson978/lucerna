@@ -112,7 +112,7 @@ export function IncomeTrajectoryEditor({
   );
 
   const maxIncome = Math.max(...trajectory.map((y) => y.gross_income), 1);
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   const yearRange = trajectory.length > 0
     ? `${trajectory[0].year}–${trajectory[trajectory.length - 1].year}`
@@ -145,7 +145,7 @@ export function IncomeTrajectoryEditor({
             Income trajectory
             {!open && (
               <span className="text-body-sm text-text-tertiary font-normal ml-1">
-                {yearRange} · {trajectory.length} yrs · {formatCurrency(totalIncome)} total
+                {yearRange} · {trajectory.length} yrs · {formatCurrency(totalIncome)} total · <span className="text-accent/70">click to edit</span>
               </span>
             )}
           </button>

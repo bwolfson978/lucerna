@@ -10,20 +10,35 @@ describe("IncomeTrajectoryEditor", () => {
     { year: 2028, gross_income: 106090, life_event: "none" },
   ];
 
-  it("renders a card for each year in the trajectory", () => {
+  /** Click the collapsible trigger to expand the section */
+  const expand = () => fireEvent.click(screen.getByText("Income trajectory"));
+
+  it("renders collapsed by default with summary info", () => {
     const onChange = vi.fn();
     render(
       <IncomeTrajectoryEditor trajectory={baseTrajectory} onChange={onChange} />
     );
+    expect(screen.queryByText(/Enter your expected income/)).not.toBeInTheDocument();
+    expect(screen.getByText(/click to edit/)).toBeInTheDocument();
+    expect(screen.getByText(/3 yrs/)).toBeInTheDocument();
+  });
+
+  it("renders a card for each year in the trajectory when expanded", () => {
+    const onChange = vi.fn();
+    render(
+      <IncomeTrajectoryEditor trajectory={baseTrajectory} onChange={onChange} />
+    );
+    expand();
     expect(screen.getAllByLabelText(/Remove year/)).toHaveLength(3);
   });
 
-  it("displays the header and description", () => {
+  it("displays the header and description when expanded", () => {
     const onChange = vi.fn();
     render(
       <IncomeTrajectoryEditor trajectory={baseTrajectory} onChange={onChange} />
     );
     expect(screen.getByText("Income trajectory")).toBeInTheDocument();
+    expand();
     expect(
       screen.getByText(/Enter your expected income/)
     ).toBeInTheDocument();
@@ -38,6 +53,7 @@ describe("IncomeTrajectoryEditor", () => {
         description="Custom description text"
       />
     );
+    expand();
     expect(screen.getByText("Custom description text")).toBeInTheDocument();
   });
 
@@ -78,6 +94,7 @@ describe("IncomeTrajectoryEditor", () => {
     render(
       <IncomeTrajectoryEditor trajectory={baseTrajectory} onChange={onChange} />
     );
+    expand();
 
     const removeButtons = screen.getAllByLabelText(/Remove year/);
     fireEvent.click(removeButtons[1]); // Remove year 2027
@@ -98,6 +115,7 @@ describe("IncomeTrajectoryEditor", () => {
     render(
       <IncomeTrajectoryEditor trajectory={singleYear} onChange={onChange} />
     );
+    expand();
 
     expect(screen.queryByLabelText(/Remove year/)).not.toBeInTheDocument();
   });
@@ -134,6 +152,7 @@ describe("IncomeTrajectoryEditor", () => {
     render(
       <IncomeTrajectoryEditor trajectory={baseTrajectory} onChange={onChange} />
     );
+    expand();
 
     // Check that currency values are displayed
     expect(screen.getByText("$100,000")).toBeInTheDocument();
