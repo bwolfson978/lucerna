@@ -15,6 +15,7 @@ import { CURRENT_YEAR } from "@/lib/utils/constants";
 interface InputFormProps {
   onSubmit: (input: ScenarioInput) => void;
   loading?: boolean;
+  loadingLabel?: string;
 }
 
 const FILING_STATUS_OPTIONS = [
@@ -112,7 +113,7 @@ function mergeTrajectory(
   return fresh.map((row) => pinned.get(row.year) ?? row);
 }
 
-export function InputForm({ onSubmit, loading }: InputFormProps) {
+export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -474,7 +475,7 @@ export function InputForm({ onSubmit, loading }: InputFormProps) {
       {/* Submit */}
       <div className="pt-comfortable border-t border-border">
         <GlowButton type="submit" loading={loading}>
-          Run my scenario
+          {loading && loadingLabel ? loadingLabel : "Run my scenario"}
         </GlowButton>
       </div>
     </form>
