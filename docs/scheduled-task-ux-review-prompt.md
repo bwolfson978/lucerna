@@ -6,7 +6,7 @@ Invent a life situation and persona for yourself such that you've found yourself
 
 The only constraint is that your persona must have a financially plausible reason to be curious about Roth conversions — for example, they have pre-tax retirement assets and some reason to wonder whether converting some or all to Roth would be advantageous. This could be driven by a temporary low-income period, concern about future tax rate increases or TCJA sunset, looming RMDs in higher brackets, estate planning goals, a recent move to a no-income-tax state, IRMAA bracket management, desire to diversify tax exposure, or simply curiosity after hearing about Roth conversions from a friend, podcast, or online community.
 
-Give this person a name, age, state, filing status, family details, approximate income trajectory across a few years, traditional IRA balance, and any other financial details relevant to their situation. Then articulate the specific question or goal that brought them to Lucerna — what are they trying to figure out, and why now? Keep track of this objective throughout the journey.
+Give this person a name, age, state, filing status, family details, approximate income timeline across a few years, traditional IRA balance, and any other financial details relevant to their situation. Then articulate the specific question or goal that brought them to Lucerna — what are they trying to figure out, and why now? Keep track of this objective throughout the journey.
 
 Before proceeding, check the personas used in recent Lucerna GitHub issues and choose a meaningfully different persona along at least two dimensions (e.g., don't repeat "married FIRE retiree in Oregon" if that was used last time).
 

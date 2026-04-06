@@ -1,19 +1,18 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import type { YearlyIncome, LifeEvent } from "@/lib/types";
+import type { YearlyIncome } from "@/lib/types";
 import { FormField } from "@/components/common/FormField";
 import { CurrencyInput } from "@/components/common/CurrencyInput";
 import { FormSelect } from "@/components/common/FormSelect";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
-import { LIFE_EVENT_LABELS, CURRENT_YEAR } from "@/lib/utils/constants";
-import { formatCurrency } from "@/lib/utils/formatting";
+import { CURRENT_YEAR } from "@/lib/utils/constants";
 import { Card } from "@/components/ui/card";
 
-interface IncomeTrajectoryEditorProps {
-  trajectory: YearlyIncome[];
-  onChange: (trajectory: YearlyIncome[]) => void;
+interface IncomeTimelineEditorProps {
+  timeline: YearlyIncome[];
+  onChange: (timeline: YearlyIncome[]) => void;
   onReset?: () => void;
   description?: string;
   defaultState?: string;
@@ -69,55 +68,49 @@ const buildStateYearOptions = (defaultState?: string) => [
 
 const STATE_YEAR_OPTIONS = buildStateYearOptions();
 
-const lifeEventOptions = Object.entries(LIFE_EVENT_LABELS).map(
-  ([value, label]) => ({ value, label })
-);
-
-export function IncomeTrajectoryEditor({
-  trajectory,
+export function IncomeTimelineEditor({
+  timeline,
   onChange,
   onReset,
   description,
   defaultState,
-}: IncomeTrajectoryEditorProps) {
+}: IncomeTimelineEditorProps) {
   const addYear = useCallback(() => {
-    if (trajectory.length >= 15) return;
+    if (timeline.length >= 15) return;
     const lastYear =
-      trajectory.length > 0
-        ? trajectory[trajectory.length - 1].year
+      timeline.length > 0
+        ? timeline[timeline.length - 1].year
         : CURRENT_YEAR - 1;
     onChange([
-      ...trajectory,
-      { year: lastYear + 1, gross_income: 0, life_event: "none" },
+      ...timeline,
+      { year: lastYear + 1, gross_income: 0 },
     ]);
-  }, [trajectory, onChange]);
+  }, [timeline, onChange]);
 
   const removeYear = useCallback(
     (index: number) => {
-      if (trajectory.length <= 1) return;
-      onChange(trajectory.filter((_, i) => i !== index));
+      if (timeline.length <= 1) return;
+      onChange(timeline.filter((_, i) => i !== index));
     },
-    [trajectory, onChange]
+    [timeline, onChange]
   );
 
   const updateYear = useCallback(
     (index: number, field: keyof YearlyIncome, value: unknown) => {
-      const updated = trajectory.map((row, i) => {
+      const updated = timeline.map((row, i) => {
         if (i !== index) return row;
         return { ...row, [field]: value };
       });
       onChange(updated);
     },
-    [trajectory, onChange]
+    [timeline, onChange]
   );
 
-  const maxIncome = Math.max(...trajectory.map((y) => y.gross_income), 1);
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
-  const yearRange = trajectory.length > 0
-    ? `${trajectory[0].year}–${trajectory[trajectory.length - 1].year}`
+  const yearRange = timeline.length > 0
+    ? `${timeline[0].year}–${timeline[timeline.length - 1].year}`
     : "";
-  const totalIncome = trajectory.reduce((sum, r) => sum + r.gross_income, 0);
 
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="flex flex-col gap-default">
@@ -142,10 +135,10 @@ export function IncomeTrajectoryEditor({
                 strokeLinejoin="round"
               />
             </svg>
-            Income trajectory
+            Income timeline
             {!open && (
               <span className="text-body-sm text-text-tertiary font-normal ml-1">
-                {yearRange} · {trajectory.length} yrs · {formatCurrency(totalIncome)} total
+                {yearRange} · {timeline.length} yrs · <span className="text-accent/70">click to edit</span>
               </span>
             )}
           </button>
@@ -163,7 +156,7 @@ export function IncomeTrajectoryEditor({
           <Button
             variant="outline"
             onClick={addYear}
-            disabled={trajectory.length >= 15}
+            disabled={timeline.length >= 15}
             className="text-body-sm"
           >
             + Add year
@@ -178,13 +171,33 @@ export function IncomeTrajectoryEditor({
           </p>
 
           <div className="flex flex-col gap-tight">
-        {trajectory.map((row, index) => (
+        {timeline.map((row, index) => (
           <Card
             key={row.year}
-            className="flex flex-col gap-tight sm:flex-row sm:items-end"
+            className="relative flex flex-col gap-tight"
           >
-            <div className="flex items-end gap-tight flex-1">
-              <div className="w-16 shrink-0">
+            {/* Remove button — top-right on mobile, inline on desktop */}
+            {timeline.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removeYear(index)}
+                className="absolute top-2 right-2 sm:hidden text-text-tertiary hover:text-negative transition-colors duration-300 p-1"
+                aria-label={`Remove year ${row.year}`}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M4 4l8 8M12 4l-8 8"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+            )}
+
+            {/* Fields — stacked rows on mobile, single row on desktop */}
+            <div className="grid grid-cols-[4rem_1fr] gap-tight sm:flex sm:items-end sm:gap-tight">
+              <div className="shrink-0">
                 <FormField
                   label="Year"
                   type="number"
@@ -196,7 +209,7 @@ export function IncomeTrajectoryEditor({
                 />
               </div>
 
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 pr-6 sm:pr-0">
                 <CurrencyInput
                   label="Gross income"
                   value={row.gross_income || ""}
@@ -205,23 +218,8 @@ export function IncomeTrajectoryEditor({
                 />
               </div>
 
-              <div className="w-36 shrink-0">
-                <FormSelect
-                  label="Life event"
-                  value={row.life_event}
-                  options={lifeEventOptions}
-                  onChange={(e) =>
-                    updateYear(
-                      index,
-                      "life_event",
-                      e.target.value as LifeEvent
-                    )
-                  }
-                />
-              </div>
-
               {defaultState && (
-                <div className="w-24 shrink-0">
+                <div className="sm:w-24 sm:shrink-0">
                   <FormSelect
                     label="State"
                     value={row.state ?? "default"}
@@ -237,11 +235,12 @@ export function IncomeTrajectoryEditor({
                 </div>
               )}
 
-              {trajectory.length > 1 && (
+              {/* Desktop-only inline remove button */}
+              {timeline.length > 1 && (
                 <button
                   type="button"
                   onClick={() => removeYear(index)}
-                  className="text-text-tertiary hover:text-negative transition-colors duration-300 p-2 min-h-[44px] flex items-center"
+                  className="hidden sm:flex text-text-tertiary hover:text-negative transition-colors duration-300 p-2 min-h-[44px] items-center"
                   aria-label={`Remove year ${row.year}`}
                 >
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -256,23 +255,14 @@ export function IncomeTrajectoryEditor({
               )}
             </div>
 
-            {/* Income bar preview */}
-            <div className="sm:w-32 h-6 flex items-center gap-2">
-              <div
-                className="h-4 bg-neutral/20 rounded-sm relative overflow-hidden"
-                style={{ width: "100%" }}
-              >
-                <div
-                  className="h-full bg-neutral rounded-sm transition-all duration-300"
-                  style={{
-                    width: `${(row.gross_income / maxIncome) * 100}%`,
-                  }}
-                />
-              </div>
-              <span className="text-[11px] font-mono text-text-tertiary whitespace-nowrap">
-                {formatCurrency(row.gross_income)}
-              </span>
-            </div>
+            {/* Notes */}
+            <input
+              type="text"
+              value={row.notes ?? ""}
+              placeholder="Notes (e.g. sabbatical, startup, part-time)"
+              onChange={(e) => updateYear(index, "notes", e.target.value)}
+              className="w-full bg-transparent border border-border/50 rounded-md px-3 py-1.5 text-body-sm text-text-secondary placeholder:text-text-tertiary/50 focus:outline-none focus:border-accent/50 transition-colors duration-300"
+            />
           </Card>
         ))}
           </div>
