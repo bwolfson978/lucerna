@@ -15,13 +15,7 @@ function renderWithProviders(ui: React.ReactElement) {
 }
 
 describe("MethodologySidebar", () => {
-  it("is hidden by default", () => {
-    renderWithProviders(<MethodologySidebar />);
-    const sidebar = screen.getByRole("complementary");
-    expect(sidebar.className).toContain("translate-x-full");
-  });
-
-  it("opens when HowItWorksButton is clicked", () => {
+  it("renders sidebar content when opened", () => {
     renderWithProviders(
       <>
         <HowItWorksButton />
@@ -29,11 +23,10 @@ describe("MethodologySidebar", () => {
       </>
     );
     fireEvent.click(screen.getByText("How does it work?"));
-    const sidebar = screen.getByRole("complementary");
-    expect(sidebar.className).toContain("translate-x-0");
+    expect(screen.getByText("How It Works")).toBeInTheDocument();
   });
 
-  it("shows all accordion section titles", () => {
+  it("shows all accordion section titles when opened", () => {
     renderWithProviders(
       <>
         <HowItWorksButton />
@@ -82,9 +75,10 @@ describe("MethodologySidebar", () => {
       </>
     );
     fireEvent.click(screen.getByText("How does it work?"));
+    expect(screen.getByText("How It Works")).toBeInTheDocument();
     fireEvent.click(screen.getByLabelText("Close methodology sidebar"));
-    const sidebar = screen.getByRole("complementary");
-    expect(sidebar.className).toContain("translate-x-full");
+    // After close, the sidebar content is still in DOM (inline mode) but context resets
+    expect(screen.queryByText(/Jumped to/)).not.toBeInTheDocument();
   });
 
   it("closes when Escape key is pressed", () => {
@@ -95,9 +89,10 @@ describe("MethodologySidebar", () => {
       </>
     );
     fireEvent.click(screen.getByText("How does it work?"));
-    expect(screen.getByRole("complementary").className).toContain("translate-x-0");
     fireEvent.keyDown(document, { key: "Escape" });
-    expect(screen.getByRole("complementary").className).toContain("translate-x-full");
+    // HowItWorksButton should no longer show active state
+    const btn = screen.getByText("How does it work?").closest("button")!;
+    expect(btn.className).not.toContain("bg-accent");
   });
 
   it("expands correct section when triggered from InfoTrigger", () => {
@@ -112,9 +107,27 @@ describe("MethodologySidebar", () => {
       </>
     );
     fireEvent.click(screen.getByText("Why these brackets?"));
-    // The bracket filling section button should have aria-expanded true
     const bracketButton = screen.getByText("Tax Bracket Filling");
     expect(bracketButton.closest("button")).toHaveAttribute("data-state", "open");
+  });
+
+  // Mobile mode tests
+  it("is hidden by default in mobile mode", () => {
+    renderWithProviders(<MethodologySidebar mobile />);
+    const sidebar = screen.getByRole("complementary");
+    expect(sidebar.className).toContain("translate-x-full");
+  });
+
+  it("opens in mobile mode when triggered", () => {
+    renderWithProviders(
+      <>
+        <HowItWorksButton />
+        <MethodologySidebar mobile />
+      </>
+    );
+    fireEvent.click(screen.getByText("How does it work?"));
+    const sidebar = screen.getByRole("complementary");
+    expect(sidebar.className).toContain("translate-x-0");
   });
 });
 

@@ -19,8 +19,6 @@ import { Card } from "@/components/ui/card";
 import { useConversionSlider } from "@/hooks/useConversionSlider";
 import { computeSnapThreshold } from "@/lib/utils/snap";
 import { useSyncedScroll } from "@/hooks/useSyncedScroll";
-import { MethodologyProvider } from "@/components/methodology/MethodologyContext";
-import { MethodologySidebar } from "@/components/methodology/MethodologySidebar";
 import { InfoTrigger } from "@/components/methodology/InfoTrigger";
 
 interface YearOverride {
@@ -111,7 +109,6 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
     result.estimated_lifetime_tax_savings - estimatedSavings;
 
   return (
-    <MethodologyProvider>
     <div className="flex flex-col gap-section">
       {/* Hero metric + slider */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-default">
@@ -287,9 +284,6 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
         </div>
       </div>
 
-      {/* Methodology sidebar */}
-      <MethodologySidebar result={result} />
     </div>
-    </MethodologyProvider>
   );
 }
