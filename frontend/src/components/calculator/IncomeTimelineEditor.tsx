@@ -1,13 +1,13 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import type { YearlyIncome, LifeEvent } from "@/lib/types";
+import type { YearlyIncome } from "@/lib/types";
 import { FormField } from "@/components/common/FormField";
 import { CurrencyInput } from "@/components/common/CurrencyInput";
 import { FormSelect } from "@/components/common/FormSelect";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
-import { LIFE_EVENT_LABELS, CURRENT_YEAR } from "@/lib/utils/constants";
+import { CURRENT_YEAR } from "@/lib/utils/constants";
 import { formatCurrency } from "@/lib/utils/formatting";
 import { Card } from "@/components/ui/card";
 
@@ -69,10 +69,6 @@ const buildStateYearOptions = (defaultState?: string) => [
 
 const STATE_YEAR_OPTIONS = buildStateYearOptions();
 
-const lifeEventOptions = Object.entries(LIFE_EVENT_LABELS).map(
-  ([value, label]) => ({ value, label })
-);
-
 export function IncomeTimelineEditor({
   timeline,
   onChange,
@@ -88,7 +84,7 @@ export function IncomeTimelineEditor({
         : CURRENT_YEAR - 1;
     onChange([
       ...timeline,
-      { year: lastYear + 1, gross_income: 0, life_event: "none" },
+      { year: lastYear + 1, gross_income: 0 },
     ]);
   }, [timeline, onChange]);
 
@@ -224,21 +220,6 @@ export function IncomeTimelineEditor({
                 />
               </div>
 
-              <div className="sm:w-36 sm:shrink-0">
-                <FormSelect
-                  label="Life event"
-                  value={row.life_event}
-                  options={lifeEventOptions}
-                  onChange={(e) =>
-                    updateYear(
-                      index,
-                      "life_event",
-                      e.target.value as LifeEvent
-                    )
-                  }
-                />
-              </div>
-
               {defaultState && (
                 <div className="sm:w-24 sm:shrink-0">
                   <FormSelect
@@ -275,6 +256,15 @@ export function IncomeTimelineEditor({
                 </button>
               )}
             </div>
+
+            {/* Notes */}
+            <input
+              type="text"
+              value={row.notes ?? ""}
+              placeholder="Notes (e.g. sabbatical, startup, part-time)"
+              onChange={(e) => updateYear(index, "notes", e.target.value)}
+              className="w-full bg-transparent border border-border/50 rounded-md px-3 py-1.5 text-body-sm text-text-secondary placeholder:text-text-tertiary/50 focus:outline-none focus:border-accent/50 transition-colors duration-300"
+            />
 
             {/* Income bar preview */}
             <div className="h-6 flex items-center gap-2">

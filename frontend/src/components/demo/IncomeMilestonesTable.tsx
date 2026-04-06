@@ -2,7 +2,6 @@
 
 import type { YearlyIncome } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils/formatting";
-import { LIFE_EVENT_LABELS } from "@/lib/utils/constants";
 
 interface IncomeMilestonesTableProps {
   timeline: YearlyIncome[];
@@ -24,7 +23,7 @@ export function IncomeMilestonesTable({
           Income
         </div>
         <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
-          Life event
+          Notes
         </div>
       </div>
 
@@ -56,9 +55,9 @@ export function IncomeMilestonesTable({
                 {formatCurrency(yi.gross_income)}
               </div>
 
-              {/* Life event */}
+              {/* Notes */}
               <div className="h-8 flex items-center justify-center text-[9px] text-text-tertiary">
-                {LIFE_EVENT_LABELS[yi.life_event]}
+                {yi.notes || "—"}
               </div>
             </div>
           ))}

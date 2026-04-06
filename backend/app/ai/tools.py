@@ -36,7 +36,7 @@ TOOLS = [
                         "properties": {
                             "year": {"type": "integer"},
                             "gross_income": {"type": "number"},
-                            "life_event": {"type": "string", "default": "none"},
+                            "notes": {"type": "string", "default": ""},
                         },
                         "required": ["year", "gross_income"],
                     },

@@ -1,21 +1,9 @@
 export type FilingStatus = "single" | "married_filing_jointly";
 
-export type LifeEvent =
-  | "none"
-  | "grad_school"
-  | "sabbatical"
-  | "startup"
-  | "career_change"
-  | "part_time"
-  | "early_retirement"
-  | "parental_leave"
-  | "back_to_work"
-  | "layoff";
-
 export interface YearlyIncome {
   year: number;
   gross_income: number;
-  life_event: LifeEvent;
+  notes?: string;
   state?: string | null;
 }
 

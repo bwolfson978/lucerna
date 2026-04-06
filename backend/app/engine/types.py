@@ -8,24 +8,11 @@ class FilingStatus(str, Enum):
     MFJ = "married_filing_jointly"
 
 
-class LifeEvent(str, Enum):
-    NONE = "none"
-    GRAD_SCHOOL = "grad_school"
-    SABBATICAL = "sabbatical"
-    STARTUP = "startup"
-    CAREER_CHANGE = "career_change"
-    PART_TIME = "part_time"
-    EARLY_RETIREMENT = "early_retirement"
-    PARENTAL_LEAVE = "parental_leave"
-    BACK_TO_WORK = "back_to_work"
-    LAYOFF = "layoff"
-
-
 class YearlyIncome(BaseModel):
     """Income forecast for a single year in the timeline."""
     year: int
     gross_income: float = Field(ge=0)
-    life_event: LifeEvent = LifeEvent.NONE
+    notes: str = Field(default="", description="Optional user notes for this year")
     state: Optional[str] = Field(
         default=None,
         description="State override for this year. None = use scenario default."

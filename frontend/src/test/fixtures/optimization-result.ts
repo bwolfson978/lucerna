@@ -133,9 +133,9 @@ export const sampleOptimizationResult: OptimizationResult = {
     age: 38,
     filing_status: "single",
     income_timeline: [
-      { year: 2026, gross_income: 35000, life_event: "startup" },
-      { year: 2027, gross_income: 30000, life_event: "startup" },
-      { year: 2028, gross_income: 150000, life_event: "back_to_work" },
+      { year: 2026, gross_income: 35000, notes: "Startup year 1" },
+      { year: 2027, gross_income: 30000, notes: "Startup year 2" },
+      { year: 2028, gross_income: 150000, notes: "Back to work" },
     ],
     traditional_ira_balance: 210000,
     roth_ira_balance: 5000,

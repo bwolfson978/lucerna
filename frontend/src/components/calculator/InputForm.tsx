@@ -92,13 +92,12 @@ function generateTimeline(
     gross_income: Math.round(
       baseIncome * Math.pow(1 + annualGrowthRate / 100, i)
     ),
-    life_event: "none" as const,
   }));
 }
 
 /**
  * Smart-merge: regenerate timeline from base inputs but preserve
- * years where the user set a life event (the "pin" signal).
+ * years where the user customized values (notes or state override).
  */
 function mergeTimeline(
   fresh: YearlyIncome[],
@@ -106,7 +105,7 @@ function mergeTimeline(
 ): YearlyIncome[] {
   const pinned = new Map<number, YearlyIncome>();
   for (const row of existing) {
-    if (row.life_event !== "none" || row.state != null) {
+    if ((row.notes && row.notes.length > 0) || row.state != null) {
       pinned.set(row.year, row);
     }
   }
@@ -174,7 +173,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
   }, [age, retirementAge, currentIncome, incomeGrowthRate]);
 
   const showTimeline = timeline.length > 0;
-  const hasLifeEvents = timeline.some((y) => y.life_event !== "none" || y.state != null);
+  const hasCustomizations = timeline.some((y) => (y.notes && y.notes.length > 0) || y.state != null);
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -360,7 +359,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
         <IncomeTimelineEditor
           timeline={timeline}
           onChange={setTimeline}
-          onReset={hasLifeEvents ? handleResetTimeline : undefined}
+          onReset={hasCustomizations ? handleResetTimeline : undefined}
           description="Projected from your inputs above. Change any year's income or add a life event to customize."
           defaultState={state !== "none" ? state : undefined}
         />

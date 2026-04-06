@@ -1,5 +1,3 @@
-import type { LifeEvent } from "@/lib/types";
-
 export const CHART_COLORS = {
   income: "#6C5CE7",
   conversion: "#F0C674",
@@ -17,19 +15,6 @@ export const BRACKET_COLORS: Record<string, string> = {
   "0.32": "#F87171",
   "0.35": "#EF4444",
   "0.37": "#DC2626",
-};
-
-export const LIFE_EVENT_LABELS: Record<LifeEvent, string> = {
-  none: "—",
-  grad_school: "Grad school",
-  sabbatical: "Sabbatical",
-  startup: "Startup",
-  career_change: "Career change",
-  part_time: "Part-time",
-  early_retirement: "Early retirement",
-  parental_leave: "Parental leave",
-  back_to_work: "Back to work",
-  layoff: "Layoff",
 };
 
 export const CURRENT_YEAR = new Date().getFullYear();

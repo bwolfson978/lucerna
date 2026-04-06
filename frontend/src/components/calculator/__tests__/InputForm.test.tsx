@@ -20,7 +20,7 @@ vi.mock("../IncomeTimelineEditor", () => ({
     onReset,
     description,
   }: {
-    timeline: { year: number; gross_income: number; life_event: string }[];
+    timeline: { year: number; gross_income: number; notes?: string }[];
     onChange: (t: typeof timeline) => void;
     onReset?: () => void;
     description?: string;
@@ -30,19 +30,19 @@ vi.mock("../IncomeTimelineEditor", () => ({
       <span data-testid="timeline-description">{description}</span>
       {timeline.map((y) => (
         <div key={y.year} data-testid={`year-${y.year}`}>
-          {y.gross_income} - {y.life_event}
+          {y.gross_income} - {y.notes || ""}
         </div>
       ))}
       <button
-        data-testid="simulate-edit-life-event"
+        data-testid="simulate-edit-notes"
         onClick={() => {
           const updated = timeline.map((y, i) =>
-            i === 1 ? { ...y, life_event: "sabbatical", gross_income: 40000 } : y
+            i === 1 ? { ...y, notes: "Sabbatical", gross_income: 40000 } : y
           );
           onChange(updated);
         }}
       >
-        Edit life event
+        Edit notes
       </button>
       {onReset && (
         <button data-testid="reset-button" onClick={onReset}>
@@ -104,34 +104,34 @@ describe("InputForm", () => {
     );
   });
 
-  it("does not show reset button when no life events are set", () => {
+  it("does not show reset button when no customizations are set", () => {
     renderInputForm({ onSubmit });
     fillBasicInputs();
     expect(screen.queryByTestId("reset-button")).not.toBeInTheDocument();
   });
 
-  it("shows reset button after a life event is set", () => {
+  it("shows reset button after notes are added", () => {
     renderInputForm({ onSubmit });
     fillBasicInputs();
 
-    // Simulate user editing a year with a life event
-    fireEvent.click(screen.getByTestId("simulate-edit-life-event"));
+    // Simulate user editing a year with notes
+    fireEvent.click(screen.getByTestId("simulate-edit-notes"));
 
     expect(screen.getByTestId("reset-button")).toBeInTheDocument();
   });
 
-  it("reset button clears life events", () => {
+  it("reset button clears customizations", () => {
     renderInputForm({ onSubmit });
     fillBasicInputs();
 
-    // Set a life event
-    fireEvent.click(screen.getByTestId("simulate-edit-life-event"));
+    // Add notes
+    fireEvent.click(screen.getByTestId("simulate-edit-notes"));
     expect(screen.getByTestId("reset-button")).toBeInTheDocument();
 
     // Click reset
     fireEvent.click(screen.getByTestId("reset-button"));
 
-    // Reset button should disappear since no more life events
+    // Reset button should disappear since no more customizations
     expect(screen.queryByTestId("reset-button")).not.toBeInTheDocument();
   });
 
@@ -149,12 +149,12 @@ describe("InputForm", () => {
     expect(input.income_timeline[0].gross_income).toBe(100000);
   });
 
-  it("submits with custom life events in timeline", () => {
+  it("submits with custom notes in timeline", () => {
     renderInputForm({ onSubmit });
     fillBasicInputs();
 
-    // Set a life event on year index 1
-    fireEvent.click(screen.getByTestId("simulate-edit-life-event"));
+    // Add notes on year index 1
+    fireEvent.click(screen.getByTestId("simulate-edit-notes"));
 
     const form = screen.getByRole("button", { name: /run my scenario/i });
     fireEvent.click(form);
@@ -162,25 +162,25 @@ describe("InputForm", () => {
     expect(onSubmit).toHaveBeenCalled();
     // Get the last call (after editing)
     const lastCall = onSubmit.mock.calls[onSubmit.mock.calls.length - 1][0];
-    expect(lastCall.income_timeline[1].life_event).toBe("sabbatical");
+    expect(lastCall.income_timeline[1].notes).toBe("Sabbatical");
     expect(lastCall.income_timeline[1].gross_income).toBe(40000);
   });
 
-  it("preserves life events when income changes", () => {
+  it("preserves notes when income changes", () => {
     renderInputForm({ onSubmit });
     fillBasicInputs();
 
-    // Set a life event
-    fireEvent.click(screen.getByTestId("simulate-edit-life-event"));
+    // Add notes
+    fireEvent.click(screen.getByTestId("simulate-edit-notes"));
 
     // Change income — should regenerate but preserve pinned year
     const incomeInput = screen.getByLabelText("Current income");
     fireEvent.change(incomeInput, { target: { value: "120000" } });
 
-    // The year with sabbatical life event should still show sabbatical
+    // The year with notes should still show notes
     const currentYear = new Date().getFullYear();
     const pinnedYear = screen.getByTestId(`year-${currentYear + 1}`);
-    expect(pinnedYear.textContent).toContain("sabbatical");
+    expect(pinnedYear.textContent).toContain("Sabbatical");
     expect(pinnedYear.textContent).toContain("40000");
   });
 
