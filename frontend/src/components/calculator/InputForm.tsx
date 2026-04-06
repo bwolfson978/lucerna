@@ -114,7 +114,7 @@ function mergeTimeline(
 
 export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showMore, setShowAdvanced] = useState(false);
 
   // Form state — nullable so fields can be fully cleared while typing
   const [age, setAge] = useState<number | null>(35);
@@ -128,7 +128,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
     null
   );
 
-  // Advanced settings
+  // Additional settings
   const [yearsInRetirement, setYearsInRetirement] = useState<number | null>(25);
   const [growthRate, setGrowthRate] = useState<number | null>(7);
   const [discountRate, setDiscountRate] = useState<number | null>(5);
@@ -360,7 +360,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
           timeline={timeline}
           onChange={setTimeline}
           onReset={hasCustomizations ? handleResetTimeline : undefined}
-          description="Projected from your inputs above. Change any year's income or add a life event to customize."
+          description="Projected from your inputs above. Adjust any year to reflect expected changes — job transitions, time off, or anything else on the horizon."
           defaultState={state !== "none" ? state : undefined}
         />
       )}
@@ -368,8 +368,8 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
         <span className="text-caption text-negative">{errors.timeline}</span>
       )}
 
-      {/* Advanced settings */}
-      <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+      {/* Additional settings */}
+      <Collapsible open={showMore} onOpenChange={setShowAdvanced}>
         <CollapsibleTrigger asChild>
           <button
             type="button"
@@ -380,7 +380,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
               height="12"
               viewBox="0 0 12 12"
               fill="none"
-              className={`transition-transform duration-300 ${showAdvanced ? "rotate-90" : ""}`}
+              className={`transition-transform duration-300 ${showMore ? "rotate-90" : ""}`}
             >
               <path
                 d="M4.5 2.5l3.5 3.5-3.5 3.5"
@@ -390,7 +390,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
                 strokeLinejoin="round"
               />
             </svg>
-            Advanced settings
+            Additional settings
           </button>
         </CollapsibleTrigger>
 

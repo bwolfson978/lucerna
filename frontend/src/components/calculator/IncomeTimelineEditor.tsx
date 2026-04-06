@@ -8,7 +8,6 @@ import { FormSelect } from "@/components/common/FormSelect";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { CURRENT_YEAR } from "@/lib/utils/constants";
-import { formatCurrency } from "@/lib/utils/formatting";
 import { Card } from "@/components/ui/card";
 
 interface IncomeTimelineEditorProps {
@@ -107,7 +106,6 @@ export function IncomeTimelineEditor({
     [timeline, onChange]
   );
 
-  const maxIncome = Math.max(...timeline.map((y) => y.gross_income), 1);
   const [open, setOpen] = useState(false);
 
   const yearRange = timeline.length > 0
@@ -265,23 +263,6 @@ export function IncomeTimelineEditor({
               onChange={(e) => updateYear(index, "notes", e.target.value)}
               className="w-full bg-transparent border border-border/50 rounded-md px-3 py-1.5 text-body-sm text-text-secondary placeholder:text-text-tertiary/50 focus:outline-none focus:border-accent/50 transition-colors duration-300"
             />
-
-            {/* Income bar preview */}
-            <div className="h-6 flex items-center gap-2">
-              <div
-                className="h-4 bg-neutral/20 rounded-sm relative overflow-hidden flex-1"
-              >
-                <div
-                  className="h-full bg-neutral rounded-sm transition-all duration-300"
-                  style={{
-                    width: `${(row.gross_income / maxIncome) * 100}%`,
-                  }}
-                />
-              </div>
-              <span className="text-[11px] font-mono text-text-tertiary whitespace-nowrap">
-                {formatCurrency(row.gross_income)}
-              </span>
-            </div>
           </Card>
         ))}
           </div>

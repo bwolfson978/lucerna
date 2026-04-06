@@ -148,16 +148,4 @@ describe("IncomeTimelineEditor", () => {
     expect(screen.queryByText("Reset to defaults")).not.toBeInTheDocument();
   });
 
-  it("displays income bar previews with formatted currency", () => {
-    const onChange = vi.fn();
-    render(
-      <IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />
-    );
-    expand();
-
-    // Check that currency values are displayed
-    expect(screen.getByText("$100,000")).toBeInTheDocument();
-    expect(screen.getByText("$103,000")).toBeInTheDocument();
-    expect(screen.getByText("$106,090")).toBeInTheDocument();
-  });
 });
