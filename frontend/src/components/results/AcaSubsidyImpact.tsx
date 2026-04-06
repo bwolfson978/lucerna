@@ -39,7 +39,7 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
       </div>
 
       {/* Summary metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-default">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-tight sm:gap-default">
         <MetricCard
           label="Subsidy preserved"
           value={

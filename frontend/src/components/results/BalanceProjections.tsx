@@ -35,7 +35,7 @@ export function BalanceProjections({
         />
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-default">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-tight sm:gap-default">
         <MetricCard
           label="Traditional IRA/401(k)"
           value={formatCompactCurrency(traditionalAtRetirement)}

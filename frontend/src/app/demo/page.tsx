@@ -37,7 +37,7 @@ export default function DemoPage() {
     <MethodologyProvider>
       <Header />
       <MethodologyLayout result={demo?.result}>
-        <main className="px-section md:px-page py-section-lg">
+        <main className="px-default md:px-page py-section-lg">
           <div className="max-w-content mx-auto flex flex-col gap-section">
             {/* Persona intro */}
             <div className="flex flex-col gap-comfortable">
