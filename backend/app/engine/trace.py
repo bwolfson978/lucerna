@@ -197,6 +197,21 @@ def _build_sensitivity_notes(
             "accounts for both federal tax and any reduction in your marketplace premium subsidy"
         )
 
+    # RMD impact note
+    from app.engine.rmd import rmd_start_age as _rmd_start
+    owner_rmd_start = _rmd_start(scenario.age)
+    years_to_rmd = owner_rmd_start - scenario.age
+    if years_to_rmd <= 15:
+        notes.append(
+            f"RMDs begin at age {owner_rmd_start} ({years_to_rmd} years from now) — "
+            f"converting before then reduces forced taxable withdrawals in retirement"
+        )
+    elif scenario.traditional_ira_balance >= 500000:
+        notes.append(
+            f"With a large traditional IRA balance, future RMDs (starting at age {owner_rmd_start}) "
+            f"could push into higher brackets — early conversion mitigates this"
+        )
+
     if scenario.state and scenario.state != "none":
         # Find the average state marginal rate across conversion years
         state_rates = []

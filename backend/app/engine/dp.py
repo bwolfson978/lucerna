@@ -23,6 +23,7 @@ from app.engine.state_tax import (
     vectorized_state_tax, calculate_state_tax, get_state_marginal_rate,
     resolve_state_for_year,
 )
+from app.engine.rmd import rmd_start_age, vectorized_rmd
 
 
 @dataclass
@@ -66,6 +67,9 @@ def _compute_retirement_values(
     # Resolve retirement state for distributions and liquidation
     ret_state = scenario.retirement_state or scenario.state
 
+    # RMD parameters
+    owner_rmd_start = rmd_start_age(scenario.age)
+
     for year_offset in range(1, n_retirement + 1):
         year = years_until_retirement + year_offset
 
@@ -73,8 +77,18 @@ def _compute_retirement_values(
         trad *= (1 + g)
         roth *= (1 + g)
 
-        # Withdraw from traditional first
-        distribution = np.minimum(spending_arr, trad)
+        # Determine age in this retirement year
+        owner_age = scenario.age + year
+
+        # Calculate RMD (mandatory minimum withdrawal from traditional)
+        if owner_age >= owner_rmd_start:
+            rmd = vectorized_rmd(trad, owner_age)
+        else:
+            rmd = np.zeros_like(trad)
+
+        # Withdraw at least the RMD from traditional, or spending if larger
+        distribution = np.maximum(rmd, np.minimum(spending_arr, trad))
+        distribution = np.minimum(distribution, trad)  # can't exceed balance
         trad -= distribution
 
         tax_on_dist = vectorized_federal_tax(distribution, scenario.filing_status)

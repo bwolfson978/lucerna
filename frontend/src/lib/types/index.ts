@@ -87,6 +87,25 @@ export interface AcaSubsidyDetail {
   hits_cliff: boolean;
 }
 
+export interface RmdYearDetail {
+  year: number;
+  age: number;
+  trad_balance_start: number;
+  rmd_amount: number;
+  actual_distribution: number;
+  tax_on_distribution: number;
+  effective_rate: number;
+}
+
+export interface RmdProjection {
+  rmd_start_age: number;
+  rmd_start_year: number;
+  yearly_detail: RmdYearDetail[];
+  total_rmd_taxes: number;
+  peak_rmd_amount: number;
+  peak_rmd_year: number;
+}
+
 export interface ReasoningTrace {
   binding_constraint: string;
   marginal_tax_rate_at_optimal: number;
@@ -118,6 +137,17 @@ export interface ReasoningTrace {
     years_hitting_cliff: number;
     explanation: string;
     worst_year_note?: string;
+  } | null;
+  rmd_summary?: {
+    rmd_start_age: number;
+    total_rmd_taxes_no_conversion: number;
+    peak_rmd_no_conversion: number;
+    peak_rmd_year_no_conversion: number;
+    total_rmd_taxes_with_conversion: number;
+    peak_rmd_with_conversion: number;
+    rmd_tax_savings: number;
+    peak_rmd_reduction: number;
+    explanation: string;
   } | null;
 }
 
@@ -167,6 +197,8 @@ export interface OptimizationResult {
   total_subsidy_lost?: number | null;
   subsidy_cliff_income?: number | null;
   npv_without_aca?: number | null;
+  rmd_projection?: RmdProjection | null;
+  rmd_projection_no_conversion?: RmdProjection | null;
   input: ScenarioInput;
 }
 
