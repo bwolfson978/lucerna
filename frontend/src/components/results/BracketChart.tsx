@@ -6,6 +6,7 @@ import { BRACKET_COLORS, CHART_COLORS } from "@/lib/utils/constants";
 import { useRef, useMemo, useState, useCallback, useEffect, type RefObject } from "react";
 import { useContainerWidth } from "@/hooks/useContainerWidth";
 import { useScrollFade } from "@/hooks/useScrollFade";
+import { useViewportHeight } from "@/hooks/useViewportHeight";
 
 interface ChartTooltip {
   x: number;
@@ -52,7 +53,9 @@ const BRACKET_BOUNDARIES: Record<string, { rate: number; max: number }[]> = {
 export const BAR_GAP = 10;
 export const MIN_BAR_WIDTH = 24;
 export const DEFAULT_BAR_WIDTH = 48;
-const DESKTOP_CHART_HEIGHT = 320;
+export const MAX_BAR_WIDTH = 72;
+const MIN_DESKTOP_CHART_HEIGHT = 320;
+const MAX_DESKTOP_CHART_HEIGHT = 480;
 const MOBILE_CHART_HEIGHT = 260;
 const TOP_PADDING = 16;
 const BOTTOM_PADDING = 40;
@@ -88,6 +91,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
   const [isEngaged, setIsEngaged] = useState(false);
 
   const containerWidth = useContainerWidth(containerRef);
+  const viewportHeight = useViewportHeight();
   const { hasScrolled } = useScrollFade(scrollRef, fadeRef);
 
   // Dismiss tooltip and disengage when clicking outside the chart
@@ -105,7 +109,19 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
   // Responsive layout computation
   const layout = useMemo(() => {
     const isMobile = containerWidth !== undefined && containerWidth < MOBILE_BREAKPOINT;
-    const chartHeight = isMobile ? MOBILE_CHART_HEIGHT : DESKTOP_CHART_HEIGHT;
+
+    // Dynamic chart height: scale with viewport on desktop, clamped to sensible range
+    let chartHeight: number;
+    if (isMobile) {
+      chartHeight = MOBILE_CHART_HEIGHT;
+    } else if (viewportHeight !== undefined) {
+      // Use ~45% of viewport height, clamped between min/max
+      const desired = Math.round(viewportHeight * 0.45);
+      chartHeight = Math.max(MIN_DESKTOP_CHART_HEIGHT, Math.min(desired, MAX_DESKTOP_CHART_HEIGHT));
+    } else {
+      chartHeight = MIN_DESKTOP_CHART_HEIGHT;
+    }
+
     const leftAxisWidth = isMobile ? LEFT_AXIS_WIDTH_MOBILE : LEFT_AXIS_WIDTH_DESKTOP;
     const rightAxisWidth = isMobile ? RIGHT_AXIS_WIDTH_MOBILE : RIGHT_AXIS_WIDTH_DESKTOP;
 
@@ -120,7 +136,8 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
       const availableForBars = containerWidth - totalOverhead;
       const computed = Math.floor((availableForBars - BAR_GAP) / years.length) - BAR_GAP;
       if (computed >= MIN_BAR_WIDTH) {
-        barWidth = Math.min(computed, DEFAULT_BAR_WIDTH);
+        // Allow bars to grow up to MAX_BAR_WIDTH to fill available space
+        barWidth = Math.min(computed, MAX_BAR_WIDTH);
         barsFit = true;
       } else {
         barWidth = MIN_BAR_WIDTH;
@@ -131,7 +148,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
     const totalBarWidth = years.length * (barWidth + BAR_GAP);
 
     return { isMobile, chartHeight, leftAxisWidth, rightAxisWidth, barWidth, totalBarWidth, barsFit };
-  }, [containerWidth, years.length]);
+  }, [containerWidth, viewportHeight, years.length]);
 
   const { isMobile, chartHeight, leftAxisWidth, rightAxisWidth, barWidth, totalBarWidth, barsFit } = layout;
 

@@ -99,6 +99,7 @@ const config: Config = {
       },
       maxWidth: {
         content: "1080px",
+        "content-wide": "1400px",
       },
       borderRadius: {
         sm: "8px",
