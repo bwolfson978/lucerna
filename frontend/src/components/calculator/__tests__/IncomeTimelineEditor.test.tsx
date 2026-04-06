@@ -30,7 +30,8 @@ describe("IncomeTimelineEditor", () => {
       <IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />
     );
     expand();
-    expect(screen.getAllByLabelText(/Remove year/)).toHaveLength(3);
+    // 3 years × 2 buttons each (mobile + desktop) = 6
+    expect(screen.getAllByLabelText(/Remove year/)).toHaveLength(6);
   });
 
   it("displays the header and description when expanded", () => {
@@ -97,8 +98,9 @@ describe("IncomeTimelineEditor", () => {
     );
     expand();
 
-    const removeButtons = screen.getAllByLabelText(/Remove year/);
-    fireEvent.click(removeButtons[1]); // Remove year 2027
+    // Use desktop remove buttons (hidden sm:flex); they come after mobile ones in DOM
+    const removeButtons = screen.getAllByLabelText(/Remove year 2027/);
+    fireEvent.click(removeButtons[0]);
 
     expect(onChange).toHaveBeenCalledTimes(1);
     const newTrajectory = onChange.mock.calls[0][0];

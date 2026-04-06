@@ -180,10 +180,30 @@ export function IncomeTimelineEditor({
         {timeline.map((row, index) => (
           <Card
             key={row.year}
-            className="flex flex-col gap-tight sm:flex-row sm:items-end"
+            className="relative flex flex-col gap-tight"
           >
-            <div className="flex items-end gap-tight flex-1">
-              <div className="w-16 shrink-0">
+            {/* Remove button — top-right on mobile, inline on desktop */}
+            {timeline.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removeYear(index)}
+                className="absolute top-2 right-2 sm:hidden text-text-tertiary hover:text-negative transition-colors duration-300 p-1"
+                aria-label={`Remove year ${row.year}`}
+              >
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M4 4l8 8M12 4l-8 8"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </button>
+            )}
+
+            {/* Fields — stacked rows on mobile, single row on desktop */}
+            <div className="grid grid-cols-[4rem_1fr] gap-tight sm:flex sm:items-end sm:gap-tight">
+              <div className="shrink-0">
                 <FormField
                   label="Year"
                   type="number"
@@ -195,7 +215,7 @@ export function IncomeTimelineEditor({
                 />
               </div>
 
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 pr-6 sm:pr-0">
                 <CurrencyInput
                   label="Gross income"
                   value={row.gross_income || ""}
@@ -204,7 +224,7 @@ export function IncomeTimelineEditor({
                 />
               </div>
 
-              <div className="w-36 shrink-0">
+              <div className="sm:w-36 sm:shrink-0">
                 <FormSelect
                   label="Life event"
                   value={row.life_event}
@@ -220,7 +240,7 @@ export function IncomeTimelineEditor({
               </div>
 
               {defaultState && (
-                <div className="w-24 shrink-0">
+                <div className="sm:w-24 sm:shrink-0">
                   <FormSelect
                     label="State"
                     value={row.state ?? "default"}
@@ -236,11 +256,12 @@ export function IncomeTimelineEditor({
                 </div>
               )}
 
+              {/* Desktop-only inline remove button */}
               {timeline.length > 1 && (
                 <button
                   type="button"
                   onClick={() => removeYear(index)}
-                  className="text-text-tertiary hover:text-negative transition-colors duration-300 p-2 min-h-[44px] flex items-center"
+                  className="hidden sm:flex text-text-tertiary hover:text-negative transition-colors duration-300 p-2 min-h-[44px] items-center"
                   aria-label={`Remove year ${row.year}`}
                 >
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -256,10 +277,9 @@ export function IncomeTimelineEditor({
             </div>
 
             {/* Income bar preview */}
-            <div className="sm:w-32 h-6 flex items-center gap-2">
+            <div className="h-6 flex items-center gap-2">
               <div
-                className="h-4 bg-neutral/20 rounded-sm relative overflow-hidden"
-                style={{ width: "100%" }}
+                className="h-4 bg-neutral/20 rounded-sm relative overflow-hidden flex-1"
               >
                 <div
                   className="h-full bg-neutral rounded-sm transition-all duration-300"
