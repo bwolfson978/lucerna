@@ -43,7 +43,7 @@ The AI conversation layer must use educational framing (legal requirement):
 - All API inputs and outputs use Pydantic models
 - Engine code lives in `app/engine/`, API routes in `app/api/`, AI layer in `app/ai/`
 - The reasoning trace (`app/engine/trace.py`) is the contract between engine and AI — keep it structured and complete
-- **Multi-year optimizer** is the only engine mode — `scipy.optimize.minimize` (SLSQP) with greedy bracket-fill heuristic as initialization and fallback. No separate single-year path; a 1-year trajectory is just `len(income_trajectory) == 1`.
+- **Multi-year optimizer** is the only engine mode — `scipy.optimize.minimize` (SLSQP) with greedy bracket-fill heuristic as initialization and fallback. No separate single-year path; a 1-year timeline is just `len(income_timeline) == 1`.
 - Engine files: `types.py` → `tax.py` → `heuristic.py` → `optimizer.py` → `trace.py` → `demo.py`
 
 ## Project structure

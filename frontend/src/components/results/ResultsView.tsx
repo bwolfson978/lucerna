@@ -59,7 +59,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
 
   // Build chart data from client-side bracket fills
   const chartYears = useMemo(() => {
-    return result.input.income_trajectory.map((yi, i) => ({
+    return result.input.income_timeline.map((yi, i) => ({
       year: yi.year,
       age: result.input.age + i,
       bracketFill: yearlyBracketFills[i] || [],
@@ -67,8 +67,8 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
   }, [result.input, yearlyBracketFills]);
 
   // Income arrays for the detail table
-  const incomes = result.input.income_trajectory.map((yi) => yi.gross_income);
-  const yearInfos = result.input.income_trajectory.map((yi, i) => ({
+  const incomes = result.input.income_timeline.map((yi) => yi.gross_income);
+  const yearInfos = result.input.income_timeline.map((yi, i) => ({
     year: yi.year,
     age: result.input.age + i,
   }));
@@ -87,7 +87,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
 
   const handleReRun = useCallback(() => {
     if (!onReRun) return;
-    const updatedTrajectory = result.input.income_trajectory.map((yi, i) => {
+    const updatedTrajectory = result.input.income_timeline.map((yi, i) => {
       const override = overrides.get(i);
       return {
         ...yi,
@@ -96,7 +96,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
     });
     const updatedInput: ScenarioInput = {
       ...result.input,
-      income_trajectory: updatedTrajectory,
+      income_timeline: updatedTrajectory,
     };
     setOverrides(new Map());
     onReRun(updatedInput);
@@ -212,7 +212,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
               Adjust income or life events below, then re-run the analysis.
             </p>
           )}
-          {result.input.income_trajectory.length > 1 && (
+          {result.input.income_timeline.length > 1 && (
             <InfoTrigger
               label="How is this allocated across years?"
               sectionId="multi-year-allocation"

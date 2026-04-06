@@ -30,7 +30,7 @@ export default function DemoPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const trajectory = demo?.result?.input?.income_trajectory;
+  const timeline = demo?.result?.input?.income_timeline;
   const retirementAge = demo?.result?.input?.retirement_age ?? 65;
 
   return (
@@ -61,11 +61,11 @@ export default function DemoPage() {
                       Key income milestones
                     </h3>
                     <p className="text-text-tertiary text-[11px] mb-2">
-                      {trajectory?.length ?? 0} years modeled through retirement
+                      {timeline?.length ?? 0} years modeled through retirement
                       at age {retirementAge}
                     </p>
-                    {trajectory && trajectory.length > 0 && (
-                      <IncomeMilestonesTable trajectory={trajectory} />
+                    {timeline && timeline.length > 0 && (
+                      <IncomeMilestonesTable timeline={timeline} />
                     )}
                   </div>
                 </div>

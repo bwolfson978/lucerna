@@ -22,7 +22,7 @@
 | D10 | Guided tour | Custom implementation (React state + CSS transitions) | Full control over mobile behavior and animation |
 | D11 | Domain | getlucerna.com | Clean, available, accommodates broader vision |
 | D12 | Filing status | Single + MFJ (simplified: one spouse's IRA, joint household income) | Covers majority of users with minimal added complexity |
-| D13 | Demo persona | Alex, 38, senior SWE ($145K), left for startup, $210K trad IRA, 3-year trajectory: $35K→$30K→$150K | Multi-year income valley demonstrates the core product thesis — optimizer places conversions in years 1-2, not year 3 |
+| D13 | Demo persona | Alex, 38, senior SWE ($145K), left for startup, $210K trad IRA, 3-year timeline: $35K→$30K→$150K | Multi-year income valley demonstrates the core product thesis — optimizer places conversions in years 1-2, not year 3 |
 | D14 | User-facing terminology | "After-tax wealth" and "lifetime tax savings" — never "NPV" | Plain English, avoids confusion about what the number represents |
 | D15 | Results hierarchy | Point-in-time balances primary, NPV curve secondary | Most users understand balances at ages; analytical users can drill into curve |
 | D16 | Estate planning | Out of scope M1 (full liquidation assumption, noted in UI) | Future expansion; would further favor Roth |
@@ -38,7 +38,7 @@ getlucerna.com
 │   ├── Landing page / hero
 │   ├── Demo scenario (pre-populated multi-year results)
 │   ├── Guided walkthrough (animated tour)
-│   ├── Income trajectory editor (year-by-year input)
+│   ├── Income timeline editor (year-by-year input)
 │   ├── Bracket visualization (custom SVG, per year)
 │   ├── Stacked bar chart (income + conversion per year with bracket lines)
 │   ├── Results summary (multi-year conversion schedule)
@@ -88,7 +88,7 @@ WEEK 1-2: FOUNDATION
 
 WEEK 3-5: ENGINE + EARLY FRONTEND
   WS2.3-2.5 (Scipy optimizer + heuristic + validation)  ──┐── Partially parallel
-  WS3.1-3.3 (Design system + components + trajectory editor) ──┘
+  WS3.1-3.3 (Design system + components + timeline editor) ──┘
   │
   WS2 depends on: WS1 complete
   WS3 depends on: WS1 complete + design aesthetic spec
@@ -457,7 +457,7 @@ Add environment variables:
 
 ## WS2: Multi-Year Optimization Engine (Python)
 
-**Goal:** A validated, deterministic multi-year optimization engine that takes a year-by-year income trajectory, finds the optimal conversion schedule across all years using scipy.optimize, and produces a structured reasoning trace. The engine detects income "valleys" and fills brackets efficiently. Validated against the Excel model for single-year cases and against hand-calculated multi-year scenarios.
+**Goal:** A validated, deterministic multi-year optimization engine that takes a year-by-year income timeline, finds the optimal conversion schedule across all years using scipy.optimize, and produces a structured reasoning trace. The engine detects income "valleys" and fills brackets efficiently. Validated against the Excel model for single-year cases and against hand-calculated multi-year scenarios.
 
 ### WS2.1: Define Pydantic Models (Input/Output Schema)
 
@@ -488,7 +488,7 @@ class LifeEvent(str, Enum):
 
 
 class YearlyIncome(BaseModel):
-    """Income forecast for a single year in the trajectory."""
+    """Income forecast for a single year in the timeline."""
     year: int
     gross_income: float = Field(ge=0)
     life_event: LifeEvent = LifeEvent.NONE
@@ -501,16 +501,16 @@ class ScenarioInput(BaseModel):
     age: int = Field(ge=18, le=80, description="Current age")
     filing_status: FilingStatus
     
-    # Income trajectory (the core input — replaces single-year income)
-    income_trajectory: list[YearlyIncome] = Field(
+    # Income timeline (the core input — replaces single-year income)
+    income_timeline: list[YearlyIncome] = Field(
         min_length=1, max_length=15,
         description="Year-by-year income forecast. The optimizer finds the best conversion schedule across all years."
     )
     
     # For MFJ: spouse income per year (optional, defaults to 0)
-    spouse_income_trajectory: Optional[list[float]] = Field(
+    spouse_income_timeline: Optional[list[float]] = Field(
         default=None,
-        description="Spouse income per year (MFJ only). If shorter than income_trajectory, remaining years default to last value."
+        description="Spouse income per year (MFJ only). If shorter than income_timeline, remaining years default to last value."
     )
     
     # Retirement accounts
@@ -576,7 +576,7 @@ class OptimizationResult(BaseModel):
     """Complete output from the multi-year optimizer."""
     
     # The answer: conversion amount per year
-    yearly_conversions: list[float]  # One amount per year in trajectory
+    yearly_conversions: list[float]  # One amount per year in timeline
     total_conversion: float
     
     # Key metrics
@@ -602,8 +602,8 @@ class OptimizationResult(BaseModel):
     traditional_at_retirement: float
     roth_at_retirement: float
     
-    # Income trajectory chart data (income + conversion stacked bars with bracket lines)
-    trajectory_chart: list[dict]  # Per year: {year, income, conversion, bracket_boundaries}
+    # Income timeline chart data (income + conversion stacked bars with bracket lines)
+    timeline_chart: list[dict]  # Per year: {year, income, conversion, bracket_boundaries}
     
     # Input echo
     input: ScenarioInput
@@ -1084,7 +1084,7 @@ from app.engine.types import ScenarioInput, FilingStatus, YearlyIncome, LifeEven
 DEMO_SCENARIO = ScenarioInput(
     age=38,
     filing_status=FilingStatus.SINGLE,
-    income_trajectory=[
+    income_timeline=[
         YearlyIncome(year=2026, gross_income=35000, life_event=LifeEvent.STARTUP),
         YearlyIncome(year=2027, gross_income=30000, life_event=LifeEvent.STARTUP),
         YearlyIncome(year=2028, gross_income=150000, life_event=LifeEvent.BACK_TO_WORK),
@@ -1104,7 +1104,7 @@ DEMO_PERSONA = {
     "occupation": "Senior Software Engineer",
     "previous_salary": "$145,000/year",
     "situation": "Left job 6 months ago to co-found a startup",
-    "income_trajectory": [
+    "income_timeline": [
         {"year": 2026, "income": "$35K", "event": "Startup year 1 (6 months salary before leaving)"},
         {"year": 2027, "income": "$30K", "event": "Startup year 2 (minimal founder salary)"},
         {"year": 2028, "income": "$150K", "event": "Back to work (startup acquired / new role)"},
@@ -1156,7 +1156,7 @@ Given the length of this document, here is the scope summary for WS3-WS7. Each w
 ### WS3: Frontend Core UI (~40 hours)
 - 3.1: Tailwind design system config with bracket colors, mobile breakpoints, JetBrains Mono + Geist Sans fonts (per design aesthetic spec)
 - 3.2: Shared UI components (metric cards, buttons, inputs, tooltips — Linear dark mode aesthetic)
-- 3.3: **Income trajectory editor** — editable year-by-year table with income per year, life event tags, add/remove year buttons, visual income bar chart that updates as user types. This is the primary input component and the core UX differentiator.
+- 3.3: **Income timeline editor** — editable year-by-year table with income per year, life event tags, add/remove year buttons, visual income bar chart that updates as user types. This is the primary input component and the core UX differentiator.
 - 3.4: Stacked bar chart — income (gray) + conversion (blue) per year, with bracket boundary lines overlaid. The key results visualization showing where the optimizer placed conversions.
 - 3.5: Bracket fill visualization (custom SVG) — shows how income + conversion fills each bracket for a selected year. Click a year in the stacked bar chart to drill into its bracket fill.
 - 3.6: Results summary page — headline lifetime tax savings, year-by-year conversion schedule table, balance projections at retirement, scenario comparison cards
@@ -1166,7 +1166,7 @@ Given the length of this document, here is the scope summary for WS3-WS7. Each w
 - 3.3: Bracket visualization component (custom SVG, animated with CSS transitions, adaptive layout — horizontal stacked bars on desktop, vertical stacked bars on mobile)
 - 3.4: Results page — two-tier hierarchy:
   - **Primary view:** Headline tax savings metric, bracket fill visualization, point-in-time balance comparison at key ages (today / retirement / end of retirement) showing "with conversion vs. without," scenario comparison cards (no conversion / optimal / full conversion)
-- 3.9: Demo scenario pre-populated view ("Meet Alex" — 38yo SWE, startup founder, $210K IRA, 3-year income trajectory $35K→$30K→$150K)
+- 3.9: Demo scenario pre-populated view ("Meet Alex" — 38yo SWE, startup founder, $210K IRA, 3-year income timeline $35K→$30K→$150K)
 - 3.10: Cross-device QA (iPhone SE, iPhone 14/15, iPad, laptop, wide desktop)
 - 3.11: Info tooltips for simplifying assumptions ("The model assumes all remaining balances are withdrawn at the end of this period. Estate planning and wealth transfer are not currently modeled.")
 
@@ -1214,7 +1214,7 @@ Given the length of this document, here is the scope summary for WS3-WS7. Each w
 |-----------|-------|
 | WS1: Infrastructure & Setup | 6 |
 | WS2: Multi-Year Optimization Engine | 30 |
-| WS3: Frontend Core UI (income trajectory editor + multi-year results) | 40 |
+| WS3: Frontend Core UI (income timeline editor + multi-year results) | 40 |
 | WS4: AI Conversation Layer | 26 |
 | WS5: Guided Walkthrough | 15 |
 | WS6: Feedback & Email | 15 |
@@ -1226,7 +1226,7 @@ Given the length of this document, here is the scope summary for WS3-WS7. Each w
 **At 15 hrs/week: ~13 weeks**
 **At 20 hrs/week: ~10 weeks**
 
-**Key changes from original estimate:** WS2 increased from 19→30 hours (scipy multi-year optimizer is harder than brute-force single-year). WS3 increased from 35→40 hours (income trajectory editor + stacked bar year-by-year chart are new components).
+**Key changes from original estimate:** WS2 increased from 19→30 hours (scipy multi-year optimizer is harder than brute-force single-year). WS3 increased from 35→40 hours (income timeline editor + stacked bar year-by-year chart are new components).
 
 ---
 
