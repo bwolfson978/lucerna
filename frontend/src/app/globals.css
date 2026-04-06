@@ -384,3 +384,24 @@ input[type="range"]::-moz-range-thumb {
 .animate-fade-out-delayed {
   animation: fade-out-delayed 3s ease forwards;
 }
+
+/* ── Methodology sidebar ── */
+.methodology-scrollbar::-webkit-scrollbar { width: 4px; }
+.methodology-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.methodology-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.08); border-radius: 2px; }
+
+.methodology-accordion-content[data-state="open"] {
+  animation: accordion-open 200ms ease-out;
+}
+.methodology-accordion-content[data-state="closed"] {
+  animation: accordion-close 200ms ease-out;
+}
+
+@keyframes accordion-open {
+  from { height: 0; opacity: 0; }
+  to { height: var(--radix-collapsible-content-height); opacity: 1; }
+}
+@keyframes accordion-close {
+  from { height: var(--radix-collapsible-content-height); opacity: 1; }
+  to { height: 0; opacity: 0; }
+}
