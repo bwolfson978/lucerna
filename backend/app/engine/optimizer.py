@@ -552,7 +552,7 @@ def _build_rmd_projection(
     Simulates the same balance trajectory as calculate_npv but captures
     per-year RMD detail for display and AI explanation.
     """
-    n_years = len(scenario.income_trajectory)
+    n_years = len(scenario.income_timeline)
     g = scenario.annual_growth_rate
     filing_status = scenario.filing_status
 
@@ -584,7 +584,7 @@ def _build_rmd_projection(
     owner_rmd_start = rmd_start_age(scenario.age)
 
     # Determine if RMDs will occur during the modeled retirement period
-    first_year = scenario.income_trajectory[0].year
+    first_year = scenario.income_timeline[0].year
     retirement_start_year = first_year + years_until_retirement
 
     yearly_detail: list[RmdYearDetail] = []
