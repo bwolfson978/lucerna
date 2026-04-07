@@ -136,11 +136,23 @@ def _dp_backward(
 
     # The balance grid must cover the GROWN balance range.  If nothing is
     # converted, the balance after n_years of growth could be as large as
-    # initial_balance * (1+g)^n_years.  Extend the grid accordingly so
-    # np.interp never has to clamp at the edge.
+    # initial_balance * (1+g)^n_years.  Use a non-uniform grid that
+    # concentrates resolution in the [0, initial_balance] range where
+    # conversion decisions actually happen, and uses sparser points in
+    # the [initial_balance, max_grown] range (only reached if little
+    # is converted).  This prevents long trajectories with high growth
+    # from diluting grid resolution to $700+ steps.
     max_grown_balance = initial_balance * (1 + g) ** n_years
-    extended_grid = np.linspace(0, max_grown_balance, len(balance_grid))
-    G = len(extended_grid)
+    G = len(balance_grid)
+    if max_grown_balance > initial_balance * 1.5 and G > 20:
+        # Split: 80% of grid points in [0, balance], 20% in [balance, max_grown]
+        n_fine = int(G * 0.8)
+        n_coarse = G - n_fine
+        fine_part = np.linspace(0, initial_balance, n_fine, endpoint=False)
+        coarse_part = np.linspace(initial_balance, max_grown_balance, n_coarse)
+        extended_grid = np.concatenate([fine_part, coarse_part])
+    else:
+        extended_grid = np.linspace(0, max_grown_balance, G)
 
     value_table = np.zeros((n_years + 1, G))
 
@@ -511,9 +523,17 @@ def _dp_backward_3d(
     initial_balance = scenario.traditional_ira_balance
     initial_roth = scenario.roth_ira_balance
 
-    # Extend balance grid for growth (same logic as 2D DP)
+    # Extend balance grid for growth (same non-uniform logic as 2D DP)
     max_grown_balance = initial_balance * (1 + g) ** n_years
-    extended_grid = np.linspace(0, max_grown_balance, len(balance_grid))
+    G_input = len(balance_grid)
+    if max_grown_balance > initial_balance * 1.5 and G_input > 20:
+        n_fine = int(G_input * 0.8)
+        n_coarse = G_input - n_fine
+        fine_part = np.linspace(0, initial_balance, n_fine, endpoint=False)
+        coarse_part = np.linspace(initial_balance, max_grown_balance, n_coarse)
+        extended_grid = np.concatenate([fine_part, coarse_part])
+    else:
+        extended_grid = np.linspace(0, max_grown_balance, G_input)
     G = len(extended_grid)
     B = len(budget_grid)
 
@@ -708,25 +728,17 @@ def _forward_pass_3d(
         bud_idx = np.searchsorted(budget_grid, current_budget, side="right") - 1
         bud_idx = max(0, min(bud_idx, B - 2))
 
-        # Bilinear interpolation of policy: look up conversion index at
-        # the four neighboring (balance, budget) grid points, convert to
-        # dollar amounts, then interpolate.
-        b_lo, b_hi = bud_idx, bud_idx + 1
+        # Snap to nearest budget grid point's policy instead of
+        # interpolating between neighboring policies.  Lerping blends
+        # different allocation strategies and produces small spurious
+        # amounts in years that shouldn't have conversions at this budget.
+        b_lo, b_hi = bud_idx, min(bud_idx + 1, B - 1)
+        dist_lo = abs(current_budget - budget_grid[b_lo])
+        dist_hi = abs(current_budget - budget_grid[b_hi])
+        b_snap = b_lo if dist_lo <= dist_hi else b_hi
 
-        # Get conversion amounts from policy at neighboring budget points
-        conv_idx_lo = policy_table[t, bal_idx, b_lo]
-        conv_idx_hi = policy_table[t, bal_idx, b_hi]
-        conv_lo = extended_grid[conv_idx_lo] if conv_idx_lo < len(extended_grid) else 0.0
-        conv_hi = extended_grid[conv_idx_hi] if conv_idx_hi < len(extended_grid) else 0.0
-
-        # Lerp on budget dimension
-        budget_span = budget_grid[b_hi] - budget_grid[b_lo]
-        if budget_span > 0:
-            frac = (current_budget - budget_grid[b_lo]) / budget_span
-            frac = max(0.0, min(1.0, frac))
-            conversion = conv_lo + frac * (conv_hi - conv_lo)
-        else:
-            conversion = conv_lo
+        conv_idx = policy_table[t, bal_idx, b_snap]
+        conversion = extended_grid[conv_idx] if conv_idx < len(extended_grid) else 0.0
 
         # Clamp to available balance and budget
         conversion = min(conversion, current_balance, current_budget)
@@ -741,17 +753,26 @@ def _forward_pass_3d(
 
 def extract_conversion_curve_3d(
     scenario: ScenarioInput,
-    n_points: int = 50,
+    n_curve_points: int = 200,
     balance_grid_size: int = 300,
+    budget_grid_size: int = 50,
     curve_max: float | None = None,
 ) -> list[ConversionCurvePoint]:
     """Build a conversion curve using 3D DP with budget constraint.
 
-    For each total conversion cap, extracts the NPV-maximizing schedule
-    via a single 3D backward pass + per-cap forward passes.
+    The budget grid (internal DP resolution) is decoupled from the output
+    curve points.  The expensive backward pass is O(N × G × B) where B is
+    budget_grid_size; forward passes are ~0.1ms each, so we can extract
+    many more output points than internal budget states at negligible cost.
 
     Args:
-        curve_max: Upper bound for the budget grid.  When the DP optimal
+        n_curve_points: Number of output curve points (default 200).
+            With 200 points for a $100K balance the interval is ~$500,
+            fine enough that the frontend can snap to the nearest point
+            without visible jumps.
+        budget_grid_size: Internal budget states for the 3D backward pass
+            (default 50).  Controls DP accuracy, not output density.
+        curve_max: Upper bound for the budget range.  When the DP optimal
             total exceeds the initial balance (due to inter-year growth),
             pass that total here so the curve covers the full range.
     """
@@ -767,18 +788,21 @@ def extract_conversion_curve_3d(
     # Budget grid: extend to cover curve_max when inter-year growth lets
     # total conversions exceed the initial balance.
     upper = max(balance, curve_max or balance)
-    budget_grid = np.linspace(0, upper, n_points)
+    budget_grid = np.linspace(0, upper, budget_grid_size)
     balance_grid = np.linspace(0, balance, balance_grid_size)
 
-    # Single 3D backward pass
+    # Single 3D backward pass (the expensive part)
     value_table, policy_table, extended_grid, budget_grid = _dp_backward_3d(
         scenario, balance_grid, budget_grid,
     )
 
-    # Extract optimal schedule for each budget cap via forward pass
+    # Extract optimal schedule at many output caps via cheap forward passes.
+    # The forward pass interpolates from the internal budget grid, so output
+    # caps need not align with budget grid points.
+    output_caps = np.linspace(0, upper, n_curve_points)
     points: list[ConversionCurvePoint] = []
 
-    for cap in budget_grid:
+    for cap in output_caps:
         cap_rounded = round(cap / 100) * 100
 
         if cap_rounded <= 0:

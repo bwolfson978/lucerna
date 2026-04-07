@@ -12,75 +12,83 @@ import {
 } from "@/lib/tax/brackets";
 import { computeSnapThreshold } from "@/lib/utils/snap";
 
+/**
+ * Find the nearest curve point to a given total conversion.
+ * Returns the curve point whose total_cap is closest.
+ */
+function findNearestCurvePoint(
+  totalConversion: number,
+  sorted: ConversionCurvePoint[]
+): ConversionCurvePoint {
+  let bestIdx = 0;
+  let bestDist = Math.abs(sorted[0].total_cap - totalConversion);
+  for (let i = 1; i < sorted.length; i++) {
+    const dist = Math.abs(sorted[i].total_cap - totalConversion);
+    if (dist < bestDist) {
+      bestDist = dist;
+      bestIdx = i;
+    }
+  }
+  return sorted[bestIdx];
+}
+
 export function distributeConversion(
   totalConversion: number,
   optimizerWeights: number[],
   conversionCurve?: ConversionCurvePoint[],
-  iraBalance?: number
+  iraBalance?: number,
+  optimizerTotal?: number
 ): number[] {
   if (totalConversion === 0) return optimizerWeights.map(() => 0);
 
-  // Use curve interpolation when available
+  // When at the optimizer's optimal total, use the authoritative result
+  // directly — it comes from the 2D DP and has no interpolation artifacts.
+  if (
+    optimizerTotal !== undefined &&
+    Math.abs(totalConversion - optimizerTotal) < 1
+  ) {
+    return optimizerWeights.map((w) => Math.max(0, w));
+  }
+
+  // Snap to nearest pre-computed curve point.  Each curve point is a real
+  // DP-optimal allocation for that budget cap — no blending between
+  // different strategies, so no spurious small amounts appear.
   if (conversionCurve && conversionCurve.length >= 2) {
     const sorted = [...conversionCurve].sort(
       (a, b) => a.total_cap - b.total_cap
     );
 
-    let interpolated: number[] | undefined;
+    const nearest = findNearestCurvePoint(totalConversion, sorted);
+    let snapped = nearest.yearly_conversions.map((c) => Math.max(0, c));
 
-    // Clamp to curve range
-    if (totalConversion <= sorted[0].total_cap) {
-      interpolated = sorted[0].yearly_conversions.map((c) => Math.max(0, c));
-    } else if (totalConversion >= sorted[sorted.length - 1].total_cap) {
-      interpolated = sorted[sorted.length - 1].yearly_conversions.map((c) =>
-        Math.max(0, c)
-      );
-    } else {
-      // Find bounding points and lerp
-      for (let i = 0; i < sorted.length - 1; i++) {
-        if (
-          sorted[i].total_cap <= totalConversion &&
-          sorted[i + 1].total_cap >= totalConversion
-        ) {
-          const range = sorted[i + 1].total_cap - sorted[i].total_cap;
-          const t = range > 0 ? (totalConversion - sorted[i].total_cap) / range : 0;
-          interpolated = sorted[i].yearly_conversions.map((low, idx) => {
-            const high = sorted[i + 1].yearly_conversions[idx] ?? 0;
-            return Math.max(0, low + t * (high - low));
-          });
-          break;
-        }
-      }
+    // Scale the snapped allocation so the total matches the slider value.
+    // This preserves the DP-optimal year ratios while keeping the displayed
+    // total consistent with the slider position.
+    const snappedTotal = snapped.reduce((a, b) => a + b, 0);
+    if (snappedTotal > 0 && Math.abs(snappedTotal - totalConversion) > 1) {
+      const scale = totalConversion / snappedTotal;
+      snapped = snapped.map((c) => c * scale);
+    } else if (snappedTotal === 0 && totalConversion > 0) {
+      // All curve points near here are zero — distribute uniformly
+      const perYear = totalConversion / snapped.length;
+      snapped = snapped.map(() => perYear);
     }
 
-    if (interpolated) {
-      // Scale up if the interpolated total falls short of the requested amount.
-      // This happens when the optimizer plateaus (doesn't use the full cap).
-      const interpolatedTotal = interpolated.reduce((a, b) => a + b, 0);
-      if (interpolatedTotal > 0 && totalConversion > interpolatedTotal + 0.01) {
-        const scale = totalConversion / interpolatedTotal;
-        interpolated = interpolated.map((c) => c * scale);
-      } else if (interpolatedTotal === 0 && totalConversion > 0) {
-        const perYear = totalConversion / interpolated.length;
-        interpolated = interpolated.map(() => perYear);
-      }
-
-      // Cap each year at IRA balance
-      if (iraBalance !== undefined) {
-        interpolated = interpolated.map((c) => Math.min(c, iraBalance));
-      }
-
-      return interpolated;
+    // Cap each year at IRA balance
+    if (iraBalance !== undefined) {
+      snapped = snapped.map((c) => Math.min(c, iraBalance));
     }
+
+    return snapped;
   }
 
   // Fallback: proportional scaling
-  const optimizerTotal = optimizerWeights.reduce((a, b) => a + b, 0);
-  if (optimizerTotal === 0) {
+  const weightTotal = optimizerWeights.reduce((a, b) => a + b, 0);
+  if (weightTotal === 0) {
     const perYear = totalConversion / optimizerWeights.length;
     return optimizerWeights.map(() => perYear);
   }
-  const scale = totalConversion / optimizerTotal;
+  const scale = totalConversion / weightTotal;
   return optimizerWeights.map((w) => Math.max(0, w * scale));
 }
 
@@ -105,9 +113,10 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
         totalConversion,
         result.yearly_conversions,
         result.conversion_curve,
-        result.input.traditional_ira_balance
+        result.input.traditional_ira_balance,
+        result.total_conversion
       ),
-    [totalConversion, result.yearly_conversions, result.conversion_curve, result.input.traditional_ira_balance]
+    [totalConversion, result.yearly_conversions, result.conversion_curve, result.input.traditional_ira_balance, result.total_conversion]
   );
 
   const yearlyBracketFills: BracketFillResult[][] = useMemo(
