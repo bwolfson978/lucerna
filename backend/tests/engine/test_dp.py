@@ -566,7 +566,7 @@ class TestConversionCurve3D:
         scenario = ScenarioInput(
             age=55,
             filing_status=FilingStatus.SINGLE,
-            income_trajectory=[
+            income_timeline=[
                 YearlyIncome(year=2026, gross_income=40000),
                 YearlyIncome(year=2027, gross_income=50000),
                 YearlyIncome(year=2028, gross_income=120000),
