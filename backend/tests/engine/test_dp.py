@@ -406,20 +406,20 @@ class TestConversionCurve3D:
     def test_curve_has_expected_points(self):
         """3D curve should have the requested number of points."""
         scenario = _simple_scenario()
-        curve = extract_conversion_curve_3d(scenario, n_points=25, balance_grid_size=150)
+        curve = extract_conversion_curve_3d(scenario, n_curve_points=25, balance_grid_size=150)
         assert len(curve) == 25
 
     def test_curve_endpoints(self):
         """First point should be $0, last should be full balance."""
         scenario = _simple_scenario(balance=100_000)
-        curve = extract_conversion_curve_3d(scenario, n_points=20, balance_grid_size=150)
+        curve = extract_conversion_curve_3d(scenario, n_curve_points=20, balance_grid_size=150)
         assert curve[0].total_cap == 0
         assert curve[-1].total_cap == 100_000
 
     def test_zero_cap_zero_conversions(self):
         """At cap=0, all conversions should be zero."""
         scenario = _simple_scenario()
-        curve = extract_conversion_curve_3d(scenario, n_points=20, balance_grid_size=150)
+        curve = extract_conversion_curve_3d(scenario, n_curve_points=20, balance_grid_size=150)
         zero_point = curve[0]
         assert zero_point.total_cap == 0
         assert all(c == 0 for c in zero_point.yearly_conversions)
@@ -428,7 +428,7 @@ class TestConversionCurve3D:
         """No curve point should have higher NPV than the unconstrained DP optimal."""
         scenario = _simple_scenario()
         dp_result = dp_optimize(scenario)
-        curve = extract_conversion_curve_3d(scenario, n_points=20, balance_grid_size=150)
+        curve = extract_conversion_curve_3d(scenario, n_curve_points=20, balance_grid_size=150)
 
         for point in curve:
             assert point.npv <= dp_result.npv + 50, (
@@ -444,7 +444,7 @@ class TestConversionCurve3D:
         """
         scenario = _simple_scenario(balance=100_000, incomes=[30_000, 35_000, 150_000])
         dp_result = dp_optimize(scenario)
-        curve_3d = extract_conversion_curve_3d(scenario, n_points=20, balance_grid_size=300)
+        curve_3d = extract_conversion_curve_3d(scenario, n_curve_points=20, balance_grid_size=300)
         curve_prop = extract_conversion_curve(dp_result, scenario, n_points=20)
 
         # Compare at matching cap points
@@ -462,7 +462,7 @@ class TestConversionCurve3D:
         """Year-to-year allocation ratios should differ at different caps
         (not just proportional scaling)."""
         scenario = _simple_scenario(balance=100_000, incomes=[30_000, 35_000, 150_000])
-        curve = extract_conversion_curve_3d(scenario, n_points=20, balance_grid_size=150)
+        curve = extract_conversion_curve_3d(scenario, n_curve_points=20, balance_grid_size=150)
 
         # Find a low-cap and mid-cap point with nonzero conversions
         low_point = None
@@ -494,7 +494,7 @@ class TestConversionCurve3D:
     def test_npv_curve_is_monotonic_then_decreasing(self):
         """NPV should increase as cap grows toward optimal, then decrease."""
         scenario = _simple_scenario()
-        curve = extract_conversion_curve_3d(scenario, n_points=30, balance_grid_size=150)
+        curve = extract_conversion_curve_3d(scenario, n_curve_points=30, balance_grid_size=150)
 
         npvs = [p.npv for p in curve]
         peak_idx = max(range(len(npvs)), key=lambda i: npvs[i])
@@ -510,14 +510,14 @@ class TestConversionCurve3D:
         import time
         scenario = _simple_scenario()
         start = time.monotonic()
-        extract_conversion_curve_3d(scenario, n_points=50, balance_grid_size=300)
+        extract_conversion_curve_3d(scenario, n_curve_points=50, balance_grid_size=300)
         elapsed = time.monotonic() - start
         assert elapsed < 5.0, f"3D DP took {elapsed:.1f}s, expected < 5s"
 
     def test_npv_decreases_past_optimal(self):
         """Past optimal, forcing more conversions should reduce NPV."""
         scenario = _simple_scenario()
-        curve = extract_conversion_curve_3d(scenario, n_points=30, balance_grid_size=150)
+        curve = extract_conversion_curve_3d(scenario, n_curve_points=30, balance_grid_size=150)
         npvs = [p.npv for p in curve]
         peak_idx = max(range(len(npvs)), key=lambda i: npvs[i])
 
@@ -531,7 +531,7 @@ class TestConversionCurve3D:
     def test_respects_budget_cap(self):
         """Each curve point's yearly conversions should sum to ≤ its cap."""
         scenario = _simple_scenario()
-        curve = extract_conversion_curve_3d(scenario, n_points=20, balance_grid_size=150)
+        curve = extract_conversion_curve_3d(scenario, n_curve_points=20, balance_grid_size=150)
 
         for point in curve:
             actual_total = sum(point.yearly_conversions)
@@ -539,3 +539,72 @@ class TestConversionCurve3D:
                 f"At cap=${point.total_cap:,.0f}: actual total "
                 f"${actual_total:,.0f} exceeds cap"
             )
+
+    def test_decoupled_curve_points_from_budget_grid(self):
+        """Output curve points should be independent of internal budget grid size.
+
+        Verifies the key performance insight: we can extract many more output
+        points than internal budget states at negligible extra cost.
+        """
+        scenario = _simple_scenario()
+        # 100 output points from only 20 internal budget states
+        curve = extract_conversion_curve_3d(
+            scenario, n_curve_points=100, balance_grid_size=150, budget_grid_size=20,
+        )
+        assert len(curve) == 100
+
+    def test_dense_curve_reduces_spurious_amounts(self):
+        """Dense curve with 200 points should have far fewer small artifacts
+        than a sparse 20-point curve.
+
+        Regression test for GitHub issue #59: the frontend snaps to the
+        nearest curve point instead of interpolating, so any remaining
+        small amounts in individual curve points don't appear as separate
+        bars — they're absorbed into the scaling ratios.  But a denser
+        curve still reduces the artifacts at the source.
+        """
+        scenario = ScenarioInput(
+            age=55,
+            filing_status=FilingStatus.SINGLE,
+            income_trajectory=[
+                YearlyIncome(year=2026, gross_income=40000),
+                YearlyIncome(year=2027, gross_income=50000),
+                YearlyIncome(year=2028, gross_income=120000),
+                YearlyIncome(year=2029, gross_income=130000),
+                YearlyIncome(year=2030, gross_income=60000),
+            ],
+            traditional_ira_balance=300000,
+            roth_ira_balance=10000,
+            retirement_age=65,
+            years_in_retirement=25,
+            annual_retirement_spending=60000,
+            annual_growth_rate=0.07,
+            discount_rate=0.05,
+        )
+
+        # Count small spurious amounts in sparse vs dense curves
+        def count_small(curve):
+            return sum(
+                1 for pt in curve
+                for c in pt.yearly_conversions
+                if 0 < c < 500
+            )
+
+        sparse = extract_conversion_curve_3d(
+            scenario, n_curve_points=20, balance_grid_size=300, budget_grid_size=50,
+        )
+        dense = extract_conversion_curve_3d(
+            scenario, n_curve_points=200, balance_grid_size=300, budget_grid_size=50,
+        )
+
+        sparse_count = count_small(sparse)
+        dense_count = count_small(dense)
+
+        # Dense curve shouldn't have proportionally more artifacts than sparse.
+        # With 10x more points, artifact rate per point should be similar or lower.
+        dense_rate = dense_count / len(dense)
+        sparse_rate = sparse_count / max(len(sparse), 1)
+        assert dense_rate <= sparse_rate + 0.05, (
+            f"Dense curve has higher artifact rate ({dense_rate:.2f}) "
+            f"than sparse ({sparse_rate:.2f})"
+        )

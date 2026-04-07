@@ -741,17 +741,26 @@ def _forward_pass_3d(
 
 def extract_conversion_curve_3d(
     scenario: ScenarioInput,
-    n_points: int = 50,
+    n_curve_points: int = 200,
     balance_grid_size: int = 300,
+    budget_grid_size: int = 50,
     curve_max: float | None = None,
 ) -> list[ConversionCurvePoint]:
     """Build a conversion curve using 3D DP with budget constraint.
 
-    For each total conversion cap, extracts the NPV-maximizing schedule
-    via a single 3D backward pass + per-cap forward passes.
+    The budget grid (internal DP resolution) is decoupled from the output
+    curve points.  The expensive backward pass is O(N × G × B) where B is
+    budget_grid_size; forward passes are ~0.1ms each, so we can extract
+    many more output points than internal budget states at negligible cost.
 
     Args:
-        curve_max: Upper bound for the budget grid.  When the DP optimal
+        n_curve_points: Number of output curve points (default 200).
+            With 200 points for a $100K balance the interval is ~$500,
+            fine enough that the frontend can snap to the nearest point
+            without visible jumps.
+        budget_grid_size: Internal budget states for the 3D backward pass
+            (default 50).  Controls DP accuracy, not output density.
+        curve_max: Upper bound for the budget range.  When the DP optimal
             total exceeds the initial balance (due to inter-year growth),
             pass that total here so the curve covers the full range.
     """
@@ -767,18 +776,21 @@ def extract_conversion_curve_3d(
     # Budget grid: extend to cover curve_max when inter-year growth lets
     # total conversions exceed the initial balance.
     upper = max(balance, curve_max or balance)
-    budget_grid = np.linspace(0, upper, n_points)
+    budget_grid = np.linspace(0, upper, budget_grid_size)
     balance_grid = np.linspace(0, balance, balance_grid_size)
 
-    # Single 3D backward pass
+    # Single 3D backward pass (the expensive part)
     value_table, policy_table, extended_grid, budget_grid = _dp_backward_3d(
         scenario, balance_grid, budget_grid,
     )
 
-    # Extract optimal schedule for each budget cap via forward pass
+    # Extract optimal schedule at many output caps via cheap forward passes.
+    # The forward pass interpolates from the internal budget grid, so output
+    # caps need not align with budget grid points.
+    output_caps = np.linspace(0, upper, n_curve_points)
     points: list[ConversionCurvePoint] = []
 
-    for cap in budget_grid:
+    for cap in output_caps:
         cap_rounded = round(cap / 100) * 100
 
         if cap_rounded <= 0:
