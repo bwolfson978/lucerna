@@ -1,15 +1,14 @@
 "use client";
 
 import type { YearlyIncome } from "@/lib/types";
-import { formatCurrency } from "@/lib/utils/formatting";
-import { LIFE_EVENT_LABELS } from "@/lib/utils/constants";
+import { formatCompactCurrency } from "@/lib/utils/formatting";
 
 interface IncomeMilestonesTableProps {
-  trajectory: YearlyIncome[];
+  timeline: YearlyIncome[];
 }
 
 export function IncomeMilestonesTable({
-  trajectory,
+  timeline,
 }: IncomeMilestonesTableProps) {
   const colWidth = 58;
 
@@ -24,7 +23,7 @@ export function IncomeMilestonesTable({
           Income
         </div>
         <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
-          Life event
+          Notes
         </div>
       </div>
 
@@ -32,13 +31,13 @@ export function IncomeMilestonesTable({
       <div className="overflow-x-auto flex-1">
         <div
           className="flex"
-          style={{ width: `${trajectory.length * colWidth}px` }}
+          style={{ width: `${timeline.length * colWidth}px` }}
         >
-          {trajectory.map((yi) => (
+          {timeline.map((yi) => (
             <div
               key={yi.year}
-              className="flex flex-col"
-              style={{ width: `${colWidth}px` }}
+              className="flex flex-col overflow-hidden"
+              style={{ width: `${colWidth}px`, minWidth: `${colWidth}px` }}
             >
               {/* Year */}
               <div
@@ -50,15 +49,15 @@ export function IncomeMilestonesTable({
 
               {/* Income */}
               <div
-                className="h-8 flex items-center justify-center text-[10px] text-text-primary"
+                className="h-8 flex items-center justify-center text-[10px] text-text-primary px-0.5"
                 style={{ fontFamily: "'Manrope', system-ui" }}
               >
-                {formatCurrency(yi.gross_income)}
+                {formatCompactCurrency(yi.gross_income)}
               </div>
 
-              {/* Life event */}
-              <div className="h-8 flex items-center justify-center text-[9px] text-text-tertiary">
-                {LIFE_EVENT_LABELS[yi.life_event]}
+              {/* Notes */}
+              <div className="h-8 flex items-center justify-center text-[9px] text-text-tertiary px-0.5" title={yi.notes || undefined}>
+                {yi.notes || "—"}
               </div>
             </div>
           ))}

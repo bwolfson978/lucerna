@@ -1,21 +1,9 @@
 export type FilingStatus = "single" | "married_filing_jointly";
 
-export type LifeEvent =
-  | "none"
-  | "grad_school"
-  | "sabbatical"
-  | "startup"
-  | "career_change"
-  | "part_time"
-  | "early_retirement"
-  | "parental_leave"
-  | "back_to_work"
-  | "layoff";
-
 export interface YearlyIncome {
   year: number;
   gross_income: number;
-  life_event: LifeEvent;
+  notes?: string;
   state?: string | null;
 }
 
@@ -36,7 +24,7 @@ export interface HealthcareInput {
 export interface ScenarioInput {
   age: number;
   filing_status: FilingStatus;
-  income_trajectory: YearlyIncome[];
+  income_timeline: YearlyIncome[];
   traditional_ira_balance: number;
   roth_ira_balance?: number;
   retirement_age?: number;
@@ -159,7 +147,7 @@ export interface YearlyDetail {
   marginal_bracket: number;
 }
 
-export interface TrajectoryChartPoint {
+export interface TimelineChartPoint {
   year: number;
   income: number;
   conversion: number;
@@ -189,7 +177,7 @@ export interface OptimizationResult {
   reasoning_trace: ReasoningTrace;
   traditional_at_retirement: number;
   roth_at_retirement: number;
-  trajectory_chart: TrajectoryChartPoint[];
+  timeline_chart: TimelineChartPoint[];
   conversion_curve: ConversionCurvePoint[];
   unconstrained_npv?: number | null;
   unconstrained_conversions?: number[] | null;
@@ -208,7 +196,7 @@ export interface DemoPersona {
   occupation: string;
   previous_salary: string;
   situation: string;
-  income_trajectory: {
+  income_timeline: {
     year: number;
     income: string;
     event: string;

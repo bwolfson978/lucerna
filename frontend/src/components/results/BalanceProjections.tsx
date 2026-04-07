@@ -1,6 +1,7 @@
 import { MetricCard } from "@/components/common/MetricCard";
 import { formatCompactCurrency, formatSavings } from "@/lib/utils/formatting";
 import { Tooltip } from "@/components/common/Tooltip";
+import { InfoTrigger } from "@/components/methodology/InfoTrigger";
 
 interface BalanceProjectionsProps {
   traditionalAtRetirement: number;
@@ -20,14 +21,21 @@ export function BalanceProjections({
 
   return (
     <div className="flex flex-col gap-default">
-      <div className="flex items-center gap-2">
-        <h3 className="text-h3 text-text-primary">
-          Projected balances at retirement
-        </h3>
-        <Tooltip content="Projected account balances at your retirement age, assuming the selected conversion schedule and expected growth rate." />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h3 className="text-h3 text-text-primary">
+            Projected balances at retirement
+          </h3>
+          <Tooltip content="Projected account balances at your retirement age, assuming the selected conversion schedule and expected growth rate." />
+        </div>
+        <InfoTrigger
+          label="What assumptions drive these projections?"
+          sectionId="assumptions-limitations"
+          triggerId="balance-projections"
+        />
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-default">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-tight sm:gap-default">
         <MetricCard
           label="Traditional IRA/401(k)"
           value={formatCompactCurrency(traditionalAtRetirement)}

@@ -9,7 +9,7 @@ import { GlowButton } from "@/components/common/GlowButton";
 import { Switch } from "@/components/ui/switch";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { Label } from "@/components/ui/label";
-import { IncomeTrajectoryEditor } from "@/components/calculator/IncomeTrajectoryEditor";
+import { IncomeTimelineEditor } from "@/components/calculator/IncomeTimelineEditor";
 import { CURRENT_YEAR } from "@/lib/utils/constants";
 
 interface InputFormProps {
@@ -79,34 +79,35 @@ const STATE_OPTIONS = [
   { value: "custom", label: "Other (enter rate)" },
 ];
 
-function generateTrajectory(
+function generateTimeline(
   currentAge: number,
   retAge: number,
   baseIncome: number,
   annualGrowthRate: number
 ): YearlyIncome[] {
   const yearsToRetirement = retAge - currentAge;
-  if (yearsToRetirement <= 0) return [];
-  return Array.from({ length: yearsToRetirement }, (_, i) => ({
+  const trajectoryLength = yearsToRetirement > 0
+    ? yearsToRetirement
+    : Math.max(1, Math.min(10, 73 - currentAge)); // already retired: plan until RMDs
+  return Array.from({ length: trajectoryLength }, (_, i) => ({
     year: CURRENT_YEAR + i,
     gross_income: Math.round(
       baseIncome * Math.pow(1 + annualGrowthRate / 100, i)
     ),
-    life_event: "none" as const,
   }));
 }
 
 /**
- * Smart-merge: regenerate trajectory from base inputs but preserve
- * years where the user set a life event (the "pin" signal).
+ * Smart-merge: regenerate timeline from base inputs but preserve
+ * years where the user customized values (notes or state override).
  */
-function mergeTrajectory(
+function mergeTimeline(
   fresh: YearlyIncome[],
   existing: YearlyIncome[]
 ): YearlyIncome[] {
   const pinned = new Map<number, YearlyIncome>();
   for (const row of existing) {
-    if (row.life_event !== "none" || row.state != null) {
+    if ((row.notes && row.notes.length > 0) || row.state != null) {
       pinned.set(row.year, row);
     }
   }
@@ -115,7 +116,7 @@ function mergeTrajectory(
 
 export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showMore, setShowAdvanced] = useState(false);
 
   // Form state — nullable so fields can be fully cleared while typing
   const [age, setAge] = useState<number | null>(35);
@@ -129,7 +130,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
     null
   );
 
-  // Advanced settings
+  // Additional settings
   const [yearsInRetirement, setYearsInRetirement] = useState<number | null>(25);
   const [growthRate, setGrowthRate] = useState<number | null>(7);
   const [discountRate, setDiscountRate] = useState<number | null>(5);
@@ -148,33 +149,33 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
     number | null
   >(null);
 
-  // Income trajectory state
-  const [trajectory, setTrajectory] = useState<YearlyIncome[]>([]);
+  // Income timeline state
+  const [timeline, setTimeline] = useState<YearlyIncome[]>([]);
 
-  // Regenerate trajectory when base inputs change, preserving pinned years
+  // Regenerate timeline when base inputs change, preserving pinned years
   useEffect(() => {
     const ageVal = age ?? 0;
     const retVal = retirementAge ?? 65;
     const incGrowthVal = incomeGrowthRate ?? 0;
 
-    if (currentIncome <= 0 || ageVal >= retVal) {
-      setTrajectory([]);
+    if (currentIncome <= 0) {
+      setTimeline([]);
       return;
     }
 
-    const fresh = generateTrajectory(ageVal, retVal, currentIncome, incGrowthVal);
-    setTrajectory((prev) => (prev.length === 0 ? fresh : mergeTrajectory(fresh, prev)));
+    const fresh = generateTimeline(ageVal, retVal, currentIncome, incGrowthVal);
+    setTimeline((prev) => (prev.length === 0 ? fresh : mergeTimeline(fresh, prev)));
   }, [age, retirementAge, currentIncome, incomeGrowthRate]);
 
-  const handleResetTrajectory = useCallback(() => {
+  const handleResetTimeline = useCallback(() => {
     const ageVal = age ?? 0;
     const retVal = retirementAge ?? 65;
     const incGrowthVal = incomeGrowthRate ?? 0;
-    setTrajectory(generateTrajectory(ageVal, retVal, currentIncome, incGrowthVal));
+    setTimeline(generateTimeline(ageVal, retVal, currentIncome, incGrowthVal));
   }, [age, retirementAge, currentIncome, incomeGrowthRate]);
 
-  const showTrajectory = trajectory.length > 0;
-  const hasLifeEvents = trajectory.some((y) => y.life_event !== "none" || y.state != null);
+  const showTimeline = timeline.length > 0;
+  const hasCustomizations = timeline.some((y) => (y.notes && y.notes.length > 0) || y.state != null);
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -188,8 +189,6 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
     const hhSize = householdSize ?? 1;
 
     if (ageVal < 0 || ageVal > 120) errs.age = "Age must be between 0 and 120";
-    if (retVal <= ageVal)
-      errs.retirementAge = "Retirement age must be greater than current age";
     if (retVal < 1 || retVal > 120)
       errs.retirementAge = "Retirement age must be between 1 and 120";
     if (currentIncome < 0) errs.currentIncome = "Income cannot be negative";
@@ -200,10 +199,10 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
       errs.yearsInRetirement = "Must be at least 1 year";
     if (retirementSpending !== null && retirementSpending < 0)
       errs.retirementSpending = "Spending cannot be negative";
-    if (trajectory.length === 0)
-      errs.trajectory = "Enter your income and retirement age to generate a trajectory";
-    if (trajectory.some((y) => y.gross_income < 0))
-      errs.trajectory = "Income cannot be negative";
+    if (timeline.length === 0)
+      errs.timeline = "Enter your income and retirement age to generate a timeline";
+    if (timeline.some((y) => y.gross_income < 0))
+      errs.timeline = "Income cannot be negative";
     if (includeAca) {
       if (hhSize < 1)
         errs.householdSize = "Household must have at least 1 person";
@@ -224,7 +223,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
     const input: ScenarioInput = {
       age: ageVal,
       filing_status: filingStatus,
-      income_trajectory: trajectory,
+      income_timeline: timeline,
       traditional_ira_balance: traditionalBalance,
       roth_ira_balance: rothBalance,
       retirement_age: retVal,
@@ -355,22 +354,22 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
         />
       </div>
 
-      {/* Inline income trajectory editor */}
-      {showTrajectory && (
-        <IncomeTrajectoryEditor
-          trajectory={trajectory}
-          onChange={setTrajectory}
-          onReset={hasLifeEvents ? handleResetTrajectory : undefined}
-          description="Projected from your inputs above. Change any year's income or add a life event to customize."
+      {/* Inline income timeline editor */}
+      {showTimeline && (
+        <IncomeTimelineEditor
+          timeline={timeline}
+          onChange={setTimeline}
+          onReset={hasCustomizations ? handleResetTimeline : undefined}
+          description="Projected from your inputs above. Adjust any year to reflect expected changes — job transitions, time off, or anything else on the horizon."
           defaultState={state !== "none" ? state : undefined}
         />
       )}
-      {errors.trajectory && (
-        <span className="text-caption text-negative">{errors.trajectory}</span>
+      {errors.timeline && (
+        <span className="text-caption text-negative">{errors.timeline}</span>
       )}
 
-      {/* Advanced settings */}
-      <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
+      {/* Additional settings */}
+      <Collapsible open={showMore} onOpenChange={setShowAdvanced}>
         <CollapsibleTrigger asChild>
           <button
             type="button"
@@ -381,7 +380,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
               height="12"
               viewBox="0 0 12 12"
               fill="none"
-              className={`transition-transform duration-300 ${showAdvanced ? "rotate-90" : ""}`}
+              className={`transition-transform duration-300 ${showMore ? "rotate-90" : ""}`}
             >
               <path
                 d="M4.5 2.5l3.5 3.5-3.5 3.5"
@@ -391,7 +390,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
                 strokeLinejoin="round"
               />
             </svg>
-            Advanced settings
+            Additional settings
           </button>
         </CollapsibleTrigger>
 

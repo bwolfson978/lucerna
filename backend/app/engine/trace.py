@@ -27,11 +27,11 @@ def generate_reasoning_trace(
     # Marginal rates at optimal (combined federal + state)
     marginal_rates = []
     for t in range(n_years):
-        income = scenario.income_trajectory[t].gross_income
+        income = scenario.income_timeline[t].gross_income
         c_t = optimal_conversions[t]
         rate = get_marginal_rate(income + c_t, scenario.filing_status)
         yr_state = resolve_state_for_year(
-            scenario.income_trajectory[t].state, scenario.state
+            scenario.income_timeline[t].state, scenario.state
         )
         if yr_state:
             rate += get_state_marginal_rate(
@@ -115,14 +115,14 @@ def _cost_of_next_bracket(
     extra = 1000
     total_extra_tax = 0.0
     for t in range(len(conversions)):
-        income = scenario.income_trajectory[t].gross_income
+        income = scenario.income_timeline[t].gross_income
         c_t = conversions[t]
         tax_current = calculate_federal_tax(income + c_t, scenario.filing_status)
         tax_extra = calculate_federal_tax(income + c_t + extra, scenario.filing_status)
         total_extra_tax += (tax_extra - tax_current)
 
     rate = get_marginal_rate(
-        scenario.income_trajectory[0].gross_income + conversions[0] + extra,
+        scenario.income_timeline[0].gross_income + conversions[0] + extra,
         scenario.filing_status,
     )
 
@@ -142,7 +142,7 @@ def _benefit_of_current_bracket(
 
     total_tax_paid = 0.0
     for t in range(len(conversions)):
-        income = scenario.income_trajectory[t].gross_income
+        income = scenario.income_timeline[t].gross_income
         c_t = conversions[t]
         tax_with = calculate_federal_tax(income + c_t, scenario.filing_status)
         tax_without = calculate_federal_tax(income, scenario.filing_status)
@@ -152,7 +152,7 @@ def _benefit_of_current_bracket(
     avg_rate = total_tax_paid / total_conversion if total_conversion > 0 else 0.0
 
     # Estimate future tax avoided (rough: retirement rate * conversion * growth)
-    years_to_retire = scenario.retirement_age - scenario.age
+    years_to_retire = max(0, scenario.retirement_age - scenario.age)
     future_value = total_conversion * (1 + scenario.annual_growth_rate) ** years_to_retire
     retirement_rate = get_marginal_rate(
         scenario.annual_retirement_spending or future_value * 0.04,
@@ -183,7 +183,7 @@ def _build_sensitivity_notes(
 
     n_years = len(conversions)
     if n_years > 1:
-        incomes = [y.gross_income for y in scenario.income_trajectory]
+        incomes = [y.gross_income for y in scenario.income_timeline]
         income_range = max(incomes) - min(incomes)
         if income_range > 50000:
             notes.append("Large income variation across years creates significant conversion opportunities in low-income years")
@@ -218,10 +218,10 @@ def _build_sensitivity_notes(
         for t in range(len(conversions)):
             if conversions[t] > 0:
                 yr_state = resolve_state_for_year(
-                    scenario.income_trajectory[t].state, scenario.state
+                    scenario.income_timeline[t].state, scenario.state
                 )
                 if yr_state:
-                    income = scenario.income_trajectory[t].gross_income
+                    income = scenario.income_timeline[t].gross_income
                     sr = get_state_marginal_rate(
                         income + conversions[t], yr_state, scenario.filing_status,
                         scenario.custom_state_rate,
@@ -309,13 +309,13 @@ def _build_summary_points(
         year_parts = []
         for t in range(n_years):
             if conversions[t] > 0:
-                year = scenario.income_trajectory[t].year
+                year = scenario.income_timeline[t].year
                 year_parts.append(f"${conversions[t]:,.0f} in {year}")
         what = "Convert " + ", ".join(year_parts) if year_parts else "No conversion recommended"
 
     # Why this amount
     low_income_years = [
-        scenario.income_trajectory[t].year
+        scenario.income_timeline[t].year
         for t in range(n_years)
         if conversions[t] > 0
     ]

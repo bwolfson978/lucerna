@@ -19,22 +19,22 @@ def _aca_coverage_years(scenario: ScenarioInput) -> set[int]:
 
     If healthcare inputs specify explicit years, use those. If
     has_employer_coverage_after is set, only model ACA for years before it.
-    Otherwise, defaults to all trajectory years (conservative — optimizer
+    Otherwise, defaults to all timeline years (conservative — optimizer
     will find the right balance).
     """
     hc = scenario.healthcare
     if hc is None:
         return set()
 
-    trajectory_years = {y.year for y in scenario.income_trajectory}
+    timeline_years = {y.year for y in scenario.income_timeline}
 
     if hc.aca_coverage_years is not None:
-        return set(hc.aca_coverage_years) & trajectory_years
+        return set(hc.aca_coverage_years) & timeline_years
 
     if hc.has_employer_coverage_after is not None:
-        return {y for y in trajectory_years if y < hc.has_employer_coverage_after}
+        return {y for y in timeline_years if y < hc.has_employer_coverage_after}
 
-    return trajectory_years
+    return timeline_years
 
 
 def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> float:
@@ -42,14 +42,14 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
 
     Model phases:
     1. Conversion years: pay tax on conversions, shift balances, grow
-    2. Post-trajectory growth: grow both accounts until retirement
+    2. Post-timeline growth: grow both accounts until retirement
     3. Retirement: withdraw from traditional (taxed), Roth grows tax-free
     4. Terminal liquidation: remaining balances distributed
 
     When healthcare inputs are provided, subsidy loss from conversions
     is included as an additional cost in Phase 1.
     """
-    n_years = len(scenario.income_trajectory)
+    n_years = len(scenario.income_timeline)
     g = scenario.annual_growth_rate
     d = scenario.discount_rate
     filing_status = scenario.filing_status
@@ -64,7 +64,7 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
 
     # Phase 1: Conversion years
     for t in range(n_years):
-        income = scenario.income_trajectory[t].gross_income
+        income = scenario.income_timeline[t].gross_income
         c_t = min(max(0, yearly_conversions[t]), trad_balance)
 
         tax_with = calculate_federal_tax(income + c_t, filing_status)
@@ -74,7 +74,7 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
         # State tax on conversion (additive cost layer)
         state_tax_cost = 0.0
         year_state = resolve_state_for_year(
-            scenario.income_trajectory[t].state, scenario.state
+            scenario.income_timeline[t].state, scenario.state
         )
         if year_state:
             st_with = calculate_state_tax(income + c_t, year_state, filing_status, scenario.custom_state_rate)
@@ -83,7 +83,7 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
 
         # ACA subsidy loss (if healthcare inputs provided and this is a coverage year)
         subsidy_loss = 0.0
-        if hc and scenario.income_trajectory[t].year in aca_years:
+        if hc and scenario.income_timeline[t].year in aca_years:
             subsidy_loss = calculate_subsidy_loss(
                 income, c_t, hc.household_size, hc.monthly_slcsp_premium,
             )
@@ -103,8 +103,8 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
         trad_balance *= (1 + g)
         roth_balance *= (1 + g)
 
-    # Phase 2: Post-trajectory growth until retirement
-    years_until_retirement = scenario.retirement_age - scenario.age
+    # Phase 2: Post-timeline growth until retirement
+    years_until_retirement = max(0, scenario.retirement_age - scenario.age)
     remaining_growth_years = years_until_retirement - n_years
     if remaining_growth_years > 0:
         growth_factor = (1 + g) ** remaining_growth_years
@@ -186,7 +186,7 @@ def _run_scipy(
     when a successful result is found and subsequent restarts don't improve
     NPV by more than 0.1%.
     """
-    n_years = len(scenario.income_trajectory)
+    n_years = len(scenario.income_timeline)
     max_balance = scenario.traditional_ira_balance
 
     greedy = greedy_bracket_fill(scenario)
@@ -263,7 +263,7 @@ def _build_constrained_params(
     unconstrained_conversions: list[float],
 ) -> tuple[list[tuple[float, float]], list[dict]]:
     """Build scipy bounds and constraints from user preferences."""
-    n_years = len(scenario.income_trajectory)
+    n_years = len(scenario.income_timeline)
     max_balance = scenario.traditional_ira_balance
 
     # Start with base bounds
@@ -282,10 +282,10 @@ def _build_constrained_params(
     if prefs.max_annual_tax_cost is not None:
         cap = prefs.max_annual_tax_cost
         for t in range(n_years):
-            income_t = scenario.income_trajectory[t].gross_income
+            income_t = scenario.income_timeline[t].gross_income
             fs = scenario.filing_status
             yr_state = resolve_state_for_year(
-                scenario.income_trajectory[t].state, scenario.state
+                scenario.income_timeline[t].state, scenario.state
             )
             custom_rate = scenario.custom_state_rate
 
@@ -317,7 +317,7 @@ def _build_constrained_params(
             # Sort years by income (ascending) to pick lowest-income years
             year_indices = sorted(
                 range(n_years),
-                key=lambda t: scenario.income_trajectory[t].gross_income,
+                key=lambda t: scenario.income_timeline[t].gross_income,
             )
             target_years = year_indices[:min_years]
             floor = total_unconstrained / (min_years * 3)
@@ -349,7 +349,7 @@ def _run_scipy_light(
     cached_greedy: list[float] | None = None,
 ) -> list[float]:
     """Lighter optimizer for conversion curve: single restart, lower precision."""
-    n_years = len(scenario.income_trajectory)
+    n_years = len(scenario.income_timeline)
     max_balance = min(scenario.traditional_ira_balance, total_cap)
 
     bounds = [(0, max_balance) for _ in range(n_years)]
@@ -401,7 +401,7 @@ def _build_year_detail(
     Returns (yearly_detail, yearly_bracket_fill, total_tax, aca_details).
     aca_details is None when healthcare inputs are not provided.
     """
-    n_years = len(scenario.income_trajectory)
+    n_years = len(scenario.income_timeline)
     yearly_detail = []
     yearly_bracket_fill: list[list[BracketFillResult]] = []
     total_tax = 0.0
@@ -413,9 +413,9 @@ def _build_year_detail(
     from app.engine.aca import federal_poverty_level
 
     for t in range(n_years):
-        income = scenario.income_trajectory[t].gross_income
+        income = scenario.income_timeline[t].gross_income
         c_t = conversions[t]
-        year = scenario.income_trajectory[t].year
+        year = scenario.income_timeline[t].year
 
         tax_with = calculate_federal_tax(income + c_t, scenario.filing_status)
         tax_without = calculate_federal_tax(income, scenario.filing_status)
@@ -423,7 +423,7 @@ def _build_year_detail(
 
         # State tax cost for this year
         year_state = resolve_state_for_year(
-            scenario.income_trajectory[t].state, scenario.state
+            scenario.income_timeline[t].state, scenario.state
         )
         state_tax = 0.0
         if year_state:
@@ -505,7 +505,7 @@ def compute_conversion_curve(
     NPV data at discrete points.
     """
     max_balance = scenario.traditional_ira_balance
-    n_years = len(scenario.income_trajectory)
+    n_years = len(scenario.income_timeline)
 
     # Scale down points for long trajectories — each scipy call is O(n_years)
     if n_years > 15:
@@ -710,7 +710,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
     """
     from app.engine.dp import dp_optimize, extract_conversion_curve_3d
 
-    n_years = len(scenario.income_trajectory)
+    n_years = len(scenario.income_timeline)
     max_balance = scenario.traditional_ira_balance
 
     # --- Unconstrained: DP (globally optimal) ---
@@ -745,18 +745,18 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         scenario, final_conversions,
     )
 
-    trajectory_chart = []
+    timeline_chart = []
     trad_balance = scenario.traditional_ira_balance
     roth_balance = scenario.roth_ira_balance
     g = scenario.annual_growth_rate
 
     for t in range(n_years):
-        income = scenario.income_trajectory[t].gross_income
+        income = scenario.income_timeline[t].gross_income
         c_t = final_conversions[t]
 
         bracket_fill = yearly_bracket_fill[t]
-        trajectory_chart.append({
-            "year": scenario.income_trajectory[t].year,
+        timeline_chart.append({
+            "year": scenario.income_timeline[t].year,
             "income": income,
             "conversion": c_t,
             "bracket_boundaries": [b.bracket_max for b in bracket_fill],
@@ -768,7 +768,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         roth_balance *= (1 + g)
 
     # Project to retirement
-    years_until_retirement = scenario.retirement_age - scenario.age
+    years_until_retirement = max(0, scenario.retirement_age - scenario.age)
     remaining_growth = years_until_retirement - n_years
     if remaining_growth > 0:
         factor = (1 + g) ** remaining_growth
@@ -780,14 +780,14 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
     # Scenarios
     full_conversions = [max_balance] + [0.0] * (n_years - 1)
     npv_at_full = calculate_npv(scenario, full_conversions)
-    yr0_income = scenario.income_trajectory[0].gross_income
+    yr0_income = scenario.income_timeline[0].gross_income
     tax_full = (
         calculate_federal_tax(yr0_income + max_balance, scenario.filing_status)
         - calculate_federal_tax(yr0_income, scenario.filing_status)
     )
     # Include state tax in full-conversion scenario
     yr0_state = resolve_state_for_year(
-        scenario.income_trajectory[0].state, scenario.state
+        scenario.income_timeline[0].state, scenario.state
     )
     if yr0_state:
         tax_full += (
@@ -795,7 +795,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
             - calculate_state_tax(yr0_income, yr0_state, scenario.filing_status, scenario.custom_state_rate)
         )
 
-    trajectory_years = [yi.year for yi in scenario.income_trajectory]
+    timeline_years = [yi.year for yi in scenario.income_timeline]
     scenarios = [
         ScenarioComparison(
             label="No conversion",
@@ -805,7 +805,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
             difference_from_optimal=npv_at_zero - npv_at_optimal,
             estimated_savings=0.0,
             yearly_conversions=[0.0] * n_years,
-            years=trajectory_years,
+            years=timeline_years,
         ),
         ScenarioComparison(
             label="Highest estimated savings",
@@ -815,7 +815,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
             difference_from_optimal=0,
             estimated_savings=npv_at_optimal - npv_at_zero,
             yearly_conversions=list(final_conversions),
-            years=trajectory_years,
+            years=timeline_years,
         ),
         ScenarioComparison(
             label="Full conversion (year 1)",
@@ -825,7 +825,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
             difference_from_optimal=npv_at_full - npv_at_optimal,
             estimated_savings=npv_at_full - npv_at_zero,
             yearly_conversions=[max_balance] + [0.0] * (n_years - 1),
-            years=trajectory_years,
+            years=timeline_years,
         ),
     ]
 
@@ -884,7 +884,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         reasoning_trace=reasoning,
         traditional_at_retirement=round(trad_balance, 2),
         roth_at_retirement=round(roth_balance, 2),
-        trajectory_chart=trajectory_chart,
+        timeline_chart=timeline_chart,
         conversion_curve=conversion_curve,
         unconstrained_npv=result_unconstrained_npv,
         unconstrained_conversions=result_unconstrained_conversions,

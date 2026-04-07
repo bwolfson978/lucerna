@@ -6,6 +6,8 @@ import { BRACKET_COLORS, CHART_COLORS } from "@/lib/utils/constants";
 import { useRef, useMemo, useState, useCallback, useEffect, type RefObject } from "react";
 import { useContainerWidth } from "@/hooks/useContainerWidth";
 import { useScrollFade } from "@/hooks/useScrollFade";
+import { useViewportHeight } from "@/hooks/useViewportHeight";
+import taxData from "@/lib/tax/federal-brackets-2025.json";
 
 interface ChartTooltip {
   x: number;
@@ -29,33 +31,30 @@ interface BracketChartProps {
   onLayoutChange?: (layout: { leftOffset: number; rightOffset: number }) => void;
 }
 
-// All bracket boundaries for axis labels
+// Derive bracket boundaries from the shared JSON config.
+// For the top bracket (max: null/Infinity), use min + 500K as display max.
+function buildBoundaries(raw: typeof taxData.brackets.single) {
+  return raw.map((b) => ({
+    rate: b.rate,
+    max: b.max === null ? b.min + 500000 : b.max,
+  }));
+}
+
 const BRACKET_BOUNDARIES: Record<string, { rate: number; max: number }[]> = {
-  single: [
-    { rate: 0.10, max: 11925 },
-    { rate: 0.12, max: 48475 },
-    { rate: 0.22, max: 103350 },
-    { rate: 0.24, max: 197300 },
-    { rate: 0.32, max: 250525 },
-    { rate: 0.35, max: 626350 },
-  ],
-  married_filing_jointly: [
-    { rate: 0.10, max: 23850 },
-    { rate: 0.12, max: 96950 },
-    { rate: 0.22, max: 206700 },
-    { rate: 0.24, max: 394600 },
-    { rate: 0.32, max: 501050 },
-    { rate: 0.35, max: 751600 },
-  ],
+  single: buildBoundaries(taxData.brackets.single),
+  married_filing_jointly: buildBoundaries(taxData.brackets.married_filing_jointly),
 };
 
 export const BAR_GAP = 10;
 export const MIN_BAR_WIDTH = 24;
 export const DEFAULT_BAR_WIDTH = 48;
-const DESKTOP_CHART_HEIGHT = 320;
+const MIN_DESKTOP_CHART_HEIGHT = 320;
+const MAX_DESKTOP_CHART_HEIGHT = 480;
 const MOBILE_CHART_HEIGHT = 260;
 const TOP_PADDING = 16;
 const BOTTOM_PADDING = 40;
+/** Minimum pixel height so small-but-nonzero segments stay visible */
+const MIN_SEGMENT_HEIGHT = 3;
 const MOBILE_BREAKPOINT = 500;
 const LEFT_AXIS_WIDTH_DESKTOP = 70;
 const LEFT_AXIS_WIDTH_MOBILE = 55;
@@ -86,6 +85,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
   const [isEngaged, setIsEngaged] = useState(false);
 
   const containerWidth = useContainerWidth(containerRef);
+  const viewportHeight = useViewportHeight();
   const { hasScrolled } = useScrollFade(scrollRef, fadeRef);
 
   // Dismiss tooltip and disengage when clicking outside the chart
@@ -103,7 +103,19 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
   // Responsive layout computation
   const layout = useMemo(() => {
     const isMobile = containerWidth !== undefined && containerWidth < MOBILE_BREAKPOINT;
-    const chartHeight = isMobile ? MOBILE_CHART_HEIGHT : DESKTOP_CHART_HEIGHT;
+
+    // Dynamic chart height: scale with viewport on desktop, clamped to sensible range
+    let chartHeight: number;
+    if (isMobile) {
+      chartHeight = MOBILE_CHART_HEIGHT;
+    } else if (viewportHeight !== undefined) {
+      // Use ~45% of viewport height, clamped between min/max
+      const desired = Math.round(viewportHeight * 0.45);
+      chartHeight = Math.max(MIN_DESKTOP_CHART_HEIGHT, Math.min(desired, MAX_DESKTOP_CHART_HEIGHT));
+    } else {
+      chartHeight = MIN_DESKTOP_CHART_HEIGHT;
+    }
+
     const leftAxisWidth = isMobile ? LEFT_AXIS_WIDTH_MOBILE : LEFT_AXIS_WIDTH_DESKTOP;
     const rightAxisWidth = isMobile ? RIGHT_AXIS_WIDTH_MOBILE : RIGHT_AXIS_WIDTH_DESKTOP;
 
@@ -118,7 +130,8 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
       const availableForBars = containerWidth - totalOverhead;
       const computed = Math.floor((availableForBars - BAR_GAP) / years.length) - BAR_GAP;
       if (computed >= MIN_BAR_WIDTH) {
-        barWidth = Math.min(computed, DEFAULT_BAR_WIDTH);
+        // Let bars expand to fill available space — no hard cap
+        barWidth = computed;
         barsFit = true;
       } else {
         barWidth = MIN_BAR_WIDTH;
@@ -129,7 +142,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
     const totalBarWidth = years.length * (barWidth + BAR_GAP);
 
     return { isMobile, chartHeight, leftAxisWidth, rightAxisWidth, barWidth, totalBarWidth, barsFit };
-  }, [containerWidth, years.length]);
+  }, [containerWidth, viewportHeight, years.length]);
 
   const { isMobile, chartHeight, leftAxisWidth, rightAxisWidth, barWidth, totalBarWidth, barsFit } = layout;
 
@@ -187,7 +200,10 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
   // Find the bracket boundary to use as chart max
   const maxBracket = useMemo(() => {
     const idx = brackets.findIndex((b) => b.rate >= maxFilledBracketRate);
-    const showIdx = Math.min(idx + 1, brackets.length - 1);
+    // If rate not found (-1), show the highest bracket; otherwise show one above
+    const showIdx = idx === -1
+      ? brackets.length - 1
+      : Math.min(idx + 1, brackets.length - 1);
     return brackets[showIdx];
   }, [brackets, maxFilledBracketRate]);
 
@@ -309,7 +325,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
             className={!barsFit ? "overflow-x-auto bracket-chart-scroll pb-2" : ""}
           >
             <svg
-              width={Math.max(totalBarWidth, 200)}
+              width={barsFit ? "100%" : Math.max(totalBarWidth, 200)}
               height={chartHeight}
               className="block"
             >
@@ -344,7 +360,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
                     key={`line-${b.rate}`}
                     x1={0}
                     y1={y}
-                    x2={totalBarWidth}
+                    x2={barsFit ? "100%" : totalBarWidth}
                     y2={y}
                     stroke={color}
                     strokeWidth={1}
@@ -553,22 +569,33 @@ function BracketBar({
         );
         const bracketVisibleMax = Math.min(bf.bracket_max, chartMax);
 
-        // Remaining capacity segment (background)
-        const remainingBottom = yScale(
-          bf.bracket_min + bf.filled_by_income + bf.filled_by_conversion
-        );
+        // Income segment (natural)
+        const rawIncomeBottom = yScale(bf.bracket_min);
+        const rawIncomeTop = yScale(bf.bracket_min + bf.filled_by_income);
+        const rawIncomeHeight = rawIncomeBottom - rawIncomeTop;
+
+        // Enforce minimum height for nonzero income
+        const incomeHeight =
+          bf.filled_by_income > 0
+            ? Math.max(rawIncomeHeight, MIN_SEGMENT_HEIGHT)
+            : 0;
+        const incomeBottom = rawIncomeBottom;
+        const incomeTop = incomeBottom - incomeHeight;
+
+        // Conversion segment stacks on top of (possibly expanded) income
+        const rawConvHeight = yScale(bf.bracket_min + bf.filled_by_income) - yScale(segmentTop);
+
+        const convHeight =
+          bf.filled_by_conversion > 0
+            ? Math.max(rawConvHeight, MIN_SEGMENT_HEIGHT)
+            : 0;
+        const convBottom = incomeTop;
+        const convTop = convBottom - convHeight;
+
+        // Remaining capacity sits on top of the filled segments
         const remainingTop = yScale(bracketVisibleMax);
-        const remainingHeight = remainingBottom - remainingTop;
-
-        // Income segment
-        const incomeBottom = yScale(bf.bracket_min);
-        const incomeTop = yScale(bf.bracket_min + bf.filled_by_income);
-        const incomeHeight = incomeBottom - incomeTop;
-
-        // Conversion segment
-        const convBottom = yScale(bf.bracket_min + bf.filled_by_income);
-        const convTop = yScale(segmentTop);
-        const convHeight = convBottom - convTop;
+        const remainingBottom = convHeight > 0 ? convTop : incomeTop;
+        const remainingHeight = Math.max(remainingBottom - remainingTop, 0);
 
         return (
           <g key={bf.bracket_rate}>
@@ -587,7 +614,7 @@ function BracketBar({
             )}
 
             {/* Income portion */}
-            {incomeHeight > 1 && (
+            {incomeHeight > 0 && (
               <rect
                 x={x}
                 y={incomeTop}
@@ -600,7 +627,7 @@ function BracketBar({
             )}
 
             {/* Conversion portion */}
-            {convHeight > 1 && (
+            {convHeight > 0 && (
               <rect
                 x={x}
                 y={convTop}
