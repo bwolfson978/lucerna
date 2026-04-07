@@ -94,7 +94,7 @@ This serves the **"convince me it's worth it"** moment. The current Lucerna outp
 
 ### Architecture fit
 - The NPV model in `optimizer.py` already simulates retirement withdrawals internally (Phase 3: retirement withdrawals, Phase 4: terminal liquidation) — this feature **surfaces that simulation to the user** rather than hiding it inside the optimizer
-- Extends the trajectory chart to show the "other side" — accumulation + conversion years followed by withdrawal years
+- Extends the timeline chart to show the "other side" — accumulation + conversion years followed by withdrawal years
 - Naturally leads into RMD and Social Security modeling (Phase 3 features) by providing the visualization framework
 
 ### Demand signals

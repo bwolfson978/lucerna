@@ -27,7 +27,7 @@ class TestAgeValidation:
         """Age -1 should return 422."""
         payload = dict(
             age=-1, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 50000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 50000}],
             traditional_ira_balance=100000,
         )
         resp = await async_client.post("/api/optimize", json=payload)
@@ -37,7 +37,7 @@ class TestAgeValidation:
         """Age 121 should return 422."""
         payload = dict(
             age=121, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 50000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 50000}],
             traditional_ira_balance=100000,
         )
         resp = await async_client.post("/api/optimize", json=payload)
@@ -47,7 +47,7 @@ class TestAgeValidation:
         """Age 0 should be accepted (custodial IRA)."""
         payload = dict(
             age=0, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 5000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 5000}],
             traditional_ira_balance=10000,
             retirement_age=65,
         )
@@ -58,7 +58,7 @@ class TestAgeValidation:
         """Age 119 with retirement_age 120 should be accepted."""
         payload = dict(
             age=119, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 50000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 50000}],
             traditional_ira_balance=100000,
             retirement_age=120,
         )
@@ -69,7 +69,7 @@ class TestAgeValidation:
         """Non-integer age should be rejected or coerced."""
         payload = dict(
             age="thirty", filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 50000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 50000}],
             traditional_ira_balance=100000,
         )
         resp = await async_client.post("/api/optimize", json=payload)
@@ -86,7 +86,7 @@ class TestFilingStatusValidation:
         """Unrecognized filing status should return 422."""
         payload = dict(
             age=40, filing_status="head_of_household",
-            income_trajectory=[{"year": 2026, "gross_income": 80000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
         )
         resp = await async_client.post("/api/optimize", json=payload)
@@ -96,7 +96,7 @@ class TestFilingStatusValidation:
         """MFJ is a valid filing status."""
         payload = dict(
             age=50, filing_status="married_filing_jointly",
-            income_trajectory=[{"year": 2026, "gross_income": 150000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 150000}],
             traditional_ira_balance=500000,
             retirement_age=65,
         )
@@ -105,23 +105,23 @@ class TestFilingStatusValidation:
 
 
 # ---------------------------------------------------------------------------
-# 3. Income trajectory validation
+# 3. Income timeline validation
 # ---------------------------------------------------------------------------
 
 class TestIncomeTrajectoryValidation:
 
-    async def test_empty_trajectory(self, async_client):
-        """Empty income trajectory should return 422 (min_length=1)."""
+    async def test_empty_timeline(self, async_client):
+        """Empty income timeline should return 422 (min_length=1)."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[],
+            income_timeline=[],
             traditional_ira_balance=200000,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 422
 
-    async def test_missing_trajectory(self, async_client):
-        """Missing income_trajectory field should return 422."""
+    async def test_missing_timeline(self, async_client):
+        """Missing income_timeline field should return 422."""
         payload = dict(
             age=40, filing_status="single",
             traditional_ira_balance=200000,
@@ -133,7 +133,7 @@ class TestIncomeTrajectoryValidation:
         """Negative gross_income should return 422 (ge=0)."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": -10000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": -10000}],
             traditional_ira_balance=200000,
         )
         resp = await async_client.post("/api/optimize", json=payload)
@@ -143,32 +143,22 @@ class TestIncomeTrajectoryValidation:
         """Zero income should be accepted (sabbatical year, etc.)."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 0, "life_event": "sabbatical"}],
+            income_timeline=[{"year": 2026, "gross_income": 0, "notes": "Sabbatical"}],
             traditional_ira_balance=200000,
             retirement_age=65,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
 
-    async def test_invalid_life_event(self, async_client):
-        """Unknown life_event enum value should return 422."""
-        payload = dict(
-            age=40, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 80000, "life_event": "lottery_win"}],
-            traditional_ira_balance=200000,
-        )
-        resp = await async_client.post("/api/optimize", json=payload)
-        assert resp.status_code == 422
-
-    async def test_many_year_trajectory(self, async_client):
-        """A long trajectory (15 years) should be accepted."""
-        trajectory = [
-            {"year": 2026 + i, "gross_income": 80000 + i * 2000, "life_event": "none"}
+    async def test_many_year_timeline(self, async_client):
+        """A long timeline (15 years) should be accepted."""
+        timeline = [
+            {"year": 2026 + i, "gross_income": 80000 + i * 2000}
             for i in range(15)
         ]
         payload = dict(
             age=35, filing_status="single",
-            income_trajectory=trajectory,
+            income_timeline=timeline,
             traditional_ira_balance=300000,
             retirement_age=65,
         )
@@ -188,7 +178,7 @@ class TestTraditionalBalanceValidation:
         """Negative traditional balance should return 422 (ge=0)."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 80000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=-50000,
         )
         resp = await async_client.post("/api/optimize", json=payload)
@@ -198,7 +188,7 @@ class TestTraditionalBalanceValidation:
         """Zero balance should be accepted — nothing to convert."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 80000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=0,
             retirement_age=65,
         )
@@ -211,7 +201,7 @@ class TestTraditionalBalanceValidation:
         """$5M balance should be accepted and produce a result."""
         payload = dict(
             age=50, filing_status="married_filing_jointly",
-            income_trajectory=[{"year": 2026, "gross_income": 200000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 200000}],
             traditional_ira_balance=5000000,
             retirement_age=65,
         )
@@ -231,7 +221,7 @@ class TestRothBalanceValidation:
         """Negative Roth balance should return 422 (ge=0)."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 80000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
             roth_ira_balance=-10000,
         )
@@ -242,7 +232,7 @@ class TestRothBalanceValidation:
         """Omitting roth_ira_balance should default to 0."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 80000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
             retirement_age=65,
         )
@@ -260,7 +250,7 @@ class TestRetirementAgeValidation:
         """Retirement age 0 should return 422 (ge=1)."""
         payload = dict(
             age=0, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 50000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 50000}],
             traditional_ira_balance=100000,
             retirement_age=0,
         )
@@ -271,7 +261,7 @@ class TestRetirementAgeValidation:
         """Retirement age 121 should return 422 (le=120)."""
         payload = dict(
             age=50, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 80000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
             retirement_age=121,
         )
@@ -290,7 +280,7 @@ class TestRateValidation:
         """Very high growth rate (500%) should be accepted — user can experiment."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 80000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
             retirement_age=65,
             annual_growth_rate=5.0,
@@ -302,7 +292,7 @@ class TestRateValidation:
         """Negative growth rate (-50%) should be accepted — user can experiment."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 80000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
             retirement_age=65,
             annual_growth_rate=-0.50,
@@ -314,7 +304,7 @@ class TestRateValidation:
         """Very high discount rate (200%) should be accepted — user can experiment."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 80000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
             retirement_age=65,
             discount_rate=2.0,
@@ -326,7 +316,7 @@ class TestRateValidation:
         """Zero growth and discount rates should be accepted."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 80000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
             retirement_age=65,
             annual_growth_rate=0.0,
@@ -346,7 +336,7 @@ class TestYearsInRetirementValidation:
         """years_in_retirement < 1 should return 422 (ge=1)."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 80000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
             years_in_retirement=0,
         )
@@ -357,7 +347,7 @@ class TestYearsInRetirementValidation:
         """Omitting years_in_retirement should default to 25 and work."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 80000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
             retirement_age=65,
         )
@@ -375,7 +365,7 @@ class TestHealthcareValidation:
         """Household size 0 should return 422 (ge=1)."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 50000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 50000}],
             traditional_ira_balance=200000,
             retirement_age=65,
             healthcare={"household_size": 0, "monthly_slcsp_premium": 620},
@@ -387,7 +377,7 @@ class TestHealthcareValidation:
         """Large household (size 20) should be accepted — no real-world cap."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 50000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 50000}],
             traditional_ira_balance=200000,
             retirement_age=65,
             healthcare={"household_size": 20, "monthly_slcsp_premium": 620},
@@ -399,7 +389,7 @@ class TestHealthcareValidation:
         """Negative SLCSP premium should return 422 (ge=0)."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 50000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 50000}],
             traditional_ira_balance=200000,
             retirement_age=65,
             healthcare={"household_size": 1, "monthly_slcsp_premium": -100},
@@ -411,7 +401,7 @@ class TestHealthcareValidation:
         """Valid healthcare inputs should be accepted and affect results."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 45000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 45000}],
             traditional_ira_balance=200000,
             retirement_age=65,
             healthcare={"household_size": 2, "monthly_slcsp_premium": 800},
@@ -425,10 +415,10 @@ class TestHealthcareValidation:
         """Employer coverage year should limit ACA modeling to earlier years."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[
-                {"year": 2026, "gross_income": 45000, "life_event": "none"},
-                {"year": 2027, "gross_income": 50000, "life_event": "none"},
-                {"year": 2028, "gross_income": 90000, "life_event": "back_to_work"},
+            income_timeline=[
+                {"year": 2026, "gross_income": 45000},
+                {"year": 2027, "gross_income": 50000},
+                {"year": 2028, "gross_income": 90000, "notes": "Back to work"},
             ],
             traditional_ira_balance=200000,
             retirement_age=65,
@@ -472,7 +462,7 @@ class TestConversionPreferencesValidation:
         """Valid conversion preferences should be accepted."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 80000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
             retirement_age=65,
             conversion_preferences={
@@ -495,7 +485,7 @@ class TestFunctionalScenarios:
         """Young person with low income and moderate IRA — should convert aggressively."""
         payload = dict(
             age=25, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 30000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 30000}],
             traditional_ira_balance=50000,
             retirement_age=65,
         )
@@ -510,7 +500,7 @@ class TestFunctionalScenarios:
         """High earner ($400k) — may convert less since already in high brackets."""
         payload = dict(
             age=45, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 400000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 400000}],
             traditional_ira_balance=500000,
             retirement_age=65,
         )
@@ -526,9 +516,9 @@ class TestFunctionalScenarios:
         """Zero income sabbatical year should get large conversion (low brackets empty)."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[
-                {"year": 2026, "gross_income": 0, "life_event": "sabbatical"},
-                {"year": 2027, "gross_income": 120000, "life_event": "back_to_work"},
+            income_timeline=[
+                {"year": 2026, "gross_income": 0, "notes": "Sabbatical"},
+                {"year": 2027, "gross_income": 120000, "notes": "Back to work"},
             ],
             traditional_ira_balance=200000,
             retirement_age=65,
@@ -543,9 +533,9 @@ class TestFunctionalScenarios:
         """MFJ couple with $150k income, $500k IRA — typical FIRE scenario."""
         payload = dict(
             age=50, filing_status="married_filing_jointly",
-            income_trajectory=[
-                {"year": 2026, "gross_income": 150000, "life_event": "none"},
-                {"year": 2027, "gross_income": 155000, "life_event": "none"},
+            income_timeline=[
+                {"year": 2026, "gross_income": 150000},
+                {"year": 2027, "gross_income": 155000},
             ],
             traditional_ira_balance=500000,
             roth_ira_balance=100000,
@@ -564,7 +554,7 @@ class TestFunctionalScenarios:
         """Person 1 year from retirement — only 1 conversion year available."""
         payload = dict(
             age=64, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 70000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 70000}],
             traditional_ira_balance=300000,
             retirement_age=65,
         )
@@ -575,13 +565,13 @@ class TestFunctionalScenarios:
 
     async def test_early_retiree_zero_income_multi_year(self, async_client):
         """Early retiree with 0 income for 5 years — should spread conversions across years."""
-        trajectory = [
-            {"year": 2026 + i, "gross_income": 0, "life_event": "early_retirement"}
+        timeline = [
+            {"year": 2026 + i, "gross_income": 0, "notes": "Early retirement"}
             for i in range(5)
         ]
         payload = dict(
             age=45, filing_status="single",
-            income_trajectory=trajectory,
+            income_timeline=timeline,
             traditional_ira_balance=400000,
             retirement_age=50,
         )
@@ -597,7 +587,7 @@ class TestFunctionalScenarios:
         """Verify all expected fields are present in a successful response."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 80000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
             retirement_age=65,
         )
@@ -621,17 +611,17 @@ class TestFunctionalScenarios:
         assert "reasoning_trace" in data
         assert "traditional_at_retirement" in data
         assert "roth_at_retirement" in data
-        assert "trajectory_chart" in data
+        assert "timeline_chart" in data
         assert "input" in data
 
     async def test_conversions_never_exceed_balance(self, async_client):
         """No matter the scenario, total conversions must not exceed IRA balance."""
         payload = dict(
             age=30, filing_status="single",
-            income_trajectory=[
-                {"year": 2026, "gross_income": 20000, "life_event": "none"},
-                {"year": 2027, "gross_income": 15000, "life_event": "part_time"},
-                {"year": 2028, "gross_income": 10000, "life_event": "grad_school"},
+            income_timeline=[
+                {"year": 2026, "gross_income": 20000},
+                {"year": 2027, "gross_income": 15000, "notes": "Part-time"},
+                {"year": 2028, "gross_income": 10000, "notes": "Grad school"},
             ],
             traditional_ira_balance=80000,
             retirement_age=65,
@@ -645,8 +635,8 @@ class TestFunctionalScenarios:
         """ACA-aware optimization should produce subsidy impact data."""
         payload = dict(
             age=42, filing_status="single",
-            income_trajectory=[
-                {"year": 2026, "gross_income": 35000, "life_event": "startup"},
+            income_timeline=[
+                {"year": 2026, "gross_income": 35000, "notes": "Startup"},
             ],
             traditional_ira_balance=150000,
             retirement_age=65,
@@ -666,7 +656,7 @@ class TestFunctionalScenarios:
         """Optimal NPV should be >= no-conversion NPV (optimizer should not make things worse)."""
         payload = dict(
             age=40, filing_status="single",
-            income_trajectory=[{"year": 2026, "gross_income": 60000, "life_event": "none"}],
+            income_timeline=[{"year": 2026, "gross_income": 60000}],
             traditional_ira_balance=200000,
             retirement_age=65,
         )
@@ -674,3 +664,34 @@ class TestFunctionalScenarios:
         assert resp.status_code == 200
         data = resp.json()
         assert data["npv_at_optimal"] >= data["npv_at_zero"] - 1  # float tolerance
+
+    async def test_already_retired_returns_200(self, async_client):
+        """retirement_age < current age (already retired) should return 200."""
+        payload = dict(
+            age=70, filing_status="married_filing_jointly",
+            income_timeline=[
+                {"year": 2026, "gross_income": 50000},
+                {"year": 2027, "gross_income": 50000},
+                {"year": 2028, "gross_income": 50000},
+            ],
+            traditional_ira_balance=500000,
+            retirement_age=65,
+        )
+        resp = await async_client.post("/api/optimize", json=payload)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total_conversion"] >= 0
+        assert len(data["yearly_conversions"]) == 3
+
+    async def test_retirement_age_equals_current_age_returns_200(self, async_client):
+        """retirement_age == current age should return 200."""
+        payload = dict(
+            age=65, filing_status="single",
+            income_timeline=[
+                {"year": 2026, "gross_income": 40000},
+            ],
+            traditional_ira_balance=300000,
+            retirement_age=65,
+        )
+        resp = await async_client.post("/api/optimize", json=payload)
+        assert resp.status_code == 200

@@ -35,8 +35,16 @@ const config: Config = {
           "28px",
           { lineHeight: "1.0", letterSpacing: "-0.02em", fontWeight: "700" },
         ],
+        "data-sm": [
+          "16px",
+          { lineHeight: "1.2", letterSpacing: "-0.01em", fontWeight: "700" },
+        ],
         "data-hero": [
           "40px",
+          { lineHeight: "1.0", letterSpacing: "-0.02em", fontWeight: "800" },
+        ],
+        "data-hero-sm": [
+          "28px",
           { lineHeight: "1.0", letterSpacing: "-0.02em", fontWeight: "800" },
         ],
       },

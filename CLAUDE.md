@@ -43,7 +43,7 @@ The AI conversation layer must use educational framing (legal requirement):
 - All API inputs and outputs use Pydantic models
 - Engine code lives in `app/engine/`, API routes in `app/api/`, AI layer in `app/ai/`
 - The reasoning trace (`app/engine/trace.py`) is the contract between engine and AI — keep it structured and complete
-- **Multi-year optimizer** is the only engine mode — `scipy.optimize.minimize` (SLSQP) with greedy bracket-fill heuristic as initialization and fallback. No separate single-year path; a 1-year trajectory is just `len(income_trajectory) == 1`.
+- **Multi-year optimizer** is the only engine mode — `scipy.optimize.minimize` (SLSQP) with greedy bracket-fill heuristic as initialization and fallback. No separate single-year path; a 1-year timeline is just `len(income_timeline) == 1`.
 - Engine files: `types.py` → `tax.py` → `heuristic.py` → `optimizer.py` → `trace.py` → `demo.py`
 
 ## Project structure
@@ -107,6 +107,19 @@ Any time you are starting an implementation by checking out a new feature branch
 - Immediately relabel to `status:claimed` before starting work
 - When opening a PR, relabel to `status:in-review` and link the issue
 - If blocked, relabel `status:blocked` and leave a comment explaining why
+
+### Ingesting screenshots from GitHub issues
+GitHub issue screenshots are hosted at `github.com/user-attachments/...` URLs that require authentication. To view them:
+
+```bash
+# 1. Extract image URL(s) from the issue body
+IMG_URL=$(gh issue view <NUMBER> --json body -q .body | grep -oP 'https://[^ )"]+')
+
+# 2. Download with authenticated gh api
+gh api -H "Accept: application/octet-stream" "$IMG_URL" > issue_screenshot.png
+```
+
+Then use the Read tool on the downloaded `.png` — it renders images visually (multimodal). Always do this when an issue contains screenshots so you understand the full context before planning or implementing.
 
 ### Label reference
 - status:open | status:claimed | status:in-review | status:done | status:blocked

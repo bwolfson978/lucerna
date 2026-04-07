@@ -21,7 +21,7 @@ def _simple_scenario(
     return ScenarioInput(
         age=40,
         filing_status=FilingStatus.SINGLE,
-        income_trajectory=[
+        income_timeline=[
             YearlyIncome(year=2026 + i, gross_income=inc)
             for i, inc in enumerate(incomes)
         ],
@@ -96,7 +96,7 @@ class TestDPOptimize:
         assert result.total_conversion <= 50_000 + 100  # $100 rounding tolerance
 
     def test_single_year(self):
-        """Single year trajectory should work."""
+        """Single year timeline should work."""
         scenario = _simple_scenario(balance=100_000, incomes=[40_000])
         result = dp_optimize(scenario)
         assert len(result.yearly_conversions) == 1
@@ -117,7 +117,7 @@ class TestDPBeatsScipyOrMatches:
         from app.engine.optimizer import _run_scipy, _finalize_conversions
 
         scenario = _simple_scenario()
-        n = len(scenario.income_trajectory)
+        n = len(scenario.income_timeline)
         bal = scenario.traditional_ira_balance
 
         # Scipy result
@@ -139,7 +139,7 @@ class TestDPBeatsScipyOrMatches:
         from app.engine.demo import DEMO_SCENARIO
         from app.engine.optimizer import _run_scipy, _finalize_conversions
 
-        n = len(DEMO_SCENARIO.income_trajectory)
+        n = len(DEMO_SCENARIO.income_timeline)
         bal = DEMO_SCENARIO.traditional_ira_balance
         bounds = [(0, bal)] * n
         constraints = [{"type": "ineq", "fun": lambda x: bal - np.sum(x)}]
@@ -202,11 +202,11 @@ class TestLargeBalance:
     """Tests with $2M+ balances to verify correctness and performance at scale."""
 
     def _large_scenario(self, balance: float = 2_000_000) -> ScenarioInput:
-        # 5-year trajectory with mixed incomes
+        # 5-year timeline with mixed incomes
         return ScenarioInput(
             age=55,
             filing_status=FilingStatus.SINGLE,
-            income_trajectory=[
+            income_timeline=[
                 YearlyIncome(year=2026, gross_income=40_000),
                 YearlyIncome(year=2027, gross_income=50_000),
                 YearlyIncome(year=2028, gross_income=35_000),
@@ -269,7 +269,7 @@ class TestDPWithACA:
         return ScenarioInput(
             age=60,
             filing_status=FilingStatus.SINGLE,
-            income_trajectory=[
+            income_timeline=[
                 YearlyIncome(year=2026, gross_income=30_000),
                 YearlyIncome(year=2027, gross_income=30_000),
                 YearlyIncome(year=2028, gross_income=150_000),
@@ -328,7 +328,7 @@ class TestConstrainedWithDP:
         return ScenarioInput(
             age=40,
             filing_status=FilingStatus.SINGLE,
-            income_trajectory=[
+            income_timeline=[
                 YearlyIncome(year=2026, gross_income=40_000),
                 YearlyIncome(year=2027, gross_income=35_000),
                 YearlyIncome(year=2028, gross_income=150_000),
@@ -366,7 +366,7 @@ class TestConstrainedWithDP:
         unconstrained = ScenarioInput(
             age=40,
             filing_status=FilingStatus.SINGLE,
-            income_trajectory=[
+            income_timeline=[
                 YearlyIncome(year=2026, gross_income=40_000),
                 YearlyIncome(year=2027, gross_income=35_000),
                 YearlyIncome(year=2028, gross_income=150_000),

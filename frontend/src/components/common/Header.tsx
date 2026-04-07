@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { HowItWorksButton } from "@/components/methodology/HowItWorksButton";
 
 export function Header() {
   return (
@@ -29,6 +30,7 @@ export function Header() {
           >
             Run Your Own Scenario
           </Link>
+          <HowItWorksButton />
         </nav>
       </div>
     </header>

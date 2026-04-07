@@ -15,8 +15,8 @@ def _estimate_retirement_rate(scenario: ScenarioInput) -> float:
     if spending is None:
         total_balance = scenario.traditional_ira_balance + scenario.roth_ira_balance
         # Estimate retirement spending: balance grows to retirement, then 4% rule
-        years_to_retire = max(1, scenario.retirement_age - scenario.age)
-        future_balance = total_balance * (1 + scenario.annual_growth_rate) ** years_to_retire
+        years_to_retire = max(0, scenario.retirement_age - scenario.age)
+        future_balance = total_balance * (1 + scenario.annual_growth_rate) ** max(1, years_to_retire)
         spending = future_balance * 0.04
     rate = get_marginal_rate(spending, scenario.filing_status)
 
@@ -48,7 +48,7 @@ def greedy_bracket_fill(scenario: ScenarioInput) -> list[float]:
     remaining_balance = scenario.traditional_ira_balance
     conversions: list[float] = []
 
-    for year_info in scenario.income_trajectory:
+    for year_info in scenario.income_timeline:
         if remaining_balance <= 0:
             conversions.append(0.0)
             continue

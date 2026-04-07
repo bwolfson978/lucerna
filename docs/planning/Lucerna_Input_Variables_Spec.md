@@ -5,7 +5,7 @@
 
 ---
 
-## Design principle: Income trajectory first, defaults for everything else
+## Design principle: Income timeline first, defaults for everything else
 
 The core input is the user's **year-by-year income forecast** — this is what makes Lucerna different from every other tool. The user should be able to get a meaningful first result by entering **5 things**: their age, filing status, traditional IRA balance, and a few years of expected income. Everything else has smart defaults. The fewer decisions required to get a first result, the better.
 
@@ -20,11 +20,11 @@ These are the minimum inputs needed to run the optimizer.
 | Age | integer | 18–80 | Current age. Used to calculate years to retirement, years to RMD age, etc. |
 | Filing status | enum | Single, Married Filing Jointly | MFS, HoH are future. For MFJ, we model one spouse's IRA but use joint brackets. |
 | Traditional IRA/401(k) balance | currency | ≥ 0 | Total pre-tax retirement balance available for conversion. Includes rollover IRAs, traditional IRAs, and any 401(k) eligible for rollover. |
-| Income trajectory | list of (year, income) | 1–15 years, each ≥ 0 | **This is the core input that makes Lucerna different.** Year-by-year income forecast. Pre-populated with a sensible default (e.g., 5 years at current income). User adjusts years where income dips or spikes. |
+| Income timeline | list of (year, income) | 1–15 years, each ≥ 0 | **This is the core input that makes Lucerna different.** Year-by-year income forecast. Pre-populated with a sensible default (e.g., 5 years at current income). User adjusts years where income dips or spikes. |
 
 **For MFJ:** We also need spouse's age (for survivor scenario modeling in future phases). For MVP, we assume same age.
 
-**Minimum viable input:** If the user provides just age + filing status + IRA balance + current income (as a single number), the system creates a default 5-year trajectory with that income repeated, then prompts: "Is your income changing in the next few years? Adjust the years where it's different." This lets users start fast but naturally discover the multi-year capability.
+**Minimum viable input:** If the user provides just age + filing status + IRA balance + current income (as a single number), the system creates a default 5-year timeline with that income repeated, then prompts: "Is your income changing in the next few years? Adjust the years where it's different." This lets users start fast but naturally discover the multi-year capability.
 
 ---
 
@@ -55,7 +55,7 @@ These inputs refine the model. All have defaults so a user can skip them entirel
 
 ---
 
-## Group 4: Income trajectory (the multi-year core)
+## Group 4: Income timeline (the multi-year core)
 
 This is where Lucerna differentiates. Instead of asking "how much do you want to convert?", we ask "what does your income look like over the next few years?" and the optimizer finds the valleys.
 
@@ -73,9 +73,9 @@ The user provides a **year-by-year income forecast** for a configurable horizon 
 
 The optimizer's job is to find the **conversion schedule** — an amount to convert in each year — that maximizes total after-tax wealth (NPV) across the entire horizon, subject to constraints.
 
-**The core insight the user should experience:** They enter their income trajectory, and the optimizer finds "valleys" — years where income is low enough that conversion is cheap — and fills them optimally. The output is a year-by-year conversion plan that shows exactly how much to convert each year and why.
+**The core insight the user should experience:** They enter their income timeline, and the optimizer finds "valleys" — years where income is low enough that conversion is cheap — and fills them optimally. The output is a year-by-year conversion plan that shows exactly how much to convert each year and why.
 
-### What the engine does with the income trajectory
+### What the engine does with the income timeline
 
 For each year `t` in the horizon:
 
@@ -113,7 +113,7 @@ These are NOT in the MVP but are architecturally planned for. They should be rep
 | RMD modeling | Phase 2 | Auto-calculated from traditional balance and IRS Uniform Lifetime Table. Shows what happens if user doesn't convert — forced withdrawals at potentially higher rates. |
 | IRMAA thresholds | Phase 3 | Medicare Part B/D premium surcharges triggered by high income 2 years prior. Relevant for ages 63+. |
 | Capital gains harvesting | Phase 3 | Model interaction with 0% LTCG bracket. Every dollar of conversion that fills the 12% bracket is a dollar that can't be used for 0% LTCG harvesting. |
-| Spouse's income trajectory | Phase 2 | For MFJ, spouse's separate income trajectory. |
+| Spouse's income timeline | Phase 2 | For MFJ, spouse's separate income timeline. |
 | Spouse's IRA balance | Phase 2 | For MFJ, spouse may also have conversion opportunities. |
 | Pension / annuity income | Phase 3 | Fixed income streams that fill brackets in retirement. |
 | Bracket inflation indexing | Phase 2 | Assume brackets grow with inflation (historically true). Default: on. Affects long-term projections. |
@@ -124,11 +124,11 @@ These are NOT in the MVP but are architecturally planned for. They should be rep
 
 ## Optimizer: Technical approach
 
-The optimizer uses `scipy.optimize.minimize` with SLSQP to find the optimal conversion schedule across all years in the income trajectory. There is no separate single-year mode — a single-year scenario is simply a trajectory of length 1.
+The optimizer uses `scipy.optimize.minimize` with SLSQP to find the optimal conversion schedule across all years in the income timeline. There is no separate single-year mode — a single-year scenario is simply a timeline of length 1.
 
 **Formulation:**
 
-1. **Decision variables:** `[c_0, c_1, ..., c_N]` — the conversion amount for each year in the trajectory. These are continuous variables.
+1. **Decision variables:** `[c_0, c_1, ..., c_N]` — the conversion amount for each year in the timeline. These are continuous variables.
 
 2. **Objective:** Minimize negative NPV (i.e., maximize NPV). NPV is the sum of all after-tax cash flows — conversion tax payments (negative, immediate), retirement withdrawal streams (positive, discounted), and terminal account values (positive, discounted).
 
@@ -150,7 +150,7 @@ The optimizer uses `scipy.optimize.minimize` with SLSQP to find the optimal conv
 
 The multi-year experience should feel like this:
 
-1. User enters their income trajectory (a simple editable row of numbers, one per year)
+1. User enters their income timeline (a simple editable row of numbers, one per year)
 2. The system highlights which years are "valleys" — where income is lower than their long-run average
 3. User hits "Optimize"
 4. The engine returns a conversion schedule showing how much to convert each year
@@ -158,7 +158,7 @@ The multi-year experience should feel like this:
    - A stacked bar chart: income (gray) + conversion (blue) per year, with bracket boundaries overlaid
    - The total lifetime tax savings vs. not converting
    - Year-by-year breakdown: conversion amount, tax cost, effective rate, marginal bracket
-   - The wealth trajectory chart showing how the Roth grows over time
+   - The wealth timeline chart showing how the Roth grows over time
 
 The key visualization is the **income + conversion stacked bar chart with bracket lines.** The user can see at a glance: "My income dips in years 2-3 because I'm in grad school. The optimizer fills those low-bracket years with conversions. In year 4 when my income comes back, it converts nothing." The bracket lines make it viscerally clear why the optimizer chose what it chose.
 
@@ -166,13 +166,13 @@ The key visualization is the **income + conversion stacked bar chart with bracke
 
 ## Input form UX: Progressive disclosure
 
-### Screen 1: The basics (3 fields + trajectory)
+### Screen 1: The basics (3 fields + timeline)
 - Age
 - Filing status
 - Traditional IRA balance
-- **Income trajectory editor** — starts with current year income field. Below it, a prompt: "Is your income changing in the next few years?" → expanding to show 3-5 editable year rows, pre-populated with the current income. User adjusts years where income dips or spikes. Optional life event tags per year (dropdown).
+- **Income timeline editor** — starts with current year income field. Below it, a prompt: "Is your income changing in the next few years?" → expanding to show 3-5 editable year rows, pre-populated with the current income. User adjusts years where income dips or spikes. Optional life event tags per year (dropdown).
 
-→ "Find my optimal conversion plan" button available as soon as trajectory has ≥ 1 year
+→ "Find my optimal conversion plan" button available as soon as timeline has ≥ 1 year
 
 ### Screen 2: Refine your scenario (optional, expandable)
 - Roth balance
@@ -204,7 +204,7 @@ The key visualization is the **income + conversion stacked bar chart with bracke
 | Retirement age > 75 | — | "Are you sure? This limits your conversion window." |
 | Non-retirement savings < estimated conversion tax | — | "You may need to pay conversion taxes from your IRA, which reduces the benefit." |
 | Conversion fills 32%+ bracket | — | "You're converting into the 32% bracket. The optimizer will determine if this is still beneficial." |
-| Income trajectory has no low-income years | — | "Your income is relatively stable. Conversion benefits may be modest." |
+| Income timeline has no low-income years | — | "Your income is relatively stable. Conversion benefits may be modest." |
 | IRA balance < $10,000 | — | "With a smaller balance, the absolute tax savings may be limited." |
 
 ---
@@ -243,8 +243,8 @@ class UserScenario(BaseModel):
     filing_status: FilingStatus
     traditional_balance: float = Field(ge=0)
     
-    # Income trajectory (the core input — always required, min 1 year)
-    income_trajectory: list[YearlyIncome] = Field(min_length=1, max_length=15)
+    # Income timeline (the core input — always required, min 1 year)
+    income_timeline: list[YearlyIncome] = Field(min_length=1, max_length=15)
     
     # Group 2: Situation (defaults)
     roth_balance: float = Field(default=0, ge=0)
@@ -298,11 +298,11 @@ class OptimizationResult(BaseModel):
 
 ## Key architectural decisions
 
-1. **Multi-year is the only mode.** There is no separate "single-year" mode. A single-year scenario is just a trajectory of length 1. The engine always operates on a list of years and always uses scipy.optimize.
+1. **Multi-year is the only mode.** There is no separate "single-year" mode. A single-year scenario is just a timeline of length 1. The engine always operates on a list of years and always uses scipy.optimize.
 
-2. **The optimizer finds the schedule; the user adjusts it.** After optimization, the user can manually override any year's conversion amount and see the impact in real time. The editable income trajectory table is always available.
+2. **The optimizer finds the schedule; the user adjusts it.** After optimization, the user can manually override any year's conversion amount and see the impact in real time. The editable income timeline table is always available.
 
-3. **Income trajectory builds from a simple starting point.** If the user enters just a single income number, the system creates a default 5-year trajectory and prompts: "Is your income changing? Adjust the years where it's different." This lets users start fast but naturally discover the multi-year capability.
+3. **Income timeline builds from a simple starting point.** If the user enters just a single income number, the system creates a default 5-year timeline and prompts: "Is your income changing? Adjust the years where it's different." This lets users start fast but naturally discover the multi-year capability.
 
 4. **All dollar amounts are nominal internally, displayed in today's dollars.** The inflation rate converts future values for display. The engine works in nominal terms to keep tax bracket math correct (brackets are nominal).
 

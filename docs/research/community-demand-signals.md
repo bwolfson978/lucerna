@@ -394,7 +394,7 @@ Across Bogleheads, Reddit FIRE communities, early-retirement forums, and FIRE bl
   - "Doesn't ask other crucial and basic questions" like Social Security or Medicare benefits.
   - When tested, Boldin assumed spending "41 percent less than MaxiFi" in the lowest year and "84 percent less" in the highest year.
   - Boldin reported a $7.3M nominal estate without inflation-adjusted values, "potentially misleading people."
-- **Relevance to Lucerna:** A leading economics professor publicly dismantling Boldin's Roth conversion analysis. This is ammunition for Lucerna's positioning: "We don't give you a 3-input calculator — we model your actual multi-year trajectory." Also highlights the risk Boldin's flaws pose to users making real financial decisions.
+- **Relevance to Lucerna:** A leading economics professor publicly dismantling Boldin's Roth conversion analysis. This is ammunition for Lucerna's positioning: "We don't give you a 3-input calculator — we model your actual multi-year timeline." Also highlights the risk Boldin's flaws pose to users making real financial decisions.
 
 ---
 

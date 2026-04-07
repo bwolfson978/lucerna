@@ -1,9 +1,14 @@
 /**
  * Client-side federal tax bracket calculations.
- * Mirrors backend/app/engine/tax.py exactly for real-time slider interactivity.
+ * Mirrors backend/app/engine/tax.py for real-time slider interactivity.
+ *
+ * Bracket data is loaded from federal-brackets-2025.json — the single
+ * source of truth for the frontend. When tax year changes, update the
+ * JSON file and both this module and BracketChart pick up the change.
  */
 
 import type { FilingStatus, BracketFillResult } from "@/lib/types";
+import taxData from "./federal-brackets-2025.json";
 
 interface Bracket {
   min: number;
@@ -11,32 +16,23 @@ interface Bracket {
   rate: number;
 }
 
-// 2025 Federal Tax Brackets — Source: IRS Revenue Procedure 2024-40
-// Must stay in sync with backend/app/engine/tax.py
-const BRACKETS: Record<FilingStatus, Bracket[]> = {
-  single: [
-    { min: 0, max: 11925, rate: 0.10 },
-    { min: 11925, max: 48475, rate: 0.12 },
-    { min: 48475, max: 103350, rate: 0.22 },
-    { min: 103350, max: 197300, rate: 0.24 },
-    { min: 197300, max: 250525, rate: 0.32 },
-    { min: 250525, max: 626350, rate: 0.35 },
-    { min: 626350, max: Infinity, rate: 0.37 },
-  ],
-  married_filing_jointly: [
-    { min: 0, max: 23850, rate: 0.10 },
-    { min: 23850, max: 96950, rate: 0.12 },
-    { min: 96950, max: 206700, rate: 0.22 },
-    { min: 206700, max: 394600, rate: 0.24 },
-    { min: 394600, max: 501050, rate: 0.32 },
-    { min: 501050, max: 751600, rate: 0.35 },
-    { min: 751600, max: Infinity, rate: 0.37 },
-  ],
+// Parse JSON brackets, converting null max to Infinity
+function parseBrackets(raw: typeof taxData.brackets.single): Bracket[] {
+  return raw.map((b) => ({
+    min: b.min,
+    max: b.max === null ? Infinity : b.max,
+    rate: b.rate,
+  }));
+}
+
+export const BRACKETS: Record<FilingStatus, Bracket[]> = {
+  single: parseBrackets(taxData.brackets.single),
+  married_filing_jointly: parseBrackets(taxData.brackets.married_filing_jointly),
 };
 
-const STANDARD_DEDUCTION: Record<FilingStatus, number> = {
-  single: 15000,
-  married_filing_jointly: 30000,
+export const STANDARD_DEDUCTION: Record<FilingStatus, number> = {
+  single: taxData.standard_deduction.single,
+  married_filing_jointly: taxData.standard_deduction.married_filing_jointly,
 };
 
 export function calculateFederalTax(

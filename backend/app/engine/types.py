@@ -8,24 +8,11 @@ class FilingStatus(str, Enum):
     MFJ = "married_filing_jointly"
 
 
-class LifeEvent(str, Enum):
-    NONE = "none"
-    GRAD_SCHOOL = "grad_school"
-    SABBATICAL = "sabbatical"
-    STARTUP = "startup"
-    CAREER_CHANGE = "career_change"
-    PART_TIME = "part_time"
-    EARLY_RETIREMENT = "early_retirement"
-    PARENTAL_LEAVE = "parental_leave"
-    BACK_TO_WORK = "back_to_work"
-    LAYOFF = "layoff"
-
-
 class YearlyIncome(BaseModel):
-    """Income forecast for a single year in the trajectory."""
+    """Income forecast for a single year in the timeline."""
     year: int
     gross_income: float = Field(ge=0)
-    life_event: LifeEvent = LifeEvent.NONE
+    notes: str = Field(default="", description="Optional user notes for this year")
     state: Optional[str] = Field(
         default=None,
         description="State override for this year. None = use scenario default."
@@ -75,7 +62,7 @@ class HealthcareInput(BaseModel):
         default=None,
         description=(
             "Calendar years when ACA marketplace coverage is needed. "
-            "If not provided, defaults to all years in the income trajectory "
+            "If not provided, defaults to all years in the income timeline "
             "where income is below the employer-coverage threshold."
         )
     )
@@ -84,7 +71,7 @@ class HealthcareInput(BaseModel):
         description=(
             "Calendar year when employer coverage resumes. ACA subsidy "
             "impact is only modeled for years before this. If not provided, "
-            "ACA impact is modeled for all trajectory years."
+            "ACA impact is modeled for all timeline years."
         )
     )
 
@@ -96,8 +83,8 @@ class ScenarioInput(BaseModel):
     age: int = Field(ge=0, le=120, description="Current age")
     filing_status: FilingStatus
 
-    # Income trajectory (the core input — replaces single-year income)
-    income_trajectory: list[YearlyIncome] = Field(
+    # Income timeline (the core input — replaces single-year income)
+    income_timeline: list[YearlyIncome] = Field(
         min_length=1,
         description="Year-by-year income forecast. The optimizer finds the best conversion schedule across all years."
     )
@@ -218,7 +205,7 @@ class OptimizationResult(BaseModel):
     """Complete output from the multi-year optimizer."""
 
     # The answer: conversion amount per year
-    yearly_conversions: list[float]  # One amount per year in trajectory
+    yearly_conversions: list[float]  # One amount per year in timeline
     total_conversion: float
 
     # Key metrics
@@ -244,8 +231,8 @@ class OptimizationResult(BaseModel):
     traditional_at_retirement: float
     roth_at_retirement: float
 
-    # Income trajectory chart data (income + conversion stacked bars with bracket lines)
-    trajectory_chart: list[dict]  # Per year: {year, income, conversion, bracket_boundaries}
+    # Income timeline chart data (income + conversion stacked bars with bracket lines)
+    timeline_chart: list[dict]  # Per year: {year, income, conversion, bracket_boundaries}
 
     # Pre-computed conversion curve for interactive slider
     conversion_curve: list["ConversionCurvePoint"] = Field(default_factory=list)
