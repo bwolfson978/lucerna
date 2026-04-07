@@ -13,7 +13,40 @@ from app.engine.rmd import (
     calculate_rmd,
     vectorized_rmd,
     UNIFORM_LIFETIME_TABLE,
+    _MIN_RMD_AGE,
+    _START_AGE_RULES,
 )
+
+
+class TestRmdDataLoading:
+    """Verify JSON data file loads correctly."""
+
+    def test_uniform_lifetime_table_loaded(self):
+        assert len(UNIFORM_LIFETIME_TABLE) == 49  # ages 72-120
+
+    def test_min_rmd_age_loaded(self):
+        assert _MIN_RMD_AGE == 72
+
+    def test_start_age_rules_loaded(self):
+        assert len(_START_AGE_RULES) == 3
+
+    def test_start_age_rules_have_required_fields(self):
+        for rule in _START_AGE_RULES:
+            assert "born_on_or_before" in rule
+            assert "rmd_start_age" in rule
+
+    def test_last_rule_is_catch_all(self):
+        """Last rule should have null threshold (catch-all)."""
+        assert _START_AGE_RULES[-1]["born_on_or_before"] is None
+
+    def test_table_keys_are_integers(self):
+        for age in UNIFORM_LIFETIME_TABLE:
+            assert isinstance(age, int)
+
+    def test_table_values_are_positive_floats(self):
+        for divisor in UNIFORM_LIFETIME_TABLE.values():
+            assert isinstance(divisor, (int, float))
+            assert divisor > 0
 
 
 class TestRmdStartAge:
