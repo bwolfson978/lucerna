@@ -136,11 +136,23 @@ def _dp_backward(
 
     # The balance grid must cover the GROWN balance range.  If nothing is
     # converted, the balance after n_years of growth could be as large as
-    # initial_balance * (1+g)^n_years.  Extend the grid accordingly so
-    # np.interp never has to clamp at the edge.
+    # initial_balance * (1+g)^n_years.  Use a non-uniform grid that
+    # concentrates resolution in the [0, initial_balance] range where
+    # conversion decisions actually happen, and uses sparser points in
+    # the [initial_balance, max_grown] range (only reached if little
+    # is converted).  This prevents long trajectories with high growth
+    # from diluting grid resolution to $700+ steps.
     max_grown_balance = initial_balance * (1 + g) ** n_years
-    extended_grid = np.linspace(0, max_grown_balance, len(balance_grid))
-    G = len(extended_grid)
+    G = len(balance_grid)
+    if max_grown_balance > initial_balance * 1.5 and G > 20:
+        # Split: 80% of grid points in [0, balance], 20% in [balance, max_grown]
+        n_fine = int(G * 0.8)
+        n_coarse = G - n_fine
+        fine_part = np.linspace(0, initial_balance, n_fine, endpoint=False)
+        coarse_part = np.linspace(initial_balance, max_grown_balance, n_coarse)
+        extended_grid = np.concatenate([fine_part, coarse_part])
+    else:
+        extended_grid = np.linspace(0, max_grown_balance, G)
 
     value_table = np.zeros((n_years + 1, G))
 
@@ -511,9 +523,17 @@ def _dp_backward_3d(
     initial_balance = scenario.traditional_ira_balance
     initial_roth = scenario.roth_ira_balance
 
-    # Extend balance grid for growth (same logic as 2D DP)
+    # Extend balance grid for growth (same non-uniform logic as 2D DP)
     max_grown_balance = initial_balance * (1 + g) ** n_years
-    extended_grid = np.linspace(0, max_grown_balance, len(balance_grid))
+    G_input = len(balance_grid)
+    if max_grown_balance > initial_balance * 1.5 and G_input > 20:
+        n_fine = int(G_input * 0.8)
+        n_coarse = G_input - n_fine
+        fine_part = np.linspace(0, initial_balance, n_fine, endpoint=False)
+        coarse_part = np.linspace(initial_balance, max_grown_balance, n_coarse)
+        extended_grid = np.concatenate([fine_part, coarse_part])
+    else:
+        extended_grid = np.linspace(0, max_grown_balance, G_input)
     G = len(extended_grid)
     B = len(budget_grid)
 
@@ -708,25 +728,17 @@ def _forward_pass_3d(
         bud_idx = np.searchsorted(budget_grid, current_budget, side="right") - 1
         bud_idx = max(0, min(bud_idx, B - 2))
 
-        # Bilinear interpolation of policy: look up conversion index at
-        # the four neighboring (balance, budget) grid points, convert to
-        # dollar amounts, then interpolate.
-        b_lo, b_hi = bud_idx, bud_idx + 1
+        # Snap to nearest budget grid point's policy instead of
+        # interpolating between neighboring policies.  Lerping blends
+        # different allocation strategies and produces small spurious
+        # amounts in years that shouldn't have conversions at this budget.
+        b_lo, b_hi = bud_idx, min(bud_idx + 1, B - 1)
+        dist_lo = abs(current_budget - budget_grid[b_lo])
+        dist_hi = abs(current_budget - budget_grid[b_hi])
+        b_snap = b_lo if dist_lo <= dist_hi else b_hi
 
-        # Get conversion amounts from policy at neighboring budget points
-        conv_idx_lo = policy_table[t, bal_idx, b_lo]
-        conv_idx_hi = policy_table[t, bal_idx, b_hi]
-        conv_lo = extended_grid[conv_idx_lo] if conv_idx_lo < len(extended_grid) else 0.0
-        conv_hi = extended_grid[conv_idx_hi] if conv_idx_hi < len(extended_grid) else 0.0
-
-        # Lerp on budget dimension
-        budget_span = budget_grid[b_hi] - budget_grid[b_lo]
-        if budget_span > 0:
-            frac = (current_budget - budget_grid[b_lo]) / budget_span
-            frac = max(0.0, min(1.0, frac))
-            conversion = conv_lo + frac * (conv_hi - conv_lo)
-        else:
-            conversion = conv_lo
+        conv_idx = policy_table[t, bal_idx, b_snap]
+        conversion = extended_grid[conv_idx] if conv_idx < len(extended_grid) else 0.0
 
         # Clamp to available balance and budget
         conversion = min(conversion, current_balance, current_budget)
