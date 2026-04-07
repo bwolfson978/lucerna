@@ -184,6 +184,30 @@ class ReasoningTrace(BaseModel):
     aca_impact: Optional[list[AcaSubsidyDetail]] = None
     aca_summary: Optional[dict] = None
 
+    # RMD impact analysis
+    rmd_summary: Optional[dict] = None
+
+
+class RmdYearDetail(BaseModel):
+    """Per-year RMD projection for a given conversion schedule."""
+    year: int
+    age: int
+    trad_balance_start: float
+    rmd_amount: float
+    actual_distribution: float
+    tax_on_distribution: float
+    effective_rate: float
+
+
+class RmdProjection(BaseModel):
+    """Summary of projected RMD impact across retirement."""
+    rmd_start_age: int
+    rmd_start_year: int
+    yearly_detail: list[RmdYearDetail]
+    total_rmd_taxes: float
+    peak_rmd_amount: float
+    peak_rmd_year: int
+
 
 class NPVCurvePoint(BaseModel):
     conversion_amount: float
@@ -246,6 +270,10 @@ class OptimizationResult(BaseModel):
     total_subsidy_lost: Optional[float] = None
     subsidy_cliff_income: Optional[float] = None
     npv_without_aca: Optional[float] = None  # NPV from tax-only optimization for comparison
+
+    # RMD projection (always computed — RMDs are mandatory)
+    rmd_projection: Optional[RmdProjection] = None
+    rmd_projection_no_conversion: Optional[RmdProjection] = None
 
     # Input echo
     input: ScenarioInput
