@@ -37,7 +37,7 @@ export function ConversionSlider({
     <div className="flex flex-col gap-1">
       {/* Value + label row */}
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-data-xs text-text-tertiary whitespace-nowrap">Roth conversion</span>
+        <span className="text-data-xs text-text-tertiary whitespace-nowrap">Conversion amount</span>
         <span
           className="text-body-sm font-medium text-text-primary tabular-nums"
           style={{ fontFamily: "'Manrope', system-ui" }}
@@ -86,7 +86,7 @@ export function ConversionSlider({
       <button
         type="button"
         onClick={() => onChange(optimalValue)}
-        className="flex items-center gap-1 text-data-xs text-text-tertiary hover:text-accent transition-colors cursor-pointer self-end text-left"
+        className="flex items-center gap-1 text-data-xs text-text-tertiary hover:text-accent transition-colors cursor-pointer self-start text-left"
       >
         <svg width="8" height="11" viewBox="0 0 14 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0" style={{ filter: "drop-shadow(0 0 3px rgba(240,198,116,0.4))" }}>
           <path d="M7 0L12 6L7 12L2 6Z" fill="#F0C674" />

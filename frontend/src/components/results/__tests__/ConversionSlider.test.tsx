@@ -13,7 +13,7 @@ describe("ConversionSlider", () => {
 
   it("displays the label", () => {
     render(<ConversionSlider {...defaultProps} />);
-    expect(screen.getByText("Roth conversion")).toBeInTheDocument();
+    expect(screen.getByText("Conversion amount")).toBeInTheDocument();
   });
 
   it("shows diamond legend for highest savings", () => {

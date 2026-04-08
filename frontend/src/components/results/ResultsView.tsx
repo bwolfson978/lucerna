@@ -131,7 +131,7 @@ export function ResultsView({ result }: ResultsViewProps) {
       {/* Bracket chart with slider + annotation row */}
       <div className="flex flex-col gap-default">
         <div className="flex items-center justify-between">
-          <h3 className="text-h3 text-text-primary">Conversion schedule</h3>
+          <h3 className="text-h3 text-text-primary">Roth conversion schedule</h3>
           <InfoTrigger
             label="How is this determined?"
             sectionId="bracket-filling"
