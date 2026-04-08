@@ -154,8 +154,8 @@ export function ResultsView({ result }: ResultsViewProps) {
           onBarWidthChange={setTableColWidth}
           leftBottomContent={
             <div className="flex flex-col border-r border-border">
-              <div className="h-8 flex items-center justify-end text-text-tertiary text-data-xs font-medium px-2 whitespace-nowrap">
-                Additional tax due to conversion
+              <div className="h-8 flex items-center justify-end text-text-tertiary text-data-xs font-medium px-1 text-right leading-tight">
+                Tax cost
               </div>
             </div>
           }
