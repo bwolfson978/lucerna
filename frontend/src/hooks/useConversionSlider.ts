@@ -14,29 +14,42 @@ import { useTaxConfig } from "@/lib/tax/TaxConfigProvider";
 import { computeSnapThreshold } from "@/lib/utils/snap";
 
 /**
- * Find the nearest curve point to a given total conversion.
- * Returns the curve point whose total_cap is closest.
+ * Find the two curve points that bound a given total conversion and
+ * return them along with the interpolation parameter t ∈ [0, 1].
+ *
+ * Expects `sorted` to be ordered by ascending `total_cap`.
  */
-function findNearestCurvePoint(
+function findBoundingPoints(
   totalConversion: number,
   sorted: ConversionCurvePoint[]
-): ConversionCurvePoint {
-  let bestIdx = 0;
-  let bestDist = Math.abs(sorted[0].total_cap - totalConversion);
-  for (let i = 1; i < sorted.length; i++) {
-    const dist = Math.abs(sorted[i].total_cap - totalConversion);
-    if (dist < bestDist) {
-      bestDist = dist;
-      bestIdx = i;
+): { lower: ConversionCurvePoint; upper: ConversionCurvePoint; t: number } {
+  // Clamp to endpoints
+  if (totalConversion <= sorted[0].total_cap) {
+    return { lower: sorted[0], upper: sorted[0], t: 0 };
+  }
+  if (totalConversion >= sorted[sorted.length - 1].total_cap) {
+    return { lower: sorted[sorted.length - 1], upper: sorted[sorted.length - 1], t: 0 };
+  }
+
+  for (let i = 0; i < sorted.length - 1; i++) {
+    if (sorted[i].total_cap <= totalConversion && sorted[i + 1].total_cap >= totalConversion) {
+      const range = sorted[i + 1].total_cap - sorted[i].total_cap;
+      const t = range > 0 ? (totalConversion - sorted[i].total_cap) / range : 0;
+      return { lower: sorted[i], upper: sorted[i + 1], t };
     }
   }
-  return sorted[bestIdx];
+
+  // Fallback (shouldn't reach here)
+  return { lower: sorted[sorted.length - 1], upper: sorted[sorted.length - 1], t: 0 };
 }
+
+/** Threshold below which interpolation artifacts are zeroed out. */
+const LERP_ZERO_THRESHOLD = 100;
 
 export function distributeConversion(
   totalConversion: number,
   optimizerWeights: number[],
-  conversionCurve?: ConversionCurvePoint[],
+  sortedCurve?: ConversionCurvePoint[],
   iraBalance?: number,
   optimizerTotal?: number
 ): number[] {
@@ -51,36 +64,38 @@ export function distributeConversion(
     return optimizerWeights.map((w) => Math.max(0, w));
   }
 
-  // Snap to nearest pre-computed curve point.  Each curve point is a real
-  // DP-optimal allocation for that budget cap — no blending between
-  // different strategies, so no spurious small amounts appear.
-  if (conversionCurve && conversionCurve.length >= 2) {
-    const sorted = [...conversionCurve].sort(
-      (a, b) => a.total_cap - b.total_cap
-    );
+  // Interpolate between the two bounding curve points for smooth slider
+  // behavior.  Each curve point is a real allocation for its budget cap;
+  // lerping yearly amounts produces a smooth transition between strategies.
+  if (sortedCurve && sortedCurve.length >= 2) {
+    const { lower, upper, t } = findBoundingPoints(totalConversion, sortedCurve);
 
-    const nearest = findNearestCurvePoint(totalConversion, sorted);
-    let snapped = nearest.yearly_conversions.map((c) => Math.max(0, c));
+    let lerped = lower.yearly_conversions.map((lc, i) => {
+      const uc = upper.yearly_conversions[i] ?? 0;
+      return Math.max(0, lc + t * (uc - lc));
+    });
 
-    // Scale the snapped allocation so the total matches the slider value.
-    // This preserves the DP-optimal year ratios while keeping the displayed
-    // total consistent with the slider position.
-    const snappedTotal = snapped.reduce((a, b) => a + b, 0);
-    if (snappedTotal > 0 && Math.abs(snappedTotal - totalConversion) > 1) {
-      const scale = totalConversion / snappedTotal;
-      snapped = snapped.map((c) => c * scale);
-    } else if (snappedTotal === 0 && totalConversion > 0) {
+    // Zero out tiny interpolation artifacts where one bounding point has
+    // zero and the other has a small allocation (GitHub issue #59).
+    lerped = lerped.map((c) => (c < LERP_ZERO_THRESHOLD ? 0 : c));
+
+    // Scale so total matches slider value exactly.
+    const lerpedTotal = lerped.reduce((a, b) => a + b, 0);
+    if (lerpedTotal > 0 && Math.abs(lerpedTotal - totalConversion) > 1) {
+      const scale = totalConversion / lerpedTotal;
+      lerped = lerped.map((c) => c * scale);
+    } else if (lerpedTotal === 0 && totalConversion > 0) {
       // All curve points near here are zero — distribute uniformly
-      const perYear = totalConversion / snapped.length;
-      snapped = snapped.map(() => perYear);
+      const perYear = totalConversion / lerped.length;
+      lerped = lerped.map(() => perYear);
     }
 
     // Cap each year at IRA balance
     if (iraBalance !== undefined) {
-      snapped = snapped.map((c) => Math.min(c, iraBalance));
+      lerped = lerped.map((c) => Math.min(c, iraBalance));
     }
 
-    return snapped;
+    return lerped;
   }
 
   // Fallback: proportional scaling
@@ -109,16 +124,26 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
     [result.input.income_timeline]
   );
 
+  // Sort the conversion curve once — reused by both distributeConversion
+  // and estimatedSavings interpolation.
+  const sortedCurve = useMemo(
+    () =>
+      result.conversion_curve && result.conversion_curve.length >= 2
+        ? [...result.conversion_curve].sort((a, b) => a.total_cap - b.total_cap)
+        : undefined,
+    [result.conversion_curve]
+  );
+
   const yearlyConversions = useMemo(
     () =>
       distributeConversion(
         totalConversion,
         result.yearly_conversions,
-        result.conversion_curve,
+        sortedCurve,
         result.input.traditional_ira_balance,
         result.total_conversion
       ),
-    [totalConversion, result.yearly_conversions, result.conversion_curve, result.input.traditional_ira_balance, result.total_conversion]
+    [totalConversion, result.yearly_conversions, sortedCurve, result.input.traditional_ira_balance, result.total_conversion]
   );
 
   const yearlyBracketFills: BracketFillResult[][] = useMemo(
@@ -172,41 +197,39 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
       return result.estimated_lifetime_tax_savings;
     }
 
-    const curve = result.conversion_curve;
-    if (!curve || curve.length === 0) {
+    if (!sortedCurve || sortedCurve.length === 0) {
       return result.estimated_lifetime_tax_savings;
     }
 
-    const sorted = [...curve].sort((a, b) => a.total_cap - b.total_cap);
     const npvAtZero = result.npv_at_zero;
 
     // Find bounding points for linear interpolation
-    if (totalConversion <= sorted[0].total_cap) {
-      return sorted[0].npv - npvAtZero;
+    if (totalConversion <= sortedCurve[0].total_cap) {
+      return sortedCurve[0].npv - npvAtZero;
     }
-    if (totalConversion >= sorted[sorted.length - 1].total_cap) {
-      return sorted[sorted.length - 1].npv - npvAtZero;
+    if (totalConversion >= sortedCurve[sortedCurve.length - 1].total_cap) {
+      return sortedCurve[sortedCurve.length - 1].npv - npvAtZero;
     }
 
-    for (let i = 0; i < sorted.length - 1; i++) {
+    for (let i = 0; i < sortedCurve.length - 1; i++) {
       if (
-        sorted[i].total_cap <= totalConversion &&
-        sorted[i + 1].total_cap >= totalConversion
+        sortedCurve[i].total_cap <= totalConversion &&
+        sortedCurve[i + 1].total_cap >= totalConversion
       ) {
-        const range = sorted[i + 1].total_cap - sorted[i].total_cap;
+        const range = sortedCurve[i + 1].total_cap - sortedCurve[i].total_cap;
         const t =
           range > 0
-            ? (totalConversion - sorted[i].total_cap) / range
+            ? (totalConversion - sortedCurve[i].total_cap) / range
             : 0;
         const interpolatedNpv =
-          sorted[i].npv + t * (sorted[i + 1].npv - sorted[i].npv);
+          sortedCurve[i].npv + t * (sortedCurve[i + 1].npv - sortedCurve[i].npv);
         return interpolatedNpv - npvAtZero;
       }
     }
 
     return result.estimated_lifetime_tax_savings;
   }, [
-    result.conversion_curve,
+    sortedCurve,
     result.npv_at_zero,
     result.estimated_lifetime_tax_savings,
     result.total_conversion,

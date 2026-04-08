@@ -5,6 +5,7 @@ import type { OptimizationResult, ScenarioInput } from "@/lib/types";
 import { MetricCard } from "@/components/common/MetricCard";
 import { Tooltip } from "@/components/common/Tooltip";
 import { formatCurrency, formatSavings, formatTableCurrency } from "@/lib/utils/formatting";
+import { CHART_COLORS } from "@/lib/utils/constants";
 import { BracketChart } from "./BracketChart";
 import { ConversionSlider } from "./ConversionSlider";
 import { ScenarioCards } from "./ScenarioCards";
@@ -12,6 +13,7 @@ import { BalanceProjections } from "./BalanceProjections";
 import { AcaSubsidyImpact } from "./AcaSubsidyImpact";
 import { Card } from "@/components/ui/card";
 import { useConversionSlider } from "@/hooks/useConversionSlider";
+import { useScrollOnTransition } from "@/hooks/useScrollOnTransition";
 import { computeSnapThreshold } from "@/lib/utils/snap";
 import { InfoTrigger } from "@/components/methodology/InfoTrigger";
 
@@ -25,11 +27,13 @@ export function ResultsView({ result }: ResultsViewProps) {
   // onReRun and loading are accepted for future calculator re-run support
   const chartScrollRef = useRef<HTMLDivElement>(null);
   const [tableColWidth, setTableColWidth] = useState(58);
+  const [chartLayout, setChartLayout] = useState({ leftOffset: 0, rightOffset: 0, verticalLabelWidth: 0, axisLabelStart: 0 });
 
   // Client-side slider: continuous bracket fill computation
   const {
     totalConversion: sliderValue,
     setTotalConversion: setSliderValue,
+    yearlyConversions,
     yearlyBracketFills,
     yearlyDetail,
     displayTotalConversion,
@@ -37,6 +41,9 @@ export function ResultsView({ result }: ResultsViewProps) {
     conversionYears,
     estimatedSavings,
   } = useConversionSlider({ result });
+
+  // Auto-scroll bracket chart when a bar activates or deactivates
+  useScrollOnTransition(yearlyConversions, chartScrollRef, tableColWidth);
 
   // Build chart data from client-side bracket fills
   const chartYears = useMemo(() => {
@@ -60,15 +67,42 @@ export function ResultsView({ result }: ResultsViewProps) {
 
   return (
     <div className="flex flex-col gap-section">
-      {/* Hero metric + slider */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-default">
-        {/* Headline metric */}
-        <Card recommended className="p-section">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between">
-              <span className="metric-label">
-                Estimated lifetime tax savings
-              </span>
+      {/* Summary metrics */}
+      <div className="grid grid-cols-3 gap-tight sm:gap-default">
+        <MetricCard
+          label="Total Roth conversion"
+          value={formatCurrency(displayTotalConversion)}
+        />
+        <MetricCard
+          label="Tax on Roth conversions"
+          value={formatCurrency(totalTaxCost)}
+        />
+        <MetricCard
+          label="Conversion years"
+          value={String(conversionYears)}
+        />
+      </div>
+
+      {/* Bracket chart with slider + annotation row */}
+      <div className="flex flex-col gap-default">
+        <div className="flex items-center justify-between">
+          <h3 className="text-h3 text-text-primary">Roth conversion schedule</h3>
+          <InfoTrigger
+            label="How is this determined?"
+            sectionId="bracket-filling"
+            triggerId="bracket-chart"
+          />
+        </div>
+        <Card className="flex flex-col gap-default">
+        {/* Top row: compact hero metric (left) + slider (right, max 1/3) */}
+        {/* Aligned with chart axes: left edge matches income labels, right edge matches bar area */}
+        <div
+          className="flex items-start justify-between gap-4"
+          style={{ paddingLeft: chartLayout.axisLabelStart, paddingRight: chartLayout.rightOffset }}
+        >
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className="metric-label">Estimated lifetime tax savings</span>
               <InfoTrigger
                 label="How is this calculated?"
                 sectionId="savings-number"
@@ -106,56 +140,27 @@ export function ResultsView({ result }: ResultsViewProps) {
               <Tooltip content="This is the difference in after-tax wealth between the selected conversion schedule and doing nothing, expressed in today's dollars using your discount rate." />
             </span>
           </div>
-        </Card>
-
-        {/* Slider */}
-        <Card className="p-section flex flex-col justify-center">
-          <ConversionSlider
-            value={sliderValue}
-            min={0}
-            max={Math.max(result.input.traditional_ira_balance, result.total_conversion)}
-            optimalValue={result.total_conversion}
-            onChange={setSliderValue}
-          />
-        </Card>
-      </div>
-
-      {/* Summary metrics */}
-      <div className="grid grid-cols-3 gap-tight sm:gap-default">
-        <MetricCard
-          label="Total Roth conversion"
-          value={formatCurrency(displayTotalConversion)}
-        />
-        <MetricCard
-          label="Tax on Roth conversions"
-          value={formatCurrency(totalTaxCost)}
-        />
-        <MetricCard
-          label="Conversion years"
-          value={String(conversionYears)}
-        />
-      </div>
-
-      {/* Bracket chart with annotation row in a single scroll container */}
-      <div className="flex flex-col gap-default">
-        <div className="flex items-center justify-between">
-          <h3 className="text-h3 text-text-primary">Conversion schedule</h3>
-          <InfoTrigger
-            label="How is this determined?"
-            sectionId="bracket-filling"
-            triggerId="bracket-chart"
-          />
+          <div className="w-1/3 min-w-[180px] flex-shrink-0">
+            <ConversionSlider
+              value={sliderValue}
+              min={0}
+              max={Math.max(result.input.traditional_ira_balance, result.total_conversion)}
+              optimalValue={result.total_conversion}
+              onChange={setSliderValue}
+            />
+          </div>
         </div>
-        <Card className="flex flex-col gap-default">
         <BracketChart
           years={chartYears}
           filingStatus={result.input.filing_status}
           scrollRef={chartScrollRef}
           onBarWidthChange={setTableColWidth}
+          onLayoutChange={setChartLayout}
+          hideLegend
           leftBottomContent={
             <div className="flex flex-col border-r border-border">
-              <div className="h-8 flex items-center justify-end text-text-tertiary text-data-xs font-medium px-1 text-right leading-tight">
-                Tax cost
+              <div className="h-8 flex items-center justify-end text-text-tertiary text-data-xs font-medium px-1 text-right leading-tight" style={{ maxWidth: 64 }}>
+                Additional tax from conversion
               </div>
             </div>
           }
@@ -182,6 +187,22 @@ export function ResultsView({ result }: ResultsViewProps) {
             })}
           </div>
         </BracketChart>
+
+        {/* Series legend */}
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-body-sm text-text-secondary">
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.income }} />
+            Earned Income
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.conversion }} />
+            Roth Conversion
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded bg-bg-hover border border-border" />
+            Remaining space in tax bracket
+          </span>
+        </div>
 
       </Card>
       </div>

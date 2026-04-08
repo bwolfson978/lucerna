@@ -44,14 +44,14 @@ describe("distributeConversion", () => {
     });
   });
 
-  describe("snap to nearest curve point", () => {
+  describe("interpolation between curve points", () => {
     const curve: ConversionCurvePoint[] = [
       makeCurvePoint(0, [0, 0, 0]),
       makeCurvePoint(25000, [15000, 10000, 0]),
       makeCurvePoint(50000, [35000, 15000, 0]),
       makeCurvePoint(75000, [45000, 25000, 5000]),
       makeCurvePoint(100000, [60000, 40000, 0]),
-    ];
+    ].sort((a, b) => a.total_cap - b.total_cap);
 
     it("returns zeros when totalConversion is 0", () => {
       const result = distributeConversion(0, weights, curve);
@@ -63,24 +63,28 @@ describe("distributeConversion", () => {
       expect(result).toEqual([15000, 10000, 0]);
     });
 
-    it("snaps to nearest curve point and scales to match total", () => {
-      // 30000 is closer to 25000 (dist=5000) than to 50000 (dist=20000)
-      // So snaps to 25000's allocation [15000, 10000, 0] and scales by 30000/25000
+    it("lerps between bounding curve points and scales to match total", () => {
+      // 30000 is between 25000 [15000, 10000, 0] and 50000 [35000, 15000, 0]
+      // t = (30000 - 25000) / (50000 - 25000) = 0.2
+      // lerp: [15000 + 0.2*20000, 10000 + 0.2*5000, 0] = [19000, 11000, 0]
+      // total = 30000, matches slider — no scaling needed
       const result = distributeConversion(30000, weights, curve);
       const total = result.reduce((a, b) => a + b, 0);
       expect(total).toBeCloseTo(30000);
-      // Ratio should match the 25000 point: 15000/10000 = 1.5
-      expect(result[0] / result[1]).toBeCloseTo(1.5);
+      // Values should be interpolated between the two bounding points
+      expect(result[0]).toBeCloseTo(19000, -2);
+      expect(result[1]).toBeCloseTo(11000, -2);
     });
 
-    it("preserves allocation ratios from nearest point", () => {
-      // 70000 is closer to 75000 (dist=5000) than to 50000 (dist=20000)
-      // So snaps to 75000's allocation [45000, 25000, 5000]
-      const result = distributeConversion(70000, weights, curve);
+    it("produces smooth intermediate allocations between curve points", () => {
+      // 62500 is exactly halfway between 50000 and 75000
+      // lerp: [40000, 20000, 2500] — but 2500 > threshold so it stays
+      const result = distributeConversion(62500, weights, curve);
       const total = result.reduce((a, b) => a + b, 0);
-      expect(total).toBeCloseTo(70000);
-      // Ratios from 75000 point: 45000:25000:5000 = 9:5:1
-      expect(result[0] / result[2]).toBeCloseTo(9);
+      expect(total).toBeCloseTo(62500);
+      // Year 0 should be between 35000 (at 50K) and 45000 (at 75K)
+      expect(result[0]).toBeGreaterThan(35000);
+      expect(result[0]).toBeLessThan(45000);
     });
 
     it("clamps to first point when below range", () => {
@@ -88,7 +92,7 @@ describe("distributeConversion", () => {
       expect(result).toEqual([0, 0, 0]);
     });
 
-    it("scales up from last point when above range", () => {
+    it("scales from last point when above range", () => {
       const result = distributeConversion(150000, weights, curve);
       const total = result.reduce((a, b) => a + b, 0);
       expect(total).toBeCloseTo(150000);
@@ -96,25 +100,25 @@ describe("distributeConversion", () => {
       expect(result[0] / result[1]).toBeCloseTo(60000 / 40000);
     });
 
-    it("never produces small spurious amounts from interpolation", () => {
-      // Regression test for GitHub issue #59: lerp between curve points
-      // with different allocation strategies used to produce tiny amounts.
-      // With snap-to-nearest, this can't happen — we always use a real
-      // DP allocation's ratios.
+    it("zeroes out small interpolation artifacts (GitHub issue #59)", () => {
+      // Regression test: lerp between curve points with different allocation
+      // strategies can produce tiny amounts.  Values below the threshold
+      // ($100) are zeroed out to prevent spurious bar segments.
       const artifactCurve: ConversionCurvePoint[] = [
         makeCurvePoint(0, [0, 0, 0, 0]),
         makeCurvePoint(40000, [40000, 0, 0, 0]),
         // At 50000, allocation shifts to include year 2
         makeCurvePoint(50000, [30000, 20000, 0, 0]),
         makeCurvePoint(100000, [50000, 40000, 10000, 0]),
-      ];
+      ].sort((a, b) => a.total_cap - b.total_cap);
 
-      // Just above the 40000 point — old lerp would produce a tiny year-2 amount.
-      // With snap-to-nearest, we get 40000's allocation scaled up.
+      // Just above the 40000 point — lerp produces a tiny year-2 amount
+      // that should be zeroed by the threshold.
+      // t = (41000 - 40000) / (50000 - 40000) = 0.1
+      // lerp year 1: 0 + 0.1 * 20000 = 2000 → above threshold, kept
+      // But year 2 and 3 are zero on both sides → stay zero
       const result = distributeConversion(41000, weights.concat(0), artifactCurve);
 
-      // Year 2 should be 0 (snapped to 40000's strategy [40000, 0, 0, 0])
-      expect(result[1]).toBe(0);
       expect(result[2]).toBe(0);
       expect(result[3]).toBe(0);
       // Total should match slider

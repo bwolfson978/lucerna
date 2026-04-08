@@ -13,14 +13,11 @@ describe("ConversionSlider", () => {
 
   it("displays the label", () => {
     render(<ConversionSlider {...defaultProps} />);
-    expect(screen.getByText("Roth conversion amount")).toBeInTheDocument();
+    expect(screen.getByText("Conversion amount")).toBeInTheDocument();
   });
 
-  it("shows lantern legend instead of 'Optimal'", () => {
+  it("shows diamond legend for highest savings", () => {
     render(<ConversionSlider {...defaultProps} />);
-    expect(screen.queryByText(/Optimal/)).not.toBeInTheDocument();
-    expect(
-      screen.getByText("Roth conversion amount with highest estimated lifetime savings")
-    ).toBeInTheDocument();
+    expect(screen.getByText("Highest savings")).toBeInTheDocument();
   });
 });
