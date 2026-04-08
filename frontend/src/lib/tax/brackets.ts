@@ -2,9 +2,9 @@
  * Client-side federal tax bracket calculations.
  * Mirrors backend/app/engine/tax.py for real-time slider interactivity.
  *
- * Bracket data is loaded from federal-brackets-2025.json — the single
- * source of truth for the frontend. When tax year changes, update the
- * JSON file and both this module and BracketChart pick up the change.
+ * Bracket data is loaded from federal-brackets-2025.json, which is
+ * auto-generated from backend/data/tax_brackets_2025.json by
+ * scripts/generate_frontend_tax_data.py. Do not edit the JSON manually.
  */
 
 import type { FilingStatus, BracketFillResult } from "@/lib/types";

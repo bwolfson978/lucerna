@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "cd .. && python scripts/generate_frontend_tax_data.py",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
