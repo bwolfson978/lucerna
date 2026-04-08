@@ -69,7 +69,7 @@ export default function CalculatorPage() {
                     Run your scenario
                   </h1>
                   <p className="text-body-sm text-text-secondary leading-relaxed">
-                    Enter your details and the optimizer will find the conversion
+                    Enter your details and the optimizer will find the Roth conversion
                     schedule that maximizes your after-tax wealth.
                   </p>
                 </div>

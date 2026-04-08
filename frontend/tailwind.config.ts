@@ -35,6 +35,10 @@ const config: Config = {
           "28px",
           { lineHeight: "1.0", letterSpacing: "-0.02em", fontWeight: "700" },
         ],
+        "data-xs": [
+          "12px",
+          { lineHeight: "1.3", letterSpacing: "-0.01em", fontWeight: "600" },
+        ],
         "data-sm": [
           "16px",
           { lineHeight: "1.2", letterSpacing: "-0.01em", fontWeight: "700" },
