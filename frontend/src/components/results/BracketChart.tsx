@@ -29,6 +29,10 @@ interface BracketChartProps {
   scrollRef?: RefObject<HTMLDivElement | null>;
   onBarWidthChange?: (barWidth: number) => void;
   onLayoutChange?: (layout: { leftOffset: number; rightOffset: number }) => void;
+  /** Content rendered below the chart SVG inside the shared scroll container */
+  children?: React.ReactNode;
+  /** Content rendered below the left axis (fixed, for row labels) */
+  leftBottomContent?: React.ReactNode;
 }
 
 // Derive bracket boundaries from tax config.
@@ -70,7 +74,7 @@ function niceInterval(range: number, targetTicks: number): number {
   return nice * magnitude;
 }
 
-export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef, onBarWidthChange, onLayoutChange }: BracketChartProps) {
+export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef, onBarWidthChange, onLayoutChange, children, leftBottomContent }: BracketChartProps) {
   const internalScrollRef = useRef<HTMLDivElement>(null);
   const scrollRef = externalScrollRef || internalScrollRef;
   const fadeRef = useRef<HTMLDivElement>(null);
@@ -138,7 +142,9 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
       }
     }
 
-    const totalBarWidth = years.length * (barWidth + BAR_GAP);
+    const totalBarWidth = years.length > 0
+      ? years.length * (barWidth + BAR_GAP) - BAR_GAP
+      : 0;
 
     return { isMobile, chartHeight, leftAxisWidth, rightAxisWidth, barWidth, totalBarWidth, barsFit };
   }, [containerWidth, viewportHeight, years.length]);
@@ -241,7 +247,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.conversion }} />
-          Conversion
+          Roth Conversion
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded bg-bg-hover border border-border" />
@@ -260,9 +266,9 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
       >
         {/* Left axis label (desktop only) */}
         {!isMobile && (
-          <div className="flex-shrink-0 flex items-center" style={{ width: VERTICAL_LABEL_WIDTH }}>
+          <div className="flex-shrink-0 flex items-center self-start" style={{ width: VERTICAL_LABEL_WIDTH, height: chartHeight }}>
             <span
-              className="text-[11px] text-text-tertiary tracking-wider uppercase"
+              className="text-caption text-text-tertiary tracking-wider uppercase"
               style={{
                 writingMode: "vertical-rl",
                 transform: "rotate(180deg)",
@@ -274,44 +280,46 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
           </div>
         )}
 
-        {/* Fixed left axis: evenly spaced income tick marks */}
-        <svg
-          width={leftAxisWidth}
-          height={chartHeight}
-          className="flex-shrink-0"
-        >
-          {incomeTicks.map((val) => {
-            const y = yScale(val);
-            return (
-              <g key={`tick-${val}`}>
-                <line
-                  x1={leftAxisWidth - 4}
-                  y1={y}
-                  x2={leftAxisWidth}
-                  y2={y}
-                  stroke="rgba(255,255,255,0.15)"
-                  strokeWidth={1}
-                />
-                <text
-                  x={leftAxisWidth - 6}
-                  y={y + 4}
-                  textAnchor="end"
-                  className="text-[10px] fill-text-tertiary"
-                  fontFamily="'Manrope', system-ui"
-                >
-                  {formatAxisCurrency(val)}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
+        {/* Fixed left axis: evenly spaced income tick marks + bottom label slot */}
+        <div className="flex-shrink-0 flex flex-col overflow-hidden" style={{ width: leftAxisWidth }}>
+          <svg
+            width={leftAxisWidth}
+            height={chartHeight}
+          >
+            {incomeTicks.map((val) => {
+              const y = yScale(val);
+              return (
+                <g key={`tick-${val}`}>
+                  <line
+                    x1={leftAxisWidth - 4}
+                    y1={y}
+                    x2={leftAxisWidth}
+                    y2={y}
+                    stroke="rgba(255,255,255,0.15)"
+                    strokeWidth={1}
+                  />
+                  <text
+                    x={leftAxisWidth - 6}
+                    y={y + 4}
+                    textAnchor="end"
+                    className="text-data-xs fill-text-tertiary"
+                    fontFamily="'Manrope', system-ui"
+                  >
+                    {formatAxisCurrency(val)}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+          {leftBottomContent}
+        </div>
 
         {/* Scrollable bar area */}
         <div ref={fadeRef} className={`flex-1 min-w-0 ${!barsFit ? "scroll-fade mb-2" : ""}`}>
           {/* Scroll hint pill — shown until first scroll */}
           {!barsFit && !hasScrolled && (
             <div className="absolute inset-0 flex items-center justify-end pr-3 pointer-events-none z-10 animate-fade-out-delayed">
-              <div className="flex items-center gap-1 text-[10px] text-accent/70 bg-card/80 backdrop-blur-sm rounded-full px-2.5 py-1">
+              <div className="flex items-center gap-1 text-data-xs text-accent/70 bg-card/80 backdrop-blur-sm rounded-full px-2.5 py-1">
                 <span>Scroll</span>
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -323,8 +331,9 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
             ref={scrollRef}
             className={!barsFit ? "overflow-x-auto bracket-chart-scroll pb-2" : ""}
           >
+            <div style={!barsFit ? { width: Math.max(totalBarWidth, 200) } : undefined}>
             <svg
-              width={barsFit ? "100%" : Math.max(totalBarWidth, 200)}
+              width="100%"
               height={chartHeight}
               className="block"
             >
@@ -335,7 +344,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
                   <stop offset="100%" stopColor="white" stopOpacity="0.3" />
                 </linearGradient>
                 {years.map((yearData, i) => {
-                  const maskX = i * (barWidth + BAR_GAP) + BAR_GAP / 2;
+                  const maskX = i * (barWidth + BAR_GAP);
                   return (
                     <mask key={`mask-${yearData.year}`} id={`barMask-${i}`}>
                       <rect
@@ -371,7 +380,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
 
               {/* Bars */}
               {years.map((yearData, i) => {
-                const x = i * (barWidth + BAR_GAP) + BAR_GAP / 2;
+                const x = i * (barWidth + BAR_GAP);
                 return (
                   <BracketBar
                     key={yearData.year}
@@ -391,15 +400,14 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
 
               {/* X axis: year labels */}
               {years.map((yearData, i) => {
-                const x =
-                  i * (barWidth + BAR_GAP) + BAR_GAP / 2 + barWidth / 2;
+                const x = i * (barWidth + BAR_GAP) + barWidth / 2;
                 return (
                   <text
                     key={`label-${yearData.year}`}
                     x={x}
                     y={chartHeight - 6}
                     textAnchor="middle"
-                    className={`${barWidth < 36 ? "text-[9px]" : "text-[10px]"} fill-text-tertiary`}
+                    className={`${barWidth < 36 ? "text-[11px]" : "text-data-xs"} fill-text-tertiary`}
                     fontFamily="'Manrope', system-ui"
                   >
                     {yearData.year}
@@ -407,6 +415,8 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
                 );
               })}
             </svg>
+            {children}
+            </div>
           </div>
         </div>
 
@@ -414,7 +424,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
         <svg
           width={rightAxisWidth}
           height={chartHeight}
-          className="flex-shrink-0"
+          className="flex-shrink-0 self-start"
         >
           {visibleBrackets.map((b) => {
             const y = yScale(b.max);
@@ -425,7 +435,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
                 key={b.rate}
                 x={6}
                 y={y + 4}
-                className={`${isMobile ? "text-[9px]" : "text-[11px]"} font-medium`}
+                className={`${isMobile ? "text-[11px]" : "text-caption"} font-medium`}
                 fontFamily="'Manrope', system-ui"
                 fill={color}
               >
@@ -439,9 +449,9 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
 
         {/* Right axis label (desktop only) */}
         {!isMobile && (
-          <div className="flex-shrink-0 flex items-center" style={{ width: VERTICAL_LABEL_WIDTH }}>
+          <div className="flex-shrink-0 flex items-center self-start" style={{ width: VERTICAL_LABEL_WIDTH, height: chartHeight }}>
             <span
-              className="text-[11px] text-text-tertiary tracking-wider uppercase"
+              className="text-caption text-text-tertiary tracking-wider uppercase"
               style={{
                 writingMode: "vertical-rl",
                 fontFamily: "'Inter', system-ui",
@@ -496,7 +506,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
                         <span className="text-text-primary font-medium">{formatCurrency(totalConversion)}</span>
                       </div>
                     )}
-                    <div className="border-t border-glass-border mt-1 pt-1.5 flex justify-between text-text-primary text-[12px] font-medium">
+                    <div className="border-t border-glass-border mt-1 pt-1.5 flex justify-between text-text-primary text-caption font-medium">
                       <span>Total</span>
                       <span>{formatCurrency(totalIncome + totalConversion)}</span>
                     </div>
