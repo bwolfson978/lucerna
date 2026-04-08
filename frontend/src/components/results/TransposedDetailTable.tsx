@@ -88,7 +88,7 @@ export function TransposedDetailTable({
           </div>
         )}
         <div className="h-8 flex items-center justify-end text-text-tertiary text-data-xs font-medium px-2">
-          Added tax
+          Additional tax
         </div>
       </div>
 
