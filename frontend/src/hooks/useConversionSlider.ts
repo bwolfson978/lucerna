@@ -10,6 +10,7 @@ import {
   analyzeBracketFill,
   calculateFederalTax,
 } from "@/lib/tax/brackets";
+import { useTaxConfig } from "@/lib/tax/TaxConfigProvider";
 import { computeSnapThreshold } from "@/lib/utils/snap";
 
 /**
@@ -101,6 +102,7 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
     result.total_conversion
   );
 
+  const taxConfig = useTaxConfig();
   const filingStatus = result.input.filing_status;
   const incomes = useMemo(
     () => result.input.income_timeline.map((yi) => yi.gross_income),
@@ -122,17 +124,17 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
   const yearlyBracketFills: BracketFillResult[][] = useMemo(
     () =>
       incomes.map((income, i) =>
-        analyzeBracketFill(income, yearlyConversions[i] ?? 0, filingStatus)
+        analyzeBracketFill(income, yearlyConversions[i] ?? 0, filingStatus, taxConfig)
       ),
-    [incomes, yearlyConversions, filingStatus]
+    [incomes, yearlyConversions, filingStatus, taxConfig]
   );
 
   const yearlyDetail: YearlyDetail[] = useMemo(
     () =>
       incomes.map((income, i) => {
         const conversion = yearlyConversions[i] ?? 0;
-        const taxWith = calculateFederalTax(income + conversion, filingStatus);
-        const taxWithout = calculateFederalTax(income, filingStatus);
+        const taxWith = calculateFederalTax(income + conversion, filingStatus, taxConfig);
+        const taxWithout = calculateFederalTax(income, filingStatus, taxConfig);
         const taxCost = taxWith - taxWithout;
         // Find marginal bracket rate from the bracket fill data
         const fills = yearlyBracketFills[i];
@@ -153,7 +155,7 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
           marginal_bracket: marginalRate,
         };
       }),
-    [incomes, yearlyConversions, yearlyBracketFills, filingStatus, result.input.income_timeline]
+    [incomes, yearlyConversions, yearlyBracketFills, filingStatus, taxConfig, result.input.income_timeline]
   );
 
   const displayTotalConversion = yearlyConversions.reduce((a, b) => a + b, 0);

@@ -13,8 +13,8 @@ from scripts.update_data import (
     validate_rmd_tables,
     validate_file,
     validate_all,
-    scaffold_tax_brackets,
-    scaffold_rmd_tables,
+    is_stale,
+    get_tax_year,
 )
 
 
@@ -43,7 +43,6 @@ class TestValidateMetadata:
         data = {"metadata": {"last_updated": "2025-01-01", "description": "Test"}}
         filepath = tmp_path / "test.json"
         warnings = validate_metadata(data, filepath)
-        # Only recommended field warning (notes)
         assert all("required" not in w for w in warnings)
 
     def test_missing_metadata_block(self, tmp_path):
@@ -138,7 +137,7 @@ class TestValidateRmdTables:
         data = {
             "uniform_lifetime_table": {
                 "min_age": 72,
-                "entries": {"72": 27.4, "73": 28.0},  # Increases — invalid
+                "entries": {"72": 27.4, "73": 28.0},
             },
             "start_age_rules": {"rules": [{"born_on_or_before": None, "rmd_start_age": 72}]},
         }
@@ -196,36 +195,23 @@ class TestValidateAll:
         assert warnings == [], f"Unexpected warnings: {warnings}"
 
 
-# ── Scaffold ──
+# ── Freshness ──
 
 
-class TestScaffoldTaxBrackets:
-    def test_bumps_year(self):
-        data = {
-            "metadata": {"tax_year": 2025, "last_updated": "2025-01-01"},
-            "federal": {"brackets": {}, "standard_deduction": {}},
-        }
-        result = scaffold_tax_brackets(data, 2027)
-        assert result["metadata"]["tax_year"] == 2027
+class TestFreshness:
+    def test_get_tax_year(self):
+        filepath = DATA_DIR / "tax_brackets_2025.json"
+        assert get_tax_year(filepath) == 2025
 
-    def test_preserves_federal_data(self):
-        data = {
-            "metadata": {"tax_year": 2025, "last_updated": "2025-01-01"},
-            "federal": {"standard_deduction": {"single": 15000}, "brackets": {"single": []}},
-        }
-        result = scaffold_tax_brackets(data, 2027)
-        assert result["federal"]["standard_deduction"]["single"] == 15000
+    def test_tax_brackets_stale_for_future_year(self):
+        filepath = DATA_DIR / "tax_brackets_2025.json"
+        assert is_stale(filepath, 2027) is True
 
+    def test_tax_brackets_fresh_for_current_year(self):
+        filepath = DATA_DIR / "tax_brackets_2025.json"
+        assert is_stale(filepath, 2025) is False
 
-class TestScaffoldRmdTables:
-    def test_updates_metadata(self):
-        data = {
-            "metadata": {
-                "last_updated": "2025-01-01",
-                "notes": "Original notes.",
-            },
-            "uniform_lifetime_table": {},
-        }
-        result = scaffold_rmd_tables(data, 2027)
-        assert "REVIEW 2027" in result["metadata"]["notes"]
-        assert "Original notes." in result["metadata"]["notes"]
+    def test_rmd_tables_fresh_when_recently_updated(self):
+        filepath = DATA_DIR / "rmd_tables.json"
+        # rmd_tables was updated recently, so should not be stale
+        assert is_stale(filepath, 2025) is False

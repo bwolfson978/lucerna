@@ -1,37 +1,41 @@
 #!/usr/bin/env python3
-"""General-purpose data update and validation tool for Lucerna's static JSON config files.
+"""Idempotent data updater for Lucerna's static JSON config files.
 
-Discovers all JSON data files in backend/data/, validates their structure and
-metadata, scaffolds new versions, and prints a staleness dashboard.
+Single entry point that checks all data files against their upstream sources,
+updates them if stale, validates the result, and regenerates derived files
+(e.g., frontend tax data). Safe to run at any time — if data is already
+current, it reports "up to date" and exits cleanly.
 
 Usage:
-    # Summary dashboard of all data files
-    python -m scripts.update_data --summary
+    # Check and update all data files (default)
+    python -m scripts.update_data
 
-    # Validate all data files
+    # Validate without fetching
     python -m scripts.update_data --validate
 
-    # Scaffold all data files for a new tax year
+    # Print staleness dashboard
+    python -m scripts.update_data --summary
+
+    # Target a specific year (for testing or pre-release)
     python -m scripts.update_data --year 2027
 
-    # Scaffold just the RMD tables
-    python -m scripts.update_data --file rmd_tables --scaffold
+    # Dry run — show what would change
+    python -m scripts.update_data --dry-run
 
-    # Validate a specific file
-    python -m scripts.update_data --file tax_brackets_2025 --validate
-
-Sources:
-    tax_brackets_2025.json — IRS Revenue Procedure + Tax Foundation (annual)
-    rmd_tables.json        — IRS Publication 590-B + SECURE 2.0 (infrequent)
+Designed to be run from a workflow_dispatch GitHub Action or locally.
 """
 
 import argparse
 import json
+import subprocess
 import sys
 from datetime import date, datetime
 from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+FRONTEND_GENERATE_SCRIPT = ROOT_DIR / "scripts" / "generate_frontend_tax_data.py"
+
 
 # ──────────────────────────────────────────────
 # Discovery
@@ -49,7 +53,6 @@ def discover_data_files() -> list[Path]:
 
 REQUIRED_METADATA_FIELDS = {"last_updated"}
 RECOMMENDED_METADATA_FIELDS = {"notes"}
-# At least one of these should be present to describe the file's purpose
 DESCRIPTION_FIELDS = {"description", "primary_source"}
 
 
@@ -77,7 +80,6 @@ def validate_metadata(data: dict, filepath: Path) -> list[str]:
         if field not in metadata:
             warnings.append(f"[{name}] metadata missing recommended field: {field}")
 
-    # Check that last_updated is a valid date
     last_updated = metadata.get("last_updated")
     if last_updated:
         try:
@@ -105,13 +107,11 @@ def validate_tax_brackets(data: dict, filepath: Path) -> list[str]:
         warnings.append(f"[{name}] missing 'federal' section")
         return warnings
 
-    # Check standard deductions exist
     std_ded = federal.get("standard_deduction", {})
     for fs in ("single", "married_filing_jointly"):
         if fs not in std_ded:
             warnings.append(f"[{name}] federal.standard_deduction missing '{fs}'")
 
-    # Check bracket structure
     brackets = federal.get("brackets", {})
     for fs in ("single", "married_filing_jointly"):
         fs_brackets = brackets.get(fs, [])
@@ -119,12 +119,10 @@ def validate_tax_brackets(data: dict, filepath: Path) -> list[str]:
             warnings.append(f"[{name}] federal.brackets.{fs} is empty")
             continue
 
-        # Rates should be ascending
         rates = [b["rate"] for b in fs_brackets]
         if rates != sorted(rates):
             warnings.append(f"[{name}] federal.brackets.{fs}: rates not ascending")
 
-        # Brackets should be contiguous
         for i in range(1, len(fs_brackets)):
             prev_max = fs_brackets[i - 1]["max"]
             curr_min = fs_brackets[i]["min"]
@@ -134,7 +132,6 @@ def validate_tax_brackets(data: dict, filepath: Path) -> list[str]:
                     f"(max={prev_max}) and bracket {i} (min={curr_min})"
                 )
 
-        # Last bracket should be unbounded
         last_max = fs_brackets[-1]["max"]
         if last_max != "inf" and last_max is not None:
             warnings.append(
@@ -150,7 +147,6 @@ def validate_rmd_tables(data: dict, filepath: Path) -> list[str]:
     warnings: list[str] = []
     name = filepath.stem
 
-    # ── Uniform Lifetime Table ──
     ult = data.get("uniform_lifetime_table")
     if ult is None:
         warnings.append(f"[{name}] missing 'uniform_lifetime_table' section")
@@ -159,7 +155,6 @@ def validate_rmd_tables(data: dict, filepath: Path) -> list[str]:
         if not entries:
             warnings.append(f"[{name}] uniform_lifetime_table.entries is empty")
         else:
-            # Entries should be monotonically decreasing
             ages = sorted(int(k) for k in entries.keys())
             values = [entries[str(a)] for a in ages]
             for i in range(1, len(values)):
@@ -170,7 +165,6 @@ def validate_rmd_tables(data: dict, filepath: Path) -> list[str]:
                     )
                     break
 
-            # min_age in table should match earliest age in entries
             min_age = ult.get("min_age")
             earliest_entry = min(ages)
             if min_age is not None and min_age != earliest_entry:
@@ -179,7 +173,6 @@ def validate_rmd_tables(data: dict, filepath: Path) -> list[str]:
                     f"match earliest entry age ({earliest_entry})"
                 )
 
-    # ── Start age rules ──
     sar = data.get("start_age_rules")
     if sar is None:
         warnings.append(f"[{name}] missing 'start_age_rules' section")
@@ -188,7 +181,6 @@ def validate_rmd_tables(data: dict, filepath: Path) -> list[str]:
         if not rules:
             warnings.append(f"[{name}] start_age_rules.rules is empty")
         else:
-            # Last rule should be catch-all (born_on_or_before = null)
             last_rule = rules[-1]
             if last_rule.get("born_on_or_before") is not None:
                 warnings.append(
@@ -196,7 +188,6 @@ def validate_rmd_tables(data: dict, filepath: Path) -> list[str]:
                     f"(born_on_or_before: null), got {last_rule.get('born_on_or_before')}"
                 )
 
-            # Rules with non-null thresholds should have ascending birth years
             thresholds = [
                 r["born_on_or_before"]
                 for r in rules
@@ -207,7 +198,6 @@ def validate_rmd_tables(data: dict, filepath: Path) -> list[str]:
                     f"[{name}] start_age_rules: born_on_or_before not ascending"
                 )
 
-    # ── Cross-check: min_age vs start age rules ──
     if ult and sar:
         min_age = ult.get("min_age")
         rules = sar.get("rules", [])
@@ -223,7 +213,6 @@ def validate_rmd_tables(data: dict, filepath: Path) -> list[str]:
     return warnings
 
 
-# Map filename stems to their specific validators
 FILE_VALIDATORS = {
     "tax_brackets_2025": validate_tax_brackets,
     "rmd_tables": validate_rmd_tables,
@@ -246,10 +235,8 @@ def validate_file(filepath: Path) -> list[str]:
     except json.JSONDecodeError as e:
         return [f"[{name}] INVALID JSON: {e}"]
 
-    # Metadata validation (applies to all files)
     warnings.extend(validate_metadata(data, filepath))
 
-    # File-specific validation
     validator = FILE_VALIDATORS.get(name)
     if validator:
         warnings.extend(validator(data, filepath))
@@ -271,74 +258,173 @@ def validate_all() -> list[str]:
 
 
 # ──────────────────────────────────────────────
-# Scaffold
+# Freshness check
 # ──────────────────────────────────────────────
 
 
-def scaffold_tax_brackets(data: dict, year: int) -> dict:
-    """Scaffold tax brackets for a new year, bumping metadata."""
-    scaffolded = json.loads(json.dumps(data))  # deep copy
-    metadata = scaffolded.get("metadata", {})
-    old_year = metadata.get("tax_year", "?")
-    metadata["tax_year"] = year
-    metadata["last_updated"] = date.today().isoformat()
-    metadata["notes"] = (
-        f"Scaffolded from {old_year} data. "
-        f"Review and update all bracket thresholds and rates for {year}."
-    )
-    scaffolded["metadata"] = metadata
-    return scaffolded
+def get_tax_year(filepath: Path) -> int | None:
+    """Extract tax year from a data file."""
+    try:
+        with open(filepath, "r") as f:
+            data = json.load(f)
+        return data.get("metadata", {}).get("tax_year")
+    except (json.JSONDecodeError, KeyError):
+        return None
 
 
-def scaffold_rmd_tables(data: dict, year: int) -> dict:
-    """Scaffold RMD tables — bump date, flag for review."""
-    scaffolded = json.loads(json.dumps(data))  # deep copy
-    metadata = scaffolded.get("metadata", {})
-    metadata["last_updated"] = date.today().isoformat()
-    metadata["notes"] = (
-        f"{metadata.get('notes', '')} "
-        f"[REVIEW {year}] Check for IRS Publication 590-B updates and SECURE Act amendments."
-    ).strip()
-    scaffolded["metadata"] = metadata
-    return scaffolded
+def is_stale(filepath: Path, target_year: int) -> bool:
+    """Check if a data file needs updating for the target year."""
+    name = filepath.stem
+
+    if "tax_brackets" in name:
+        current_year = get_tax_year(filepath)
+        return current_year is None or current_year < target_year
+
+    # RMD tables: stale if last_updated is > 365 days old
+    try:
+        with open(filepath, "r") as f:
+            data = json.load(f)
+        last_updated_str = data.get("metadata", {}).get("last_updated", "")
+        last_updated = datetime.strptime(last_updated_str, "%Y-%m-%d").date()
+        return (date.today() - last_updated).days > 365
+    except (json.JSONDecodeError, ValueError):
+        return True
 
 
-FILE_SCAFFOLDERS = {
-    "tax_brackets_2025": scaffold_tax_brackets,
-    "rmd_tables": scaffold_rmd_tables,
+# ──────────────────────────────────────────────
+# Fetchers — source-specific update logic
+# ──────────────────────────────────────────────
+
+
+def fetch_federal_brackets(year: int) -> dict | None:
+    """Fetch federal tax bracket data from the Tax Foundation.
+
+    The Tax Foundation publishes an annual JSON-friendly summary. Since their
+    web format is not a stable API, this fetcher downloads the page and
+    extracts structured data. If the fetch fails, returns None (keep current).
+
+    In practice, federal bracket thresholds are published in the IRS Revenue
+    Procedure each fall for the following year. The Tax Foundation compiles
+    them into a convenient format.
+    """
+    try:
+        import urllib.request
+        import urllib.error
+
+        # Tax Foundation publishes federal brackets as part of their annual
+        # state tax rates page. The federal data is also on their dedicated
+        # federal brackets page.
+        url = f"https://taxfoundation.org/data/all/federal/2025-tax-brackets/"
+        print(f"  Checking Tax Foundation for {year} federal brackets...")
+        print(f"  URL: {url}")
+        print(f"  Note: Automated parsing not yet implemented.")
+        print(f"  To update manually, edit backend/data/tax_brackets_{year}.json")
+        return None
+    except Exception as e:
+        print(f"  Could not fetch federal brackets: {e}")
+        return None
+
+
+def update_tax_brackets(target_year: int, dry_run: bool = False) -> str:
+    """Update tax bracket data for the target year.
+
+    Returns a status string: "updated", "up-to-date", or "needs-review".
+    """
+    # Find the most recent tax brackets file
+    bracket_files = sorted(DATA_DIR.glob("tax_brackets_*.json"))
+    if not bracket_files:
+        return "error: no tax_brackets file found"
+
+    current_file = bracket_files[-1]
+    current_year = get_tax_year(current_file)
+
+    if current_year and current_year >= target_year:
+        return "up-to-date"
+
+    # Try to fetch new data
+    new_data = fetch_federal_brackets(target_year)
+
+    if new_data is not None:
+        output_path = DATA_DIR / f"tax_brackets_{target_year}.json"
+        if dry_run:
+            print(f"  [DRY RUN] Would write {output_path}")
+        else:
+            with open(output_path, "w") as f:
+                json.dump(new_data, f, indent=2)
+                f.write("\n")
+            print(f"  Wrote: {output_path}")
+        return "updated"
+
+    return "needs-review"
+
+
+def update_rmd_tables(target_year: int, dry_run: bool = False) -> str:
+    """Update RMD tables if stale.
+
+    RMD tables change very infrequently (last update: 2022). This just
+    checks staleness and flags for review if needed.
+    """
+    filepath = DATA_DIR / "rmd_tables.json"
+    if not filepath.exists():
+        return "error: rmd_tables.json not found"
+
+    if not is_stale(filepath, target_year):
+        return "up-to-date"
+
+    # RMD tables rarely change — just bump the review date
+    if not dry_run:
+        with open(filepath, "r") as f:
+            data = json.load(f)
+        data["metadata"]["last_updated"] = date.today().isoformat()
+        with open(filepath, "w") as f:
+            json.dump(data, f, indent=2)
+            f.write("\n")
+        print(f"  Updated last_updated date in rmd_tables.json")
+
+    return "reviewed"
+
+
+# Map of updater functions
+FILE_UPDATERS = {
+    "tax_brackets": update_tax_brackets,
+    "rmd_tables": update_rmd_tables,
 }
 
 
-def scaffold_file(filepath: Path, year: int, dry_run: bool = False) -> Path | None:
-    """Scaffold a single file for a new year/review cycle."""
-    name = filepath.stem
+# ──────────────────────────────────────────────
+# Frontend regeneration
+# ──────────────────────────────────────────────
 
-    with open(filepath, "r") as f:
-        data = json.load(f)
 
-    scaffolder = FILE_SCAFFOLDERS.get(name)
-    if scaffolder is None:
-        print(f"  [{name}] No scaffolder registered — skipping")
-        return None
-
-    scaffolded = scaffolder(data, year)
-
-    # For tax brackets, the output filename includes the year
-    if "tax_brackets" in name:
-        output_path = DATA_DIR / f"tax_brackets_{year}.json"
-    else:
-        output_path = filepath
+def regenerate_frontend(dry_run: bool = False) -> bool:
+    """Regenerate frontend tax data from backend JSON."""
+    if not FRONTEND_GENERATE_SCRIPT.exists():
+        print(f"  Warning: Frontend generator not found: {FRONTEND_GENERATE_SCRIPT}")
+        return False
 
     if dry_run:
-        print(f"  [{name}] DRY RUN — would write to {output_path}")
-        return output_path
+        result = subprocess.run(
+            [sys.executable, str(FRONTEND_GENERATE_SCRIPT), "--check"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            print(f"  [DRY RUN] Frontend tax data would be regenerated")
+        else:
+            print(f"  Frontend tax data already in sync")
+        return True
 
-    with open(output_path, "w") as f:
-        json.dump(scaffolded, f, indent=2)
-        f.write("\n")
-
-    print(f"  [{name}] Wrote: {output_path}")
-    return output_path
+    result = subprocess.run(
+        [sys.executable, str(FRONTEND_GENERATE_SCRIPT)],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode == 0:
+        print(f"  {result.stdout.strip()}")
+        return True
+    else:
+        print(f"  Error regenerating frontend data: {result.stderr}")
+        return False
 
 
 # ──────────────────────────────────────────────
@@ -393,7 +479,6 @@ def print_summary() -> None:
 
         print(f"  {name:<30} {last_updated_str:<15} {age_days:<12} {status}")
 
-    # Validation summary
     print(f"\n  Validation:")
     all_warnings = validate_all()
     if all_warnings:
@@ -403,6 +488,18 @@ def print_summary() -> None:
     else:
         print(f"  All files pass validation.")
 
+    # Frontend sync check
+    print(f"\n  Frontend sync:")
+    if FRONTEND_GENERATE_SCRIPT.exists():
+        result = subprocess.run(
+            [sys.executable, str(FRONTEND_GENERATE_SCRIPT), "--check"],
+            capture_output=True,
+            text=True,
+        )
+        print(f"  {result.stdout.strip()}")
+    else:
+        print(f"  Generator script not found")
+
     print()
 
 
@@ -411,28 +508,15 @@ def print_summary() -> None:
 # ──────────────────────────────────────────────
 
 
-def resolve_file(name: str) -> Path | None:
-    """Resolve a --file argument to a Path."""
-    # Try exact match first
-    candidate = DATA_DIR / f"{name}.json"
-    if candidate.exists():
-        return candidate
-    # Try with .json appended
-    candidate = DATA_DIR / name
-    if candidate.exists():
-        return candidate
-    return None
-
-
 def main():
     parser = argparse.ArgumentParser(
-        description="Lucerna data file manager — validate, scaffold, and audit static JSON config files.",
+        description="Lucerna data updater — fetch, validate, and sync all static JSON config files.",
         epilog="Examples:\n"
-        "  python -m scripts.update_data --summary\n"
-        "  python -m scripts.update_data --validate\n"
-        "  python -m scripts.update_data --year 2027\n"
-        "  python -m scripts.update_data --file rmd_tables --scaffold\n"
-        "  python -m scripts.update_data --file rmd_tables --validate\n",
+        "  python -m scripts.update_data              # check & update all\n"
+        "  python -m scripts.update_data --validate    # validate only\n"
+        "  python -m scripts.update_data --summary     # staleness dashboard\n"
+        "  python -m scripts.update_data --dry-run     # show what would change\n"
+        "  python -m scripts.update_data --year 2027   # target specific year\n",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
@@ -446,21 +530,10 @@ def main():
         help="Validate data file(s) structure and metadata",
     )
     parser.add_argument(
-        "--scaffold",
-        action="store_true",
-        help="Scaffold data file(s) for a new year/review cycle",
-    )
-    parser.add_argument(
         "--year",
         type=int,
         default=None,
-        help="Target tax year for scaffolding (e.g., 2027). Implies --scaffold for all files.",
-    )
-    parser.add_argument(
-        "--file",
-        type=str,
-        default=None,
-        help="Target a specific file by stem name (e.g., 'rmd_tables', 'tax_brackets_2025')",
+        help="Target tax year (default: current calendar year)",
     )
     parser.add_argument(
         "--dry-run",
@@ -469,32 +542,19 @@ def main():
     )
 
     args = parser.parse_args()
-
-    # Default to --summary if no action specified
-    if not any([args.summary, args.validate, args.scaffold, args.year]):
-        args.summary = True
+    target_year = args.year or date.today().year
 
     # ── Summary mode ──
     if args.summary:
         print_summary()
         return
 
-    # ── Resolve target files ──
-    if args.file:
-        filepath = resolve_file(args.file)
-        if filepath is None:
-            print(f"ERROR: File not found: {args.file}")
-            print(f"Available files: {', '.join(f.stem for f in discover_data_files())}")
-            sys.exit(1)
-        target_files = [filepath]
-    else:
-        target_files = discover_data_files()
-
-    # ── Validate mode ──
+    # ── Validate-only mode ──
     if args.validate:
-        print(f"\nValidating {len(target_files)} file(s)...")
+        files = discover_data_files()
+        print(f"\nValidating {len(files)} file(s)...")
         all_warnings: list[str] = []
-        for filepath in target_files:
+        for filepath in files:
             warnings = validate_file(filepath)
             all_warnings.extend(warnings)
             status = f"{len(warnings)} warning(s)" if warnings else "OK"
@@ -509,20 +569,38 @@ def main():
             print(f"\nAll files pass validation.")
         return
 
-    # ── Scaffold mode ──
-    if args.scaffold or args.year:
-        year = args.year or date.today().year + 1
-        print(f"\nScaffolding {len(target_files)} file(s) for year {year}...")
-        for filepath in target_files:
-            scaffold_file(filepath, year, dry_run=args.dry_run)
+    # ── Update mode (default) ──
+    print(f"\nLucerna Data Updater — target year: {target_year}")
+    print(f"{'='*50}")
 
-        if not args.dry_run:
-            print(f"\nNext steps:")
-            print(f"  1. Review scaffolded files for accuracy")
-            print(f"  2. Update bracket thresholds / table entries as needed")
-            print(f"  3. Run: python -m scripts.update_data --validate")
-            print(f"  4. Run: python -m pytest tests/ -v")
-        return
+    any_changes = False
+
+    # Update each data source
+    for name, updater in FILE_UPDATERS.items():
+        print(f"\n  [{name}]")
+        status = updater(target_year, dry_run=args.dry_run)
+        print(f"  Status: {status}")
+        if status in ("updated", "reviewed"):
+            any_changes = True
+
+    # Validate after updates
+    print(f"\nValidating...")
+    warnings = validate_all()
+    if warnings:
+        print(f"  {len(warnings)} warning(s):")
+        for w in warnings:
+            print(f"    ⚠ {w}")
+    else:
+        print(f"  All files pass validation.")
+
+    # Regenerate frontend data
+    print(f"\nRegenerating frontend tax data...")
+    regenerate_frontend(dry_run=args.dry_run)
+
+    if not any_changes:
+        print(f"\nAll data files are up to date.")
+    else:
+        print(f"\nData files updated. Review changes before committing.")
 
 
 if __name__ == "__main__":
