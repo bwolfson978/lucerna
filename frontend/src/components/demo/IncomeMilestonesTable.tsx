@@ -57,7 +57,7 @@ export function IncomeMilestonesTable({
 
               {/* Notes */}
               <div className="h-8 flex items-center justify-center text-center text-[11px] text-text-tertiary px-0.5" title={yi.notes || undefined}>
-                {yi.notes || "—"}
+                {yi.notes || "-"}
               </div>
             </div>
           ))}

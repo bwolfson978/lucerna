@@ -360,7 +360,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
           timeline={timeline}
           onChange={setTimeline}
           onReset={hasCustomizations ? handleResetTimeline : undefined}
-          description="Projected from your inputs above. Adjust any year to reflect expected changes — job transitions, time off, or anything else on the horizon."
+          description="Projected from your inputs above. Adjust any year to reflect expected changes: job transitions, time off, or anything else on the horizon."
           defaultState={state !== "none" ? state : undefined}
         />
       )}
@@ -416,7 +416,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
               value={discountRate ?? ""}
               decimalScale={1}
               helper="Time value of money"
-              tooltip="The extra return you'd need to accept a dollar next year instead of today. Think of it as your opportunity cost — roughly match it to your expected investment return. The default of 5% works well for most people."
+              tooltip="The extra return you'd need to accept a dollar next year instead of today. Think of it as your opportunity cost. Roughly match it to your expected investment return. The default of 5% works well for most people."
               onChange={setDiscountRate}
             />
           </div>

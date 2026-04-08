@@ -20,7 +20,7 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
     <Card className="flex flex-col gap-default">
       <div className="flex items-center gap-2">
         <h3 className="text-h3 text-text-primary">
-          Bracket fill{year ? ` — ${year}` : ""}
+          Bracket fill{year ? `: ${year}` : ""}
         </h3>
         <Tooltip content="Shows how your income and Roth conversion fill each federal tax bracket. Green brackets are cheaper; red brackets are more expensive." />
       </div>

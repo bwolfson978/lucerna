@@ -124,7 +124,7 @@ export function TransposedDetailTable({
                   className="h-8 flex items-center justify-center text-data-xs text-text-primary px-1"
                   style={{ fontFamily: "'Manrope', system-ui" }}
                 >
-                  {detail ? formatTableCurrency(detail.tax_cost, maxChars) : "—"}
+                  {detail ? formatTableCurrency(detail.tax_cost, maxChars) : "-"}
                 </div>
               </div>
             );

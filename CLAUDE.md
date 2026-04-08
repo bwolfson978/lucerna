@@ -33,6 +33,7 @@ The UI is for financially literate people who are not financial professionals. A
 - "Impact on after-tax wealth (today's dollars)" not "discounted cash flow"
 - "Projected balance" not "terminal value"
 - Show multiple scenarios and tradeoffs, not a single "optimal" directive
+- **No emdashes (—) in user-facing copy.** They look AI-generated. Use commas, periods, colons, or rewrite the sentence instead. This applies to all visible text: headings, descriptions, tooltips, labels, placeholders. Code comments are fine.
 
 The AI conversation layer must use educational framing (legal requirement):
 - Never "you should" — use "the analysis shows" / "based on your inputs"

@@ -55,9 +55,9 @@ export default function Home() {
                   Describe your situation
                 </h3>
                 <p className="text-body-sm text-text-secondary leading-relaxed">
-                  Share a few details — your income, retirement savings, and
+                  Share a few details: your income, retirement savings, and
                   how you see the next few years unfolding. Career change,
-                  early retirement, sabbatical — whatever your path looks like.
+                  early retirement, sabbatical, whatever your path looks like.
                 </p>
               </div>
               <div className="flex flex-col gap-default">
@@ -67,7 +67,7 @@ export default function Home() {
                 </h3>
                 <p className="text-body-sm text-text-secondary leading-relaxed">
                   Our planner searches across conversion scenarios and surfaces
-                  the schedule that keeps you in the lowest brackets —
+                  the schedule that keeps you in the lowest brackets,
                   maximizing your after-tax wealth over time.
                 </p>
               </div>
@@ -78,7 +78,7 @@ export default function Home() {
                 </h3>
                 <p className="text-body-sm text-text-secondary leading-relaxed">
                   See how conversions fill your brackets year by year, then
-                  adjust anything — income, conversion amounts, assumptions —
+                  adjust anything (income, conversion amounts, assumptions)
                   and watch the impact in real time. Understand the tradeoffs
                   and plan with confidence.
                 </p>
@@ -99,7 +99,7 @@ export default function Home() {
                   DEMO SCENARIO
                 </span>
                 <p className="text-body text-text-primary leading-relaxed">
-                  <strong>Alex, 38</strong> — Senior SWE who left to co-found a
+                  <strong>Alex, 38.</strong> Senior SWE who left to co-found a
                   startup. $210K traditional IRA/401(k), 3-year income timeline:
                   $35K → $30K → $150K. Two low-income years create a window
                   to convert at lower brackets.

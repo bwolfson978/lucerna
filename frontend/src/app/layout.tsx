@@ -5,11 +5,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Lucerna — See your financial future clearly",
+  title: "Lucerna | See your financial future clearly",
   description:
     "Multi-year Roth conversion analysis. Compare conversion schedules across your income timeline.",
   openGraph: {
-    title: "Lucerna — See your financial future clearly",
+    title: "Lucerna | See your financial future clearly",
     description:
       "Multi-year Roth conversion analysis. Compare conversion schedules across your income timeline.",
     type: "website",

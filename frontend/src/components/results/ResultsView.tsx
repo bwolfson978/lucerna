@@ -152,7 +152,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
               </span>
             )}
             <span className="text-body-sm text-text-secondary">
-              vs. not converting — in today&apos;s dollars
+              vs. not converting, in today&apos;s dollars
               <Tooltip content="This is the difference in after-tax wealth between the selected conversion schedule and doing nothing, expressed in today's dollars using your discount rate." />
             </span>
           </div>
@@ -280,7 +280,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
             This analysis uses federal tax brackets only (2025 rates).
             {result.aca_subsidy_impact
               ? " ACA marketplace subsidy impact is included based on your healthcare inputs (2026 rules, 2025 FPL guidelines)."
-              : " ACA subsidies are not modeled — enable the marketplace toggle to include them."}{" "}
+              : " ACA subsidies are not modeled. Enable the marketplace toggle to include them."}{" "}
             State taxes, Social Security taxation, and RMDs are not modeled.
             The model assumes all remaining balances are withdrawn at the end
             of the retirement period. This is educational scenario analysis,
