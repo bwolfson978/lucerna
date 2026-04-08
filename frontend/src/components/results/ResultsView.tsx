@@ -138,9 +138,10 @@ export function ResultsView({ result }: ResultsViewProps) {
 
       {/* Bracket chart with annotation row in a single scroll container */}
       <Card className="flex flex-col gap-default">
-        <div className="flex items-center justify-end px-4 pt-2 -mb-2">
+        <div className="flex items-center justify-between px-4 pt-2 -mb-2">
+          <h3 className="text-h3 text-text-primary">Conversion schedule</h3>
           <InfoTrigger
-            label="Why these brackets?"
+            label="How is this determined?"
             sectionId="bracket-filling"
             triggerId="bracket-chart"
           />
@@ -181,17 +182,6 @@ export function ResultsView({ result }: ResultsViewProps) {
           </div>
         </BracketChart>
 
-        {result.input.income_timeline.length > 1 && (
-          <div className="flex items-center justify-end">
-            <InfoTrigger
-              label="How is this allocated across years?"
-              sectionId="multi-year-allocation"
-              triggerId="detail-table"
-              className="shrink-0"
-            />
-          </div>
-        )}
-
       </Card>
 
       {/* Scenario comparison */}
@@ -214,14 +204,18 @@ export function ResultsView({ result }: ResultsViewProps) {
       <div className="text-body-sm text-text-tertiary border-t border-border pt-section">
         <div className="flex items-start justify-between gap-4">
           <p>
-            This analysis uses federal tax brackets only (2025 rates).
+            This analysis uses 2025 federal tax brackets
+            {result.input.state && result.input.state !== "none"
+              ? " and state income tax for your selected state"
+              : " (state taxes not included)"}
+            .
             {result.aca_subsidy_impact
-              ? " ACA marketplace subsidy impact is included based on your healthcare inputs (2026 rules, 2025 FPL guidelines)."
-              : " ACA subsidies are not modeled. Enable the marketplace toggle to include them."}{" "}
-            State taxes, Social Security taxation, and RMDs are not modeled.
-            The model assumes all remaining balances are withdrawn at the end
-            of the retirement period. This is educational scenario analysis,
-            not financial advice.
+              ? " ACA marketplace subsidy impact is included based on your healthcare inputs."
+              : ""}{" "}
+            Required minimum distributions are modeled in the retirement
+            phase. Social Security benefits and IRMAA surcharges are not
+            included. This is educational scenario analysis, not financial
+            advice.
           </p>
           <InfoTrigger
             label="Are these reasonable?"

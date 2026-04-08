@@ -142,7 +142,9 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
       }
     }
 
-    const totalBarWidth = years.length * (barWidth + BAR_GAP);
+    const totalBarWidth = years.length > 0
+      ? years.length * (barWidth + BAR_GAP) - BAR_GAP
+      : 0;
 
     return { isMobile, chartHeight, leftAxisWidth, rightAxisWidth, barWidth, totalBarWidth, barsFit };
   }, [containerWidth, viewportHeight, years.length]);
@@ -342,7 +344,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
                   <stop offset="100%" stopColor="white" stopOpacity="0.3" />
                 </linearGradient>
                 {years.map((yearData, i) => {
-                  const maskX = i * (barWidth + BAR_GAP) + BAR_GAP / 2;
+                  const maskX = i * (barWidth + BAR_GAP);
                   return (
                     <mask key={`mask-${yearData.year}`} id={`barMask-${i}`}>
                       <rect
@@ -378,7 +380,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
 
               {/* Bars */}
               {years.map((yearData, i) => {
-                const x = i * (barWidth + BAR_GAP) + BAR_GAP / 2;
+                const x = i * (barWidth + BAR_GAP);
                 return (
                   <BracketBar
                     key={yearData.year}
@@ -398,8 +400,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
 
               {/* X axis: year labels */}
               {years.map((yearData, i) => {
-                const x =
-                  i * (barWidth + BAR_GAP) + BAR_GAP / 2 + barWidth / 2;
+                const x = i * (barWidth + BAR_GAP) + barWidth / 2;
                 return (
                   <text
                     key={`label-${yearData.year}`}
