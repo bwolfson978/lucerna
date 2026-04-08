@@ -5,6 +5,7 @@ import type { OptimizationResult, ScenarioInput } from "@/lib/types";
 import { MetricCard } from "@/components/common/MetricCard";
 import { Tooltip } from "@/components/common/Tooltip";
 import { formatCurrency, formatSavings, formatTableCurrency } from "@/lib/utils/formatting";
+import { CHART_COLORS } from "@/lib/utils/constants";
 import { BracketChart } from "./BracketChart";
 import { ConversionSlider } from "./ConversionSlider";
 import { ScenarioCards } from "./ScenarioCards";
@@ -129,24 +130,39 @@ export function ResultsView({ result }: ResultsViewProps) {
 
       {/* Bracket chart with slider + annotation row */}
       <div className="flex flex-col gap-default">
+        <h3 className="text-h3 text-text-primary">Conversion schedule</h3>
         <Card className="flex flex-col gap-default">
-        {/* Card header: heading left, slider top-right (max 1/3 width) */}
+        {/* Top row: series legend (left) + slider (right, max 1/3) + info trigger */}
         <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-2 pt-1">
-            <h3 className="text-h3 text-text-primary">Conversion schedule</h3>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-body-sm text-text-secondary pt-1">
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.income }} />
+              Earned Income
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.conversion }} />
+              Roth Conversion
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded bg-bg-hover border border-border" />
+              Remaining
+            </span>
+          </div>
+          <div className="flex items-start gap-3 flex-shrink-0">
+            <div className="w-[180px]">
+              <ConversionSlider
+                value={sliderValue}
+                min={0}
+                max={Math.max(result.input.traditional_ira_balance, result.total_conversion)}
+                optimalValue={result.total_conversion}
+                onChange={setSliderValue}
+              />
+            </div>
             <InfoTrigger
               label="How is this determined?"
               sectionId="bracket-filling"
               triggerId="bracket-chart"
-            />
-          </div>
-          <div className="w-1/3 min-w-[180px] flex-shrink-0">
-            <ConversionSlider
-              value={sliderValue}
-              min={0}
-              max={Math.max(result.input.traditional_ira_balance, result.total_conversion)}
-              optimalValue={result.total_conversion}
-              onChange={setSliderValue}
+              className="pt-1"
             />
           </div>
         </div>
@@ -155,6 +171,7 @@ export function ResultsView({ result }: ResultsViewProps) {
           filingStatus={result.input.filing_status}
           scrollRef={chartScrollRef}
           onBarWidthChange={setTableColWidth}
+          hideLegend
           leftBottomContent={
             <div className="flex flex-col border-r border-border">
               <div className="h-8 flex items-center justify-end text-text-tertiary text-data-xs font-medium px-1 text-right leading-tight">

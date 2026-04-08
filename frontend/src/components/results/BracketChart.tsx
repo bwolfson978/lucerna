@@ -33,6 +33,8 @@ interface BracketChartProps {
   children?: React.ReactNode;
   /** Content rendered below the left axis (fixed, for row labels) */
   leftBottomContent?: React.ReactNode;
+  /** Hide the built-in series legend (when rendered externally) */
+  hideLegend?: boolean;
 }
 
 // Derive bracket boundaries from tax config.
@@ -74,7 +76,7 @@ function niceInterval(range: number, targetTicks: number): number {
   return nice * magnitude;
 }
 
-export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef, onBarWidthChange, onLayoutChange, children, leftBottomContent }: BracketChartProps) {
+export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef, onBarWidthChange, onLayoutChange, children, leftBottomContent, hideLegend }: BracketChartProps) {
   const internalScrollRef = useRef<HTMLDivElement>(null);
   const scrollRef = externalScrollRef || internalScrollRef;
   const fadeRef = useRef<HTMLDivElement>(null);
@@ -240,20 +242,22 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
   return (
     <div className="flex flex-col gap-default">
       {/* Legend */}
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-body-sm text-text-secondary">
-        <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.income }} />
-          Earned Income
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.conversion }} />
-          Roth Conversion
-        </span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-bg-hover border border-border" />
-          Remaining space in tax bracket
-        </span>
-      </div>
+      {!hideLegend && (
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-body-sm text-text-secondary">
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.income }} />
+            Earned Income
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.conversion }} />
+            Roth Conversion
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded bg-bg-hover border border-border" />
+            Remaining space in tax bracket
+          </span>
+        </div>
+      )}
 
       <div
         ref={containerRef}
