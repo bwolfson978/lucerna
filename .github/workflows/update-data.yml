@@ -63,10 +63,6 @@ jobs:
           cd backend
           python -m scripts.update_data --validate
 
-      - name: Regenerate frontend tax data
-        if: steps.update.outputs.changed == 'true'
-        run: python scripts/generate_frontend_tax_data.py
-
       - name: Run backend tests
         if: steps.update.outputs.changed == 'true'
         run: |
@@ -100,7 +96,7 @@ jobs:
 
             - All backend tests passed
             - All frontend tests passed
-            - Frontend tax data regenerated
+            - Frontend fallback JSON synced
           branch: auto/update-tax-data
           delete-branch: true
           labels: type:improvement

@@ -2,7 +2,7 @@
   "metadata": {
     "tax_year": 2025,
     "source": "IRS Revenue Procedure 2024-40",
-    "notes": "This file is auto-generated from backend/data/tax_brackets_2025.json.\nDo not edit manually \u2014 run: python scripts/generate_frontend_tax_data.py"
+    "notes": "Fallback data — frontend fetches live data from /api/tax-config at runtime."
   },
   "standard_deduction": {
     "single": 15000,

@@ -3,8 +3,7 @@
  * Mirrors backend/app/engine/tax.py for real-time slider interactivity.
  *
  * At runtime, bracket data comes from the backend via TaxConfigProvider.
- * The bundled federal-brackets-2025.json (auto-generated from
- * backend/data/tax_brackets_2025.json) serves as the fallback when
+ * The bundled federal-brackets-2025.json serves as the fallback when
  * the backend is unreachable.
  */
 

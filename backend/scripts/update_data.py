@@ -27,14 +27,15 @@ Designed to be run from a workflow_dispatch GitHub Action or locally.
 
 import argparse
 import json
-import subprocess
 import sys
 from datetime import date, datetime
 from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-FRONTEND_GENERATE_SCRIPT = ROOT_DIR / "scripts" / "generate_frontend_tax_data.py"
+FRONTEND_FALLBACK = (
+    ROOT_DIR / "frontend" / "src" / "lib" / "tax" / "federal-brackets-2025.json"
+)
 
 
 # ──────────────────────────────────────────────
@@ -392,39 +393,72 @@ FILE_UPDATERS = {
 
 
 # ──────────────────────────────────────────────
-# Frontend regeneration
+# Frontend fallback sync
 # ──────────────────────────────────────────────
 
 
-def regenerate_frontend(dry_run: bool = False) -> bool:
-    """Regenerate frontend tax data from backend JSON."""
-    if not FRONTEND_GENERATE_SCRIPT.exists():
-        print(f"  Warning: Frontend generator not found: {FRONTEND_GENERATE_SCRIPT}")
+def _transform_brackets_for_frontend(backend_brackets: list[dict]) -> list[dict]:
+    """Convert backend bracket format to frontend format (inf -> null)."""
+    return [
+        {"min": b["min"], "max": None if b["max"] == "inf" else b["max"], "rate": b["rate"]}
+        for b in backend_brackets
+    ]
+
+
+def sync_frontend_fallback(dry_run: bool = False) -> bool:
+    """Update the frontend fallback JSON from the backend's tax brackets.
+
+    The frontend fetches live data from /api/tax-config at runtime, but
+    keeps a bundled JSON as fallback when the backend is unreachable.
+    This function keeps that fallback in sync.
+    """
+    # Load backend data
+    bracket_files = sorted(DATA_DIR.glob("tax_brackets_*.json"))
+    if not bracket_files:
+        print(f"  No tax_brackets file found — skipping frontend sync")
         return False
+
+    with open(bracket_files[-1], "r") as f:
+        backend_data = json.load(f)
+
+    federal = backend_data["federal"]
+    backend_meta = backend_data.get("metadata", {})
+
+    frontend_json = {
+        "metadata": {
+            "tax_year": backend_meta.get("tax_year", 2025),
+            "source": backend_meta.get("federal_source", "IRS Revenue Procedure 2024-40"),
+            "notes": "Fallback data — frontend fetches live data from /api/tax-config at runtime.",
+        },
+        "standard_deduction": federal["standard_deduction"],
+        "brackets": {
+            "single": _transform_brackets_for_frontend(federal["brackets"]["single"]),
+            "married_filing_jointly": _transform_brackets_for_frontend(
+                federal["brackets"]["married_filing_jointly"]
+            ),
+        },
+    }
+
+    # Check if already in sync
+    if FRONTEND_FALLBACK.exists():
+        with open(FRONTEND_FALLBACK, "r") as f:
+            current = json.load(f)
+        current_data = {"standard_deduction": current.get("standard_deduction"), "brackets": current.get("brackets")}
+        new_data = {"standard_deduction": frontend_json["standard_deduction"], "brackets": frontend_json["brackets"]}
+        if current_data == new_data:
+            print(f"  Frontend fallback already in sync")
+            return False
 
     if dry_run:
-        result = subprocess.run(
-            [sys.executable, str(FRONTEND_GENERATE_SCRIPT), "--check"],
-            capture_output=True,
-            text=True,
-        )
-        if result.returncode != 0:
-            print(f"  [DRY RUN] Frontend tax data would be regenerated")
-        else:
-            print(f"  Frontend tax data already in sync")
+        print(f"  [DRY RUN] Would update {FRONTEND_FALLBACK}")
         return True
 
-    result = subprocess.run(
-        [sys.executable, str(FRONTEND_GENERATE_SCRIPT)],
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode == 0:
-        print(f"  {result.stdout.strip()}")
-        return True
-    else:
-        print(f"  Error regenerating frontend data: {result.stderr}")
-        return False
+    FRONTEND_FALLBACK.parent.mkdir(parents=True, exist_ok=True)
+    with open(FRONTEND_FALLBACK, "w") as f:
+        json.dump(frontend_json, f, indent=2)
+        f.write("\n")
+    print(f"  Updated frontend fallback: {FRONTEND_FALLBACK}")
+    return True
 
 
 # ──────────────────────────────────────────────
@@ -489,16 +523,26 @@ def print_summary() -> None:
         print(f"  All files pass validation.")
 
     # Frontend sync check
-    print(f"\n  Frontend sync:")
-    if FRONTEND_GENERATE_SCRIPT.exists():
-        result = subprocess.run(
-            [sys.executable, str(FRONTEND_GENERATE_SCRIPT), "--check"],
-            capture_output=True,
-            text=True,
-        )
-        print(f"  {result.stdout.strip()}")
+    print(f"\n  Frontend fallback:")
+    if FRONTEND_FALLBACK.exists():
+        # Quick check: does a sync report changes?
+        bracket_files = sorted(DATA_DIR.glob("tax_brackets_*.json"))
+        if bracket_files:
+            with open(bracket_files[-1], "r") as f:
+                backend = json.load(f)
+            with open(FRONTEND_FALLBACK, "r") as f:
+                frontend = json.load(f)
+            backend_fed = backend["federal"]
+            fe_brackets = frontend.get("brackets", {})
+            be_single = [{"min": b["min"], "max": None if b["max"] == "inf" else b["max"], "rate": b["rate"]} for b in backend_fed["brackets"].get("single", [])]
+            if fe_brackets.get("single") == be_single:
+                print(f"  In sync with backend")
+            else:
+                print(f"  OUT OF SYNC — run: python -m scripts.update_data")
+        else:
+            print(f"  No backend tax brackets to compare against")
     else:
-        print(f"  Generator script not found")
+        print(f"  Fallback file not found: {FRONTEND_FALLBACK}")
 
     print()
 
@@ -593,9 +637,9 @@ def main():
     else:
         print(f"  All files pass validation.")
 
-    # Regenerate frontend data
-    print(f"\nRegenerating frontend tax data...")
-    regenerate_frontend(dry_run=args.dry_run)
+    # Sync frontend fallback
+    print(f"\nSyncing frontend fallback...")
+    sync_frontend_fallback(dry_run=args.dry_run)
 
     if not any_changes:
         print(f"\nAll data files are up to date.")
