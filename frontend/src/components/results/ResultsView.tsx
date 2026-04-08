@@ -110,51 +110,65 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
 
   return (
     <div className="flex flex-col gap-section">
-      {/* Hero metric */}
-      <Card recommended className="p-section">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="metric-label">
-              Estimated lifetime tax savings
+      {/* Hero metric + slider */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-default">
+        {/* Headline metric */}
+        <Card recommended className="p-section">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="metric-label">
+                Estimated lifetime tax savings
+              </span>
+              <InfoTrigger
+                label="How is this calculated?"
+                sectionId="savings-number"
+                triggerId="hero-savings"
+              />
+            </div>
+            <span className="metric-value-hero text-optimal">
+              {formatSavings(estimatedSavings)}
             </span>
-            <InfoTrigger
-              label="How is this calculated?"
-              sectionId="savings-number"
-              triggerId="hero-savings"
-            />
-          </div>
-          <span className="metric-value-hero text-optimal">
-            {formatSavings(estimatedSavings)}
-          </span>
-          {!isAtOptimal && (
-            <span
-              className="flex items-center gap-1 text-body-sm text-negative font-medium"
-              style={{ fontFamily: "'Manrope', system-ui" }}
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="none"
-                aria-hidden="true"
+            {!isAtOptimal && (
+              <span
+                className="flex items-center gap-1 text-body-sm text-negative font-medium"
+                style={{ fontFamily: "'Manrope', system-ui" }}
               >
-                <path
-                  d="M6 2v8M6 10l-3-3M6 10l3-3"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              {formatCurrency(Math.max(1, Math.abs(savingsDifference)))} less than highest savings
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M6 2v8M6 10l-3-3M6 10l3-3"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                {formatCurrency(Math.max(1, Math.abs(savingsDifference)))} less than highest savings
+              </span>
+            )}
+            <span className="text-body-sm text-text-secondary">
+              vs. not converting — in today&apos;s dollars
+              <Tooltip content="This is the difference in after-tax wealth between the selected conversion schedule and doing nothing, expressed in today's dollars using your discount rate." />
             </span>
-          )}
-          <span className="text-body-sm text-text-secondary">
-            vs. not converting — in today&apos;s dollars
-            <Tooltip content="This is the difference in after-tax wealth between the selected conversion schedule and doing nothing, expressed in today's dollars using your discount rate." />
-          </span>
-        </div>
-      </Card>
+          </div>
+        </Card>
+
+        {/* Slider */}
+        <Card className="p-section flex flex-col justify-center">
+          <ConversionSlider
+            value={sliderValue}
+            min={0}
+            max={Math.max(result.input.traditional_ira_balance, result.total_conversion)}
+            optimalValue={result.total_conversion}
+            onChange={setSliderValue}
+          />
+        </Card>
+      </div>
 
       {/* Summary metrics */}
       <div className="grid grid-cols-3 gap-tight sm:gap-default">
@@ -241,16 +255,6 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
           </div>
         )}
 
-        {/* Conversion slider — below chart for contextual adjustment */}
-        <div className="border-t border-border pt-default">
-          <ConversionSlider
-            value={sliderValue}
-            min={0}
-            max={Math.max(result.input.traditional_ira_balance, result.total_conversion)}
-            optimalValue={result.total_conversion}
-            onChange={setSliderValue}
-          />
-        </div>
       </Card>
 
       {/* Scenario comparison */}

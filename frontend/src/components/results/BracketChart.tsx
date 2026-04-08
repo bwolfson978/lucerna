@@ -322,7 +322,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
           )}
           <div
             ref={scrollRef}
-            className={!barsFit ? "overflow-x-auto bracket-chart-scroll pb-2" : ""}
+            className={!barsFit ? "overflow-x-auto scroll-hidden" : ""}
           >
             <svg
               width={barsFit ? "100%" : Math.max(totalBarWidth, 200)}

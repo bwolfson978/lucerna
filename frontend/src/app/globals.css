@@ -296,6 +296,15 @@ input[type="range"]::-moz-range-thumb {
   box-shadow: 0 0 8px rgba(240, 198, 116, 0.3);
 }
 
+/* Hidden scrollbar — keeps scroll functionality, hides the track */
+.scroll-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scroll-hidden::-webkit-scrollbar {
+  display: none;
+}
+
 /* Dark-themed scrollbars for chart containers and overflow areas */
 .bracket-chart-scroll,
 .overflow-x-auto {
