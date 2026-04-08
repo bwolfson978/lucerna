@@ -28,7 +28,7 @@ interface BracketChartProps {
   filingStatus: "single" | "married_filing_jointly";
   scrollRef?: RefObject<HTMLDivElement | null>;
   onBarWidthChange?: (barWidth: number) => void;
-  onLayoutChange?: (layout: { leftOffset: number; rightOffset: number }) => void;
+  onLayoutChange?: (layout: { leftOffset: number; rightOffset: number; verticalLabelWidth: number }) => void;
   /** Content rendered below the chart SVG inside the shared scroll container */
   children?: React.ReactNode;
   /** Content rendered below the left axis (fixed, for row labels) */
@@ -164,6 +164,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
     onLayoutChange?.({
       leftOffset: verticalLabelWidth + leftAxisWidth,
       rightOffset: rightAxisWidth + verticalLabelWidth,
+      verticalLabelWidth,
     });
   }, [onLayoutChange, verticalLabelWidth, leftAxisWidth, rightAxisWidth]);
 

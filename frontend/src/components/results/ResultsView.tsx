@@ -27,7 +27,7 @@ export function ResultsView({ result }: ResultsViewProps) {
   // onReRun and loading are accepted for future calculator re-run support
   const chartScrollRef = useRef<HTMLDivElement>(null);
   const [tableColWidth, setTableColWidth] = useState(58);
-  const [chartLayout, setChartLayout] = useState({ leftOffset: 0, rightOffset: 0 });
+  const [chartLayout, setChartLayout] = useState({ leftOffset: 0, rightOffset: 0, verticalLabelWidth: 0 });
 
   // Client-side slider: continuous bracket fill computation
   const {
@@ -98,7 +98,7 @@ export function ResultsView({ result }: ResultsViewProps) {
         {/* Aligned with chart axes: left edge matches income labels, right edge matches bar area */}
         <div
           className="flex items-start justify-between gap-4"
-          style={{ paddingLeft: chartLayout.leftOffset, paddingRight: chartLayout.rightOffset }}
+          style={{ paddingLeft: chartLayout.verticalLabelWidth, paddingRight: chartLayout.rightOffset }}
         >
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
