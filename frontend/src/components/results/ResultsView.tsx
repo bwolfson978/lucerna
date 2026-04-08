@@ -137,8 +137,8 @@ export function ResultsView({ result }: ResultsViewProps) {
       </div>
 
       {/* Bracket chart with annotation row in a single scroll container */}
-      <Card className="flex flex-col gap-default">
-        <div className="flex items-center justify-between px-4 pt-2 -mb-2">
+      <div className="flex flex-col gap-default">
+        <div className="flex items-center justify-between">
           <h3 className="text-h3 text-text-primary">Conversion schedule</h3>
           <InfoTrigger
             label="How is this determined?"
@@ -146,6 +146,7 @@ export function ResultsView({ result }: ResultsViewProps) {
             triggerId="bracket-chart"
           />
         </div>
+        <Card className="flex flex-col gap-default">
         <BracketChart
           years={chartYears}
           filingStatus={result.input.filing_status}
@@ -183,6 +184,7 @@ export function ResultsView({ result }: ResultsViewProps) {
         </BracketChart>
 
       </Card>
+      </div>
 
       {/* Scenario comparison */}
       <ScenarioCards scenarios={result.scenarios} />
