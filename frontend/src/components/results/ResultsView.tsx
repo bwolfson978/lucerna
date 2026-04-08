@@ -203,24 +203,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
           onLayoutChange={setChartLayout}
         />
 
-        {/* Separator between chart and table */}
-        <div className="border-t border-border" />
-
-        <div className="flex items-center justify-between">
-          {onReRun && (
-            <p className="text-body-sm text-text-tertiary">
-              Adjust income or life events below, then re-run the analysis.
-            </p>
-          )}
-          {result.input.income_timeline.length > 1 && (
-            <InfoTrigger
-              label="How is this allocated across years?"
-              sectionId="multi-year-allocation"
-              triggerId="detail-table"
-              className="shrink-0"
-            />
-          )}
-        </div>
+        {/* Compact annotation strip — tax cost per year, plus editable income in calculator mode */}
         <TransposedDetailTable
           details={yearlyDetail}
           years={yearInfos}
@@ -231,7 +214,34 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
           colWidth={tableColWidth}
           leftOffset={chartLayout.leftOffset}
           rightOffset={chartLayout.rightOffset}
+          showIncomeRow={!!onReRun}
         />
+
+        {onReRun && (
+          <div className="flex items-center justify-between">
+            <p className="text-body-sm text-text-tertiary">
+              Edit income values above, then re-run the analysis.
+            </p>
+            {result.input.income_timeline.length > 1 && (
+              <InfoTrigger
+                label="How is this allocated across years?"
+                sectionId="multi-year-allocation"
+                triggerId="detail-table"
+                className="shrink-0"
+              />
+            )}
+          </div>
+        )}
+        {!onReRun && result.input.income_timeline.length > 1 && (
+          <div className="flex items-center justify-end">
+            <InfoTrigger
+              label="How is this allocated across years?"
+              sectionId="multi-year-allocation"
+              triggerId="detail-table"
+              className="shrink-0"
+            />
+          </div>
+        )}
 
         {/* Re-run button */}
         {hasUnsavedChanges && onReRun && (

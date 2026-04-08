@@ -18,6 +18,8 @@ interface TransposedDetailTableProps {
   leftOffset?: number;
   /** Width of fixed right area in the chart (bracket labels + vertical label) */
   rightOffset?: number;
+  /** Show the editable income row (calculator mode) */
+  showIncomeRow?: boolean;
 }
 
 function CompactCurrencyCell({
@@ -65,6 +67,7 @@ export function TransposedDetailTable({
   colWidth = 58,
   leftOffset = 88,
   rightOffset = 108,
+  showIncomeRow = false,
 }: TransposedDetailTableProps) {
   const internalScrollRef = useRef<HTMLDivElement>(null);
   const scrollRef = externalScrollRef || internalScrollRef;
@@ -79,20 +82,14 @@ export function TransposedDetailTable({
     <div className="flex text-body-sm">
       {/* Fixed row labels — width matches chart's left fixed area */}
       <div className="flex-shrink-0 flex flex-col border-r border-border" style={{ width: leftOffset }}>
-        <div className="h-7 flex items-center justify-end text-text-tertiary text-data-xs font-semibold px-2 border-b border-border">
-          Year
-        </div>
+        {showIncomeRow && (
+          <div className="h-8 flex items-center justify-end text-text-tertiary text-data-xs font-medium px-2">
+            Earned Income
+          </div>
+        )}
         <div className="h-8 flex items-center justify-end text-text-tertiary text-data-xs font-medium px-2">
-          Earned Income
+          Added tax
         </div>
-        <div className="h-8 flex items-center justify-end text-text-tertiary text-data-xs font-medium px-2">
-          Conversion
-        </div>
-        <div className="h-8 flex items-center justify-end text-text-tertiary text-data-xs font-medium px-2 text-right leading-tight">
-          Added tax from conversion
-        </div>
-
-
       </div>
 
       {/* Scrollable columns (synced with chart scroll) */}
@@ -110,31 +107,17 @@ export function TransposedDetailTable({
                 className="flex flex-col overflow-hidden"
                 style={{ width: `${colWidth}px`, minWidth: `${colWidth}px` }}
               >
-                {/* Year header */}
-                <div
-                  className="h-7 flex items-center justify-center text-data-xs text-text-secondary font-semibold border-b border-border px-1"
-                  style={{ fontFamily: "'Manrope', system-ui" }}
-                >
-                  {yearInfo.year}
-                </div>
-
-                {/* Income (editable) */}
-                <div className="h-8 flex items-center justify-center">
-                  <CompactCurrencyCell
-                    value={effectiveIncome}
-                    onChange={(val) => onIncomeChange(i, val)}
-                    highlighted={!!(hasOverride && overrides.get(i)?.income !== undefined)}
-                    maxChars={maxChars}
-                  />
-                </div>
-
-                {/* Conversion (read-only) */}
-                <div
-                  className="h-8 flex items-center justify-center text-data-xs text-accent px-1"
-                  style={{ fontFamily: "'Manrope', system-ui" }}
-                >
-                  {detail ? formatTableCurrency(detail.conversion, maxChars) : "—"}
-                </div>
+                {/* Income (editable) — only in calculator mode */}
+                {showIncomeRow && (
+                  <div className="h-8 flex items-center justify-center">
+                    <CompactCurrencyCell
+                      value={effectiveIncome}
+                      onChange={(val) => onIncomeChange(i, val)}
+                      highlighted={!!(hasOverride && overrides.get(i)?.income !== undefined)}
+                      maxChars={maxChars}
+                    />
+                  </div>
+                )}
 
                 {/* Tax cost */}
                 <div
