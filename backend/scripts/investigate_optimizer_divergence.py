@@ -1,18 +1,19 @@
-"""Investigate divergence between DP-optimal and scaled-greedy bracket-fill allocations.
+"""Investigate divergence between DP-optimal and global bracket-fill allocations.
 
 For each test scenario, compares NPV at various slider positions (total conversion
 amounts) between:
   1. DP-optimal allocation at that budget cap (current 3D DP curve approach)
-  2. Proportionally-scaled greedy bracket-fill heuristic (proposed simpler approach)
+  2. Global bracket-fill heuristic: fills the cheapest available bracket slots
+     across all years, sorted by effective PV cost (rate * discount_factor).
+     This is the proposed simpler approach for a smoother slider UX.
 
-Generates charts and a text report to help decide if the greedy heuristic is an
-acceptable compromise for smoother UX.
+Generates charts and a text report to help decide if the bracket-fill heuristic
+is an acceptable compromise.
 
 Usage:
     cd backend && python -m scripts.investigate_optimizer_divergence
 """
 
-import os
 import sys
 from pathlib import Path
 
@@ -26,6 +27,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.engine.types import ScenarioInput, YearlyIncome, FilingStatus
+from app.engine.tax import BRACKETS, STANDARD_DEDUCTION
 from app.engine.heuristic import greedy_bracket_fill
 from app.engine.optimizer import calculate_npv
 from app.engine.dp import extract_conversion_curve_3d, dp_optimize
@@ -138,28 +140,140 @@ SCENARIOS["Valley Year"] = ScenarioInput(
 
 
 # ---------------------------------------------------------------------------
-# Utilities
+# Global bracket-fill algorithm (the proposed slider alternative)
 # ---------------------------------------------------------------------------
 
-def scale_greedy(
-    greedy: list[float],
-    target_total: float,
-    ira_balance: float,
-    growth_rate: float,
-) -> list[float]:
-    """Scale greedy allocation proportionally to hit target_total."""
-    greedy_total = sum(greedy)
-    if greedy_total == 0 or target_total == 0:
-        return [0.0] * len(greedy)
-    scale = target_total / greedy_total
-    scaled = [g * scale for g in greedy]
-    # Enforce sequential balance constraint (with growth)
-    remaining = ira_balance
-    for i in range(len(scaled)):
-        scaled[i] = min(scaled[i], remaining)
-        scaled[i] = max(0.0, scaled[i])
-        remaining = (remaining - scaled[i]) * (1 + growth_rate)
-    return scaled
+def global_bracket_fill(scenario: ScenarioInput, target_total: float) -> list[float]:
+    """Fill the cheapest available bracket slots globally across all years.
+
+    For a given slider total, progressively fills bracket space sorted by
+    bracket rate (cheapest first).  Within the same rate, earlier years are
+    filled first — converting earlier gives more years of tax-free Roth
+    growth, which slightly favors earlier years at the same marginal rate.
+
+    The visual effect: as the slider increases, the lowest-rate bracket
+    tiers fill up across all years first, then the next tier starts
+    filling.  Brackets visually "flow" and fill from cheapest to most
+    expensive.
+
+    The balance constraint (can't convert more than remaining IRA balance
+    at each year, accounting for growth) is enforced via a post-processing
+    pass that redistributes any excess.
+    """
+    if target_total <= 0:
+        return [0.0] * len(scenario.income_timeline)
+
+    n_years = len(scenario.income_timeline)
+    deduction = STANDARD_DEDUCTION[scenario.filing_status]
+    brackets = BRACKETS[scenario.filing_status]
+
+    # Enumerate all bracket slots across all years.
+    # Each slot is a chunk of bracket space in a specific year.
+    slots: list[dict] = []
+    for t, year_info in enumerate(scenario.income_timeline):
+        taxable = max(0, year_info.gross_income - deduction)
+
+        for bracket in brackets:
+            rate = bracket["rate"]
+            b_min = bracket["min"]
+            b_max = bracket["max"]
+
+            if b_max == float("inf"):
+                # Top bracket: cap room at IRA balance (generous upper bound)
+                b_max = b_min + scenario.traditional_ira_balance
+            if taxable >= b_max:
+                continue  # bracket fully filled by base income
+
+            room = b_max - max(taxable, b_min)
+            if room <= 0:
+                continue
+
+            slots.append({
+                "rate": rate,
+                "year": t,
+                "room": room,
+            })
+
+    # Sort by bracket rate (cheapest first), then by year (earlier first)
+    slots.sort(key=lambda s: (s["rate"], s["year"]))
+
+    # Fill slots greedily
+    conversions = [0.0] * n_years
+    remaining_budget = target_total
+
+    for slot in slots:
+        if remaining_budget <= 0:
+            break
+        t = slot["year"]
+        fill = min(slot["room"], remaining_budget)
+        conversions[t] += fill
+        remaining_budget -= fill
+
+    # Enforce sequential balance constraint (with inter-year growth).
+    # If a year's allocation exceeds available balance, cap it and
+    # try to redistribute excess to the next cheapest available slots.
+    excess = _enforce_balance_constraint(conversions, scenario)
+
+    # If there's excess that couldn't be placed, try redistribution
+    if excess > 1:
+        _redistribute_excess(conversions, excess, slots, scenario)
+
+    return conversions
+
+
+def _enforce_balance_constraint(
+    conversions: list[float],
+    scenario: ScenarioInput,
+) -> float:
+    """Cap each year's conversion to available balance. Returns total excess."""
+    g = scenario.annual_growth_rate
+    remaining = scenario.traditional_ira_balance
+    total_excess = 0.0
+
+    for i in range(len(conversions)):
+        if conversions[i] > remaining:
+            total_excess += conversions[i] - remaining
+            conversions[i] = remaining
+        conversions[i] = max(0.0, conversions[i])
+        remaining = (remaining - conversions[i]) * (1 + g)
+
+    return total_excess
+
+
+def _redistribute_excess(
+    conversions: list[float],
+    excess: float,
+    slots: list[dict],
+    scenario: ScenarioInput,
+) -> None:
+    """Try to place excess budget in remaining capacity, cheapest-first."""
+    g = scenario.annual_growth_rate
+    remaining_budget = excess
+
+    for slot in slots:
+        if remaining_budget <= 0:
+            break
+        t = slot["year"]
+        # Recompute available balance at year t
+        balance_at_t = scenario.traditional_ira_balance
+        for j in range(t):
+            balance_at_t = (balance_at_t - conversions[j]) * (1 + g)
+
+        available = max(0, balance_at_t - conversions[t])
+        current_in_bracket = conversions[t]
+        # How much more room in this bracket slot?
+        bracket_room = slot["room"]
+        # We already filled some of this year; figure out how much of
+        # THIS bracket's room is still unused. This is approximate since
+        # we don't track per-bracket fill, but for slots sorted by cost
+        # (lower brackets first), it works out.
+        additional = min(bracket_room, available, remaining_budget)
+        # Only add if this bracket slot hasn't been fully used
+        if additional > 0 and current_in_bracket < balance_at_t:
+            add = min(additional, balance_at_t - current_in_bracket)
+            if add > 0:
+                conversions[t] += add
+                remaining_budget -= add
 
 
 def find_nearest_curve_point(curve, target_total):
@@ -175,7 +289,7 @@ def find_nearest_curve_point(curve, target_total):
 
 
 # ---------------------------------------------------------------------------
-# Main analysis
+# Analysis
 # ---------------------------------------------------------------------------
 
 def analyze_scenario(name: str, scenario: ScenarioInput, n_points: int = 50):
@@ -184,29 +298,34 @@ def analyze_scenario(name: str, scenario: ScenarioInput, n_points: int = 50):
     print(f"  Scenario: {name}")
     print(f"{'='*70}")
 
-    # Get greedy allocation
+    n_years = len(scenario.income_timeline)
+
+    # Get greedy allocation (for reference / total range)
     greedy = greedy_bracket_fill(scenario)
     greedy_total = sum(greedy)
+
+    # Get bracket-fill at greedy total (to show the full allocation)
+    bf_at_greedy = global_bracket_fill(scenario, greedy_total)
     print(f"  Greedy total: ${greedy_total:,.0f}")
-    print(f"  Greedy per-year: {['${:,.0f}'.format(c) for c in greedy]}")
+    print(f"  Greedy per-year:       {['${:,.0f}'.format(c) for c in greedy]}")
+    print(f"  Bracket-fill per-year: {['${:,.0f}'.format(c) for c in bf_at_greedy]}")
 
     # Get DP optimal
     dp_result = dp_optimize(scenario)
     dp_optimal_total = dp_result.total_conversion
     print(f"  DP optimal total: ${dp_optimal_total:,.0f}")
+    print(f"  DP per-year:           {['${:,.0f}'.format(c) for c in dp_result.yearly_conversions]}")
 
     # NPV at zero conversion
-    npv_zero = calculate_npv(scenario, [0.0] * len(scenario.income_timeline))
+    npv_zero = calculate_npv(scenario, [0.0] * n_years)
 
     # Get DP conversion curve
-    curve_max = max(greedy_total, dp_optimal_total) * 1.25
+    max_total = max(greedy_total, dp_optimal_total, scenario.traditional_ira_balance * 0.3)
+    curve_max = max_total * 1.25
     curve = extract_conversion_curve_3d(scenario, n_curve_points=200, curve_max=curve_max)
 
-    # Test points: evenly spaced from 0 to 125% of greedy total
-    max_test = max(greedy_total, dp_optimal_total, scenario.traditional_ira_balance * 0.5) * 1.25
-    if max_test == 0:
-        max_test = scenario.traditional_ira_balance * 0.5
-    test_totals = np.linspace(0, max_test, n_points)
+    # Test points: evenly spaced from 0 to max
+    test_totals = np.linspace(0, curve_max, n_points)
 
     results = []
     for target in test_totals:
@@ -214,45 +333,53 @@ def analyze_scenario(name: str, scenario: ScenarioInput, n_points: int = 50):
         if target < 1:
             target = 0.0
 
-        # Scaled greedy
-        scaled = scale_greedy(greedy, target, scenario.traditional_ira_balance, scenario.annual_growth_rate)
-        npv_greedy = calculate_npv(scenario, scaled)
+        # Global bracket-fill heuristic
+        bf_alloc = global_bracket_fill(scenario, target)
+        npv_bf = calculate_npv(scenario, bf_alloc)
 
         # DP-optimal at this cap
         nearest = find_nearest_curve_point(curve, target)
-        dp_alloc = nearest.yearly_conversions if nearest else [0.0] * len(scenario.income_timeline)
+        dp_alloc = nearest.yearly_conversions if nearest else [0.0] * n_years
         npv_dp = calculate_npv(scenario, dp_alloc)
 
         results.append({
             "target_total": target,
-            "npv_greedy": npv_greedy,
+            "npv_bf": npv_bf,
             "npv_dp": npv_dp,
-            "npv_diff": npv_dp - npv_greedy,
-            "greedy_alloc": scaled,
+            "npv_diff": npv_dp - npv_bf,
+            "bf_alloc": bf_alloc,
             "dp_alloc": dp_alloc,
         })
 
     # Print summary table
     max_savings = max(r["npv_dp"] for r in results) - npv_zero
+    if max_savings <= 0:
+        max_savings_bf = max(r["npv_bf"] for r in results) - npv_zero
+        max_savings = max(max_savings, max_savings_bf, 1)
+
     print(f"\n  NPV at zero: ${npv_zero:,.0f}")
     print(f"  Max savings (DP): ${max_savings:,.0f}")
     print()
-    print(f"  {'Target':>12} {'NPV(Greedy)':>14} {'NPV(DP)':>14} {'Diff($)':>10} {'Diff(%)':>10}")
+
+    # Print at key absolute totals
+    key_targets = [t for t in [10000, 25000, 50000, 75000, 100000, 150000, 200000] if t <= curve_max]
+    if dp_optimal_total > 0:
+        key_targets.append(dp_optimal_total)
+    key_targets = sorted(set(key_targets))
+
+    print(f"  {'Target':>12} {'NPV(BrFill)':>14} {'NPV(DP)':>14} {'Diff($)':>10} {'Diff(%)':>10}")
     print(f"  {'-'*12} {'-'*14} {'-'*14} {'-'*10} {'-'*10}")
 
-    # Print at key percentages of greedy total
-    key_pcts = [0.1, 0.25, 0.5, 0.75, 0.9, 1.0, 1.1, 1.25]
-    for pct in key_pcts:
-        target = greedy_total * pct
-        # Find closest result
+    for target in key_targets:
         closest = min(results, key=lambda r: abs(r["target_total"] - target))
         diff_pct = (closest["npv_diff"] / max_savings * 100) if max_savings > 0 else 0
+        marker = " <-- DP opt" if abs(target - dp_optimal_total) < 1000 else ""
         print(
             f"  ${closest['target_total']:>10,.0f} "
-            f"${closest['npv_greedy']:>12,.0f} "
+            f"${closest['npv_bf']:>12,.0f} "
             f"${closest['npv_dp']:>12,.0f} "
             f"${closest['npv_diff']:>8,.0f} "
-            f"{diff_pct:>8.2f}%"
+            f"{diff_pct:>8.2f}%{marker}"
         )
 
     # Find worst divergence
@@ -261,8 +388,10 @@ def analyze_scenario(name: str, scenario: ScenarioInput, n_points: int = 50):
     print(f"\n  Worst divergence: ${worst['npv_diff']:,.0f} ({worst_pct:.2f}% of max savings) at ${worst['target_total']:,.0f}")
 
     if abs(worst["npv_diff"]) > 1:
-        print(f"    Greedy alloc: {['${:,.0f}'.format(c) for c in worst['greedy_alloc']]}")
-        print(f"    DP alloc:     {['${:,.0f}'.format(c) for c in worst['dp_alloc']]}")
+        n_show = min(n_years, 10)
+        suffix = f" ... +{n_years - n_show} more" if n_years > n_show else ""
+        print(f"    BrFill alloc: {['${:,.0f}'.format(c) for c in worst['bf_alloc'][:n_show]]}{suffix}")
+        print(f"    DP alloc:     {['${:,.0f}'.format(c) for c in worst['dp_alloc'][:n_show]]}{suffix}")
 
     return {
         "name": name,
@@ -275,21 +404,24 @@ def analyze_scenario(name: str, scenario: ScenarioInput, n_points: int = 50):
     }
 
 
+# ---------------------------------------------------------------------------
+# Charts
+# ---------------------------------------------------------------------------
+
 def plot_scenario(analysis: dict, idx: int):
     """Generate Chart A (NPV curves) and Chart B (NPV gap) for a scenario."""
     results = analysis["results"]
     name = analysis["name"]
 
     totals = [r["target_total"] for r in results]
-    npv_greedy = [r["npv_greedy"] for r in results]
+    npv_bf = [r["npv_bf"] for r in results]
     npv_dp = [r["npv_dp"] for r in results]
     npv_diff = [r["npv_diff"] for r in results]
 
     # Chart A: NPV Curves
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.plot(totals, [v / 1000 for v in npv_dp], "b-", linewidth=2, label="DP-Optimal")
-    ax.plot(totals, [v / 1000 for v in npv_greedy], color="orange", linewidth=2, linestyle="--", label="Scaled Greedy")
-    ax.axvline(analysis["greedy_total"], color="orange", alpha=0.4, linestyle=":", label=f"Greedy total (${analysis['greedy_total']:,.0f})")
+    ax.plot(totals, [v / 1000 for v in npv_bf], color="orange", linewidth=2, linestyle="--", label="Global Bracket-Fill")
     ax.axvline(analysis["dp_optimal_total"], color="blue", alpha=0.4, linestyle=":", label=f"DP optimal (${analysis['dp_optimal_total']:,.0f})")
     ax.set_xlabel("Total Conversion Amount ($)")
     ax.set_ylabel("NPV ($K)")
@@ -306,11 +438,10 @@ def plot_scenario(analysis: dict, idx: int):
     ax.plot(totals, npv_diff, "r-", linewidth=2)
     ax.fill_between(totals, 0, npv_diff, alpha=0.2, color="red")
     ax.axhline(0, color="gray", linewidth=0.5)
-    ax.axvline(analysis["greedy_total"], color="orange", alpha=0.4, linestyle=":", label=f"Greedy total")
     ax.axvline(analysis["dp_optimal_total"], color="blue", alpha=0.4, linestyle=":", label=f"DP optimal")
     ax.set_xlabel("Total Conversion Amount ($)")
-    ax.set_ylabel("NPV Gap: DP minus Greedy ($)")
-    ax.set_title(f"{name}: NPV Advantage of DP over Scaled Greedy")
+    ax.set_ylabel("NPV Gap: DP minus Bracket-Fill ($)")
+    ax.set_title(f"{name}: NPV Advantage of DP over Global Bracket-Fill")
     ax.legend(loc="best", fontsize=9)
     ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f"${x/1000:.0f}K"))
     ax.grid(True, alpha=0.3)
@@ -319,18 +450,15 @@ def plot_scenario(analysis: dict, idx: int):
     plt.close(fig)
 
 
-def plot_combined_pct(all_analyses: list[dict]):
-    """Chart C: Combined % gap across all scenarios (only those with meaningful savings)."""
-    # Only include scenarios where greedy_total > 0 and max_savings > $500
-    meaningful = [a for a in all_analyses if a["greedy_total"] > 0 and a["max_savings"] > 500]
-
+def plot_combined(all_analyses: list[dict]):
+    """Chart C: Combined gap across all scenarios with meaningful savings."""
+    meaningful = [a for a in all_analyses if a["max_savings"] > 500]
     if not meaningful:
         return
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 10))
     colors = plt.cm.tab10(range(len(meaningful)))
 
-    # Chart C1: Absolute $ gap
     for i, analysis in enumerate(meaningful):
         results = analysis["results"]
         totals = [r["target_total"] for r in results]
@@ -339,30 +467,26 @@ def plot_combined_pct(all_analyses: list[dict]):
 
     ax1.axhline(0, color="gray", linewidth=0.5)
     ax1.set_xlabel("Total Conversion Amount ($)")
-    ax1.set_ylabel("NPV Gap: DP minus Greedy ($)")
-    ax1.set_title("DP Advantage Over Scaled Greedy — Absolute $ Gap (All Scenarios)")
+    ax1.set_ylabel("NPV Gap: DP minus Bracket-Fill ($)")
+    ax1.set_title("DP Advantage Over Global Bracket-Fill — Absolute $ Gap")
     ax1.legend(loc="best", fontsize=9)
     ax1.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f"${x/1000:.0f}K"))
     ax1.grid(True, alpha=0.3)
 
-    # Chart C2: % of max savings
     for i, analysis in enumerate(meaningful):
         results = analysis["results"]
         max_savings = analysis["max_savings"]
-        greedy_total = analysis["greedy_total"]
-
-        pcts = [r["target_total"] / greedy_total * 100 for r in results]
+        totals = [r["target_total"] for r in results]
         gaps = [r["npv_diff"] / max_savings * 100 for r in results]
-        ax2.plot(pcts, gaps, linewidth=2, label=analysis["name"], color=colors[i])
+        ax2.plot(totals, gaps, linewidth=2, label=analysis["name"], color=colors[i])
 
     ax2.axhline(0, color="gray", linewidth=0.5)
-    ax2.axvline(100, color="gray", linewidth=0.5, linestyle=":")
-    ax2.set_xlabel("Slider Position (% of Greedy Total)")
+    ax2.set_xlabel("Total Conversion Amount ($)")
     ax2.set_ylabel("NPV Gap as % of Max Savings")
-    ax2.set_title("DP Advantage Over Scaled Greedy — % of Max Savings")
+    ax2.set_title("DP Advantage Over Global Bracket-Fill — % of Max Savings")
     ax2.legend(loc="best", fontsize=9)
+    ax2.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f"${x/1000:.0f}K"))
     ax2.grid(True, alpha=0.3)
-    ax2.set_xlim(0, 150)
 
     plt.tight_layout()
     fig.savefig(OUTPUT_DIR / "combined_gap.png", dpi=150)
@@ -370,9 +494,8 @@ def plot_combined_pct(all_analyses: list[dict]):
 
 
 def plot_allocation_comparison(all_analyses: list[dict]):
-    """Chart D: Side-by-side allocation comparison at the most divergent slider position."""
-    # Pick scenarios with meaningful divergence
-    meaningful = [a for a in all_analyses if a["greedy_total"] > 0 and a["max_savings"] > 500]
+    """Chart D: Side-by-side allocation comparison at the most divergent point."""
+    meaningful = [a for a in all_analyses if a["max_savings"] > 500]
     if not meaningful:
         return
 
@@ -382,28 +505,28 @@ def plot_allocation_comparison(all_analyses: list[dict]):
     for i, analysis in enumerate(meaningful):
         ax = axes[i, 0]
         results = analysis["results"]
-        # Find the point of max divergence
         worst = max(results, key=lambda r: abs(r["npv_diff"]))
-        greedy_alloc = worst["greedy_alloc"]
+        bf_alloc = worst["bf_alloc"]
         dp_alloc = worst["dp_alloc"]
-        n_years = len(greedy_alloc)
+        n_years = len(bf_alloc)
 
-        # Only show first N years that have any allocation (trim trailing zeros)
-        max_show = n_years
+        # Find last year with any allocation
+        max_show = 1
         for j in range(n_years - 1, -1, -1):
-            if greedy_alloc[j] > 0 or dp_alloc[j] > 0:
-                max_show = j + 1
+            if bf_alloc[j] > 100 or dp_alloc[j] > 100:
+                max_show = j + 2  # +1 for index, +1 for context
                 break
-        max_show = min(max_show + 1, n_years)  # one extra for context
-        if max_show > 15:
-            max_show = 15  # cap display for long timelines
+        max_show = min(max_show, n_years, 15)
 
         x = np.arange(max_show)
         width = 0.35
-        ax.bar(x - width/2, [g/1000 for g in greedy_alloc[:max_show]], width, label="Scaled Greedy", color="orange", alpha=0.8)
-        ax.bar(x + width/2, [d/1000 for d in dp_alloc[:max_show]], width, label="DP-Optimal", color="blue", alpha=0.8)
+        ax.bar(x - width/2, [g/1000 for g in bf_alloc[:max_show]], width,
+               label="Global Bracket-Fill", color="orange", alpha=0.8)
+        ax.bar(x + width/2, [d/1000 for d in dp_alloc[:max_show]], width,
+               label="DP-Optimal", color="blue", alpha=0.8)
         ax.set_ylabel("Conversion ($K)")
-        ax.set_title(f"{analysis['name']}: Year-by-Year Allocation at ${worst['target_total']:,.0f} total (max divergence point)")
+        ax.set_title(f"{analysis['name']}: Allocation at ${worst['target_total']:,.0f} "
+                     f"(gap: ${worst['npv_diff']:,.0f})")
         ax.set_xticks(x)
         ax.set_xticklabels([f"Yr {j+1}" for j in range(max_show)], fontsize=8)
         ax.legend(fontsize=9)
@@ -418,21 +541,23 @@ def _safe_name(name: str) -> str:
     return name.lower().replace(" ", "_").replace("(", "").replace(")", "").replace(",", "")
 
 
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
 def main():
     print("=" * 70)
     print("  OPTIMIZER DIVERGENCE INVESTIGATION")
-    print("  Comparing DP-Optimal vs Scaled Greedy Bracket-Fill")
+    print("  Comparing DP-Optimal vs Global Bracket-Fill Heuristic")
     print("=" * 70)
 
     all_analyses = []
-
     for idx, (name, scenario) in enumerate(SCENARIOS.items()):
         analysis = analyze_scenario(name, scenario)
         all_analyses.append(analysis)
         plot_scenario(analysis, idx)
 
-    # Combined charts
-    plot_combined_pct(all_analyses)
+    plot_combined(all_analyses)
     plot_allocation_comparison(all_analyses)
 
     # Overall summary
