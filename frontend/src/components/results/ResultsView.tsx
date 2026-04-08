@@ -159,8 +159,8 @@ export function ResultsView({ result }: ResultsViewProps) {
           hideLegend
           leftBottomContent={
             <div className="flex flex-col border-r border-border">
-              <div className="h-8 flex items-center justify-end text-text-tertiary text-data-xs font-medium px-1 text-right leading-tight">
-                Tax cost
+              <div className="h-8 flex items-center justify-end text-text-tertiary text-data-xs font-medium px-1 text-right leading-tight" style={{ maxWidth: 64 }}>
+                Additional tax from conversion
               </div>
             </div>
           }
