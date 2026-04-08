@@ -173,11 +173,11 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
       {/* Summary metrics */}
       <div className="grid grid-cols-3 gap-tight sm:gap-default">
         <MetricCard
-          label="Total conversion"
+          label="Total Roth conversion"
           value={formatCurrency(displayTotalConversion)}
         />
         <MetricCard
-          label="Tax on conversions"
+          label="Tax on Roth conversions"
           value={formatCurrency(totalTaxCost)}
         />
         <MetricCard

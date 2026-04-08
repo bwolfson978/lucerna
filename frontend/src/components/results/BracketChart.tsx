@@ -242,7 +242,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.conversion }} />
-          Conversion
+          Roth Conversion
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded bg-bg-hover border border-border" />

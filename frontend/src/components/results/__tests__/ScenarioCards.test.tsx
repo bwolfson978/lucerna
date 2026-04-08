@@ -77,7 +77,7 @@ describe("ScenarioCards", () => {
 
   it("shows per-year conversion schedule for multi-year scenario", () => {
     renderWithProviders(<ScenarioCards scenarios={mockScenarios} />);
-    const scheduleHeaders = screen.getAllByText("Conversion schedule");
+    const scheduleHeaders = screen.getAllByText("Roth conversion schedule");
     expect(scheduleHeaders.length).toBeGreaterThanOrEqual(1);
     // The best scenario shows per-year amounts
     expect(screen.getByText("$50,000")).toBeInTheDocument();

@@ -128,16 +128,16 @@ export function TimelineChart({ data, onYearClick }: TimelineChartProps) {
 
   const series = [
     { name: "Earned Income", data: incomeData },
-    { name: "Conversion", data: conversionData },
+    { name: "Roth Conversion", data: conversionData },
   ];
 
   return (
     <Card className="flex flex-col gap-default">
       <div className="flex items-center gap-2">
         <h3 className="text-h3 text-text-primary">
-          Earned income + conversion by year
+          Earned income + Roth conversion by year
         </h3>
-        <Tooltip content="Shows how the optimizer distributes conversions across your income timeline. Click a year to see its bracket fill detail." />
+        <Tooltip content="Shows how the optimizer distributes Roth conversions across your income timeline. Click a year to see its bracket fill detail." />
       </div>
 
       {/* Custom legend */}
@@ -148,7 +148,7 @@ export function TimelineChart({ data, onYearClick }: TimelineChartProps) {
         </span>
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.conversion }} />
-          Conversion
+          Roth Conversion
         </span>
       </div>
 
