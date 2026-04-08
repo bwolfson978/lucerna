@@ -34,9 +34,20 @@ export function ConversionSlider({
       : 0;
 
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-1">
+      {/* Value + label row */}
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-data-xs text-text-tertiary whitespace-nowrap">Roth conversion</span>
+        <span
+          className="text-body-sm font-medium text-text-primary tabular-nums"
+          style={{ fontFamily: "'Manrope', system-ui" }}
+        >
+          {formatCurrency(value)}
+        </span>
+      </div>
+
       {/* Slider track with optimal marker */}
-      <div className="relative pt-3">
+      <div className="relative">
         <input
           type="range"
           min={min}
@@ -56,7 +67,7 @@ export function ConversionSlider({
 
         {/* Optimal marker — gold diamond with stem */}
         <div
-          className="absolute top-[1px] pointer-events-none optimal-marker"
+          className="absolute top-[-12px] pointer-events-none optimal-marker"
           style={{
             left: `calc(8px + (100% - 16px) * ${optimalPercent / 100})`,
             transform: "translateX(-50%)",
@@ -71,29 +82,18 @@ export function ConversionSlider({
         </div>
       </div>
 
-      {/* Value + diamond legend beneath the track */}
-      <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={() => onChange(optimalValue)}
-          className="text-body-sm font-medium text-text-primary tabular-nums hover:text-accent transition-colors cursor-pointer"
-          style={{ fontFamily: "'Manrope', system-ui" }}
-          title={`Reset to highest savings: ${formatCurrency(optimalValue)}`}
-        >
-          {formatCurrency(value)}
-        </button>
-        <button
-          type="button"
-          onClick={() => onChange(optimalValue)}
-          className="flex items-center gap-1 text-data-xs text-text-tertiary hover:text-accent transition-colors cursor-pointer"
-        >
-          <svg width="8" height="11" viewBox="0 0 14 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0" style={{ filter: "drop-shadow(0 0 3px rgba(240,198,116,0.4))" }}>
-            <path d="M7 0L12 6L7 12L2 6Z" fill="#F0C674" />
-            <rect x="6" y="12" width="2" height="8" rx="1" fill="#F0C674" fillOpacity="0.6" />
-          </svg>
-          <span>Highest savings</span>
-        </button>
-      </div>
+      {/* Diamond legend — clickable reset to optimal */}
+      <button
+        type="button"
+        onClick={() => onChange(optimalValue)}
+        className="flex items-center gap-1 text-data-xs text-text-tertiary hover:text-accent transition-colors cursor-pointer self-end text-left"
+      >
+        <svg width="8" height="11" viewBox="0 0 14 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0" style={{ filter: "drop-shadow(0 0 3px rgba(240,198,116,0.4))" }}>
+          <path d="M7 0L12 6L7 12L2 6Z" fill="#F0C674" />
+          <rect x="6" y="12" width="2" height="8" rx="1" fill="#F0C674" fillOpacity="0.6" />
+        </svg>
+        <span>Highest savings</span>
+      </button>
     </div>
   );
 }

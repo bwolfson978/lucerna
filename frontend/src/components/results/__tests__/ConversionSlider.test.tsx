@@ -11,9 +11,9 @@ describe("ConversionSlider", () => {
     onChange: vi.fn(),
   };
 
-  it("displays formatted value as clickable reset button", () => {
+  it("displays the label", () => {
     render(<ConversionSlider {...defaultProps} />);
-    expect(screen.getByText("$100,000")).toBeInTheDocument();
+    expect(screen.getByText("Roth conversion")).toBeInTheDocument();
   });
 
   it("shows diamond legend for highest savings", () => {

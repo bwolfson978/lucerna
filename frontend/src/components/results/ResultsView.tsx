@@ -130,9 +130,16 @@ export function ResultsView({ result }: ResultsViewProps) {
 
       {/* Bracket chart with slider + annotation row */}
       <div className="flex flex-col gap-default">
-        <h3 className="text-h3 text-text-primary">Conversion schedule</h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-h3 text-text-primary">Conversion schedule</h3>
+          <InfoTrigger
+            label="How is this determined?"
+            sectionId="bracket-filling"
+            triggerId="bracket-chart"
+          />
+        </div>
         <Card className="flex flex-col gap-default">
-        {/* Top row: series legend (left) + slider (right, max 1/3) + info trigger */}
+        {/* Top row: series legend (left) + slider (right, max 1/3) */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-body-sm text-text-secondary pt-1">
             <span className="flex items-center gap-1.5">
@@ -148,21 +155,13 @@ export function ResultsView({ result }: ResultsViewProps) {
               Remaining
             </span>
           </div>
-          <div className="flex items-start gap-3 flex-shrink-0">
-            <div className="w-[180px]">
-              <ConversionSlider
-                value={sliderValue}
-                min={0}
-                max={Math.max(result.input.traditional_ira_balance, result.total_conversion)}
-                optimalValue={result.total_conversion}
-                onChange={setSliderValue}
-              />
-            </div>
-            <InfoTrigger
-              label="How is this determined?"
-              sectionId="bracket-filling"
-              triggerId="bracket-chart"
-              className="pt-1"
+          <div className="w-1/3 min-w-[180px] flex-shrink-0">
+            <ConversionSlider
+              value={sliderValue}
+              min={0}
+              max={Math.max(result.input.traditional_ira_balance, result.total_conversion)}
+              optimalValue={result.total_conversion}
+              onChange={setSliderValue}
             />
           </div>
         </div>
