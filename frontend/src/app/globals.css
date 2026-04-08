@@ -30,6 +30,17 @@
     @apply text-body text-text-primary bg-bg font-sans antialiased;
   }
 
+  /* Prevent browser autofill from overriding dark-theme input styles */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  select:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 1000px hsl(245 35% 15%) inset;
+    -webkit-text-fill-color: hsl(39 44% 96%);
+    caret-color: hsl(39 44% 96%);
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
   .font-data {
     font-family: 'Manrope', system-ui, sans-serif;
     font-variant-numeric: tabular-nums;
