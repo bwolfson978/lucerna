@@ -1,0 +1,112 @@
+name: Update Tax Data
+
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: "Target tax year (default: current year)"
+        required: false
+        type: string
+      dry_run:
+        description: "Dry run — show what would change without writing"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Python dependencies
+        run: |
+          cd backend
+          pip install -e .
+
+      - name: Run data updater
+        id: update
+        run: |
+          cd backend
+          ARGS=""
+          if [ -n "${{ inputs.year }}" ]; then
+            ARGS="$ARGS --year ${{ inputs.year }}"
+          fi
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+          python -m scripts.update_data $ARGS 2>&1 | tee /tmp/update-output.txt
+
+          # Check if any files changed
+          cd ..
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate data
+        if: steps.update.outputs.changed == 'true'
+        run: |
+          cd backend
+          python -m scripts.update_data --validate
+
+      - name: Run backend tests
+        if: steps.update.outputs.changed == 'true'
+        run: |
+          cd backend
+          pip install pytest pytest-asyncio httpx
+          python -m pytest tests/ -v
+
+      - name: Run frontend tests
+        if: steps.update.outputs.changed == 'true'
+        run: |
+          cd frontend
+          npm ci
+          npm run test:run
+
+      - name: Create pull request
+        if: steps.update.outputs.changed == 'true' && inputs.dry_run != true
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: update tax data for ${{ inputs.year || 'current year' }}"
+          title: "Update tax data for ${{ inputs.year || 'current year' }}"
+          body: |
+            Automated tax data update triggered via workflow_dispatch.
+
+            <details>
+            <summary>Update output</summary>
+
+            ```
+            $(cat /tmp/update-output.txt)
+            ```
+            </details>
+
+            - All backend tests passed
+            - All frontend tests passed
+            - Frontend fallback JSON synced
+          branch: auto/update-tax-data
+          delete-branch: true
+          labels: type:improvement
+
+      - name: Summary
+        run: |
+          if [ "${{ steps.update.outputs.changed }}" = "true" ]; then
+            echo "### Data files were updated" >> $GITHUB_STEP_SUMMARY
+            echo "A pull request has been created with the changes." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### All data files are up to date" >> $GITHUB_STEP_SUMMARY
+            echo "No changes needed." >> $GITHUB_STEP_SUMMARY
+          fi

@@ -7,7 +7,7 @@ import { useRef, useMemo, useState, useCallback, useEffect, type RefObject } fro
 import { useContainerWidth } from "@/hooks/useContainerWidth";
 import { useScrollFade } from "@/hooks/useScrollFade";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
-import taxData from "@/lib/tax/federal-brackets-2025.json";
+import { useTaxConfig, type TaxBracket } from "@/lib/tax/TaxConfigProvider";
 
 interface ChartTooltip {
   x: number;
@@ -31,19 +31,14 @@ interface BracketChartProps {
   onLayoutChange?: (layout: { leftOffset: number; rightOffset: number }) => void;
 }
 
-// Derive bracket boundaries from the shared JSON config.
+// Derive bracket boundaries from tax config.
 // For the top bracket (max: null/Infinity), use min + 500K as display max.
-function buildBoundaries(raw: typeof taxData.brackets.single) {
+function buildBoundaries(raw: TaxBracket[]) {
   return raw.map((b) => ({
     rate: b.rate,
     max: b.max === null ? b.min + 500000 : b.max,
   }));
 }
-
-const BRACKET_BOUNDARIES: Record<string, { rate: number; max: number }[]> = {
-  single: buildBoundaries(taxData.brackets.single),
-  married_filing_jointly: buildBoundaries(taxData.brackets.married_filing_jointly),
-};
 
 export const BAR_GAP = 10;
 export const MIN_BAR_WIDTH = 24;
@@ -80,7 +75,11 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
   const scrollRef = externalScrollRef || internalScrollRef;
   const fadeRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const brackets = BRACKET_BOUNDARIES[filingStatus];
+  const taxConfig = useTaxConfig();
+  const brackets = useMemo(
+    () => buildBoundaries(taxConfig.brackets[filingStatus]),
+    [taxConfig, filingStatus]
+  );
   const [tooltip, setTooltip] = useState<ChartTooltip | null>(null);
   const [isEngaged, setIsEngaged] = useState(false);
 

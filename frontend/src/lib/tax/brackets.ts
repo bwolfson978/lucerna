@@ -2,13 +2,14 @@
  * Client-side federal tax bracket calculations.
  * Mirrors backend/app/engine/tax.py for real-time slider interactivity.
  *
- * Bracket data is loaded from federal-brackets-2025.json — the single
- * source of truth for the frontend. When tax year changes, update the
- * JSON file and both this module and BracketChart pick up the change.
+ * At runtime, bracket data comes from the backend via TaxConfigProvider.
+ * The bundled federal-brackets-2025.json serves as the fallback when
+ * the backend is unreachable.
  */
 
 import type { FilingStatus, BracketFillResult } from "@/lib/types";
-import taxData from "./federal-brackets-2025.json";
+import type { TaxConfig } from "./TaxConfigProvider";
+import { getFallbackTaxConfig } from "./TaxConfigProvider";
 
 interface Bracket {
   min: number;
@@ -17,7 +18,9 @@ interface Bracket {
 }
 
 // Parse JSON brackets, converting null max to Infinity
-function parseBrackets(raw: typeof taxData.brackets.single): Bracket[] {
+function parseBrackets(
+  raw: { min: number; max: number | null; rate: number }[]
+): Bracket[] {
   return raw.map((b) => ({
     min: b.min,
     max: b.max === null ? Infinity : b.max,
@@ -25,23 +28,43 @@ function parseBrackets(raw: typeof taxData.brackets.single): Bracket[] {
   }));
 }
 
+function getBrackets(
+  filingStatus: FilingStatus,
+  config?: TaxConfig
+): Bracket[] {
+  const c = config ?? getFallbackTaxConfig();
+  return parseBrackets(c.brackets[filingStatus]);
+}
+
+function getDeduction(
+  filingStatus: FilingStatus,
+  config?: TaxConfig
+): number {
+  const c = config ?? getFallbackTaxConfig();
+  return c.standard_deduction[filingStatus];
+}
+
+// Legacy exports for backward compatibility (use fallback data)
+const fallback = getFallbackTaxConfig();
+
 export const BRACKETS: Record<FilingStatus, Bracket[]> = {
-  single: parseBrackets(taxData.brackets.single),
-  married_filing_jointly: parseBrackets(taxData.brackets.married_filing_jointly),
+  single: parseBrackets(fallback.brackets.single),
+  married_filing_jointly: parseBrackets(fallback.brackets.married_filing_jointly),
 };
 
 export const STANDARD_DEDUCTION: Record<FilingStatus, number> = {
-  single: taxData.standard_deduction.single,
-  married_filing_jointly: taxData.standard_deduction.married_filing_jointly,
+  single: fallback.standard_deduction.single,
+  married_filing_jointly: fallback.standard_deduction.married_filing_jointly,
 };
 
 export function calculateFederalTax(
   grossIncome: number,
-  filingStatus: FilingStatus = "single"
+  filingStatus: FilingStatus = "single",
+  config?: TaxConfig
 ): number {
-  const deduction = STANDARD_DEDUCTION[filingStatus];
+  const deduction = getDeduction(filingStatus, config);
   const taxableIncome = Math.max(0, grossIncome - deduction);
-  const brackets = BRACKETS[filingStatus];
+  const brackets = getBrackets(filingStatus, config);
 
   let tax = 0;
   for (const bracket of brackets) {
@@ -57,12 +80,13 @@ export function calculateFederalTax(
 export function analyzeBracketFill(
   baseIncome: number,
   conversionAmount: number,
-  filingStatus: FilingStatus = "single"
+  filingStatus: FilingStatus = "single",
+  config?: TaxConfig
 ): BracketFillResult[] {
-  const deduction = STANDARD_DEDUCTION[filingStatus];
+  const deduction = getDeduction(filingStatus, config);
   const baseTaxable = Math.max(0, baseIncome - deduction);
   const totalTaxable = Math.max(0, baseIncome + conversionAmount - deduction);
-  const brackets = BRACKETS[filingStatus];
+  const brackets = getBrackets(filingStatus, config);
 
   const results: BracketFillResult[] = [];
   for (const bracket of brackets) {

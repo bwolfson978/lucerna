@@ -92,6 +92,16 @@ lucerna/
 
 Check the active execution plan in `docs/planning/` for what's in scope for the current milestone. Don't build features from future milestones unless asked.
 
+## GitHub CLI
+
+When using `gh` commands, always pass the explicit `--repo bwolfson978/lucerna` flag
+(or use `gh api repos/bwolfson978/lucerna/...`) rather than relying on the git remote
+to infer the repository. This ensures commands work in all environments, including
+Claude Code web sessions where the git remote points to a local proxy.
+
+If `gh auth status` fails, check whether `GH_TOKEN` or `GITHUB_TOKEN` is set in
+the environment before asking the user to authenticate.
+
 ## Git Operations
 
 Any time you are starting an implementation by checking out a new feature branch, make sure you've pulled the most recent changes from master branch so you're building on top of them

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { TaxConfigProvider } from "@/lib/tax/TaxConfigProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -36,9 +37,11 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <TooltipProvider delayDuration={300}>
-          {children}
-        </TooltipProvider>
+        <TaxConfigProvider>
+          <TooltipProvider delayDuration={300}>
+            {children}
+          </TooltipProvider>
+        </TaxConfigProvider>
         <Analytics />
         <SpeedInsights />
       </body>
