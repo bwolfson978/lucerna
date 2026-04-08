@@ -10,19 +10,19 @@ interface IncomeMilestonesTableProps {
 export function IncomeMilestonesTable({
   timeline,
 }: IncomeMilestonesTableProps) {
-  const colWidth = 58;
+  const colWidth = 66;
 
   return (
     <div className="flex text-body-sm">
       {/* Fixed row labels */}
-      <div className="flex-shrink-0 w-[70px] flex flex-col border-r border-border">
-        <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
+      <div className="flex-shrink-0 w-[80px] flex flex-col border-r border-border">
+        <div className="h-8 flex items-center text-text-tertiary text-data-xs font-medium px-1">
           Year
         </div>
-        <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
+        <div className="h-8 flex items-center text-text-tertiary text-data-xs font-medium px-1">
           Income
         </div>
-        <div className="h-8 flex items-center text-text-tertiary text-[10px] font-medium px-1">
+        <div className="h-8 flex items-center text-text-tertiary text-data-xs font-medium px-1">
           Notes
         </div>
       </div>
@@ -41,7 +41,7 @@ export function IncomeMilestonesTable({
             >
               {/* Year */}
               <div
-                className="h-8 flex items-center justify-center text-[10px] text-text-secondary"
+                className="h-8 flex items-center justify-center text-data-xs text-text-secondary"
                 style={{ fontFamily: "'Manrope', system-ui" }}
               >
                 {yi.year}
@@ -49,15 +49,15 @@ export function IncomeMilestonesTable({
 
               {/* Income */}
               <div
-                className="h-8 flex items-center justify-center text-[10px] text-text-primary px-0.5"
+                className="h-8 flex items-center justify-center text-data-xs text-text-primary px-0.5"
                 style={{ fontFamily: "'Manrope', system-ui" }}
               >
                 {formatCompactCurrency(yi.gross_income)}
               </div>
 
               {/* Notes */}
-              <div className="h-8 flex items-center justify-center text-[9px] text-text-tertiary px-0.5" title={yi.notes || undefined}>
-                {yi.notes || "—"}
+              <div className="h-8 flex items-center justify-center text-center text-[11px] text-text-tertiary px-0.5" title={yi.notes || undefined}>
+                {yi.notes || "-"}
               </div>
             </div>
           ))}

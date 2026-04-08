@@ -29,7 +29,7 @@ export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h3 className="text-h3 text-text-primary">Scenario comparison</h3>
-          <Tooltip content="Compare different conversion schedules to see how they affect your estimated lifetime tax savings." />
+          <Tooltip content="Compare different Roth conversion schedules to see how they affect your estimated lifetime tax savings." />
         </div>
         <InfoTrigger
           label="Why is full conversion worse?"
@@ -87,8 +87,8 @@ export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
                 {/* Per-year conversion schedule (multi-year best scenario) */}
                 {scheduleRows.length > 0 && (
                   <div className="flex flex-col gap-1 pt-1 border-t border-border">
-                    <span className="text-[11px] text-text-tertiary uppercase tracking-wide">
-                      Conversion schedule
+                    <span className="text-caption text-text-tertiary uppercase tracking-wide">
+                      Roth conversion schedule
                     </span>
                     {scheduleRows.map((row) => (
                       <div
@@ -117,7 +117,7 @@ export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
                 {/* Tax on conversions (aggregate) */}
                 <div className="flex justify-between text-body-sm">
                   <span className="text-text-secondary">
-                    Tax on conversions
+                    Tax on Roth conversions
                   </span>
                   <span className="font-mono text-text-primary">
                     {formatCurrency(scenario.tax_on_conversion)}
@@ -127,7 +127,7 @@ export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
                 {/* Impact on long-term wealth vs best */}
                 {scenario.difference_from_optimal !== 0 && (
                   <div className="flex flex-col gap-1 pt-1 border-t border-border">
-                    <span className="text-[11px] text-text-tertiary uppercase tracking-wide">
+                    <span className="text-caption text-text-tertiary uppercase tracking-wide">
                       Impact on long-term wealth
                     </span>
                     <span

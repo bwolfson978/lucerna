@@ -1,29 +1,19 @@
 "use client";
 
-import { useState, useMemo, useCallback, useRef } from "react";
-import type {
-  OptimizationResult,
-  ScenarioInput,
-} from "@/lib/types";
+import { useMemo, useRef, useState } from "react";
+import type { OptimizationResult, ScenarioInput } from "@/lib/types";
 import { MetricCard } from "@/components/common/MetricCard";
 import { Tooltip } from "@/components/common/Tooltip";
-import { GlowButton } from "@/components/common/GlowButton";
-import { formatCurrency, formatSavings } from "@/lib/utils/formatting";
+import { formatCurrency, formatSavings, formatTableCurrency } from "@/lib/utils/formatting";
 import { BracketChart } from "./BracketChart";
 import { ConversionSlider } from "./ConversionSlider";
-import { TransposedDetailTable } from "./TransposedDetailTable";
 import { ScenarioCards } from "./ScenarioCards";
 import { BalanceProjections } from "./BalanceProjections";
 import { AcaSubsidyImpact } from "./AcaSubsidyImpact";
 import { Card } from "@/components/ui/card";
 import { useConversionSlider } from "@/hooks/useConversionSlider";
 import { computeSnapThreshold } from "@/lib/utils/snap";
-import { useSyncedScroll } from "@/hooks/useSyncedScroll";
 import { InfoTrigger } from "@/components/methodology/InfoTrigger";
-
-interface YearOverride {
-  income?: number;
-}
 
 interface ResultsViewProps {
   result: OptimizationResult;
@@ -31,19 +21,10 @@ interface ResultsViewProps {
   loading?: boolean;
 }
 
-export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
-  const [overrides, setOverrides] = useState<Map<number, YearOverride>>(
-    () => new Map()
-  );
-
-  const hasUnsavedChanges = overrides.size > 0;
-
-  // Synced horizontal scroll between chart and detail table
+export function ResultsView({ result }: ResultsViewProps) {
+  // onReRun and loading are accepted for future calculator re-run support
   const chartScrollRef = useRef<HTMLDivElement>(null);
-  const tableScrollRef = useRef<HTMLDivElement>(null);
   const [tableColWidth, setTableColWidth] = useState(58);
-  const [chartLayout, setChartLayout] = useState({ leftOffset: 88, rightOffset: 108 });
-  useSyncedScroll(chartScrollRef, tableScrollRef);
 
   // Client-side slider: continuous bracket fill computation
   const {
@@ -66,41 +47,10 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
     }));
   }, [result.input, yearlyBracketFills]);
 
-  // Income arrays for the detail table
-  const incomes = result.input.income_timeline.map((yi) => yi.gross_income);
   const yearInfos = result.input.income_timeline.map((yi, i) => ({
     year: yi.year,
     age: result.input.age + i,
   }));
-
-  const handleIncomeChange = useCallback(
-    (yearIndex: number, income: number) => {
-      setOverrides((prev) => {
-        const next = new Map(prev);
-        const existing = next.get(yearIndex) || {};
-        next.set(yearIndex, { ...existing, income });
-        return next;
-      });
-    },
-    []
-  );
-
-  const handleReRun = useCallback(() => {
-    if (!onReRun) return;
-    const updatedTrajectory = result.input.income_timeline.map((yi, i) => {
-      const override = overrides.get(i);
-      return {
-        ...yi,
-        gross_income: override?.income ?? yi.gross_income,
-      };
-    });
-    const updatedInput: ScenarioInput = {
-      ...result.input,
-      income_timeline: updatedTrajectory,
-    };
-    setOverrides(new Map());
-    onReRun(updatedInput);
-  }, [result.input, overrides, onReRun]);
 
   const snapThreshold = computeSnapThreshold(0, result.input.traditional_ira_balance);
   const isAtOptimal =
@@ -152,7 +102,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
               </span>
             )}
             <span className="text-body-sm text-text-secondary">
-              vs. not converting — in today&apos;s dollars
+              vs. not converting, in today&apos;s dollars
               <Tooltip content="This is the difference in after-tax wealth between the selected conversion schedule and doing nothing, expressed in today's dollars using your discount rate." />
             </span>
           </div>
@@ -173,11 +123,11 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
       {/* Summary metrics */}
       <div className="grid grid-cols-3 gap-tight sm:gap-default">
         <MetricCard
-          label="Total conversion"
+          label="Total Roth conversion"
           value={formatCurrency(displayTotalConversion)}
         />
         <MetricCard
-          label="Tax on conversions"
+          label="Tax on Roth conversions"
           value={formatCurrency(totalTaxCost)}
         />
         <MetricCard
@@ -186,7 +136,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
         />
       </div>
 
-      {/* Bracket chart + detail table — same Card so scroll areas align */}
+      {/* Bracket chart with annotation row in a single scroll container */}
       <Card className="flex flex-col gap-default">
         <div className="flex items-center justify-end px-4 pt-2 -mb-2">
           <InfoTrigger
@@ -200,50 +150,48 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
           filingStatus={result.input.filing_status}
           scrollRef={chartScrollRef}
           onBarWidthChange={setTableColWidth}
-          onLayoutChange={setChartLayout}
-        />
+          leftBottomContent={
+            <div className="flex flex-col border-r border-border">
+              <div className="h-8 flex items-center justify-end text-text-tertiary text-data-xs font-medium px-2 whitespace-nowrap">
+                Additional tax due to conversion
+              </div>
+            </div>
+          }
+        >
+          {/* Annotation row: tax cost per year */}
+          <div className="flex">
+            {yearInfos.map((yearInfo, i) => {
+              const detail = yearlyDetail[i];
+              const colWidth = tableColWidth;
+              const maxChars = Math.max(4, Math.floor((colWidth - 8) / 6.5));
+              return (
+                <div
+                  key={yearInfo.year}
+                  className="flex items-center justify-center h-8 text-data-xs text-text-primary px-1"
+                  style={{
+                    width: `${colWidth}px`,
+                    minWidth: `${colWidth}px`,
+                    fontFamily: "'Manrope', system-ui",
+                  }}
+                >
+                  {detail ? formatTableCurrency(detail.tax_cost, maxChars) : "-"}
+                </div>
+              );
+            })}
+          </div>
+        </BracketChart>
 
-        {/* Separator between chart and table */}
-        <div className="border-t border-border" />
-
-        <div className="flex items-center justify-between">
-          {onReRun && (
-            <p className="text-body-sm text-text-tertiary">
-              Adjust income or life events below, then re-run the analysis.
-            </p>
-          )}
-          {result.input.income_timeline.length > 1 && (
+        {result.input.income_timeline.length > 1 && (
+          <div className="flex items-center justify-end">
             <InfoTrigger
               label="How is this allocated across years?"
               sectionId="multi-year-allocation"
               triggerId="detail-table"
               className="shrink-0"
             />
-          )}
-        </div>
-        <TransposedDetailTable
-          details={yearlyDetail}
-          years={yearInfos}
-          incomes={incomes}
-          overrides={overrides}
-          onIncomeChange={handleIncomeChange}
-          scrollRef={tableScrollRef}
-          colWidth={tableColWidth}
-          leftOffset={chartLayout.leftOffset}
-          rightOffset={chartLayout.rightOffset}
-        />
-
-        {/* Re-run button */}
-        {hasUnsavedChanges && onReRun && (
-          <div className="pt-3 border-t border-border flex items-center justify-between">
-            <span className="text-body-sm text-text-secondary">
-              Income values modified
-            </span>
-            <GlowButton onClick={handleReRun} loading={loading}>
-              Re-run analysis
-            </GlowButton>
           </div>
         )}
+
       </Card>
 
       {/* Scenario comparison */}
@@ -269,7 +217,7 @@ export function ResultsView({ result, onReRun, loading }: ResultsViewProps) {
             This analysis uses federal tax brackets only (2025 rates).
             {result.aca_subsidy_impact
               ? " ACA marketplace subsidy impact is included based on your healthcare inputs (2026 rules, 2025 FPL guidelines)."
-              : " ACA subsidies are not modeled — enable the marketplace toggle to include them."}{" "}
+              : " ACA subsidies are not modeled. Enable the marketplace toggle to include them."}{" "}
             State taxes, Social Security taxation, and RMDs are not modeled.
             The model assumes all remaining balances are withdrawn at the end
             of the retirement period. This is educational scenario analysis,

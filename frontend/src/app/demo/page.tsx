@@ -46,7 +46,7 @@ export default function DemoPage() {
               <Card className="bg-bg-alt">
                 <div className="flex flex-col gap-default">
                   <p className="text-body text-text-primary leading-relaxed">
-                    <strong>Alex, 38</strong> — Senior Software Engineer who left
+                    <strong>Alex, 38.</strong> Senior Software Engineer who left
                     a $145K/year role 6 months ago to co-found a startup.
                   </p>
                   <p className="text-body text-text-secondary leading-relaxed">
@@ -60,7 +60,7 @@ export default function DemoPage() {
                     <h3 className="text-h3 text-text-primary mb-default">
                       Key income milestones
                     </h3>
-                    <p className="text-text-tertiary text-[11px] mb-2">
+                    <p className="text-text-tertiary text-caption mb-2">
                       {timeline?.length ?? 0} years modeled through retirement
                       at age {retirementAge}
                     </p>

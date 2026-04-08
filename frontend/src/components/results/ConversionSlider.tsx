@@ -36,7 +36,7 @@ export function ConversionSlider({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
-        <span className="metric-label">Conversion amount</span>
+        <span className="metric-label">Roth conversion amount</span>
         <span
           className="text-h3 font-medium"
           style={{ fontFamily: "'Manrope', system-ui" }}
@@ -82,7 +82,7 @@ export function ConversionSlider({
         </div>
       </div>
 
-      <div className="flex justify-between text-[10px] text-text-tertiary">
+      <div className="flex justify-between text-data-xs text-text-tertiary">
         <span>{formatCurrency(min)}</span>
         <span>{formatCurrency(max)}</span>
       </div>
@@ -97,7 +97,7 @@ export function ConversionSlider({
           <path d="M7 0L12 6L7 12L2 6Z" fill="#F0C674" />
           <rect x="6" y="12" width="2" height="8" rx="1" fill="#F0C674" fillOpacity="0.6" />
         </svg>
-        <span>Conversion amount with highest estimated lifetime savings</span>
+        <span>Roth conversion amount with highest estimated lifetime savings</span>
       </button>
     </div>
   );

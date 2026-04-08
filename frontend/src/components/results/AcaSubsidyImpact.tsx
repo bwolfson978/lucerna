@@ -115,7 +115,7 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
                   <td className="px-3 py-2.5 text-text-primary font-medium">
                     {d.year}
                     {d.hits_cliff && (
-                      <span className="ml-1.5 text-[11px] text-negative font-medium">
+                      <span className="ml-1.5 text-[12px] text-negative font-medium">
                         CLIFF
                       </span>
                     )}
