@@ -66,52 +66,6 @@ export function ResultsView({ result }: ResultsViewProps) {
 
   return (
     <div className="flex flex-col gap-section">
-      {/* Hero metric */}
-      <Card recommended className="p-section">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <span className="metric-label">
-              Estimated lifetime tax savings
-            </span>
-            <InfoTrigger
-              label="How is this calculated?"
-              sectionId="savings-number"
-              triggerId="hero-savings"
-            />
-          </div>
-          <span className="metric-value-hero text-optimal">
-            {formatSavings(estimatedSavings)}
-          </span>
-          {!isAtOptimal && (
-            <span
-              className="flex items-center gap-1 text-body-sm text-negative font-medium"
-              style={{ fontFamily: "'Manrope', system-ui" }}
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="none"
-                aria-hidden="true"
-              >
-                <path
-                  d="M6 2v8M6 10l-3-3M6 10l3-3"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              {formatCurrency(Math.max(1, Math.abs(savingsDifference)))} less than highest savings
-            </span>
-          )}
-          <span className="text-body-sm text-text-secondary">
-            vs. not converting, in today&apos;s dollars
-            <Tooltip content="This is the difference in after-tax wealth between the selected conversion schedule and doing nothing, expressed in today's dollars using your discount rate." />
-          </span>
-        </div>
-      </Card>
-
       {/* Summary metrics */}
       <div className="grid grid-cols-3 gap-tight sm:gap-default">
         <MetricCard
@@ -139,20 +93,46 @@ export function ResultsView({ result }: ResultsViewProps) {
           />
         </div>
         <Card className="flex flex-col gap-default">
-        {/* Top row: series legend (left) + slider (right, max 1/3) */}
+        {/* Top row: compact hero metric (left) + slider (right, max 1/3) */}
         <div className="flex items-start justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-body-sm text-text-secondary pt-1">
-            <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.income }} />
-              Earned Income
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className="metric-label">Estimated lifetime tax savings</span>
+              <InfoTrigger
+                label="How is this calculated?"
+                sectionId="savings-number"
+                triggerId="hero-savings"
+              />
+            </div>
+            <span className="metric-value-hero text-optimal">
+              {formatSavings(estimatedSavings)}
             </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.conversion }} />
-              Roth Conversion
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-3 h-3 rounded bg-bg-hover border border-border" />
-              Remaining
+            {!isAtOptimal && (
+              <span
+                className="flex items-center gap-1 text-body-sm text-negative font-medium"
+                style={{ fontFamily: "'Manrope', system-ui" }}
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M6 2v8M6 10l-3-3M6 10l3-3"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                {formatCurrency(Math.max(1, Math.abs(savingsDifference)))} less than highest savings
+              </span>
+            )}
+            <span className="text-body-sm text-text-secondary">
+              vs. not converting, in today&apos;s dollars
+              <Tooltip content="This is the difference in after-tax wealth between the selected conversion schedule and doing nothing, expressed in today's dollars using your discount rate." />
             </span>
           </div>
           <div className="w-1/3 min-w-[180px] flex-shrink-0">
@@ -201,6 +181,22 @@ export function ResultsView({ result }: ResultsViewProps) {
             })}
           </div>
         </BracketChart>
+
+        {/* Series legend */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-body-sm text-text-secondary">
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.income }} />
+            Earned Income
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.conversion }} />
+            Roth Conversion
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded bg-bg-hover border border-border" />
+            Remaining
+          </span>
+        </div>
 
       </Card>
       </div>
