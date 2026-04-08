@@ -29,6 +29,10 @@ interface BracketChartProps {
   scrollRef?: RefObject<HTMLDivElement | null>;
   onBarWidthChange?: (barWidth: number) => void;
   onLayoutChange?: (layout: { leftOffset: number; rightOffset: number }) => void;
+  /** Content rendered below the chart SVG inside the shared scroll container */
+  children?: React.ReactNode;
+  /** Content rendered below the left axis (fixed, for row labels) */
+  leftBottomContent?: React.ReactNode;
 }
 
 // Derive bracket boundaries from the shared JSON config.
@@ -75,7 +79,7 @@ function niceInterval(range: number, targetTicks: number): number {
   return nice * magnitude;
 }
 
-export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef, onBarWidthChange, onLayoutChange }: BracketChartProps) {
+export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef, onBarWidthChange, onLayoutChange, children, leftBottomContent }: BracketChartProps) {
   const internalScrollRef = useRef<HTMLDivElement>(null);
   const scrollRef = externalScrollRef || internalScrollRef;
   const fadeRef = useRef<HTMLDivElement>(null);
@@ -261,7 +265,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
       >
         {/* Left axis label (desktop only) */}
         {!isMobile && (
-          <div className="flex-shrink-0 flex items-center" style={{ width: VERTICAL_LABEL_WIDTH }}>
+          <div className="flex-shrink-0 flex items-center self-start" style={{ width: VERTICAL_LABEL_WIDTH, height: chartHeight }}>
             <span
               className="text-caption text-text-tertiary tracking-wider uppercase"
               style={{
@@ -275,37 +279,39 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
           </div>
         )}
 
-        {/* Fixed left axis: evenly spaced income tick marks */}
-        <svg
-          width={leftAxisWidth}
-          height={chartHeight}
-          className="flex-shrink-0"
-        >
-          {incomeTicks.map((val) => {
-            const y = yScale(val);
-            return (
-              <g key={`tick-${val}`}>
-                <line
-                  x1={leftAxisWidth - 4}
-                  y1={y}
-                  x2={leftAxisWidth}
-                  y2={y}
-                  stroke="rgba(255,255,255,0.15)"
-                  strokeWidth={1}
-                />
-                <text
-                  x={leftAxisWidth - 6}
-                  y={y + 4}
-                  textAnchor="end"
-                  className="text-data-xs fill-text-tertiary"
-                  fontFamily="'Manrope', system-ui"
-                >
-                  {formatAxisCurrency(val)}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
+        {/* Fixed left axis: evenly spaced income tick marks + bottom label slot */}
+        <div className="flex-shrink-0 flex flex-col">
+          <svg
+            width={leftAxisWidth}
+            height={chartHeight}
+          >
+            {incomeTicks.map((val) => {
+              const y = yScale(val);
+              return (
+                <g key={`tick-${val}`}>
+                  <line
+                    x1={leftAxisWidth - 4}
+                    y1={y}
+                    x2={leftAxisWidth}
+                    y2={y}
+                    stroke="rgba(255,255,255,0.15)"
+                    strokeWidth={1}
+                  />
+                  <text
+                    x={leftAxisWidth - 6}
+                    y={y + 4}
+                    textAnchor="end"
+                    className="text-data-xs fill-text-tertiary"
+                    fontFamily="'Manrope', system-ui"
+                  >
+                    {formatAxisCurrency(val)}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+          {leftBottomContent}
+        </div>
 
         {/* Scrollable bar area */}
         <div ref={fadeRef} className={`flex-1 min-w-0 ${!barsFit ? "scroll-fade mb-2" : ""}`}>
@@ -322,10 +328,11 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
           )}
           <div
             ref={scrollRef}
-            className={!barsFit ? "overflow-x-auto scroll-hidden" : ""}
+            className={!barsFit ? "overflow-x-auto bracket-chart-scroll pb-2" : ""}
           >
+            <div style={!barsFit ? { width: Math.max(totalBarWidth, 200) } : undefined}>
             <svg
-              width={barsFit ? "100%" : Math.max(totalBarWidth, 200)}
+              width="100%"
               height={chartHeight}
               className="block"
             >
@@ -408,6 +415,8 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
                 );
               })}
             </svg>
+            {children}
+            </div>
           </div>
         </div>
 
@@ -415,7 +424,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
         <svg
           width={rightAxisWidth}
           height={chartHeight}
-          className="flex-shrink-0"
+          className="flex-shrink-0 self-start"
         >
           {visibleBrackets.map((b) => {
             const y = yScale(b.max);
@@ -440,7 +449,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
 
         {/* Right axis label (desktop only) */}
         {!isMobile && (
-          <div className="flex-shrink-0 flex items-center" style={{ width: VERTICAL_LABEL_WIDTH }}>
+          <div className="flex-shrink-0 flex items-center self-start" style={{ width: VERTICAL_LABEL_WIDTH, height: chartHeight }}>
             <span
               className="text-caption text-text-tertiary tracking-wider uppercase"
               style={{
