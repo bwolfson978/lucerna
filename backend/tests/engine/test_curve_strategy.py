@@ -147,8 +147,8 @@ class TestBuildCurvePoint:
 
 
 class TestDispatch:
-    def test_default_is_dp_3d(self):
-        assert DEFAULT_CURVE_STRATEGY == "dp_3d"
+    def test_default_is_bracket_fill(self):
+        assert DEFAULT_CURVE_STRATEGY == "bracket_fill"
 
     def test_get_strategy_dp_3d(self):
         fn = _get_strategy("dp_3d")

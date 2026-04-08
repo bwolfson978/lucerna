@@ -55,7 +55,7 @@ class CurveStrategy(Protocol):
 
 # ── Active strategy (one-line swap) ─────────────────────────────────
 
-DEFAULT_CURVE_STRATEGY: CurveStrategyName = "dp_3d"
+DEFAULT_CURVE_STRATEGY: CurveStrategyName = "bracket_fill"
 
 
 # ── Shared helper ────────────────────────────────────────────────────
