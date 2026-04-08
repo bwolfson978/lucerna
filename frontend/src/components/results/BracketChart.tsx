@@ -60,8 +60,8 @@ const BOTTOM_PADDING = 40;
 /** Minimum pixel height so small-but-nonzero segments stay visible */
 const MIN_SEGMENT_HEIGHT = 3;
 const MOBILE_BREAKPOINT = 500;
-const LEFT_AXIS_WIDTH_DESKTOP = 78;
-const LEFT_AXIS_WIDTH_MOBILE = 62;
+const LEFT_AXIS_WIDTH_DESKTOP = 70;
+const LEFT_AXIS_WIDTH_MOBILE = 55;
 const RIGHT_AXIS_WIDTH_DESKTOP = 90;
 const RIGHT_AXIS_WIDTH_MOBILE = 36;
 const VERTICAL_LABEL_WIDTH = 18;
