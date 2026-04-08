@@ -16,12 +16,11 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from app.engine.types import ScenarioInput, ConversionCurvePoint, BracketFillResult
-from app.engine.tax import vectorized_federal_tax, calculate_federal_tax, analyze_bracket_fill
+from app.engine.types import ScenarioInput, ConversionCurvePoint
+from app.engine.tax import vectorized_federal_tax, calculate_federal_tax
 from app.engine.aca import vectorized_subsidy_loss
 from app.engine.state_tax import (
-    vectorized_state_tax, calculate_state_tax, get_state_marginal_rate,
-    resolve_state_for_year,
+    vectorized_state_tax, calculate_state_tax, resolve_state_for_year,
 )
 from app.engine.rmd import rmd_start_age, vectorized_rmd
 
@@ -410,9 +409,6 @@ def extract_conversion_curve(
     This is fast (~0.1ms per point) and produces an accurate, smooth curve
     whose peak aligns exactly with the DP optimal.
     """
-    from app.engine.optimizer import calculate_npv
-    from app.engine.tax import get_marginal_rate
-
     balance = scenario.traditional_ira_balance
     n_years = len(scenario.income_timeline)
     opt_total = dp_result.total_conversion
@@ -450,56 +446,8 @@ def extract_conversion_curve(
             yearly_conv[i] = max(0.0, min(yearly_conv[i], remaining_bal))
             remaining_bal = (remaining_bal - yearly_conv[i]) * (1 + g)
 
-        # Compute actual NPV for this allocation
-        npv_val = calculate_npv(scenario, yearly_conv)
-
-        # Build per-year detail and bracket fill
-        yearly_bracket_fill: list[list[BracketFillResult]] = []
-        yearly_detail: list[dict] = []
-        total_tax = 0.0
-
-        for i in range(n_years):
-            income = scenario.income_timeline[i].gross_income
-            c = yearly_conv[i]
-
-            tax_with = calculate_federal_tax(income + c, scenario.filing_status)
-            tax_without = calculate_federal_tax(income, scenario.filing_status)
-            tax_cost = tax_with - tax_without
-
-            # Add state tax cost
-            yr_state = resolve_state_for_year(
-                scenario.income_timeline[i].state, scenario.state
-            )
-            if yr_state:
-                st_with = calculate_state_tax(income + c, yr_state, scenario.filing_status, scenario.custom_state_rate)
-                st_without = calculate_state_tax(income, yr_state, scenario.filing_status, scenario.custom_state_rate)
-                tax_cost += st_with - st_without
-
-            total_tax += tax_cost
-
-            eff_rate = tax_cost / c if c > 0 else 0.0
-            marginal = get_marginal_rate(income + c, scenario.filing_status)
-
-            yearly_detail.append({
-                "year": scenario.income_timeline[i].year,
-                "income": income,
-                "conversion": c,
-                "tax_cost": round(tax_cost, 2),
-                "effective_rate": round(eff_rate, 4),
-                "marginal_bracket": f"{marginal:.0%}",
-            })
-            yearly_bracket_fill.append(
-                analyze_bracket_fill(income, c, scenario.filing_status)
-            )
-
-        points.append(ConversionCurvePoint(
-            total_cap=cap_rounded,
-            yearly_conversions=yearly_conv,
-            yearly_bracket_fill=yearly_bracket_fill,
-            yearly_detail=yearly_detail,
-            total_tax=round(total_tax, 2),
-            npv=round(npv_val, 2),
-        ))
+        from app.engine.curve_strategy import build_curve_point
+        points.append(build_curve_point(scenario, cap_rounded, yearly_conv))
 
     return points
 
@@ -790,9 +738,6 @@ def extract_conversion_curve_3d(
             total exceeds the initial balance (due to inter-year growth),
             pass that total here so the curve covers the full range.
     """
-    from app.engine.optimizer import calculate_npv
-    from app.engine.tax import get_marginal_rate
-
     balance = scenario.traditional_ira_balance
     n_years = len(scenario.income_timeline)
 
@@ -847,55 +792,7 @@ def extract_conversion_curve_3d(
                 yearly_conv[i] = max(0.0, min(yearly_conv[i], remaining_bal))
                 remaining_bal -= yearly_conv[i]
 
-        # Compute actual NPV for this allocation (authoritative)
-        npv_val = calculate_npv(scenario, yearly_conv)
-
-        # Build per-year detail and bracket fill
-        yearly_bracket_fill: list[list[BracketFillResult]] = []
-        yearly_detail: list[dict] = []
-        total_tax = 0.0
-
-        for i in range(n_years):
-            income = scenario.income_timeline[i].gross_income
-            c = yearly_conv[i]
-
-            tax_with = calculate_federal_tax(income + c, scenario.filing_status)
-            tax_without = calculate_federal_tax(income, scenario.filing_status)
-            tax_cost = tax_with - tax_without
-
-            # Add state tax cost
-            yr_state = resolve_state_for_year(
-                scenario.income_timeline[i].state, scenario.state
-            )
-            if yr_state:
-                st_with = calculate_state_tax(income + c, yr_state, scenario.filing_status, scenario.custom_state_rate)
-                st_without = calculate_state_tax(income, yr_state, scenario.filing_status, scenario.custom_state_rate)
-                tax_cost += st_with - st_without
-
-            total_tax += tax_cost
-
-            eff_rate = tax_cost / c if c > 0 else 0.0
-            marginal = get_marginal_rate(income + c, scenario.filing_status)
-
-            yearly_detail.append({
-                "year": scenario.income_timeline[i].year,
-                "income": income,
-                "conversion": c,
-                "tax_cost": round(tax_cost, 2),
-                "effective_rate": round(eff_rate, 4),
-                "marginal_bracket": f"{marginal:.0%}",
-            })
-            yearly_bracket_fill.append(
-                analyze_bracket_fill(income, c, scenario.filing_status)
-            )
-
-        points.append(ConversionCurvePoint(
-            total_cap=cap_rounded,
-            yearly_conversions=yearly_conv,
-            yearly_bracket_fill=yearly_bracket_fill,
-            yearly_detail=yearly_detail,
-            total_tax=round(total_tax, 2),
-            npv=round(npv_val, 2),
-        ))
+        from app.engine.curve_strategy import build_curve_point
+        points.append(build_curve_point(scenario, cap_rounded, yearly_conv))
 
     return points

@@ -708,7 +708,8 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
     Falls back to scipy SLSQP for constrained optimization when user
     preferences (max tax cost, etc.) are active.
     """
-    from app.engine.dp import dp_optimize, extract_conversion_curve_3d
+    from app.engine.dp import dp_optimize
+    from app.engine.curve_strategy import generate_conversion_curve
 
     n_years = len(scenario.income_timeline)
     max_balance = scenario.traditional_ira_balance
@@ -731,10 +732,9 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
 
     total_conversion = sum(final_conversions)
 
-    # Conversion curve: 3D DP with budget constraint for accurate per-cap schedules.
-    # Pass total_conversion so the curve extends beyond the initial balance when
-    # inter-year growth allows cumulative conversions to exceed it.
-    conversion_curve = extract_conversion_curve_3d(scenario, curve_max=total_conversion)
+    # Conversion curve for the interactive slider.  The active strategy is
+    # controlled by curve_strategy.DEFAULT_CURVE_STRATEGY (one-line swap).
+    conversion_curve = generate_conversion_curve(scenario, curve_max=total_conversion)
 
     # Recalculate NPV with final conversions
     npv_at_optimal = calculate_npv(scenario, final_conversions)
