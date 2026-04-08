@@ -621,7 +621,6 @@ function BracketBar({
                 height={incomeHeight}
                 fill={CHART_COLORS.income}
                 rx={2}
-                className="transition-all duration-300"
               />
             )}
 
@@ -634,7 +633,6 @@ function BracketBar({
                 height={convHeight}
                 fill={CHART_COLORS.conversion}
                 rx={2}
-                className="transition-all duration-300"
               />
             )}
 
