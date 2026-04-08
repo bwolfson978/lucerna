@@ -206,8 +206,12 @@ export function ResultsView({ result }: ResultsViewProps) {
       <div className="text-body-sm text-text-tertiary border-t border-border pt-section">
         <div className="flex items-start justify-between gap-4">
           <p>
-            This analysis uses 2025 federal and state tax brackets, and
-            models required minimum distributions in the retirement phase.
+            This analysis uses 2025 federal tax brackets
+            {result.input.state && result.input.state !== "none"
+              ? " and state income tax"
+              : ""}
+            , and models required minimum distributions in the retirement
+            phase.
             {result.aca_subsidy_impact
               ? " ACA marketplace subsidy impact is included based on your healthcare inputs."
               : ""}{" "}
