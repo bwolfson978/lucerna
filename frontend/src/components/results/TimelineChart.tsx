@@ -74,7 +74,7 @@ export function TimelineChart({ data, onYearClick }: TimelineChartProps) {
       categories,
       labels: {
         style: {
-          fontSize: "12px",
+          fontSize: "13px",
           fontFamily: "'Manrope', system-ui",
           colors: "#B8B0D2",
         },
@@ -86,7 +86,7 @@ export function TimelineChart({ data, onYearClick }: TimelineChartProps) {
       labels: {
         formatter: (val: number) => formatAxisCurrency(val),
         style: {
-          fontSize: "11px",
+          fontSize: "12px",
           fontFamily: "'Manrope', system-ui",
           colors: "#8B8A99",
         },
@@ -97,7 +97,7 @@ export function TimelineChart({ data, onYearClick }: TimelineChartProps) {
       y: {
         formatter: (val: number) => formatCurrency(val),
       },
-      style: { fontSize: "12px" },
+      style: { fontSize: "13px" },
     },
     legend: { show: false },
     states: {
@@ -115,7 +115,7 @@ export function TimelineChart({ data, onYearClick }: TimelineChartProps) {
           text: formatAxisCurrency(boundary),
           position: "left" as const,
           style: {
-            fontSize: "10px",
+            fontSize: "12px",
             fontFamily: "'Manrope', system-ui",
             color: "#8B8A99",
             background: "transparent",

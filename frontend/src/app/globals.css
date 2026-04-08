@@ -110,7 +110,7 @@
 
   /* Badge variants */
   .badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-lg text-[11px] font-medium uppercase tracking-wide;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-lg text-[12px] font-medium uppercase tracking-wide;
   }
 
   .badge-positive {

@@ -47,7 +47,7 @@ function CompactCurrencyCell({
       }}
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
-      className={`w-full text-[10px] text-center bg-transparent border-0 px-1 py-0 focus:outline-none focus:bg-accent/5 rounded ${
+      className={`w-full text-data-xs text-center bg-transparent border-0 px-1 py-0 focus:outline-none focus:bg-accent/5 rounded ${
         highlighted ? "text-accent font-medium" : "text-text-primary"
       }`}
       style={{ fontFamily: "'Manrope', system-ui" }}
@@ -72,23 +72,23 @@ export function TransposedDetailTable({
   useScrollFade(scrollRef, fadeRef);
 
   // Approximate max characters that fit in a column cell
-  // ~5.5px per char at 10px Manrope, minus 8px horizontal padding (px-1 each side)
-  const maxChars = useMemo(() => Math.max(4, Math.floor((colWidth - 8) / 5.5)), [colWidth]);
+  // ~6.5px per char at 12px Manrope, minus 8px horizontal padding (px-1 each side)
+  const maxChars = useMemo(() => Math.max(4, Math.floor((colWidth - 8) / 6.5)), [colWidth]);
 
   return (
     <div className="flex text-body-sm">
       {/* Fixed row labels — width matches chart's left fixed area */}
       <div className="flex-shrink-0 flex flex-col border-r border-border" style={{ width: leftOffset }}>
-        <div className="h-7 flex items-center justify-end text-text-tertiary text-[10px] font-semibold px-2 border-b border-border">
+        <div className="h-7 flex items-center justify-end text-text-tertiary text-data-xs font-semibold px-2 border-b border-border">
           Year
         </div>
-        <div className="h-8 flex items-center justify-end text-text-tertiary text-[10px] font-medium px-2">
+        <div className="h-8 flex items-center justify-end text-text-tertiary text-data-xs font-medium px-2">
           Earned Income
         </div>
-        <div className="h-8 flex items-center justify-end text-text-tertiary text-[10px] font-medium px-2">
+        <div className="h-8 flex items-center justify-end text-text-tertiary text-data-xs font-medium px-2">
           Conversion
         </div>
-        <div className="h-8 flex items-center justify-end text-text-tertiary text-[10px] font-medium px-2 text-right leading-tight">
+        <div className="h-8 flex items-center justify-end text-text-tertiary text-data-xs font-medium px-2 text-right leading-tight">
           Added tax from conversion
         </div>
 
@@ -112,7 +112,7 @@ export function TransposedDetailTable({
               >
                 {/* Year header */}
                 <div
-                  className="h-7 flex items-center justify-center text-[10px] text-text-secondary font-semibold border-b border-border px-1"
+                  className="h-7 flex items-center justify-center text-data-xs text-text-secondary font-semibold border-b border-border px-1"
                   style={{ fontFamily: "'Manrope', system-ui" }}
                 >
                   {yearInfo.year}
@@ -130,7 +130,7 @@ export function TransposedDetailTable({
 
                 {/* Conversion (read-only) */}
                 <div
-                  className="h-8 flex items-center justify-center text-[10px] text-accent px-1"
+                  className="h-8 flex items-center justify-center text-data-xs text-accent px-1"
                   style={{ fontFamily: "'Manrope', system-ui" }}
                 >
                   {detail ? formatTableCurrency(detail.conversion, maxChars) : "—"}
@@ -138,7 +138,7 @@ export function TransposedDetailTable({
 
                 {/* Tax cost */}
                 <div
-                  className="h-8 flex items-center justify-center text-[10px] text-text-primary px-1"
+                  className="h-8 flex items-center justify-center text-data-xs text-text-primary px-1"
                   style={{ fontFamily: "'Manrope', system-ui" }}
                 >
                   {detail ? formatTableCurrency(detail.tax_cost, maxChars) : "—"}

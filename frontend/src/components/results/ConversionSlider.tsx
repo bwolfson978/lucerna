@@ -82,7 +82,7 @@ export function ConversionSlider({
         </div>
       </div>
 
-      <div className="flex justify-between text-[10px] text-text-tertiary">
+      <div className="flex justify-between text-data-xs text-text-tertiary">
         <span>{formatCurrency(min)}</span>
         <span>{formatCurrency(max)}</span>
       </div>

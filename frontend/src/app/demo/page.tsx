@@ -60,7 +60,7 @@ export default function DemoPage() {
                     <h3 className="text-h3 text-text-primary mb-default">
                       Key income milestones
                     </h3>
-                    <p className="text-text-tertiary text-[11px] mb-2">
+                    <p className="text-text-tertiary text-caption mb-2">
                       {timeline?.length ?? 0} years modeled through retirement
                       at age {retirementAge}
                     </p>

@@ -87,7 +87,7 @@ export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
                 {/* Per-year conversion schedule (multi-year best scenario) */}
                 {scheduleRows.length > 0 && (
                   <div className="flex flex-col gap-1 pt-1 border-t border-border">
-                    <span className="text-[11px] text-text-tertiary uppercase tracking-wide">
+                    <span className="text-caption text-text-tertiary uppercase tracking-wide">
                       Conversion schedule
                     </span>
                     {scheduleRows.map((row) => (
@@ -127,7 +127,7 @@ export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
                 {/* Impact on long-term wealth vs best */}
                 {scenario.difference_from_optimal !== 0 && (
                   <div className="flex flex-col gap-1 pt-1 border-t border-border">
-                    <span className="text-[11px] text-text-tertiary uppercase tracking-wide">
+                    <span className="text-caption text-text-tertiary uppercase tracking-wide">
                       Impact on long-term wealth
                     </span>
                     <span
