@@ -27,6 +27,7 @@ export function ResultsView({ result }: ResultsViewProps) {
   // onReRun and loading are accepted for future calculator re-run support
   const chartScrollRef = useRef<HTMLDivElement>(null);
   const [tableColWidth, setTableColWidth] = useState(58);
+  const [chartLayout, setChartLayout] = useState({ leftOffset: 0, rightOffset: 0 });
 
   // Client-side slider: continuous bracket fill computation
   const {
@@ -94,7 +95,11 @@ export function ResultsView({ result }: ResultsViewProps) {
         </div>
         <Card className="flex flex-col gap-default">
         {/* Top row: compact hero metric (left) + slider (right, max 1/3) */}
-        <div className="flex items-start justify-between gap-4">
+        {/* Aligned with chart axes: left edge matches income labels, right edge matches bar area */}
+        <div
+          className="flex items-start justify-between gap-4"
+          style={{ paddingLeft: chartLayout.leftOffset, paddingRight: chartLayout.rightOffset }}
+        >
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
               <span className="metric-label">Estimated lifetime tax savings</span>
@@ -150,6 +155,7 @@ export function ResultsView({ result }: ResultsViewProps) {
           filingStatus={result.input.filing_status}
           scrollRef={chartScrollRef}
           onBarWidthChange={setTableColWidth}
+          onLayoutChange={setChartLayout}
           hideLegend
           leftBottomContent={
             <div className="flex flex-col border-r border-border">
@@ -183,7 +189,7 @@ export function ResultsView({ result }: ResultsViewProps) {
         </BracketChart>
 
         {/* Series legend */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-body-sm text-text-secondary">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-body-sm text-text-secondary">
           <span className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.income }} />
             Earned Income
