@@ -129,23 +129,27 @@ export function ResultsView({ result }: ResultsViewProps) {
 
       {/* Bracket chart with slider + annotation row */}
       <div className="flex flex-col gap-default">
-        <div className="flex items-center justify-between">
-          <h3 className="text-h3 text-text-primary">Conversion schedule</h3>
-          <InfoTrigger
-            label="How is this determined?"
-            sectionId="bracket-filling"
-            triggerId="bracket-chart"
-          />
-        </div>
         <Card className="flex flex-col gap-default">
-        {/* Slider — compact, above the chart */}
-        <ConversionSlider
-          value={sliderValue}
-          min={0}
-          max={Math.max(result.input.traditional_ira_balance, result.total_conversion)}
-          optimalValue={result.total_conversion}
-          onChange={setSliderValue}
-        />
+        {/* Card header: heading left, slider top-right (max 1/3 width) */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-center gap-2 pt-1">
+            <h3 className="text-h3 text-text-primary">Conversion schedule</h3>
+            <InfoTrigger
+              label="How is this determined?"
+              sectionId="bracket-filling"
+              triggerId="bracket-chart"
+            />
+          </div>
+          <div className="w-1/3 min-w-[180px] flex-shrink-0">
+            <ConversionSlider
+              value={sliderValue}
+              min={0}
+              max={Math.max(result.input.traditional_ira_balance, result.total_conversion)}
+              optimalValue={result.total_conversion}
+              onChange={setSliderValue}
+            />
+          </div>
+        </div>
         <BracketChart
           years={chartYears}
           filingStatus={result.input.filing_status}

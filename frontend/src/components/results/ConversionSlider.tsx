@@ -34,20 +34,23 @@ export function ConversionSlider({
       : 0;
 
   return (
-    <div className="flex flex-col gap-1.5">
-      {/* Value + label row */}
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="metric-label whitespace-nowrap">Roth conversion amount</span>
-        <span
-          className="text-h3 font-medium text-text-primary tabular-nums"
+    <div className="flex flex-col gap-1">
+      {/* Value — right-aligned, prominent */}
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-data-xs text-text-tertiary whitespace-nowrap">Roth conversion</span>
+        <button
+          type="button"
+          onClick={() => onChange(optimalValue)}
+          className="text-body-sm font-medium text-text-primary tabular-nums hover:text-accent transition-colors cursor-pointer"
           style={{ fontFamily: "'Manrope', system-ui" }}
+          title={`Reset to highest savings: ${formatCurrency(optimalValue)}`}
         >
           {formatCurrency(value)}
-        </span>
+        </button>
       </div>
 
       {/* Slider track with optimal marker */}
-      <div className="relative mt-1">
+      <div className="relative">
         <input
           type="range"
           min={min}
@@ -67,35 +70,20 @@ export function ConversionSlider({
 
         {/* Optimal marker — gold diamond with stem */}
         <div
-          className="absolute top-[-14px] pointer-events-none optimal-marker"
+          className="absolute top-[-12px] pointer-events-none optimal-marker"
           style={{
             left: `calc(8px + (100% - 16px) * ${optimalPercent / 100})`,
             transform: "translateX(-50%)",
           }}
           title={`Highest savings: ${formatCurrency(optimalValue)}`}
         >
-          <svg width="10" height="16" viewBox="0 0 14 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            {/* Diamond */}
+          <svg width="8" height="14" viewBox="0 0 14 20" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M7 0L12 6L7 12L2 6Z" fill="#F0C674" />
             <path d="M7 1.5L10.5 6L7 10.5L3.5 6Z" fill="#FAF7F2" fillOpacity="0.25" />
-            {/* Stem */}
             <rect x="6" y="12" width="2" height="8" rx="1" fill="#F0C674" fillOpacity="0.6" />
           </svg>
         </div>
       </div>
-
-      {/* Compact legend — clickable reset to optimal */}
-      <button
-        type="button"
-        onClick={() => onChange(optimalValue)}
-        className="flex items-center gap-1 text-data-xs text-text-tertiary hover:text-accent transition-colors cursor-pointer self-start text-left"
-      >
-        <svg width="8" height="11" viewBox="0 0 14 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0" style={{ filter: "drop-shadow(0 0 3px rgba(240,198,116,0.4))" }}>
-          <path d="M7 0L12 6L7 12L2 6Z" fill="#F0C674" />
-          <rect x="6" y="12" width="2" height="8" rx="1" fill="#F0C674" fillOpacity="0.6" />
-        </svg>
-        <span>Roth conversion amount with highest estimated lifetime savings</span>
-      </button>
     </div>
   );
 }
