@@ -12,6 +12,7 @@ import { BalanceProjections } from "./BalanceProjections";
 import { AcaSubsidyImpact } from "./AcaSubsidyImpact";
 import { Card } from "@/components/ui/card";
 import { useConversionSlider } from "@/hooks/useConversionSlider";
+import { useScrollOnTransition } from "@/hooks/useScrollOnTransition";
 import { computeSnapThreshold } from "@/lib/utils/snap";
 import { InfoTrigger } from "@/components/methodology/InfoTrigger";
 
@@ -30,6 +31,7 @@ export function ResultsView({ result }: ResultsViewProps) {
   const {
     totalConversion: sliderValue,
     setTotalConversion: setSliderValue,
+    yearlyConversions,
     yearlyBracketFills,
     yearlyDetail,
     displayTotalConversion,
@@ -37,6 +39,9 @@ export function ResultsView({ result }: ResultsViewProps) {
     conversionYears,
     estimatedSavings,
   } = useConversionSlider({ result });
+
+  // Auto-scroll bracket chart when a bar activates or deactivates
+  useScrollOnTransition(yearlyConversions, chartScrollRef, tableColWidth);
 
   // Build chart data from client-side bracket fills
   const chartYears = useMemo(() => {
