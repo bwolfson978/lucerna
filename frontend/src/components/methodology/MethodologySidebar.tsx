@@ -129,7 +129,7 @@ export function MethodologySidebar({ result, mobile }: MethodologySidebarProps) 
       <>
         {isOpen && (
           <div
-            className="fixed inset-0 z-40 bg-background/70"
+            className="fixed inset-0 z-40 bg-bg/70"
             onClick={closeSidebar}
             aria-hidden="true"
           />
@@ -140,7 +140,7 @@ export function MethodologySidebar({ result, mobile }: MethodologySidebarProps) 
           className={cn(
             "fixed top-0 right-0 bottom-0 z-50",
             "w-full max-w-[420px]",
-            "bg-background-alt border-l border-glass-border",
+            "bg-bg-alt border-l border-glass-border",
             "transform transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
             isOpen ? "translate-x-0" : "translate-x-full"
           )}
@@ -159,7 +159,7 @@ export function MethodologySidebar({ result, mobile }: MethodologySidebarProps) 
       className={cn(
         "sticky top-14 h-[calc(100vh-3.5rem)]",
         "w-[400px] shrink-0",
-        "bg-background-alt border-l border-glass-border",
+        "bg-bg-alt border-l border-glass-border",
       )}
     >
       {sidebarContent}
