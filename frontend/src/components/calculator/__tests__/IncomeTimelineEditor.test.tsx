@@ -132,7 +132,7 @@ describe("IncomeTimelineEditor", () => {
       />
     );
 
-    const resetButton = screen.getByText("Reset to defaults");
+    const resetButton = screen.getByText("Reset");
     expect(resetButton).toBeInTheDocument();
 
     fireEvent.click(resetButton);
@@ -145,7 +145,7 @@ describe("IncomeTimelineEditor", () => {
       <IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />
     );
 
-    expect(screen.queryByText("Reset to defaults")).not.toBeInTheDocument();
+    expect(screen.queryByText("Reset")).not.toBeInTheDocument();
   });
 
 });

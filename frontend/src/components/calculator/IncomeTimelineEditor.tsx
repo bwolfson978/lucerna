@@ -114,7 +114,7 @@ export function IncomeTimelineEditor({
 
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="flex flex-col gap-default">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <CollapsibleTrigger asChild>
           <button
             type="button"
@@ -143,14 +143,14 @@ export function IncomeTimelineEditor({
             )}
           </button>
         </CollapsibleTrigger>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-end sm:self-auto">
           {onReset && (
             <button
               type="button"
               onClick={onReset}
               className="text-body-sm text-text-tertiary hover:text-text-secondary transition-colors duration-300"
             >
-              Reset to defaults
+              Reset
             </button>
           )}
           <Button

@@ -24,8 +24,8 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
 
   return (
     <div className="flex flex-col gap-default">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <h3 className="text-h3 text-text-primary">
             ACA marketplace subsidy impact
           </h3>
@@ -35,6 +35,7 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
           label="How do conversions affect subsidies?"
           sectionId="conversion-tradeoff"
           triggerId="aca-subsidy"
+          className="shrink-0"
         />
       </div>
 
