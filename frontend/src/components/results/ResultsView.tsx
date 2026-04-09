@@ -68,7 +68,7 @@ export function ResultsView({ result }: ResultsViewProps) {
   return (
     <div className="flex flex-col gap-section">
       {/* Summary metrics */}
-      <div className="grid grid-cols-3 gap-tight sm:gap-default">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-tight sm:gap-default">
         <MetricCard
           label="Total Roth conversion"
           value={formatCurrency(displayTotalConversion)}
@@ -85,22 +85,23 @@ export function ResultsView({ result }: ResultsViewProps) {
 
       {/* Bracket chart with slider + annotation row */}
       <div className="flex flex-col gap-default">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <h3 className="text-h3 text-text-primary">Roth conversion schedule</h3>
           <InfoTrigger
             label="How is this determined?"
             sectionId="bracket-filling"
             triggerId="bracket-chart"
+            className="shrink-0"
           />
         </div>
         <Card className="flex flex-col gap-default">
         {/* Top row: compact hero metric (left) + slider (right, max 1/3) */}
         {/* Aligned with chart axes: left edge matches income labels, right edge matches bar area */}
         <div
-          className="flex items-start justify-between gap-4"
+          className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4"
           style={{ paddingLeft: chartLayout.axisLabelStart, paddingRight: chartLayout.rightOffset }}
         >
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="metric-label">Estimated lifetime tax savings</span>
               <InfoTrigger
@@ -140,7 +141,7 @@ export function ResultsView({ result }: ResultsViewProps) {
               <Tooltip content="This is the difference in after-tax wealth between the selected conversion schedule and doing nothing, expressed in today's dollars using your discount rate." />
             </span>
           </div>
-          <div className="w-1/3 min-w-[180px] flex-shrink-0">
+          <div className="w-full sm:w-1/3 sm:min-w-[180px] sm:flex-shrink-0">
             <ConversionSlider
               value={sliderValue}
               min={0}

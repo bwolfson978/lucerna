@@ -24,7 +24,7 @@ export default function Home() {
               <p className="text-body text-text-tertiary max-w-lg" style={{ lineHeight: 1.8 }}>
                 Flexible enough for your specific situation. Simple enough that you don&apos;t need a spreadsheet or a financial expert to use it.
               </p>
-              <div className="flex items-center gap-4 mt-section">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mt-section">
                 <Link
                   href="/demo"
                   className="btn-gradient-primary inline-flex items-center justify-center min-h-[44px] py-3.5 px-5 sm:px-8 rounded-[12px] text-bg text-[15px] font-semibold tracking-[0.3px] whitespace-nowrap hover:shadow-[0_8px_30px_rgba(240,198,116,0.25)] active:scale-[0.98] transition-all duration-300"

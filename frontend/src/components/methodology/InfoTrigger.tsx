@@ -46,7 +46,7 @@ export function InfoTrigger({
         <circle cx="8" cy="8" r="6.5" />
         <path d="M8 7v4M8 5.5v0" />
       </svg>
-      {label}
+      <span className="hidden sm:inline">{label}</span>
     </button>
   );
 }

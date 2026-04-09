@@ -32,7 +32,7 @@ export function HowItWorksButton() {
         <circle cx="8" cy="8" r="6.5" />
         <path d="M6.5 6.5a1.5 1.5 0 1 1 1.5 1.5v1.5M8 11.5v0" />
       </svg>
-      How does it work?
+      <span className="hidden min-[400px]:inline">How does it work?</span>
     </button>
   );
 }

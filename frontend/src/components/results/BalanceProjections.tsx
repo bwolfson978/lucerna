@@ -21,8 +21,8 @@ export function BalanceProjections({
 
   return (
     <div className="flex flex-col gap-default">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <h3 className="text-h3 text-text-primary">
             Projected balances at retirement
           </h3>
@@ -32,6 +32,7 @@ export function BalanceProjections({
           label="What assumptions drive these projections?"
           sectionId="assumptions-limitations"
           triggerId="balance-projections"
+          className="shrink-0"
         />
       </div>
 

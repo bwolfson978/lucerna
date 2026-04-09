@@ -26,8 +26,8 @@ export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
 
   return (
     <div className="flex flex-col gap-default">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <h3 className="text-h3 text-text-primary">Scenario comparison</h3>
           <Tooltip content="Compare different Roth conversion schedules to see how they affect your estimated lifetime tax savings." />
         </div>
@@ -35,6 +35,7 @@ export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
           label="Why is full conversion worse?"
           sectionId="conversion-tradeoff"
           triggerId="scenario-cards"
+          className="shrink-0"
         />
       </div>
 
