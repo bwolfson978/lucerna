@@ -9,9 +9,21 @@ from app.engine.types import (
 )
 from app.engine.tax import calculate_federal_tax, get_marginal_rate, analyze_bracket_fill
 from app.engine.heuristic import greedy_bracket_fill
-from app.engine.aca import calculate_subsidy_loss, calculate_aca_subsidy, find_subsidy_cliff_income
-from app.engine.state_tax import calculate_state_tax, get_state_marginal_rate, resolve_state_for_year
+from app.engine.aca import calculate_aca_subsidy, find_subsidy_cliff_income
+from app.engine.state_tax import calculate_state_tax, resolve_state_for_year
 from app.engine.rmd import rmd_start_age, calculate_rmd
+from app.engine.tax_cost import (
+    federal_tax_on_conversion,
+    state_tax_on_conversion,
+    total_conversion_cost,
+    combined_marginal_rate,
+)
+from app.engine.constants import (
+    ROUNDING_RESOLUTION,
+    RETIREMENT_SPENDING_RATE,
+    IMPROVEMENT_THRESHOLD,
+    round_to_resolution,
+)
 
 
 def _aca_coverage_years(scenario: ScenarioInput) -> set[int]:
@@ -65,39 +77,26 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
     # Phase 1: Conversion years
     for t in range(n_years):
         income = scenario.income_timeline[t].gross_income
-        c_t = min(max(0, yearly_conversions[t]), trad_balance)
-
-        tax_with = calculate_federal_tax(income + c_t, filing_status)
-        tax_without = calculate_federal_tax(income, filing_status)
-        conversion_tax = tax_with - tax_without
-
-        # State tax on conversion (additive cost layer)
-        state_tax_cost = 0.0
+        conversion = min(max(0, yearly_conversions[t]), trad_balance)
         year_state = resolve_state_for_year(
             scenario.income_timeline[t].state, scenario.state
         )
-        if year_state:
-            st_with = calculate_state_tax(income + c_t, year_state, filing_status, scenario.custom_state_rate)
-            st_without = calculate_state_tax(income, year_state, filing_status, scenario.custom_state_rate)
-            state_tax_cost = st_with - st_without
+        is_aca_year = hc is not None and scenario.income_timeline[t].year in aca_years
 
-        # ACA subsidy loss (if healthcare inputs provided and this is a coverage year)
-        subsidy_loss = 0.0
-        if hc and scenario.income_timeline[t].year in aca_years:
-            subsidy_loss = calculate_subsidy_loss(
-                income, c_t, hc.household_size, hc.monthly_slcsp_premium,
-            )
+        cost = total_conversion_cost(
+            income, conversion, filing_status,
+            state=year_state,
+            custom_state_rate=scenario.custom_state_rate,
+            healthcare=hc if is_aca_year else None,
+            is_aca_year=is_aca_year,
+        )
 
-        # Total conversion cost = federal tax + state tax + subsidy loss
-        total_cost = conversion_tax + state_tax_cost + subsidy_loss
-
-        # Conversion cost is paid now (discounted to year t)
         discount_factor = (1 + d) ** (-t)
-        npv -= total_cost * discount_factor
+        npv -= cost * discount_factor
 
         # Shift balances
-        trad_balance -= c_t
-        roth_balance += c_t
+        trad_balance -= conversion
+        roth_balance += conversion
 
         # Grow both accounts
         trad_balance *= (1 + g)
@@ -114,8 +113,7 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
     # Phase 3: Retirement distributions (with RMD enforcement)
     spending = scenario.annual_retirement_spending
     if spending is None:
-        total_balance = trad_balance + roth_balance
-        spending = total_balance * 0.04
+        spending = (trad_balance + roth_balance) * RETIREMENT_SPENDING_RATE
 
     # Resolve retirement state for Phase 3 and 4
     ret_state = scenario.retirement_state or scenario.state
@@ -228,7 +226,7 @@ def _run_scipy(
                 # the improvement is < 0.1%, stop trying more starting points.
                 if had_success and best_npv > 0:
                     improvement = (candidate_npv - best_npv) / best_npv
-                    if improvement < 0.001:
+                    if improvement < IMPROVEMENT_THRESHOLD:
                         break
                 best_npv = candidate_npv
                 best_conversions = result.x.tolist()
@@ -241,7 +239,7 @@ def _run_scipy(
 
 
 def _finalize_conversions(raw: list[float], max_balance: float, growth_rate: float = 0.0) -> list[float]:
-    """Round to nearest $100, enforce non-negative and within balance.
+    """Round to nearest ROUNDING_RESOLUTION, enforce non-negative and within balance.
 
     Accounts for inter-year growth so later years can access the grown
     remainder, matching the DP forward-pass semantics.
@@ -250,7 +248,7 @@ def _finalize_conversions(raw: list[float], max_balance: float, growth_rate: flo
     final = []
     for c in raw:
         c = max(0.0, min(c, remaining))
-        c = round(c / 100) * 100
+        c = round_to_resolution(c)
         c = min(c, remaining)
         final.append(c)
         remaining = (remaining - c) * (1 + growth_rate)
@@ -283,21 +281,16 @@ def _build_constrained_params(
         cap = prefs.max_annual_tax_cost
         for t in range(n_years):
             income_t = scenario.income_timeline[t].gross_income
-            fs = scenario.filing_status
+            filing_status = scenario.filing_status
             yr_state = resolve_state_for_year(
                 scenario.income_timeline[t].state, scenario.state
             )
             custom_rate = scenario.custom_state_rate
 
-            def _tax_constraint(x, _t=t, _income=income_t, _fs=fs, _cap=cap,
-                                _yr_state=yr_state, _custom_rate=custom_rate):
-                fed_with = calculate_federal_tax(_income + x[_t], _fs)
-                fed_without = calculate_federal_tax(_income, _fs)
-                cost = fed_with - fed_without
-                if _yr_state:
-                    st_with = calculate_state_tax(_income + x[_t], _yr_state, _fs, _custom_rate)
-                    st_without = calculate_state_tax(_income, _yr_state, _fs, _custom_rate)
-                    cost += st_with - st_without
+            def _tax_constraint(x, _t=t, _income=income_t, _fs=filing_status,
+                                _cap=cap, _yr_state=yr_state, _custom_rate=custom_rate):
+                cost = federal_tax_on_conversion(_income, x[_t], _fs)
+                cost += state_tax_on_conversion(_income, x[_t], _yr_state, _fs, _custom_rate)
                 return _cap - cost
 
             constraints.append({"type": "ineq", "fun": _tax_constraint})
@@ -414,42 +407,36 @@ def _build_year_detail(
 
     for t in range(n_years):
         income = scenario.income_timeline[t].gross_income
-        c_t = conversions[t]
+        conversion = conversions[t]
         year = scenario.income_timeline[t].year
-
-        tax_with = calculate_federal_tax(income + c_t, scenario.filing_status)
-        tax_without = calculate_federal_tax(income, scenario.filing_status)
-        federal_tax_cost = tax_with - tax_without
-
-        # State tax cost for this year
         year_state = resolve_state_for_year(
             scenario.income_timeline[t].state, scenario.state
         )
-        state_tax = 0.0
-        if year_state:
-            st_with = calculate_state_tax(income + c_t, year_state, scenario.filing_status, scenario.custom_state_rate)
-            st_without = calculate_state_tax(income, year_state, scenario.filing_status, scenario.custom_state_rate)
-            state_tax = st_with - st_without
 
-        tax_cost = federal_tax_cost + state_tax
+        fed_cost = federal_tax_on_conversion(income, conversion, scenario.filing_status)
+        state_cost = state_tax_on_conversion(
+            income, conversion, year_state, scenario.filing_status, scenario.custom_state_rate,
+        )
+        tax_cost = fed_cost + state_cost
         total_tax += tax_cost
 
-        eff_rate = tax_cost / c_t if c_t > 0 else 0.0
-        marginal = get_marginal_rate(income + c_t, scenario.filing_status)
-        state_marginal = get_state_marginal_rate(
-            income + c_t, year_state or "", scenario.filing_status, scenario.custom_state_rate
-        ) if year_state else 0.0
+        eff_rate = tax_cost / conversion if conversion > 0 else 0.0
+        marginal = combined_marginal_rate(
+            income, conversion, scenario.filing_status,
+            state=year_state, custom_state_rate=scenario.custom_state_rate,
+        )
+        fed_marginal = get_marginal_rate(income + conversion, scenario.filing_status)
 
         detail = {
             "year": year,
             "income": income,
-            "conversion": c_t,
+            "conversion": conversion,
             "tax_cost": round(tax_cost, 2),
-            "federal_tax_cost": round(federal_tax_cost, 2),
-            "state_tax_cost": round(state_tax, 2),
+            "federal_tax_cost": round(fed_cost, 2),
+            "state_tax_cost": round(state_cost, 2),
             "effective_rate": round(eff_rate, 4),
-            "marginal_bracket": f"{marginal:.0%}",
-            "state_marginal_rate": round(state_marginal, 4),
+            "marginal_bracket": f"{fed_marginal:.0%}",
+            "state_marginal_rate": round(marginal - get_marginal_rate(income + conversion, scenario.filing_status), 4),
         }
 
         # Add ACA subsidy detail if applicable
@@ -458,36 +445,36 @@ def _build_year_detail(
                 income, hc.household_size, hc.monthly_slcsp_premium,
             )
             subsidy_with = calculate_aca_subsidy(
-                income + c_t, hc.household_size, hc.monthly_slcsp_premium,
+                income + conversion, hc.household_size, hc.monthly_slcsp_premium,
             )
             subsidy_lost = max(0.0, subsidy_without - subsidy_with)
-            combined_cost = tax_cost + subsidy_lost
-            combined_rate = combined_cost / c_t if c_t > 0 else 0.0
+            combined_cost_val = tax_cost + subsidy_lost
+            combined_rate_val = combined_cost_val / conversion if conversion > 0 else 0.0
             fpl = federal_poverty_level(hc.household_size)
-            income_pct_fpl = ((income + c_t) / fpl) * 100
+            income_pct_fpl = ((income + conversion) / fpl) * 100
             hits_cliff = income_pct_fpl > 400
 
             detail["subsidy_lost"] = round(subsidy_lost, 2)
-            detail["combined_cost"] = round(combined_cost, 2)
-            detail["combined_rate"] = round(combined_rate, 4)
+            detail["combined_cost"] = round(combined_cost_val, 2)
+            detail["combined_rate"] = round(combined_rate_val, 4)
 
             aca_details.append(AcaSubsidyDetail(
                 year=year,
                 magi_without_conversion=income,
-                magi_with_conversion=income + c_t,
+                magi_with_conversion=income + conversion,
                 subsidy_without_conversion=round(subsidy_without, 2),
                 subsidy_with_conversion=round(subsidy_with, 2),
                 subsidy_lost=round(subsidy_lost, 2),
                 federal_tax_cost=round(tax_cost, 2),
-                combined_cost=round(combined_cost, 2),
-                combined_marginal_rate=round(combined_rate, 4),
+                combined_cost=round(combined_cost_val, 2),
+                combined_marginal_rate=round(combined_rate_val, 4),
                 income_pct_fpl=round(income_pct_fpl, 1),
                 hits_cliff=hits_cliff,
             ))
 
         yearly_detail.append(detail)
 
-        bracket_fill = analyze_bracket_fill(income, c_t, scenario.filing_status)
+        bracket_fill = analyze_bracket_fill(income, conversion, scenario.filing_status)
         yearly_bracket_fill.append(bracket_fill)
 
     return yearly_detail, yearly_bracket_fill, total_tax, aca_details
@@ -519,7 +506,7 @@ def compute_conversion_curve(
     points = []
 
     for cap in np.linspace(0, max_balance, n_points):
-        cap = round(cap / 100) * 100  # Round to nearest $100
+        cap = round_to_resolution(cap)
 
         if cap == 0:
             conversions = [0.0] * n_years
@@ -561,9 +548,9 @@ def _build_rmd_projection(
 
     # Phase 1: Apply conversions and grow
     for t in range(n_years):
-        c_t = min(max(0, conversions[t]), trad_balance)
-        trad_balance -= c_t
-        roth_balance += c_t
+        conversion = min(max(0, conversions[t]), trad_balance)
+        trad_balance -= conversion
+        roth_balance += conversion
         trad_balance *= (1 + g)
         roth_balance *= (1 + g)
 
@@ -578,7 +565,7 @@ def _build_rmd_projection(
     # Spending assumption
     spending = scenario.annual_retirement_spending
     if spending is None:
-        spending = (trad_balance + roth_balance) * 0.04
+        spending = (trad_balance + roth_balance) * RETIREMENT_SPENDING_RATE
 
     ret_state = scenario.retirement_state or scenario.state
     owner_rmd_start = rmd_start_age(scenario.age)
@@ -701,6 +688,66 @@ def _build_rmd_summary(
     return summary
 
 
+def _build_scenarios(
+    scenario: ScenarioInput,
+    final_conversions: list[float],
+    total_tax: float,
+    npv_at_optimal: float,
+    npv_at_zero: float,
+) -> list[ScenarioComparison]:
+    """Build scenario comparisons (no conversion, optimal, full conversion)."""
+    n_years = len(scenario.income_timeline)
+    max_balance = scenario.traditional_ira_balance
+    total_conversion = sum(final_conversions)
+    timeline_years = [yi.year for yi in scenario.income_timeline]
+
+    # Full conversion in year 1
+    full_conversions = [max_balance] + [0.0] * (n_years - 1)
+    npv_at_full = calculate_npv(scenario, full_conversions)
+
+    yr0_income = scenario.income_timeline[0].gross_income
+    yr0_state = resolve_state_for_year(
+        scenario.income_timeline[0].state, scenario.state
+    )
+    tax_full = federal_tax_on_conversion(yr0_income, max_balance, scenario.filing_status)
+    tax_full += state_tax_on_conversion(
+        yr0_income, max_balance, yr0_state, scenario.filing_status, scenario.custom_state_rate,
+    )
+
+    return [
+        ScenarioComparison(
+            label="No conversion",
+            conversion_amount=0,
+            npv=npv_at_zero,
+            tax_on_conversion=0,
+            difference_from_optimal=npv_at_zero - npv_at_optimal,
+            estimated_savings=0.0,
+            yearly_conversions=[0.0] * n_years,
+            years=timeline_years,
+        ),
+        ScenarioComparison(
+            label="Highest estimated savings",
+            conversion_amount=total_conversion,
+            npv=npv_at_optimal,
+            tax_on_conversion=total_tax,
+            difference_from_optimal=0,
+            estimated_savings=npv_at_optimal - npv_at_zero,
+            yearly_conversions=list(final_conversions),
+            years=timeline_years,
+        ),
+        ScenarioComparison(
+            label="Full conversion (year 1)",
+            conversion_amount=max_balance,
+            npv=npv_at_full,
+            tax_on_conversion=tax_full,
+            difference_from_optimal=npv_at_full - npv_at_optimal,
+            estimated_savings=npv_at_full - npv_at_zero,
+            yearly_conversions=[max_balance] + [0.0] * (n_years - 1),
+            years=timeline_years,
+        ),
+    ]
+
+
 def optimize(scenario: ScenarioInput) -> OptimizationResult:
     """Find the optimal multi-year conversion schedule.
 
@@ -778,56 +825,9 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
     overall_eff_rate = total_tax / total_conversion if total_conversion > 0 else 0.0
 
     # Scenarios
-    full_conversions = [max_balance] + [0.0] * (n_years - 1)
-    npv_at_full = calculate_npv(scenario, full_conversions)
-    yr0_income = scenario.income_timeline[0].gross_income
-    tax_full = (
-        calculate_federal_tax(yr0_income + max_balance, scenario.filing_status)
-        - calculate_federal_tax(yr0_income, scenario.filing_status)
+    scenarios = _build_scenarios(
+        scenario, final_conversions, total_tax, npv_at_optimal, npv_at_zero,
     )
-    # Include state tax in full-conversion scenario
-    yr0_state = resolve_state_for_year(
-        scenario.income_timeline[0].state, scenario.state
-    )
-    if yr0_state:
-        tax_full += (
-            calculate_state_tax(yr0_income + max_balance, yr0_state, scenario.filing_status, scenario.custom_state_rate)
-            - calculate_state_tax(yr0_income, yr0_state, scenario.filing_status, scenario.custom_state_rate)
-        )
-
-    timeline_years = [yi.year for yi in scenario.income_timeline]
-    scenarios = [
-        ScenarioComparison(
-            label="No conversion",
-            conversion_amount=0,
-            npv=npv_at_zero,
-            tax_on_conversion=0,
-            difference_from_optimal=npv_at_zero - npv_at_optimal,
-            estimated_savings=0.0,
-            yearly_conversions=[0.0] * n_years,
-            years=timeline_years,
-        ),
-        ScenarioComparison(
-            label="Highest estimated savings",
-            conversion_amount=total_conversion,
-            npv=npv_at_optimal,
-            tax_on_conversion=total_tax,
-            difference_from_optimal=0,
-            estimated_savings=npv_at_optimal - npv_at_zero,
-            yearly_conversions=list(final_conversions),
-            years=timeline_years,
-        ),
-        ScenarioComparison(
-            label="Full conversion (year 1)",
-            conversion_amount=max_balance,
-            npv=npv_at_full,
-            tax_on_conversion=tax_full,
-            difference_from_optimal=npv_at_full - npv_at_optimal,
-            estimated_savings=npv_at_full - npv_at_zero,
-            yearly_conversions=[max_balance] + [0.0] * (n_years - 1),
-            years=timeline_years,
-        ),
-    ]
 
     # NPV curve (sample points for the first year, holding others at 0)
     npv_curve: list[NPVCurvePoint] = []

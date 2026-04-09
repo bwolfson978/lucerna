@@ -2,6 +2,7 @@
 
 import type { YearlyDetail } from "@/lib/types";
 import { formatTableCurrency } from "@/lib/utils/formatting";
+import { dataFontStyle } from "@/lib/utils/styleConstants";
 
 import { useMemo, useRef, useState, type RefObject } from "react";
 import { useScrollFade } from "@/hooks/useScrollFade";
@@ -52,7 +53,7 @@ function CompactCurrencyCell({
       className={`w-full text-data-xs text-center bg-transparent border-0 px-1 py-0 focus:outline-none focus:bg-accent/5 rounded ${
         highlighted ? "text-accent font-medium" : "text-text-primary"
       }`}
-      style={{ fontFamily: "'Manrope', system-ui" }}
+      style={dataFontStyle}
     />
   );
 }
@@ -122,7 +123,7 @@ export function TransposedDetailTable({
                 {/* Tax cost */}
                 <div
                   className="h-8 flex items-center justify-center text-data-xs text-text-primary px-1"
-                  style={{ fontFamily: "'Manrope', system-ui" }}
+                  style={dataFontStyle}
                 >
                   {detail ? formatTableCurrency(detail.tax_cost, maxChars) : "-"}
                 </div>

@@ -15,6 +15,17 @@ from pathlib import Path
 from typing import Optional
 
 from app.engine.types import FilingStatus
+from app.engine.constants import NUMERIC_INFINITY
+
+__all__ = [
+    "resolve_state_for_year",
+    "calculate_state_tax",
+    "get_state_marginal_rate",
+    "vectorized_state_tax",
+    "get_supported_states",
+    "get_all_states",
+    "get_tax_data_metadata",
+]
 
 
 # ==============================================
@@ -31,8 +42,16 @@ def _load_tax_data() -> dict:
     Returns the full parsed data dict.
     """
     data_file = _DATA_DIR / "tax_brackets_2025.json"
-    with open(data_file, "r") as f:
-        data = json.load(f)
+    try:
+        with open(data_file, "r") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        raise RuntimeError(
+            f"Tax data file not found at {data_file}. "
+            f"Ensure backend/data/tax_brackets_2025.json exists."
+        )
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"Tax data file is malformed: {e}")
 
     # Convert "inf" strings to float("inf") in bracket max values
     for section_key in ["federal", "states"]:
@@ -206,7 +225,7 @@ def vectorized_state_tax(
     for bracket in brackets:
         bracket_max = bracket["max"]
         if bracket_max == float("inf"):
-            bracket_max = 1e18
+            bracket_max = NUMERIC_INFINITY
         in_bracket = np.minimum(taxable, bracket_max) - bracket["min"]
         in_bracket = np.maximum(0.0, in_bracket)
         tax += in_bracket * bracket["rate"]

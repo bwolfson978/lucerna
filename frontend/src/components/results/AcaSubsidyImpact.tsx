@@ -4,6 +4,7 @@ import type { AcaSubsidyDetail, OptimizationResult } from "@/lib/types";
 import { MetricCard } from "@/components/common/MetricCard";
 import { Tooltip } from "@/components/common/Tooltip";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
+import { dataFontStyle } from "@/lib/utils/styleConstants";
 import { Card } from "@/components/ui/card";
 import { InfoTrigger } from "@/components/methodology/InfoTrigger";
 
@@ -123,7 +124,7 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
                   </td>
                   <td
                     className="px-3 py-2.5 text-right text-text-primary"
-                    style={{ fontFamily: "'Manrope', system-ui" }}
+                    style={dataFontStyle}
                   >
                     {formatCurrency(d.magi_with_conversion)}
                   </td>
@@ -135,19 +136,19 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
                           ? "text-caution"
                           : "text-text-primary"
                     }`}
-                    style={{ fontFamily: "'Manrope', system-ui" }}
+                    style={dataFontStyle}
                   >
                     {Math.round(d.income_pct_fpl)}%
                   </td>
                   <td
                     className="px-3 py-2.5 text-right text-text-secondary"
-                    style={{ fontFamily: "'Manrope', system-ui" }}
+                    style={dataFontStyle}
                   >
                     {formatCurrency(d.subsidy_without_conversion)}
                   </td>
                   <td
                     className="px-3 py-2.5 text-right text-text-primary"
-                    style={{ fontFamily: "'Manrope', system-ui" }}
+                    style={dataFontStyle}
                   >
                     {formatCurrency(d.subsidy_with_conversion)}
                   </td>
@@ -155,14 +156,14 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
                     className={`px-3 py-2.5 text-right font-medium ${
                       d.subsidy_lost > 0 ? "text-negative" : "text-text-primary"
                     }`}
-                    style={{ fontFamily: "'Manrope', system-ui" }}
+                    style={dataFontStyle}
                   >
                     {d.subsidy_lost > 0 ? "-" : ""}
                     {formatCurrency(d.subsidy_lost)}
                   </td>
                   <td
                     className="px-3 py-2.5 text-right text-text-primary"
-                    style={{ fontFamily: "'Manrope', system-ui" }}
+                    style={dataFontStyle}
                   >
                     {d.combined_marginal_rate > 0
                       ? formatPercent(d.combined_marginal_rate)

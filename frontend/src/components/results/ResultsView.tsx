@@ -4,8 +4,11 @@ import { useMemo, useRef, useState } from "react";
 import type { OptimizationResult, ScenarioInput } from "@/lib/types";
 import { MetricCard } from "@/components/common/MetricCard";
 import { Tooltip } from "@/components/common/Tooltip";
+import { ArrowDownIcon } from "@/components/common/icons";
+import { ChartLegend } from "@/components/common/ChartLegend";
 import { formatCurrency, formatSavings, formatTableCurrency } from "@/lib/utils/formatting";
 import { CHART_COLORS } from "@/lib/utils/constants";
+import { dataFontStyle } from "@/lib/utils/styleConstants";
 import { BracketChart } from "./BracketChart";
 import { ConversionSlider } from "./ConversionSlider";
 import { ScenarioCards } from "./ScenarioCards";
@@ -116,23 +119,9 @@ export function ResultsView({ result }: ResultsViewProps) {
             {!isAtOptimal && (
               <span
                 className="flex items-center gap-1 text-body-sm text-negative font-medium"
-                style={{ fontFamily: "'Manrope', system-ui" }}
+                style={dataFontStyle}
               >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 12 12"
-                  fill="none"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M6 2v8M6 10l-3-3M6 10l3-3"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <ArrowDownIcon />
                 {formatCurrency(Math.max(1, Math.abs(savingsDifference)))} less than highest savings
               </span>
             )}
@@ -179,7 +168,7 @@ export function ResultsView({ result }: ResultsViewProps) {
                   style={{
                     width: `${colWidth}px`,
                     minWidth: `${colWidth}px`,
-                    fontFamily: "'Manrope', system-ui",
+                    ...dataFontStyle,
                   }}
                 >
                   {detail ? formatTableCurrency(detail.tax_cost, maxChars) : "-"}
@@ -190,20 +179,11 @@ export function ResultsView({ result }: ResultsViewProps) {
         </BracketChart>
 
         {/* Series legend */}
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-body-sm text-text-secondary">
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.income }} />
-            Earned Income
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.conversion }} />
-            Roth Conversion
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-bg-hover border border-border" />
-            Remaining space in tax bracket
-          </span>
-        </div>
+        <ChartLegend items={[
+          { color: CHART_COLORS.income, label: "Earned Income" },
+          { color: CHART_COLORS.conversion, label: "Roth Conversion" },
+          { color: "", label: "Remaining space in tax bracket", outline: true },
+        ]} />
 
       </Card>
       </div>

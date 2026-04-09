@@ -5,6 +5,7 @@ import type { YearlyIncome } from "@/lib/types";
 import { FormField } from "@/components/common/FormField";
 import { CurrencyInput } from "@/components/common/CurrencyInput";
 import { FormSelect } from "@/components/common/FormSelect";
+import { ChevronDownIcon } from "@/components/common/icons";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { CURRENT_YEAR } from "@/lib/utils/constants";
@@ -120,21 +121,7 @@ export function IncomeTimelineEditor({
             type="button"
             className="flex items-center gap-2 text-h3 text-text-primary hover:text-accent transition-colors duration-300"
           >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 12 12"
-              fill="none"
-              className={`text-text-tertiary transition-transform duration-300 ${open ? "rotate-0" : "-rotate-90"}`}
-            >
-              <path
-                d="M3 4.5L6 7.5L9 4.5"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <ChevronDownIcon className={`text-text-tertiary transition-transform duration-300 ${open ? "rotate-0" : "-rotate-90"}`} />
             Income timeline
             {!open && (
               <span className="text-body-sm text-text-tertiary font-normal ml-1">

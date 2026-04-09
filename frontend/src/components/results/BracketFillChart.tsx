@@ -3,6 +3,7 @@
 import type { BracketFillResult } from "@/lib/types";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
 import { BRACKET_COLORS, CHART_COLORS } from "@/lib/utils/constants";
+import { DATA_FONT_FAMILY } from "@/lib/utils/styleConstants";
 import { Tooltip } from "@/components/common/Tooltip";
 import { Card } from "@/components/ui/card";
 
@@ -75,7 +76,7 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
                 x={labelX}
                 y={y + 23}
                 className="text-[13px] font-medium fill-text-secondary"
-                fontFamily="'Manrope', system-ui"
+                fontFamily={DATA_FONT_FAMILY}
               >
                 {formatPercent(bracket.bracket_rate)}
               </text>
@@ -128,7 +129,7 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
                   }
                   y={y + 23}
                   className="text-[11px] fill-text-tertiary"
-                  fontFamily="'Manrope', system-ui"
+                  fontFamily={DATA_FONT_FAMILY}
                 >
                   {formatCurrency(
                     bracket.filled_by_income +

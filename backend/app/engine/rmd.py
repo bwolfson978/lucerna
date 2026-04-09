@@ -13,6 +13,14 @@ from pathlib import Path
 
 import numpy as np
 
+__all__ = [
+    "UNIFORM_LIFETIME_TABLE",
+    "rmd_start_age",
+    "get_distribution_period",
+    "calculate_rmd",
+    "vectorized_rmd",
+]
+
 
 # ==============================================
 # Load RMD data from JSON at module init
@@ -28,8 +36,16 @@ def _load_rmd_data() -> tuple[dict[int, float], int, list[dict]]:
         (uniform_lifetime_table, min_age, start_age_rules)
     """
     data_file = _DATA_DIR / "rmd_tables.json"
-    with open(data_file, "r") as f:
-        data = json.load(f)
+    try:
+        with open(data_file, "r") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        raise RuntimeError(
+            f"RMD data file not found at {data_file}. "
+            f"Ensure backend/data/rmd_tables.json exists."
+        )
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"RMD data file is malformed: {e}")
 
     ult = data["uniform_lifetime_table"]
     table = {int(age): divisor for age, divisor in ult["entries"].items()}
