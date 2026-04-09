@@ -1,10 +1,10 @@
 """Federal income tax bracket calculations.
 
 Loads bracket data from the static JSON configuration file
-(backend/data/tax_brackets_2025.json). The JSON is the single source of
+(backend/data/tax_brackets_2026.json). The JSON is the single source of
 truth for all federal and state tax brackets.
 
-Source: IRS Revenue Procedure 2024-40 (2025 tax year)
+Source: IRS Revenue Procedure 2025-32 (2026 tax year)
 """
 
 import json
@@ -28,7 +28,7 @@ _FILING_STATUS_KEY = {
 
 def _load_federal_data() -> dict:
     """Load federal bracket data from the tax brackets JSON file."""
-    data_file = _DATA_DIR / "tax_brackets_2025.json"
+    data_file = _DATA_DIR / "tax_brackets_2026.json"
     with open(data_file, "r") as f:
         data = json.load(f)
 

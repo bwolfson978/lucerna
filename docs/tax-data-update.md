@@ -14,9 +14,9 @@ The Tax Foundation publishes a downloadable `.xlsx` spreadsheet alongside their 
 
 ## When to update
 
-- **Federal brackets**: Usually announced in October/November for the following tax year (e.g., IRS Rev. Proc. 2024-40 announced 2025 brackets in October 2024).
+- **Federal brackets**: Usually announced in October/November for the following tax year (e.g., IRS Rev. Proc. 2025-32 announced 2026 brackets in October 2025).
 - **State brackets**: The Tax Foundation typically publishes their comprehensive update in January or February. Some states announce changes mid-year due to new legislation.
-- **Mid-year changes**: If a state passes significant tax reform (e.g., Iowa switching to flat tax in 2025), update the JSON and note the change.
+- **Mid-year changes**: If a state passes significant tax reform, update the JSON and note the change.
 
 ## Update workflow
 
@@ -56,7 +56,7 @@ Open `data/tax_brackets_2026.json` and cross-reference against the Tax Foundatio
 5. **No-tax states** — verify the list is still correct
 
 Common things to watch for:
-- States that recently switched to flat tax (e.g., Iowa 2025, Louisiana 2025, Georgia 2025)
+- States that recently switched to flat tax (e.g., Iowa, Louisiana, Georgia)
 - Surtax threshold changes (e.g., Massachusetts millionaire tax inflation adjustment)
 - New legislation signed between the Tax Foundation publication and your update
 - States with pending legislation that takes effect mid-year
@@ -83,7 +83,7 @@ This compares the new data against the current year and flags:
 
 ### Step 6: Update the engine import
 
-If the filename changed (e.g., `tax_brackets_2025.json` to `tax_brackets_2026.json`), update the reference in:
+If the filename changed (e.g., `tax_brackets_2026.json` to `tax_brackets_2027.json`), update the reference in:
 - `backend/app/engine/state_tax.py` — the `_DATA_DIR` path and filename in `_load_tax_data()`
 - `backend/app/engine/tax.py` — the filename in `_load_federal_data()`
 
@@ -112,7 +112,7 @@ The rate shown in the dropdown label is cosmetic (for user reference), not used 
 ```
 backend/
   data/
-    tax_brackets_2025.json    # The active configuration file
+    tax_brackets_2026.json    # The active configuration file
   scripts/
     update_state_tax_data.py  # The update automation tool
     __init__.py
@@ -129,20 +129,20 @@ backend/
 ```json
 {
   "metadata": {
-    "tax_year": 2025,
+    "tax_year": 2026,
     "primary_source": "Tax Foundation - ...",
     "primary_source_url": "https://...",
-    "federal_source": "IRS Revenue Procedure 2024-40",
-    "last_updated": "2025-02-15",
+    "federal_source": "IRS Revenue Procedure 2025-32",
+    "last_updated": "2026-04-09",
     "notes": "..."
   },
   "federal": {
-    "standard_deduction": { "single": 15000, "married_filing_jointly": 30000 },
+    "standard_deduction": { "single": 16100, "married_filing_jointly": 32200 },
     "brackets": {
       "single": [
-        { "min": 0, "max": 11925, "rate": 0.10 },
+        { "min": 0, "max": 12400, "rate": 0.10 },
         ...
-        { "min": 626350, "max": "inf", "rate": 0.37 }
+        { "min": 640600, "max": "inf", "rate": 0.37 }
       ],
       "married_filing_jointly": [ ... ]
     }

@@ -27,7 +27,7 @@ class TestDiscoverDataFiles:
         assert len(files) >= 2
         stems = [f.stem for f in files]
         assert "rmd_tables" in stems
-        assert "tax_brackets_2025" in stems
+        assert "tax_brackets_2026" in stems
 
     def test_returns_sorted(self):
         files = discover_data_files()
@@ -75,7 +75,7 @@ class TestValidateMetadata:
 
 class TestValidateTaxBrackets:
     def test_real_file_passes(self):
-        filepath = DATA_DIR / "tax_brackets_2025.json"
+        filepath = DATA_DIR / "tax_brackets_2026.json"
         with open(filepath) as f:
             data = json.load(f)
         warnings = validate_tax_brackets(data, filepath)
@@ -83,7 +83,7 @@ class TestValidateTaxBrackets:
 
     def test_missing_federal(self, tmp_path):
         data = {"metadata": {}}
-        filepath = tmp_path / "tax_brackets_2025.json"
+        filepath = tmp_path / "tax_brackets_2026.json"
         warnings = validate_tax_brackets(data, filepath)
         assert any("missing 'federal'" in w for w in warnings)
 
@@ -100,7 +100,7 @@ class TestValidateTaxBrackets:
                 },
             }
         }
-        filepath = tmp_path / "tax_brackets_2025.json"
+        filepath = tmp_path / "tax_brackets_2026.json"
         warnings = validate_tax_brackets(data, filepath)
         assert any("not ascending" in w for w in warnings)
 
@@ -117,7 +117,7 @@ class TestValidateTaxBrackets:
                 },
             }
         }
-        filepath = tmp_path / "tax_brackets_2025.json"
+        filepath = tmp_path / "tax_brackets_2026.json"
         warnings = validate_tax_brackets(data, filepath)
         assert any("gap" in w for w in warnings)
 
@@ -200,16 +200,16 @@ class TestValidateAll:
 
 class TestFreshness:
     def test_get_tax_year(self):
-        filepath = DATA_DIR / "tax_brackets_2025.json"
-        assert get_tax_year(filepath) == 2025
+        filepath = DATA_DIR / "tax_brackets_2026.json"
+        assert get_tax_year(filepath) == 2026
 
     def test_tax_brackets_stale_for_future_year(self):
-        filepath = DATA_DIR / "tax_brackets_2025.json"
-        assert is_stale(filepath, 2027) is True
+        filepath = DATA_DIR / "tax_brackets_2026.json"
+        assert is_stale(filepath, 2028) is True
 
     def test_tax_brackets_fresh_for_current_year(self):
-        filepath = DATA_DIR / "tax_brackets_2025.json"
-        assert is_stale(filepath, 2025) is False
+        filepath = DATA_DIR / "tax_brackets_2026.json"
+        assert is_stale(filepath, 2026) is False
 
     def test_rmd_tables_fresh_when_recently_updated(self):
         filepath = DATA_DIR / "rmd_tables.json"

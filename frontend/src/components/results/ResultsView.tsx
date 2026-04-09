@@ -230,7 +230,7 @@ export function ResultsView({ result }: ResultsViewProps) {
       <div className="text-body-sm text-text-tertiary border-t border-border pt-section">
         <div className="flex items-start justify-between gap-4">
           <p>
-            This analysis uses 2025 federal
+            This analysis uses 2026 federal
             {result.input.state && result.input.state !== "none"
               ? " and state"
               : ""}{" "}

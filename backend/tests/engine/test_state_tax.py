@@ -77,10 +77,10 @@ class TestCalculateStateTax:
         assert tax == pytest.approx(4_780.0, abs=1.0)
 
     def test_custom_flat_rate(self):
-        # Custom: 5% on income above federal deduction ($15,000 single)
-        # $100K - $15,000 = $85,000 * 0.05 = $4,250
+        # Custom: 5% on income above federal deduction ($16,100 single)
+        # $100K - $16,100 = $83,900 * 0.05 = $4,195
         tax = calculate_state_tax(100_000, "custom", FilingStatus.SINGLE, custom_rate=0.05)
-        assert tax == pytest.approx(4_250.0, abs=1.0)
+        assert tax == pytest.approx(4_195.0, abs=1.0)
 
     def test_custom_no_rate_returns_zero(self):
         assert calculate_state_tax(100_000, "custom") == 0.0

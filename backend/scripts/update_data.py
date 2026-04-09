@@ -34,7 +34,7 @@ from pathlib import Path
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 FRONTEND_FALLBACK = (
-    ROOT_DIR / "frontend" / "src" / "lib" / "tax" / "federal-brackets-2025.json"
+    ROOT_DIR / "frontend" / "src" / "lib" / "tax" / "federal-brackets-2026.json"
 )
 
 
@@ -215,7 +215,7 @@ def validate_rmd_tables(data: dict, filepath: Path) -> list[str]:
 
 
 FILE_VALIDATORS = {
-    "tax_brackets_2025": validate_tax_brackets,
+    "tax_brackets_2026": validate_tax_brackets,
     "rmd_tables": validate_rmd_tables,
 }
 
@@ -315,7 +315,7 @@ def fetch_federal_brackets(year: int) -> dict | None:
         # Tax Foundation publishes federal brackets as part of their annual
         # state tax rates page. The federal data is also on their dedicated
         # federal brackets page.
-        url = f"https://taxfoundation.org/data/all/federal/2025-tax-brackets/"
+        url = f"https://taxfoundation.org/data/all/federal/{year}-tax-brackets/"
         print(f"  Checking Tax Foundation for {year} federal brackets...")
         print(f"  URL: {url}")
         print(f"  Note: Automated parsing not yet implemented.")
@@ -426,8 +426,8 @@ def sync_frontend_fallback(dry_run: bool = False) -> bool:
 
     frontend_json = {
         "metadata": {
-            "tax_year": backend_meta.get("tax_year", 2025),
-            "source": backend_meta.get("federal_source", "IRS Revenue Procedure 2024-40"),
+            "tax_year": backend_meta.get("tax_year", 2026),
+            "source": backend_meta.get("federal_source", "IRS Revenue Procedure 2025-32"),
             "notes": "Fallback data — frontend fetches live data from /api/tax-config at runtime.",
         },
         "standard_deduction": federal["standard_deduction"],

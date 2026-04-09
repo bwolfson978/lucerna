@@ -23,7 +23,7 @@ class TestLoadCurrentData:
         assert "metadata" in data
         assert "federal" in data
         assert "states" in data
-        assert data["metadata"]["tax_year"] == 2025
+        assert data["metadata"]["tax_year"] == 2026
 
     def test_has_all_states(self):
         data = load_current_data()
