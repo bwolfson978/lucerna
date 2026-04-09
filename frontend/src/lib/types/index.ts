@@ -146,8 +146,8 @@ export interface YearlyDetail {
   tax_cost: number;
   federal_tax_cost?: number;
   state_tax_cost?: number;
-  effective_rate: number;
-  marginal_bracket: string;
+  effective_rate?: number;
+  marginal_bracket: string | number;
   state_marginal_rate?: number;
   subsidy_lost?: number;
   combined_cost?: number;

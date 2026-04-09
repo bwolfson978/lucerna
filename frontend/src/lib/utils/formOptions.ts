@@ -6,7 +6,7 @@
 export const FILING_STATUS_OPTIONS = [
   { value: "single", label: "Single" },
   { value: "married_filing_jointly", label: "Married filing jointly" },
-] as const;
+];
 
 export const STATE_OPTIONS = [
   { value: "none", label: "Federal only (no state tax)" },
@@ -62,4 +62,4 @@ export const STATE_OPTIONS = [
   { value: "WI", label: "Wisconsin (up to 7.65%)" },
   { value: "WY", label: "Wyoming (no state tax)" },
   { value: "custom", label: "Other (enter rate)" },
-] as const;
+];
