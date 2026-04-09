@@ -13,6 +13,15 @@ import numpy as np
 
 from app.engine.types import FilingStatus
 
+__all__ = [
+    "federal_poverty_level",
+    "calculate_aca_subsidy",
+    "calculate_subsidy_loss",
+    "vectorized_subsidy_loss",
+    "find_subsidy_cliff_income",
+    "calculate_combined_marginal_rate",
+]
+
 # =====================================================================
 # 2025 Federal Poverty Level Guidelines (used for 2026 ACA coverage)
 # Source: HHS/ASPE 2025 Poverty Guidelines
@@ -187,23 +196,25 @@ def calculate_combined_marginal_rate(
     monthly_slcsp_premium: float,
     filing_status: FilingStatus,
 ) -> float:
-    """Calculate the combined marginal rate including federal tax + subsidy loss.
+    """Calculate the combined marginal rate including federal tax + ACA subsidy loss.
 
-    This is the "true cost" as a percentage of the conversion amount:
-    (federal_tax_on_conversion + subsidy_loss) / conversion_amount.
+    This is the ACA-specific "true cost" as a percentage of the conversion
+    amount: (federal_tax + subsidy_loss) / conversion_amount.
+
+    Note: This differs from ``tax_cost.combined_marginal_rate`` which computes
+    federal + state marginal rates (without ACA). Use this function when you
+    need the ACA-aware cost; use ``tax_cost.combined_marginal_rate`` when you
+    need the federal + state marginal rate.
     """
     if conversion_amount <= 0:
         return 0.0
 
-    from app.engine.tax import calculate_federal_tax
+    from app.engine.tax_cost import federal_tax_on_conversion
 
-    tax_with = calculate_federal_tax(base_income + conversion_amount, filing_status)
-    tax_without = calculate_federal_tax(base_income, filing_status)
-    federal_tax_cost = tax_with - tax_without
+    fed_cost = federal_tax_on_conversion(base_income, conversion_amount, filing_status)
 
     subsidy_loss = calculate_subsidy_loss(
         base_income, conversion_amount, household_size, monthly_slcsp_premium,
     )
 
-    total_cost = federal_tax_cost + subsidy_loss
-    return total_cost / conversion_amount
+    return (fed_cost + subsidy_loss) / conversion_amount

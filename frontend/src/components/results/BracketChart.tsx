@@ -3,6 +3,7 @@
 import type { BracketFillResult } from "@/lib/types";
 import { formatPercent, formatCurrency, formatAxisCurrency } from "@/lib/utils/formatting";
 import { BRACKET_COLORS, CHART_COLORS } from "@/lib/utils/constants";
+import { DATA_FONT_FAMILY } from "@/lib/utils/constants";
 import { useRef, useMemo, useState, useCallback, useEffect, type RefObject } from "react";
 import { useContainerWidth } from "@/hooks/useContainerWidth";
 import { useScrollFade } from "@/hooks/useScrollFade";
@@ -312,7 +313,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
                     y={y + 4}
                     textAnchor="end"
                     className="text-data-xs fill-text-tertiary"
-                    fontFamily="'Manrope', system-ui"
+                    fontFamily={DATA_FONT_FAMILY}
                   >
                     {formatAxisCurrency(val)}
                   </text>
@@ -417,7 +418,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
                     y={chartHeight - 6}
                     textAnchor="middle"
                     className={`${barWidth < 36 ? "text-[11px]" : "text-data-xs"} fill-text-tertiary`}
-                    fontFamily="'Manrope', system-ui"
+                    fontFamily={DATA_FONT_FAMILY}
                   >
                     {yearData.year}
                   </text>
@@ -445,7 +446,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
                 x={6}
                 y={y + 4}
                 className={`${isMobile ? "text-[11px]" : "text-caption"} font-medium`}
-                fontFamily="'Manrope', system-ui"
+                fontFamily={DATA_FONT_FAMILY}
                 fill={color}
               >
                 {isMobile

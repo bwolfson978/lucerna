@@ -21,13 +21,13 @@ from app.engine.types import (
     BracketFillResult,
 )
 from app.engine.tax import (
-    calculate_federal_tax,
     get_marginal_rate,
     analyze_bracket_fill,
 )
-from app.engine.state_tax import (
-    calculate_state_tax,
-    resolve_state_for_year,
+from app.engine.state_tax import resolve_state_for_year
+from app.engine.tax_cost import (
+    federal_tax_on_conversion,
+    state_tax_on_conversion,
 )
 
 
@@ -84,25 +84,14 @@ def build_curve_point(
     for i in range(n_years):
         income = scenario.income_timeline[i].gross_income
         c = yearly_conv[i]
-
-        tax_with = calculate_federal_tax(income + c, scenario.filing_status)
-        tax_without = calculate_federal_tax(income, scenario.filing_status)
-        tax_cost = tax_with - tax_without
-
         yr_state = resolve_state_for_year(
             scenario.income_timeline[i].state, scenario.state
         )
-        if yr_state:
-            st_with = calculate_state_tax(
-                income + c, yr_state, scenario.filing_status,
-                scenario.custom_state_rate,
-            )
-            st_without = calculate_state_tax(
-                income, yr_state, scenario.filing_status,
-                scenario.custom_state_rate,
-            )
-            tax_cost += st_with - st_without
 
+        tax_cost = federal_tax_on_conversion(income, c, scenario.filing_status)
+        tax_cost += state_tax_on_conversion(
+            income, c, yr_state, scenario.filing_status, scenario.custom_state_rate,
+        )
         total_tax += tax_cost
 
         eff_rate = tax_cost / c if c > 0 else 0.0

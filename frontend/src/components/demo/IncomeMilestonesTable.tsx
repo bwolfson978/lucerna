@@ -2,6 +2,7 @@
 
 import type { YearlyIncome } from "@/lib/types";
 import { formatCompactCurrency } from "@/lib/utils/formatting";
+import { dataFontStyle } from "@/lib/utils/constants";
 
 interface IncomeMilestonesTableProps {
   timeline: YearlyIncome[];
@@ -42,7 +43,7 @@ export function IncomeMilestonesTable({
               {/* Year */}
               <div
                 className="h-8 flex items-center justify-center text-data-xs text-text-secondary"
-                style={{ fontFamily: "'Manrope', system-ui" }}
+                style={dataFontStyle}
               >
                 {yi.year}
               </div>
@@ -50,7 +51,7 @@ export function IncomeMilestonesTable({
               {/* Income */}
               <div
                 className="h-8 flex items-center justify-center text-data-xs text-text-primary px-0.5"
-                style={{ fontFamily: "'Manrope', system-ui" }}
+                style={dataFontStyle}
               >
                 {formatCompactCurrency(yi.gross_income)}
               </div>

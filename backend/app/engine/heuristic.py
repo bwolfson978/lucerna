@@ -5,6 +5,7 @@ import numpy as np
 from app.engine.types import ScenarioInput, FilingStatus, ConversionCurvePoint
 from app.engine.tax import BRACKETS, STANDARD_DEDUCTION, get_marginal_rate
 from app.engine.state_tax import get_state_marginal_rate
+from app.engine.constants import RETIREMENT_SPENDING_RATE, round_to_resolution
 
 
 def _estimate_retirement_rate(scenario: ScenarioInput) -> float:
@@ -21,7 +22,7 @@ def _estimate_retirement_rate(scenario: ScenarioInput) -> float:
         # Estimate retirement spending: balance grows to retirement, then 4% rule
         years_to_retire = max(0, scenario.retirement_age - scenario.age)
         future_balance = total_balance * (1 + scenario.annual_growth_rate) ** max(1, years_to_retire)
-        spending = future_balance * 0.04
+        spending = future_balance * RETIREMENT_SPENDING_RATE
     rate = get_marginal_rate(spending, scenario.filing_status)
 
     # Add retirement state marginal rate if applicable
@@ -186,7 +187,7 @@ def bracket_fill_curve(
     points: list[ConversionCurvePoint] = []
 
     for cap in output_caps:
-        cap_rounded = round(float(cap) / 100) * 100
+        cap_rounded = round_to_resolution(float(cap))
 
         if cap_rounded <= 0:
             yearly_conv = [0.0] * n_years

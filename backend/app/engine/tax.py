@@ -12,6 +12,16 @@ import numpy as np
 from pathlib import Path
 
 from app.engine.types import FilingStatus, BracketFillResult
+from app.engine.constants import NUMERIC_INFINITY, DISPLAY_BRACKET_CAP
+
+__all__ = [
+    "BRACKETS",
+    "STANDARD_DEDUCTION",
+    "calculate_federal_tax",
+    "get_marginal_rate",
+    "vectorized_federal_tax",
+    "analyze_bracket_fill",
+]
 
 
 # ==============================================
@@ -29,8 +39,16 @@ _FILING_STATUS_KEY = {
 def _load_federal_data() -> dict:
     """Load federal bracket data from the tax brackets JSON file."""
     data_file = _DATA_DIR / "tax_brackets_2026.json"
-    with open(data_file, "r") as f:
-        data = json.load(f)
+    try:
+        with open(data_file, "r") as f:
+            data = json.load(f)
+    except FileNotFoundError:
+        raise RuntimeError(
+            f"Tax data file not found at {data_file}. "
+            f"Ensure backend/data/tax_brackets_2026.json exists."
+        )
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"Tax data file is malformed: {e}")
 
     federal = data["federal"]
 
@@ -126,7 +144,7 @@ def vectorized_federal_tax(
         bracket_max = bracket["max"]
         # Use a large finite number instead of inf for numpy compatibility
         if bracket_max == float("inf"):
-            bracket_max = 1e18
+            bracket_max = NUMERIC_INFINITY
         in_bracket = np.minimum(taxable, bracket_max) - bracket["min"]
         in_bracket = np.maximum(0.0, in_bracket)
         tax += in_bracket * bracket["rate"]
@@ -148,7 +166,7 @@ def analyze_bracket_fill(
     results = []
     for bracket in brackets:
         if bracket["max"] == float("inf"):
-            capacity = 500000.0
+            capacity = float(DISPLAY_BRACKET_CAP)
         else:
             capacity = bracket["max"] - bracket["min"]
 
@@ -158,7 +176,7 @@ def analyze_bracket_fill(
         remaining = max(0, capacity - total_filled)
         tax_in_bracket = total_filled * bracket["rate"]
 
-        display_max = bracket["max"] if bracket["max"] != float("inf") else bracket["min"] + 500000
+        display_max = bracket["max"] if bracket["max"] != float("inf") else bracket["min"] + DISPLAY_BRACKET_CAP
 
         results.append(BracketFillResult(
             bracket_rate=bracket["rate"],

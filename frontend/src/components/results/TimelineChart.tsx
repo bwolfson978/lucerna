@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import type { TimelineChartPoint } from "@/lib/types";
 import { CHART_COLORS } from "@/lib/utils/constants";
 import { formatAxisCurrency, formatCurrency } from "@/lib/utils/formatting";
+import { DATA_FONT_FAMILY } from "@/lib/utils/constants";
 import { Tooltip } from "@/components/common/Tooltip";
 import { Card } from "@/components/ui/card";
 
@@ -75,7 +76,7 @@ export function TimelineChart({ data, onYearClick }: TimelineChartProps) {
       labels: {
         style: {
           fontSize: "13px",
-          fontFamily: "'Manrope', system-ui",
+          fontFamily: DATA_FONT_FAMILY,
           colors: "#B8B0D2",
         },
       },
@@ -87,7 +88,7 @@ export function TimelineChart({ data, onYearClick }: TimelineChartProps) {
         formatter: (val: number) => formatAxisCurrency(val),
         style: {
           fontSize: "12px",
-          fontFamily: "'Manrope', system-ui",
+          fontFamily: DATA_FONT_FAMILY,
           colors: "#8B8A99",
         },
       },
@@ -116,7 +117,7 @@ export function TimelineChart({ data, onYearClick }: TimelineChartProps) {
           position: "left" as const,
           style: {
             fontSize: "12px",
-            fontFamily: "'Manrope', system-ui",
+            fontFamily: DATA_FONT_FAMILY,
             color: "#8B8A99",
             background: "transparent",
           },

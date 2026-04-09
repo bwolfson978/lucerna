@@ -40,6 +40,7 @@ jobs:
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
           plugins: 'code-review@claude-code-plugins'
           prompt: '/code-review:code-review'
+          show_full_output: true
           claude_args: |
             --dangerously-skip-permissions
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md

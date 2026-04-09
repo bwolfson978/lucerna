@@ -23,6 +23,28 @@ from app.engine.state_tax import (
     vectorized_state_tax, calculate_state_tax, resolve_state_for_year,
 )
 from app.engine.rmd import rmd_start_age, vectorized_rmd
+from app.engine.constants import RETIREMENT_SPENDING_RATE, round_to_resolution
+
+
+def _aca_coverage_years(scenario: ScenarioInput) -> set[int]:
+    """Determine which calendar years the user needs ACA marketplace coverage.
+
+    Shared logic for both 2D and 3D DP backward passes. Equivalent to the
+    function of the same name in optimizer.py.
+    """
+    hc = scenario.healthcare
+    if hc is None:
+        return set()
+
+    timeline_years = {y.year for y in scenario.income_timeline}
+
+    if hc.aca_coverage_years is not None:
+        return set(hc.aca_coverage_years) & timeline_years
+
+    if hc.has_employer_coverage_after is not None:
+        return {y for y in timeline_years if y < hc.has_employer_coverage_after}
+
+    return timeline_years
 
 
 @dataclass
@@ -55,7 +77,7 @@ def _compute_retirement_values(
     spending = scenario.annual_retirement_spending
     if spending is None:
         total = trad_balances + roth_balances
-        spending_arr = total * 0.04
+        spending_arr = total * RETIREMENT_SPENDING_RATE
     else:
         spending_arr = np.full_like(trad_balances, spending)
 
@@ -194,16 +216,7 @@ def _dp_backward(
 
     # Determine ACA coverage years
     hc = scenario.healthcare
-    aca_years: set[int] = set()
-    if hc:
-        from app.engine.aca import federal_poverty_level
-        timeline_years = {y.year for y in scenario.income_timeline}
-        if hc.aca_coverage_years is not None:
-            aca_years = set(hc.aca_coverage_years) & timeline_years
-        elif hc.has_employer_coverage_after is not None:
-            aca_years = {y for y in timeline_years if y < hc.has_employer_coverage_after}
-        else:
-            aca_years = timeline_years
+    aca_years = _aca_coverage_years(scenario)
 
     # Pre-compute tax without conversion for each year (scalar per year)
     tax_without_cache = [
@@ -316,7 +329,7 @@ def _forward_pass(
 
         # Clamp to available balance
         conversion = min(conversion, current_balance)
-        conversions.append(round(conversion / 100) * 100)  # Round to $100
+        conversions.append(round_to_resolution(conversion))
 
         current_balance = (current_balance - conversion) * (1 + g)
 
@@ -418,7 +431,7 @@ def extract_conversion_curve(
     points: list[ConversionCurvePoint] = []
 
     for cap in caps:
-        cap_rounded = round(cap / 100) * 100
+        cap_rounded = round_to_resolution(cap)
 
         # Build per-year allocation by scaling the optimal schedule
         if cap_rounded <= 0:
@@ -429,13 +442,13 @@ def extract_conversion_curve(
         elif opt_total > 0:
             scale = cap_rounded / opt_total
             yearly_conv = [
-                round(c * scale / 100) * 100 for c in opt_conversions
+                round_to_resolution(c * scale) for c in opt_conversions
             ]
             # Adjust rounding error on the largest year
             diff = cap_rounded - sum(yearly_conv)
             if abs(diff) >= 100 and yearly_conv:
                 max_idx = max(range(len(yearly_conv)), key=lambda i: yearly_conv[i])
-                yearly_conv[max_idx] += round(diff / 100) * 100
+                yearly_conv[max_idx] += round_to_resolution(diff)
         else:
             yearly_conv = [0.0] * n_years
 
@@ -518,16 +531,7 @@ def _dp_backward_3d(
 
     # Determine ACA coverage years (same as 2D)
     hc = scenario.healthcare
-    aca_years: set[int] = set()
-    if hc:
-        from app.engine.aca import federal_poverty_level
-        timeline_years = {y.year for y in scenario.income_timeline}
-        if hc.aca_coverage_years is not None:
-            aca_years = set(hc.aca_coverage_years) & timeline_years
-        elif hc.has_employer_coverage_after is not None:
-            aca_years = {y for y in timeline_years if y < hc.has_employer_coverage_after}
-        else:
-            aca_years = timeline_years
+    aca_years = _aca_coverage_years(scenario)
 
     # Pre-compute tax costs (same as 2D)
     tax_without_cache = [
@@ -705,7 +709,7 @@ def _forward_pass_3d(
         # Clamp to available balance and budget
         conversion = min(conversion, current_balance, current_budget)
         conversion = max(0.0, conversion)
-        conversions.append(round(conversion / 100) * 100)
+        conversions.append(round_to_resolution(conversion))
 
         current_balance = (current_balance - conversion) * (1 + g)
         current_budget -= conversion
@@ -762,7 +766,7 @@ def extract_conversion_curve_3d(
     points: list[ConversionCurvePoint] = []
 
     for cap in output_caps:
-        cap_rounded = round(cap / 100) * 100
+        cap_rounded = round_to_resolution(cap)
 
         if cap_rounded <= 0:
             yearly_conv = [0.0] * n_years

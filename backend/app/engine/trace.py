@@ -3,7 +3,17 @@ from app.engine.types import (
     AcaSubsidyDetail,
 )
 from app.engine.tax import get_marginal_rate
-from app.engine.state_tax import get_state_marginal_rate, resolve_state_for_year
+from app.engine.state_tax import resolve_state_for_year, get_state_marginal_rate
+from app.engine.tax_cost import federal_tax_on_conversion, total_conversion_cost, combined_marginal_rate
+from app.engine.constants import (
+    BRACKET_FULL_THRESHOLD,
+    LARGE_BALANCE_THRESHOLD,
+    LARGE_INCOME_VARIATION,
+    HIGH_GROWTH_RATE,
+    LOW_GROWTH_RATE,
+    LONG_RETIREMENT_YEARS,
+    RETIREMENT_SPENDING_RATE,
+)
 
 
 def generate_reasoning_trace(
@@ -28,15 +38,14 @@ def generate_reasoning_trace(
     marginal_rates = []
     for t in range(n_years):
         income = scenario.income_timeline[t].gross_income
-        c_t = optimal_conversions[t]
-        rate = get_marginal_rate(income + c_t, scenario.filing_status)
+        conversion = optimal_conversions[t]
         yr_state = resolve_state_for_year(
             scenario.income_timeline[t].state, scenario.state
         )
-        if yr_state:
-            rate += get_state_marginal_rate(
-                income + c_t, yr_state, scenario.filing_status, scenario.custom_state_rate
-            )
+        rate = combined_marginal_rate(
+            income, conversion, scenario.filing_status,
+            state=yr_state, custom_state_rate=scenario.custom_state_rate,
+        )
         marginal_rates.append(rate)
 
     avg_marginal = sum(marginal_rates) / len(marginal_rates) if marginal_rates else 0.0
@@ -92,7 +101,7 @@ def _find_binding_constraint(
     bracket_labels = []
     for t, fills in enumerate(bracket_fill):
         for fill in fills:
-            if fill.filled_by_conversion > 0 and fill.remaining_capacity < 100:
+            if fill.filled_by_conversion > 0 and fill.remaining_capacity < BRACKET_FULL_THRESHOLD:
                 bracket_labels.append(f"{fill.bracket_rate:.0%}")
 
     if bracket_labels:
@@ -109,27 +118,34 @@ def _cost_of_next_bracket(
     scenario: ScenarioInput,
     conversions: list[float],
 ) -> dict:
-    """What would it cost to convert $1,000 more?"""
-    from app.engine.tax import calculate_federal_tax
-
+    """What would it cost to convert $1,000 more (federal + state)?"""
     extra = 1000
-    total_extra_tax = 0.0
+    total_extra_cost = 0.0
     for t in range(len(conversions)):
         income = scenario.income_timeline[t].gross_income
-        c_t = conversions[t]
-        tax_current = calculate_federal_tax(income + c_t, scenario.filing_status)
-        tax_extra = calculate_federal_tax(income + c_t + extra, scenario.filing_status)
-        total_extra_tax += (tax_extra - tax_current)
+        conversion = conversions[t]
+        yr_state = resolve_state_for_year(
+            scenario.income_timeline[t].state, scenario.state
+        )
+        # Cost of next $extra on top of existing income + conversion
+        total_extra_cost += total_conversion_cost(
+            income + conversion, extra, scenario.filing_status,
+            state=yr_state, custom_state_rate=scenario.custom_state_rate,
+        )
 
-    rate = get_marginal_rate(
-        scenario.income_timeline[0].gross_income + conversions[0] + extra,
+    rate = combined_marginal_rate(
+        scenario.income_timeline[0].gross_income, conversions[0] + extra,
         scenario.filing_status,
+        state=resolve_state_for_year(
+            scenario.income_timeline[0].state, scenario.state
+        ),
+        custom_state_rate=scenario.custom_state_rate,
     )
 
     return {
         "bracket_rate": rate,
-        "additional_tax": round(total_extra_tax, 2),
-        "net_effect": f"Converting ${extra:,} more would cost ${total_extra_tax:,.0f} in additional tax at the {rate:.0%} rate",
+        "additional_tax": round(total_extra_cost, 2),
+        "net_effect": f"Converting ${extra:,} more would cost ${total_extra_cost:,.0f} in additional tax at the {rate:.0%} rate",
     }
 
 
@@ -137,16 +153,17 @@ def _benefit_of_current_bracket(
     scenario: ScenarioInput,
     conversions: list[float],
 ) -> dict:
-    """What benefit does the current conversion provide?"""
-    from app.engine.tax import calculate_federal_tax
-
+    """What benefit does the current conversion provide (federal + state)?"""
     total_tax_paid = 0.0
     for t in range(len(conversions)):
         income = scenario.income_timeline[t].gross_income
-        c_t = conversions[t]
-        tax_with = calculate_federal_tax(income + c_t, scenario.filing_status)
-        tax_without = calculate_federal_tax(income, scenario.filing_status)
-        total_tax_paid += (tax_with - tax_without)
+        yr_state = resolve_state_for_year(
+            scenario.income_timeline[t].state, scenario.state
+        )
+        total_tax_paid += total_conversion_cost(
+            income, conversions[t], scenario.filing_status,
+            state=yr_state, custom_state_rate=scenario.custom_state_rate,
+        )
 
     total_conversion = sum(conversions)
     avg_rate = total_tax_paid / total_conversion if total_conversion > 0 else 0.0
@@ -155,7 +172,7 @@ def _benefit_of_current_bracket(
     years_to_retire = max(0, scenario.retirement_age - scenario.age)
     future_value = total_conversion * (1 + scenario.annual_growth_rate) ** years_to_retire
     retirement_rate = get_marginal_rate(
-        scenario.annual_retirement_spending or future_value * 0.04,
+        scenario.annual_retirement_spending or future_value * RETIREMENT_SPENDING_RATE,
         scenario.filing_status,
     )
     future_tax_avoided = future_value * retirement_rate
@@ -174,21 +191,21 @@ def _build_sensitivity_notes(
     """Generate notes about what assumptions the result is sensitive to."""
     notes = []
 
-    if scenario.annual_growth_rate > 0.08:
+    if scenario.annual_growth_rate > HIGH_GROWTH_RATE:
         notes.append("Result is sensitive to the assumed growth rate — a lower return reduces the benefit of conversion")
-    elif scenario.annual_growth_rate < 0.05:
+    elif scenario.annual_growth_rate < LOW_GROWTH_RATE:
         notes.append("Conservative growth assumption — higher returns would increase conversion benefit")
     else:
-        notes.append("Moderate growth assumption (7%) — result changes modestly with ±2% variation")
+        notes.append(f"Moderate growth assumption ({scenario.annual_growth_rate:.0%}) — result changes modestly with ±2% variation")
 
     n_years = len(conversions)
     if n_years > 1:
         incomes = [y.gross_income for y in scenario.income_timeline]
         income_range = max(incomes) - min(incomes)
-        if income_range > 50000:
+        if income_range > LARGE_INCOME_VARIATION:
             notes.append("Large income variation across years creates significant conversion opportunities in low-income years")
 
-    if scenario.years_in_retirement >= 30:
+    if scenario.years_in_retirement >= LONG_RETIREMENT_YEARS:
         notes.append("Long retirement horizon amplifies the tax-free growth benefit of Roth conversions")
 
     if scenario.healthcare:
@@ -198,15 +215,15 @@ def _build_sensitivity_notes(
         )
 
     # RMD impact note
-    from app.engine.rmd import rmd_start_age as _rmd_start
-    owner_rmd_start = _rmd_start(scenario.age)
+    from app.engine.rmd import rmd_start_age
+    owner_rmd_start = rmd_start_age(scenario.age)
     years_to_rmd = owner_rmd_start - scenario.age
     if years_to_rmd <= 15:
         notes.append(
             f"RMDs begin at age {owner_rmd_start} ({years_to_rmd} years from now) — "
             f"converting before then reduces forced taxable withdrawals in retirement"
         )
-    elif scenario.traditional_ira_balance >= 500000:
+    elif scenario.traditional_ira_balance >= LARGE_BALANCE_THRESHOLD:
         notes.append(
             f"With a large traditional IRA balance, future RMDs (starting at age {owner_rmd_start}) "
             f"could push into higher brackets — early conversion mitigates this"
@@ -222,11 +239,15 @@ def _build_sensitivity_notes(
                 )
                 if yr_state:
                     income = scenario.income_timeline[t].gross_income
-                    sr = get_state_marginal_rate(
-                        income + conversions[t], yr_state, scenario.filing_status,
-                        scenario.custom_state_rate,
+                    # State-only marginal = combined - federal
+                    total_rate = combined_marginal_rate(
+                        income, conversions[t], scenario.filing_status,
+                        state=yr_state, custom_state_rate=scenario.custom_state_rate,
                     )
-                    state_rates.append(sr)
+                    federal_rate = get_marginal_rate(
+                        income + conversions[t], scenario.filing_status,
+                    )
+                    state_rates.append(total_rate - federal_rate)
         if state_rates:
             avg_state = sum(state_rates) / len(state_rates)
             notes.append(

@@ -2,6 +2,7 @@
 
 import { formatCurrency } from "@/lib/utils/formatting";
 import { CHART_COLORS } from "@/lib/utils/constants";
+import { dataFontStyle } from "@/lib/utils/constants";
 import { maybeSnap } from "@/lib/utils/snap";
 import { useCallback } from "react";
 
@@ -40,7 +41,7 @@ export function ConversionSlider({
         <span className="text-data-xs text-text-tertiary whitespace-nowrap">Conversion amount</span>
         <span
           className="text-body-sm font-medium text-text-primary tabular-nums"
-          style={{ fontFamily: "'Manrope', system-ui" }}
+          style={dataFontStyle}
         >
           {formatCurrency(value)}
         </span>
