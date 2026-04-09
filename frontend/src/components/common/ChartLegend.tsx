@@ -18,7 +18,7 @@ interface ChartLegendProps {
 
 export function ChartLegend({ items, className }: ChartLegendProps) {
   return (
-    <div className={`flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-body-sm text-text-secondary ${className ?? ""}`}>
+    <div className={["flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-body-sm text-text-secondary", className].filter(Boolean).join(" ")}>
       {items.map((item) => (
         <span key={item.label} className="flex items-center gap-1.5">
           <span

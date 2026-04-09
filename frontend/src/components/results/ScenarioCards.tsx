@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { formatCurrency, formatCompactCurrency, formatSavings } from "@/lib/utils/formatting";
 import { Tooltip } from "@/components/common/Tooltip";
 import { ArrowDownIcon } from "@/components/common/icons";
-import { dataFontStyle } from "@/lib/utils/styleConstants";
+import { dataFontStyle } from "@/lib/utils/constants";
 import { InfoTrigger } from "@/components/methodology/InfoTrigger";
 
 interface ScenarioCardsProps {

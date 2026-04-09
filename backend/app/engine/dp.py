@@ -26,6 +26,27 @@ from app.engine.rmd import rmd_start_age, vectorized_rmd
 from app.engine.constants import RETIREMENT_SPENDING_RATE, round_to_resolution
 
 
+def _aca_coverage_years(scenario: ScenarioInput) -> set[int]:
+    """Determine which calendar years the user needs ACA marketplace coverage.
+
+    Shared logic for both 2D and 3D DP backward passes. Equivalent to the
+    function of the same name in optimizer.py.
+    """
+    hc = scenario.healthcare
+    if hc is None:
+        return set()
+
+    timeline_years = {y.year for y in scenario.income_timeline}
+
+    if hc.aca_coverage_years is not None:
+        return set(hc.aca_coverage_years) & timeline_years
+
+    if hc.has_employer_coverage_after is not None:
+        return {y for y in timeline_years if y < hc.has_employer_coverage_after}
+
+    return timeline_years
+
+
 @dataclass
 class DPResult:
     """Output from the DP optimizer."""
@@ -195,16 +216,7 @@ def _dp_backward(
 
     # Determine ACA coverage years
     hc = scenario.healthcare
-    aca_years: set[int] = set()
-    if hc:
-        from app.engine.aca import federal_poverty_level
-        timeline_years = {y.year for y in scenario.income_timeline}
-        if hc.aca_coverage_years is not None:
-            aca_years = set(hc.aca_coverage_years) & timeline_years
-        elif hc.has_employer_coverage_after is not None:
-            aca_years = {y for y in timeline_years if y < hc.has_employer_coverage_after}
-        else:
-            aca_years = timeline_years
+    aca_years = _aca_coverage_years(scenario)
 
     # Pre-compute tax without conversion for each year (scalar per year)
     tax_without_cache = [
@@ -519,16 +531,7 @@ def _dp_backward_3d(
 
     # Determine ACA coverage years (same as 2D)
     hc = scenario.healthcare
-    aca_years: set[int] = set()
-    if hc:
-        from app.engine.aca import federal_poverty_level
-        timeline_years = {y.year for y in scenario.income_timeline}
-        if hc.aca_coverage_years is not None:
-            aca_years = set(hc.aca_coverage_years) & timeline_years
-        elif hc.has_employer_coverage_after is not None:
-            aca_years = {y for y in timeline_years if y < hc.has_employer_coverage_after}
-        else:
-            aca_years = timeline_years
+    aca_years = _aca_coverage_years(scenario)
 
     # Pre-compute tax costs (same as 2D)
     tax_without_cache = [

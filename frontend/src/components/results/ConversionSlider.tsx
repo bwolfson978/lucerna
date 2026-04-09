@@ -2,7 +2,7 @@
 
 import { formatCurrency } from "@/lib/utils/formatting";
 import { CHART_COLORS } from "@/lib/utils/constants";
-import { dataFontStyle } from "@/lib/utils/styleConstants";
+import { dataFontStyle } from "@/lib/utils/constants";
 import { maybeSnap } from "@/lib/utils/snap";
 import { useCallback } from "react";
 

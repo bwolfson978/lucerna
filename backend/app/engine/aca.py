@@ -196,10 +196,15 @@ def calculate_combined_marginal_rate(
     monthly_slcsp_premium: float,
     filing_status: FilingStatus,
 ) -> float:
-    """Calculate the combined marginal rate including federal tax + subsidy loss.
+    """Calculate the combined marginal rate including federal tax + ACA subsidy loss.
 
-    This is the "true cost" as a percentage of the conversion amount:
-    (federal_tax_on_conversion + subsidy_loss) / conversion_amount.
+    This is the ACA-specific "true cost" as a percentage of the conversion
+    amount: (federal_tax + subsidy_loss) / conversion_amount.
+
+    Note: This differs from ``tax_cost.combined_marginal_rate`` which computes
+    federal + state marginal rates (without ACA). Use this function when you
+    need the ACA-aware cost; use ``tax_cost.combined_marginal_rate`` when you
+    need the federal + state marginal rate.
     """
     if conversion_amount <= 0:
         return 0.0

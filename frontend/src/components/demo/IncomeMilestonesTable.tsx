@@ -2,7 +2,7 @@
 
 import type { YearlyIncome } from "@/lib/types";
 import { formatCompactCurrency } from "@/lib/utils/formatting";
-import { dataFontStyle } from "@/lib/utils/styleConstants";
+import { dataFontStyle } from "@/lib/utils/constants";
 
 interface IncomeMilestonesTableProps {
   timeline: YearlyIncome[];

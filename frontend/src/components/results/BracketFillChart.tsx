@@ -3,7 +3,7 @@
 import type { BracketFillResult } from "@/lib/types";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
 import { BRACKET_COLORS, CHART_COLORS } from "@/lib/utils/constants";
-import { DATA_FONT_FAMILY } from "@/lib/utils/styleConstants";
+import { DATA_FONT_FAMILY } from "@/lib/utils/constants";
 import { Tooltip } from "@/components/common/Tooltip";
 import { Card } from "@/components/ui/card";
 

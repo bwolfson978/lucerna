@@ -2,7 +2,7 @@
 
 import type { YearlyDetail } from "@/lib/types";
 import { formatTableCurrency } from "@/lib/utils/formatting";
-import { dataFontStyle } from "@/lib/utils/styleConstants";
+import { dataFontStyle } from "@/lib/utils/constants";
 
 import { useMemo, useRef, useState, type RefObject } from "react";
 import { useScrollFade } from "@/hooks/useScrollFade";

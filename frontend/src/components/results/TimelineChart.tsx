@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import type { TimelineChartPoint } from "@/lib/types";
 import { CHART_COLORS } from "@/lib/utils/constants";
 import { formatAxisCurrency, formatCurrency } from "@/lib/utils/formatting";
-import { DATA_FONT_FAMILY } from "@/lib/utils/styleConstants";
+import { DATA_FONT_FAMILY } from "@/lib/utils/constants";
 import { Tooltip } from "@/components/common/Tooltip";
 import { Card } from "@/components/ui/card";
 

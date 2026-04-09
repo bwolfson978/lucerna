@@ -4,7 +4,7 @@ import type { AcaSubsidyDetail, OptimizationResult } from "@/lib/types";
 import { MetricCard } from "@/components/common/MetricCard";
 import { Tooltip } from "@/components/common/Tooltip";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
-import { dataFontStyle } from "@/lib/utils/styleConstants";
+import { dataFontStyle } from "@/lib/utils/constants";
 import { Card } from "@/components/ui/card";
 import { InfoTrigger } from "@/components/methodology/InfoTrigger";
 

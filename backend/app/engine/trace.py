@@ -4,7 +4,7 @@ from app.engine.types import (
 )
 from app.engine.tax import get_marginal_rate
 from app.engine.state_tax import resolve_state_for_year, get_state_marginal_rate
-from app.engine.tax_cost import federal_tax_on_conversion, combined_marginal_rate
+from app.engine.tax_cost import federal_tax_on_conversion, total_conversion_cost, combined_marginal_rate
 from app.engine.constants import (
     BRACKET_FULL_THRESHOLD,
     LARGE_BALANCE_THRESHOLD,
@@ -118,25 +118,34 @@ def _cost_of_next_bracket(
     scenario: ScenarioInput,
     conversions: list[float],
 ) -> dict:
-    """What would it cost to convert $1,000 more?"""
+    """What would it cost to convert $1,000 more (federal + state)?"""
     extra = 1000
-    total_extra_tax = 0.0
+    total_extra_cost = 0.0
     for t in range(len(conversions)):
         income = scenario.income_timeline[t].gross_income
         conversion = conversions[t]
-        total_extra_tax += federal_tax_on_conversion(
+        yr_state = resolve_state_for_year(
+            scenario.income_timeline[t].state, scenario.state
+        )
+        # Cost of next $extra on top of existing income + conversion
+        total_extra_cost += total_conversion_cost(
             income + conversion, extra, scenario.filing_status,
+            state=yr_state, custom_state_rate=scenario.custom_state_rate,
         )
 
-    rate = get_marginal_rate(
-        scenario.income_timeline[0].gross_income + conversions[0] + extra,
+    rate = combined_marginal_rate(
+        scenario.income_timeline[0].gross_income, conversions[0] + extra,
         scenario.filing_status,
+        state=resolve_state_for_year(
+            scenario.income_timeline[0].state, scenario.state
+        ),
+        custom_state_rate=scenario.custom_state_rate,
     )
 
     return {
         "bracket_rate": rate,
-        "additional_tax": round(total_extra_tax, 2),
-        "net_effect": f"Converting ${extra:,} more would cost ${total_extra_tax:,.0f} in additional tax at the {rate:.0%} rate",
+        "additional_tax": round(total_extra_cost, 2),
+        "net_effect": f"Converting ${extra:,} more would cost ${total_extra_cost:,.0f} in additional tax at the {rate:.0%} rate",
     }
 
 
@@ -144,12 +153,16 @@ def _benefit_of_current_bracket(
     scenario: ScenarioInput,
     conversions: list[float],
 ) -> dict:
-    """What benefit does the current conversion provide?"""
+    """What benefit does the current conversion provide (federal + state)?"""
     total_tax_paid = 0.0
     for t in range(len(conversions)):
         income = scenario.income_timeline[t].gross_income
-        total_tax_paid += federal_tax_on_conversion(
+        yr_state = resolve_state_for_year(
+            scenario.income_timeline[t].state, scenario.state
+        )
+        total_tax_paid += total_conversion_cost(
             income, conversions[t], scenario.filing_status,
+            state=yr_state, custom_state_rate=scenario.custom_state_rate,
         )
 
     total_conversion = sum(conversions)
@@ -183,7 +196,7 @@ def _build_sensitivity_notes(
     elif scenario.annual_growth_rate < LOW_GROWTH_RATE:
         notes.append("Conservative growth assumption — higher returns would increase conversion benefit")
     else:
-        notes.append("Moderate growth assumption (7%) — result changes modestly with ±2% variation")
+        notes.append(f"Moderate growth assumption ({scenario.annual_growth_rate:.0%}) — result changes modestly with ±2% variation")
 
     n_years = len(conversions)
     if n_years > 1:

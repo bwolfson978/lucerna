@@ -8,7 +8,7 @@ import { ArrowDownIcon } from "@/components/common/icons";
 import { ChartLegend } from "@/components/common/ChartLegend";
 import { formatCurrency, formatSavings, formatTableCurrency } from "@/lib/utils/formatting";
 import { CHART_COLORS } from "@/lib/utils/constants";
-import { dataFontStyle } from "@/lib/utils/styleConstants";
+import { dataFontStyle } from "@/lib/utils/constants";
 import { BracketChart } from "./BracketChart";
 import { ConversionSlider } from "./ConversionSlider";
 import { ScenarioCards } from "./ScenarioCards";
