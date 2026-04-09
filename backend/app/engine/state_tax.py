@@ -1,11 +1,11 @@
 """State income tax bracket data and calculation functions.
 
 Loads bracket data from the static JSON configuration file
-(backend/data/tax_brackets_2025.json). The JSON is the single source of
+(backend/data/tax_brackets_2026.json). The JSON is the single source of
 truth for all state tax brackets, standard deductions, and metadata.
 
 Source: Tax Foundation — State Individual Income Tax Rates and Brackets
-https://taxfoundation.org/data/all/state/state-income-tax-rates/
+https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/
 Verified against official state department of revenue publications.
 """
 
@@ -41,14 +41,14 @@ def _load_tax_data() -> dict:
     Converts "inf" strings back to float("inf") for bracket max values.
     Returns the full parsed data dict.
     """
-    data_file = _DATA_DIR / "tax_brackets_2025.json"
+    data_file = _DATA_DIR / "tax_brackets_2026.json"
     try:
         with open(data_file, "r") as f:
             data = json.load(f)
     except FileNotFoundError:
         raise RuntimeError(
             f"Tax data file not found at {data_file}. "
-            f"Ensure backend/data/tax_brackets_2025.json exists."
+            f"Ensure backend/data/tax_brackets_2026.json exists."
         )
     except json.JSONDecodeError as e:
         raise RuntimeError(f"Tax data file is malformed: {e}")

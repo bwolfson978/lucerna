@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import fallbackData from "./federal-brackets-2025.json";
+import fallbackData from "./federal-brackets-2026.json";
 
 export interface TaxBracket {
   min: number;

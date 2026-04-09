@@ -12,36 +12,36 @@ describe("calculateFederalTax", () => {
   });
 
   it("returns 0 below standard deduction", () => {
-    // $10K gross < $15K deduction → $0 taxable
+    // $10K gross < $16,100 deduction → $0 taxable
     expect(calculateFederalTax(10000)).toBe(0);
   });
 
   it("single: 10% bracket only", () => {
-    // $20K gross - $15K deduction = $5K taxable → $500
-    expect(calculateFederalTax(20000)).toBeCloseTo(500, 0);
+    // $20K gross - $16,100 deduction = $3,900 taxable → $390
+    expect(calculateFederalTax(20000)).toBeCloseTo(390, 0);
   });
 
   it("single: spans 10% and 12% brackets", () => {
-    // $50K gross - $15K deduction = $35K taxable
-    // $11,925 * 10% = $1,192.50 + ($35K - $11,925) * 12% = $2,769
-    // Total: $3,961.50
-    expect(calculateFederalTax(50000)).toBeCloseTo(3961.5, 0);
+    // $50K gross - $16,100 deduction = $33,900 taxable
+    // $12,400 * 10% = $1,240 + ($33,900 - $12,400) * 12% = $2,580
+    // Total: $3,820
+    expect(calculateFederalTax(50000)).toBeCloseTo(3820, 0);
   });
 
   it("MFJ: wider brackets, lower tax", () => {
-    // $50K gross - $30K deduction = $20K taxable, all in 10% = $2,000
+    // $50K gross - $32,200 deduction = $17,800 taxable, all in 10% = $1,780
     expect(calculateFederalTax(50000, "married_filing_jointly")).toBeCloseTo(
-      2000,
+      1780,
       0
     );
   });
 
   it("MFJ: spans 10% and 12%", () => {
-    // $100K gross - $30K deduction = $70K taxable
-    // $23,850 * 10% = $2,385 + ($70K - $23,850) * 12% = $5,538
-    // Total: $7,923
+    // $100K gross - $32,200 deduction = $67,800 taxable
+    // $24,800 * 10% = $2,480 + ($67,800 - $24,800) * 12% = $5,160
+    // Total: $7,640
     expect(calculateFederalTax(100000, "married_filing_jointly")).toBeCloseTo(
-      7923,
+      7640,
       0
     );
   });
@@ -84,7 +84,7 @@ describe("analyzeBracketFill", () => {
     );
     // Total filled should equal taxable income (gross - deduction)
     expect(totalIncome + totalConversion).toBeCloseTo(
-      Math.max(0, 80000 + 50000 - 15000),
+      Math.max(0, 80000 + 50000 - 16100),
       0
     );
   });

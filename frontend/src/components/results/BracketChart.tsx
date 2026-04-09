@@ -290,8 +290,9 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
         )}
 
         {/* Fixed left axis: evenly spaced income tick marks + bottom label slot */}
-        <div className="flex-shrink-0 flex flex-col overflow-hidden" style={{ width: leftAxisWidth }}>
+        <div className="flex-shrink-0 flex flex-col" style={{ width: leftAxisWidth }}>
           <svg
+            className="overflow-hidden"
             width={leftAxisWidth}
             height={chartHeight}
           >

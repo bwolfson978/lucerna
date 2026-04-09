@@ -11,8 +11,8 @@ async def test_tax_config_returns_200(async_client):
     assert "brackets" in data
 
     # Standard deductions present for both filing statuses
-    assert data["standard_deduction"]["single"] == 15000
-    assert data["standard_deduction"]["married_filing_jointly"] == 30000
+    assert data["standard_deduction"]["single"] == 16100
+    assert data["standard_deduction"]["married_filing_jointly"] == 32200
 
     # Brackets present for both filing statuses
     for fs in ("single", "married_filing_jointly"):

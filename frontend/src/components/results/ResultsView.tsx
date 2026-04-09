@@ -113,18 +113,20 @@ export function ResultsView({ result }: ResultsViewProps) {
                 triggerId="hero-savings"
               />
             </div>
-            <span className="metric-value-hero text-optimal">
-              {formatSavings(estimatedSavings)}
-            </span>
-            {!isAtOptimal && (
-              <span
-                className="flex items-center gap-1 text-body-sm text-negative font-medium"
-                style={dataFontStyle}
-              >
-                <ArrowDownIcon />
-                {formatCurrency(Math.max(1, Math.abs(savingsDifference)))} less than highest savings
+            <div className="flex items-baseline gap-3 flex-wrap">
+              <span className="metric-value-hero text-optimal">
+                {formatSavings(estimatedSavings)}
               </span>
-            )}
+              {!isAtOptimal && (
+                <span
+                  className="flex items-center gap-1 text-body-sm text-negative font-medium whitespace-nowrap"
+                  style={dataFontStyle}
+                >
+                  <ArrowDownIcon />
+                  {formatCurrency(Math.max(1, Math.abs(savingsDifference)))} less than highest savings
+                </span>
+              )}
+            </div>
             <span className="text-body-sm text-text-secondary">
               vs. not converting, in today&apos;s dollars
               <Tooltip content="This is the difference in after-tax wealth between the selected conversion schedule and doing nothing, expressed in today's dollars using your discount rate." />
@@ -149,8 +151,8 @@ export function ResultsView({ result }: ResultsViewProps) {
           hideLegend
           leftBottomContent={
             <div className="flex flex-col border-r border-border">
-              <div className="h-8 flex items-center justify-end text-text-tertiary text-data-xs font-medium px-1 text-right leading-tight" style={{ maxWidth: 64 }}>
-                Additional tax from conversion
+              <div className="h-8 flex items-center justify-end text-text-tertiary text-data-xs font-medium px-1 text-right leading-tight">
+                Added tax from conversion
               </div>
             </div>
           }
@@ -208,12 +210,12 @@ export function ResultsView({ result }: ResultsViewProps) {
       <div className="text-body-sm text-text-tertiary border-t border-border pt-section">
         <div className="flex items-start justify-between gap-4">
           <p>
-            This analysis uses 2025 federal tax brackets
+            This analysis uses 2026 federal
             {result.input.state && result.input.state !== "none"
-              ? " and state income tax"
-              : ""}
-            , and models required minimum distributions in the retirement
-            phase.
+              ? " and state"
+              : ""}{" "}
+            tax brackets, and models required minimum distributions in the
+            retirement phase.
             {result.aca_subsidy_impact
               ? " ACA marketplace subsidy impact is included based on your healthcare inputs."
               : ""}{" "}
