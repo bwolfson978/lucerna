@@ -73,8 +73,10 @@ export function MethodologyPageClient() {
         </div>
 
         <main className="flex-1 min-w-0">
-          {/* Mobile TOC */}
-          <TableOfContents items={TOC_ITEMS} activeId={activeId} />
+          {/* Mobile TOC (hidden on desktop where the sidebar shows instead) */}
+          <div className="lg:hidden">
+            <TableOfContents items={TOC_ITEMS} activeId={activeId} />
+          </div>
 
           <div className="px-default md:px-page">
             <div className="max-w-content mx-auto flex flex-col gap-section-lg py-section-lg">
