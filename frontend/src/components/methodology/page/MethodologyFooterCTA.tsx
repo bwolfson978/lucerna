@@ -4,8 +4,8 @@ import Link from "next/link";
 
 export function MethodologyFooterCTA() {
   return (
-    <div className="relative overflow-hidden">
-      <div className="gradient-orb gradient-orb-gold absolute -top-[80px] -right-[80px]" />
+    <div className="relative">
+      <div className="gradient-orb gradient-orb-gold absolute -top-[80px] -right-[80px] opacity-60" />
 
       <div className="relative z-10 flex flex-col gap-comfortable max-w-xl">
         <h2 className="text-h1 text-text-primary font-serif">
