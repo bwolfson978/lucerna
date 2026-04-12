@@ -7,18 +7,27 @@ interface YearColumn {
   income: string;
   incomeLevel: number; // 0-1, how much of bracket space is filled by income
   conversionLevel: number; // 0-1, how much additional space is filled by conversion
-  label: string;
 }
 
 const YEARS: YearColumn[] = [
-  { year: "Year 1", income: "$35K", incomeLevel: 0.12, conversionLevel: 0.55, label: "Low income: most conversion" },
-  { year: "Year 2", income: "$30K", incomeLevel: 0.10, conversionLevel: 0.58, label: "Low income: most conversion" },
-  { year: "Year 3", income: "$150K", incomeLevel: 0.52, conversionLevel: 0.08, label: "High income: little room" },
+  { year: "Year 1", income: "$35K", incomeLevel: 0.12, conversionLevel: 0.55 },
+  { year: "Year 2", income: "$30K", incomeLevel: 0.10, conversionLevel: 0.58 },
+  { year: "Year 3", income: "$150K", incomeLevel: 0.52, conversionLevel: 0.08 },
+];
+
+// Bracket tiers in ascending order (10% at bottom, 32% at top)
+const TIERS = [
+  { rate: "10%", key: "0.10", height: 0.08 },
+  { rate: "12%", key: "0.12", height: 0.16 },
+  { rate: "22%", key: "0.22", height: 0.24 },
+  { rate: "24%", key: "0.24", height: 0.26 },
+  { rate: "32%", key: "0.32", height: 0.26 },
 ];
 
 /**
  * Three-year comparison showing that conversions concentrate in low-income years
- * where bracket space is cheapest. Each column is a stacked bar of bracket space.
+ * where bracket space is cheapest. Each column is a stacked bar of bracket space
+ * with lowest brackets at the bottom (filling upward).
  */
 export function MultiYearAllocation() {
   const labelFont = "'Inter', system-ui, sans-serif";
@@ -28,17 +37,16 @@ export function MultiYearAllocation() {
   const barHeight = 200;
   const leftMargin = 80;
   const topMargin = 40;
-
-  // Bracket tiers (simplified to 5 for visual clarity)
-  const tiers = [
-    { rate: "10%", key: "0.10", height: 0.08 },
-    { rate: "12%", key: "0.12", height: 0.16 },
-    { rate: "22%", key: "0.22", height: 0.24 },
-    { rate: "24%", key: "0.24", height: 0.26 },
-    { rate: "32%", key: "0.32", height: 0.26 },
-  ];
-
   const totalWidth = leftMargin + YEARS.length * (colWidth + colGap);
+
+  // Pre-compute tier positions (bottom-up: 10% at bottom, 32% at top)
+  const tierPositions: { rate: string; key: string; y: number; h: number }[] = [];
+  let cumY = topMargin + barHeight; // start from bottom
+  for (const tier of TIERS) {
+    const h = tier.height * barHeight;
+    cumY -= h;
+    tierPositions.push({ rate: tier.rate, key: tier.key, y: cumY, h });
+  }
 
   return (
     <svg
@@ -47,65 +55,53 @@ export function MultiYearAllocation() {
       role="img"
       aria-label="Three-year comparison showing conversions concentrated in low-income years where bracket space is cheapest"
     >
-      {/* Bracket rate labels on the left */}
-      {(() => {
-        let cumY = topMargin;
-        return tiers.map((tier) => {
-          const tierH = tier.height * barHeight;
-          const y = cumY;
-          cumY += tierH;
-          const color = BRACKET_COLORS[tier.key] || "#8B8A99";
-          return (
-            <g key={tier.rate}>
-              <rect x={leftMargin - 6} y={y} width="3" height={tierH}
-                fill={color} rx="1.5" />
-              <text x={leftMargin - 14} y={y + tierH / 2 + 1}
-                textAnchor="end" dominantBaseline="middle"
-                fill={color} fontFamily={DATA_FONT_FAMILY} fontSize="10" fontWeight="700">
-                {tier.rate}
-              </text>
-            </g>
-          );
-        });
-      })()}
+      {/* Bracket rate labels on the left (bottom-up) */}
+      {tierPositions.map((tp) => {
+        const color = BRACKET_COLORS[tp.key] || "#8B8A99";
+        return (
+          <g key={tp.rate}>
+            <rect x={leftMargin - 6} y={tp.y} width="3" height={tp.h}
+              fill={color} rx="1.5" />
+            <text x={leftMargin - 14} y={tp.y + tp.h / 2 + 1}
+              textAnchor="end" dominantBaseline="middle"
+              fill={color} fontFamily={DATA_FONT_FAMILY} fontSize="10" fontWeight="700">
+              {tp.rate}
+            </text>
+          </g>
+        );
+      })}
 
       {/* Year columns */}
       {YEARS.map((yearData, colIdx) => {
         const x = leftMargin + colIdx * (colWidth + colGap);
 
-        // Draw bracket tiers
-        let cumY = topMargin;
-        const tierElements = tiers.map((tier) => {
-          const tierH = tier.height * barHeight;
-          const y = cumY;
-          cumY += tierH;
-          return (
-            <rect key={tier.rate} x={x} y={y} width={colWidth} height={tierH}
-              fill="rgba(255, 255, 255, 0.03)"
-              stroke="rgba(255, 255, 255, 0.06)" strokeWidth="0.5" />
-          );
-        });
+        // Draw bracket tiers (background rectangles)
+        const tierBgs = tierPositions.map((tp) => (
+          <rect key={tp.rate} x={x} y={tp.y} width={colWidth} height={tp.h}
+            fill="rgba(255, 255, 255, 0.03)"
+            stroke="rgba(255, 255, 255, 0.06)" strokeWidth="0.5" />
+        ));
 
         // Income fill (from bottom up)
         const incomeHeight = yearData.incomeLevel * barHeight;
         const incomeY = topMargin + barHeight - incomeHeight;
 
-        // Conversion fill (on top of income)
+        // Conversion fill (stacked above income)
         const convHeight = yearData.conversionLevel * barHeight;
         const convY = incomeY - convHeight;
 
         return (
           <g key={yearData.year}>
-            {tierElements}
+            {tierBgs}
 
             {/* Income fill */}
             <rect x={x} y={incomeY} width={colWidth} height={incomeHeight}
-              fill={CHART_COLORS.income} opacity="0.6" rx="0" />
+              fill={CHART_COLORS.income} opacity="0.6" />
 
             {/* Conversion fill */}
             {convHeight > 0 && (
               <rect x={x} y={convY} width={colWidth} height={convHeight}
-                fill={CHART_COLORS.conversion} opacity="0.7" rx="0" />
+                fill={CHART_COLORS.conversion} opacity="0.7" />
             )}
 
             {/* Year label */}
@@ -125,7 +121,7 @@ export function MultiYearAllocation() {
         );
       })}
 
-      {/* Annotation arrows pointing to Year 1 and 2's gold blocks */}
+      {/* Annotation */}
       <text x={leftMargin + (colWidth + colGap) - colGap / 2} y={topMargin + barHeight + 60}
         textAnchor="middle" fill="#F0C674"
         fontFamily={labelFont} fontSize="10" fontWeight="500">
