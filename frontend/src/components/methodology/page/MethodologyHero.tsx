@@ -2,10 +2,10 @@
 
 export function MethodologyHero() {
   return (
-    <div className="relative overflow-hidden">
-      {/* Gradient orbs */}
-      <div className="gradient-orb gradient-orb-purple absolute -top-[100px] -right-[100px]" />
-      <div className="gradient-orb gradient-orb-gold absolute -bottom-[100px] -left-[100px]" />
+    <div className="relative">
+      {/* Gradient orbs — no overflow-hidden so they bleed naturally into the page */}
+      <div className="gradient-orb gradient-orb-purple absolute -top-[100px] -right-[100px] opacity-60" />
+      <div className="gradient-orb gradient-orb-gold absolute -bottom-[100px] -left-[100px] opacity-60" />
 
       <div className="relative z-10 flex flex-col gap-comfortable max-w-2xl">
         <h1 className="text-display md:text-display-xl text-text-primary font-serif">
