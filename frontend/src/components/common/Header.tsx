@@ -36,6 +36,13 @@ export function Header() {
             >
               Run Your Own Scenario
             </Link>
+            <span className="text-text-tertiary opacity-40">|</span>
+            <Link
+              href="/methodology"
+              className="text-body-sm text-text-secondary hover:text-accent transition-colors duration-300"
+            >
+              Methodology
+            </Link>
             <HowItWorksButton />
           </nav>
 
@@ -79,6 +86,13 @@ export function Header() {
             className="text-body text-text-secondary hover:text-accent transition-colors duration-300 py-2.5 px-2 rounded-lg hover:bg-glass-bg"
           >
             Run Your Own Scenario
+          </Link>
+          <Link
+            href="/methodology"
+            onClick={() => setMobileMenuOpen(false)}
+            className="text-body text-text-secondary hover:text-accent transition-colors duration-300 py-2.5 px-2 rounded-lg hover:bg-glass-bg"
+          >
+            Methodology
           </Link>
         </nav>
       )}

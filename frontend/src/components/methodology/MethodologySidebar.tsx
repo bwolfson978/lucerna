@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useMethodology } from "./MethodologyContext";
 import { AccordionSection } from "./AccordionSection";
@@ -107,7 +108,10 @@ export function MethodologySidebar({ result, mobile }: MethodologySidebarProps) 
 
       {/* Footer link */}
       <div className="mt-5 pt-4 border-t border-glass-border">
-        <span className="inline-flex items-center gap-1.5 text-sm font-medium text-accent cursor-pointer hover:opacity-80 transition-opacity">
+        <Link
+          href="/methodology"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:opacity-80 transition-opacity"
+        >
           Read our full methodology
           <svg
             className="h-3.5 w-3.5"
@@ -118,7 +122,7 @@ export function MethodologySidebar({ result, mobile }: MethodologySidebarProps) 
           >
             <path d="M6 4l4 4-4 4" />
           </svg>
-        </span>
+        </Link>
       </div>
     </div>
   );
