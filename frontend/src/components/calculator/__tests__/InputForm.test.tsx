@@ -1,7 +1,46 @@
 import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest";
+import { forwardRef } from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { InputForm } from "../InputForm";
+
+// Mock the Radix-backed Select with a native <select> so fireEvent.change
+// drives it directly and tests don't have to deal with portal rendering.
+// This still exercises the FormSelect wrapper (label, required asterisk,
+// error text) since only the innermost UI Select is replaced.
+interface MockSelectProps {
+  options: { value: string; label: string }[];
+  value?: string;
+  onChange?: (e: { target: { value: string } }) => void;
+  id?: string;
+  className?: string;
+  placeholder?: string;
+  "aria-required"?: boolean;
+  "aria-invalid"?: boolean;
+}
+vi.mock("@/components/ui/select", () => ({
+  Select: forwardRef<HTMLSelectElement, MockSelectProps>(
+    ({ options, value, onChange, id, placeholder, ...rest }, ref) => (
+      <select
+        ref={ref}
+        id={id}
+        value={value ?? ""}
+        aria-required={rest["aria-required"] || undefined}
+        aria-invalid={rest["aria-invalid"] || undefined}
+        onChange={(e) =>
+          onChange?.({ target: { value: e.target.value } })
+        }
+      >
+        {placeholder && <option value="">{placeholder}</option>}
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+    )
+  ),
+}));
 
 // Radix UI Switch uses ResizeObserver which jsdom doesn't provide
 // jsdom also doesn't implement scrollIntoView — the form uses it to jump to
@@ -90,17 +129,28 @@ describe("InputForm", () => {
     onSubmit = vi.fn();
   });
 
+  // All five Tier-1 required fields start empty in the real form — tests
+  // must populate every one to get through validation.
   function fillBasicInputs() {
-    // The form has default age=35, retirementAge=65, incomeGrowthRate=3
-    // We just need to set income and balance
-    const incomeInput = screen.getByLabelText("Current income");
-    fireEvent.change(incomeInput, { target: { value: "100000" } });
-
-    const balanceInput = screen.getByLabelText("Traditional IRA/401(k) balance");
-    fireEvent.change(balanceInput, { target: { value: "500000" } });
+    fireEvent.change(screen.getByLabelText("Age"), {
+      target: { value: "35" },
+    });
+    fireEvent.change(screen.getByLabelText("Filing status"), {
+      target: { value: "single" },
+    });
+    fireEvent.change(screen.getByLabelText("Current income"), {
+      target: { value: "100000" },
+    });
+    fireEvent.change(
+      screen.getByLabelText("Traditional IRA/401(k) balance"),
+      { target: { value: "500000" } }
+    );
+    fireEvent.change(screen.getByLabelText("Retirement age"), {
+      target: { value: "65" },
+    });
   }
 
-  it("renders without timeline editor when income is 0", () => {
+  it("renders without timeline editor when required fields are empty", () => {
     renderInputForm({ onSubmit });
     expect(screen.queryByTestId("timeline-editor")).not.toBeInTheDocument();
   });
@@ -206,39 +256,66 @@ describe("InputForm", () => {
     expect(pinnedYear.textContent).toContain("40000");
   });
 
-  it("validates required fields before submitting", () => {
+  it("validates all required fields before submitting", () => {
     renderInputForm({ onSubmit });
 
     const form = screen.getByRole("button", { name: /run my scenario/i });
     fireEvent.click(form);
 
-    // Both required fields start as null and should show their own error
+    // All five Tier-1 required fields should flag their own error
+    expect(screen.getByText("Enter your age")).toBeInTheDocument();
+    expect(
+      screen.getByText("Select your filing status")
+    ).toBeInTheDocument();
     expect(
       screen.getByText("Enter your current income")
     ).toBeInTheDocument();
     expect(
       screen.getByText("Enter your traditional IRA/401(k) balance")
     ).toBeInTheDocument();
+    expect(
+      screen.getByText("Enter your retirement age")
+    ).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it("does not pre-fill required fields with zero", () => {
+  it("does not pre-fill required personal-data fields", () => {
     renderInputForm({ onSubmit });
 
-    const incomeInput = screen.getByLabelText(
+    const age = screen.getByLabelText("Age") as HTMLInputElement;
+    const filing = screen.getByLabelText("Filing status") as HTMLSelectElement;
+    const income = screen.getByLabelText(
       "Current income"
     ) as HTMLInputElement;
-    const balanceInput = screen.getByLabelText(
+    const balance = screen.getByLabelText(
       "Traditional IRA/401(k) balance"
     ) as HTMLInputElement;
+    const retAge = screen.getByLabelText(
+      "Retirement age"
+    ) as HTMLInputElement;
 
-    expect(incomeInput.value).toBe("");
-    expect(balanceInput.value).toBe("");
-    expect(incomeInput.placeholder).toMatch(/^e\.g\./);
-    expect(balanceInput.placeholder).toMatch(/^e\.g\./);
+    expect(age.value).toBe("");
+    expect(filing.value).toBe("");
+    expect(income.value).toBe("");
+    expect(balance.value).toBe("");
+    expect(retAge.value).toBe("");
+    expect(age.placeholder).toMatch(/^e\.g\./);
+    expect(income.placeholder).toMatch(/^e\.g\./);
+    expect(balance.placeholder).toMatch(/^e\.g\./);
+    expect(retAge.placeholder).toMatch(/^e\.g\./);
   });
 
-  it("marks required fields with an asterisk and omits it for optional fields", () => {
+  it("pre-fills assumption fields with sensible defaults", () => {
+    renderInputForm({ onSubmit });
+
+    // Tier 2 — industry-standard assumptions users don't need to know
+    const growth = screen.getByLabelText(
+      "Income growth rate (%)"
+    ) as HTMLInputElement;
+    expect(growth.value).toBe("3");
+  });
+
+  it("marks Tier-1 fields with an asterisk and omits it for optional fields", () => {
     renderInputForm({ onSubmit });
 
     // Helper: find the required indicator sibling adjacent to the given label
@@ -248,12 +325,17 @@ describe("InputForm", () => {
       return !!wrapper?.querySelector("[data-required-indicator]");
     }
 
-    // Required: Current income and Traditional IRA/401(k) balance
+    // Tier 1 — personal data the user must supply
+    expect(hasRequiredIndicator("Age")).toBe(true);
+    expect(hasRequiredIndicator("Filing status")).toBe(true);
     expect(hasRequiredIndicator("Current income")).toBe(true);
     expect(hasRequiredIndicator("Traditional IRA/401(k) balance")).toBe(true);
+    expect(hasRequiredIndicator("Retirement age")).toBe(true);
 
-    // Optional: Roth balance should NOT have an asterisk
+    // Tier 3 — optional
     expect(hasRequiredIndicator("Roth IRA/401(k) balance")).toBe(false);
+    // Tier 2 — assumption with default
+    expect(hasRequiredIndicator("Income growth rate (%)")).toBe(false);
   });
 
   it("focuses first invalid field on submit failure", () => {
@@ -266,44 +348,55 @@ describe("InputForm", () => {
     const submit = screen.getByRole("button", { name: /run my scenario/i });
     fireEvent.click(submit);
 
-    // Current income is the first invalid field in DOM order
-    const incomeInput = screen.getByLabelText("Current income");
-    expect(document.activeElement).toBe(incomeInput);
+    // Age is the first invalid field in DOM order
+    const ageInput = screen.getByLabelText("Age");
+    expect(document.activeElement).toBe(ageInput);
     expect(scrollMock).toHaveBeenCalled();
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
-  it("focuses traditional balance when income is the only valid field", () => {
+  it("advances focus to the next invalid field as earlier ones are filled", () => {
     renderInputForm({ onSubmit });
 
-    // Fill just income — traditional balance should be the next invalid field
-    const incomeInput = screen.getByLabelText("Current income");
-    fireEvent.change(incomeInput, { target: { value: "85000" } });
-
-    const submit = screen.getByRole("button", { name: /run my scenario/i });
-    fireEvent.click(submit);
-
-    const balanceInput = screen.getByLabelText(
-      "Traditional IRA/401(k) balance"
+    // Fill age only — filing status should be next invalid
+    fireEvent.change(screen.getByLabelText("Age"), {
+      target: { value: "42" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: /run my scenario/i })
     );
-    expect(document.activeElement).toBe(balanceInput);
+    expect(document.activeElement).toBe(screen.getByLabelText("Filing status"));
+
+    // Then filing status — current income should be next
+    fireEvent.change(screen.getByLabelText("Filing status"), {
+      target: { value: "single" },
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: /run my scenario/i })
+    );
+    expect(document.activeElement).toBe(
+      screen.getByLabelText("Current income")
+    );
+
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
   it("allows retirement age equal to current age (already retired)", () => {
     renderInputForm({ onSubmit });
 
-    const ageInput = screen.getByLabelText("Age");
-    fireEvent.change(ageInput, { target: { value: "65" } });
-
-    const retInput = screen.getByLabelText("Retirement age");
-    fireEvent.change(retInput, { target: { value: "65" } });
-
-    const incomeInput = screen.getByLabelText("Current income");
-    fireEvent.change(incomeInput, { target: { value: "50000" } });
-
-    const balanceInput = screen.getByLabelText("Traditional IRA/401(k) balance");
-    fireEvent.change(balanceInput, { target: { value: "500000" } });
+    fireEvent.change(screen.getByLabelText("Age"), {
+      target: { value: "65" },
+    });
+    fireEvent.change(screen.getByLabelText("Retirement age"), {
+      target: { value: "65" },
+    });
+    fireEvent.change(screen.getByLabelText("Current income"), {
+      target: { value: "50000" },
+    });
+    fireEvent.change(
+      screen.getByLabelText("Traditional IRA/401(k) balance"),
+      { target: { value: "500000" } }
+    );
 
     // Should NOT show the old validation error
     expect(
@@ -318,17 +411,22 @@ describe("InputForm", () => {
   it("allows retirement age less than current age and submits", () => {
     renderInputForm({ onSubmit });
 
-    const ageInput = screen.getByLabelText("Age");
-    fireEvent.change(ageInput, { target: { value: "70" } });
-
-    const retInput = screen.getByLabelText("Retirement age");
-    fireEvent.change(retInput, { target: { value: "65" } });
-
-    const incomeInput = screen.getByLabelText("Current income");
-    fireEvent.change(incomeInput, { target: { value: "50000" } });
-
-    const balanceInput = screen.getByLabelText("Traditional IRA/401(k) balance");
-    fireEvent.change(balanceInput, { target: { value: "500000" } });
+    fireEvent.change(screen.getByLabelText("Age"), {
+      target: { value: "70" },
+    });
+    fireEvent.change(screen.getByLabelText("Filing status"), {
+      target: { value: "single" },
+    });
+    fireEvent.change(screen.getByLabelText("Retirement age"), {
+      target: { value: "65" },
+    });
+    fireEvent.change(screen.getByLabelText("Current income"), {
+      target: { value: "50000" },
+    });
+    fireEvent.change(
+      screen.getByLabelText("Traditional IRA/401(k) balance"),
+      { target: { value: "500000" } }
+    );
 
     // Should generate timeline (3 years: 73 - 70)
     expect(Number(screen.getByTestId("timeline-count").textContent)).toBe(3);
@@ -341,6 +439,7 @@ describe("InputForm", () => {
     const input = onSubmit.mock.calls[0][0];
     expect(input.retirement_age).toBe(65);
     expect(input.age).toBe(70);
+    expect(input.filing_status).toBe("single");
     expect(input.income_timeline.length).toBe(3);
   });
 });

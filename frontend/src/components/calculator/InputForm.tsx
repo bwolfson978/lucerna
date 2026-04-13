@@ -25,6 +25,7 @@ interface InputFormProps {
 // invalid field to scroll & focus when submit fails validation.
 const FIELD_ORDER = [
   "age",
+  "filingStatus",
   "currentIncome",
   "traditionalBalance",
   "retirementAge",
@@ -42,18 +43,22 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
   const [showMore, setShowAdvanced] = useState(false);
 
   // Refs used to scroll & focus the first invalid field when validation fails.
-  const fieldRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  // HTMLElement covers both <input> (NumericField/CurrencyInput) and the
+  // Radix Select trigger <button> (FormSelect).
+  const fieldRefs = useRef<Record<string, HTMLElement | null>>({});
   const timelineRef = useRef<HTMLDivElement | null>(null);
 
-  // Form state — nullable so fields can be fully cleared while typing
-  const [age, setAge] = useState<number | null>(35);
-  const [filingStatus, setFilingStatus] = useState<FilingStatus>("single");
-  // Required fields start as null so they appear genuinely empty (placeholder
-  // only). A default of 0 would read as "already filled in" to users.
+  // Form state. Required personal-data fields start as null so they appear
+  // genuinely empty — the user should consciously answer them rather than
+  // inherit a silent default.
+  const [age, setAge] = useState<number | null>(null);
+  const [filingStatus, setFilingStatus] = useState<FilingStatus | null>(null);
   const [currentIncome, setCurrentIncome] = useState<number | null>(null);
   const [traditionalBalance, setTraditionalBalance] = useState<number | null>(null);
-  const [rothBalance, setRothBalance] = useState<number>(0);
-  const [retirementAge, setRetirementAge] = useState<number | null>(65);
+  const [rothBalance, setRothBalance] = useState<number | null>(null);
+  const [retirementAge, setRetirementAge] = useState<number | null>(null);
+  // Assumption fields keep their sensible defaults — users don't know these
+  // numbers and the engine has defensible industry standards.
   const [incomeGrowthRate, setIncomeGrowthRate] = useState<number | null>(3);
   const [retirementSpending, setRetirementSpending] = useState<number | null>(
     null
@@ -81,26 +86,28 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
   // Income timeline state
   const [timeline, setTimeline] = useState<YearlyIncome[]>([]);
 
-  // Regenerate timeline when base inputs change, preserving pinned years
+  // Regenerate timeline when base inputs change, preserving pinned years.
+  // All three personal-data inputs must be filled before the timeline is
+  // meaningful — otherwise we'd generate wrong-length arrays from defaults.
   useEffect(() => {
-    const ageVal = age ?? 0;
-    const retVal = retirementAge ?? 65;
-    const incGrowthVal = incomeGrowthRate ?? 0;
-
-    if (currentIncome == null || currentIncome <= 0) {
+    if (
+      age == null ||
+      retirementAge == null ||
+      currentIncome == null ||
+      currentIncome <= 0
+    ) {
       setTimeline([]);
       return;
     }
-
-    const fresh = generateTimeline(ageVal, retVal, currentIncome, incGrowthVal);
+    const incGrowthVal = incomeGrowthRate ?? 0;
+    const fresh = generateTimeline(age, retirementAge, currentIncome, incGrowthVal);
     setTimeline((prev) => (prev.length === 0 ? fresh : mergeTimeline(fresh, prev)));
   }, [age, retirementAge, currentIncome, incomeGrowthRate]);
 
   const handleResetTimeline = useCallback(() => {
-    const ageVal = age ?? 0;
-    const retVal = retirementAge ?? 65;
+    if (age == null || retirementAge == null || currentIncome == null) return;
     const incGrowthVal = incomeGrowthRate ?? 0;
-    setTimeline(generateTimeline(ageVal, retVal, currentIncome ?? 0, incGrowthVal));
+    setTimeline(generateTimeline(age, retirementAge, currentIncome, incGrowthVal));
   }, [age, retirementAge, currentIncome, incomeGrowthRate]);
 
   const showTimeline = timeline.length > 0;
@@ -138,21 +145,23 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
     e.preventDefault();
     const errs: Record<string, string> = {};
 
-    const ageVal = age ?? 0;
-    const retVal = retirementAge ?? 65;
     const yrsRetVal = yearsInRetirement ?? 25;
     const growthVal = growthRate ?? 7;
     const discountVal = discountRate ?? 5;
     const hhSize = householdSize ?? 1;
 
-    if (ageVal < 0 || ageVal > 120) errs.age = "Age must be between 0 and 120";
-    if (retVal < 1 || retVal > 120)
-      errs.retirementAge = "Retirement age must be between 1 and 120";
+    if (age == null) errs.age = "Enter your age";
+    else if (age < 0 || age > 120) errs.age = "Age must be between 0 and 120";
+    if (filingStatus == null) errs.filingStatus = "Select your filing status";
     if (currentIncome == null || currentIncome <= 0)
       errs.currentIncome = "Enter your current income";
     if (traditionalBalance == null || traditionalBalance <= 0)
       errs.traditionalBalance = "Enter your traditional IRA/401(k) balance";
-    if (rothBalance < 0) errs.rothBalance = "Roth balance cannot be negative";
+    if (retirementAge == null) errs.retirementAge = "Enter your retirement age";
+    else if (retirementAge < 1 || retirementAge > 120)
+      errs.retirementAge = "Retirement age must be between 1 and 120";
+    if (rothBalance != null && rothBalance < 0)
+      errs.rothBalance = "Roth balance cannot be negative";
     if (yrsRetVal < 1)
       errs.yearsInRetirement = "Must be at least 1 year";
     if (retirementSpending !== null && retirementSpending < 0)
@@ -173,6 +182,8 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
       return;
     }
 
+    // All required fields have passed validation above — the non-null
+    // assertions below are safe.
     const healthcare: HealthcareInput | null = includeAca
       ? {
           household_size: hhSize,
@@ -182,12 +193,12 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
       : null;
 
     const input: ScenarioInput = {
-      age: ageVal,
-      filing_status: filingStatus,
+      age: age!,
+      filing_status: filingStatus!,
       income_timeline: timeline,
-      traditional_ira_balance: traditionalBalance ?? 0,
-      roth_ira_balance: rothBalance,
-      retirement_age: retVal,
+      traditional_ira_balance: traditionalBalance!,
+      roth_ira_balance: rothBalance ?? 0,
+      retirement_age: retirementAge!,
       years_in_retirement: yrsRetVal,
       annual_retirement_spending: retirementSpending,
       annual_growth_rate: growthVal / 100,
@@ -209,15 +220,23 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
           }}
           label="Age"
           value={age ?? ""}
+          placeholder="e.g. 35"
           min={0}
           max={120}
+          required
           error={errors.age}
           onChange={setAge}
         />
         <FormSelect
+          ref={(el) => {
+            fieldRefs.current.filingStatus = el;
+          }}
           label="Filing status"
-          value={filingStatus}
+          value={filingStatus ?? undefined}
           options={FILING_STATUS_OPTIONS}
+          placeholder="Choose filing status"
+          required
+          error={errors.filingStatus}
           onChange={(e) => setFilingStatus(e.target.value as FilingStatus)}
         />
         <FormSelect
@@ -258,8 +277,10 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
           }}
           label="Retirement age"
           value={retirementAge ?? ""}
+          placeholder="e.g. 65"
           min={1}
           max={120}
+          required
           error={errors.retirementAge}
           onChange={setRetirementAge}
         />
@@ -287,11 +308,11 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
             fieldRefs.current.rothBalance = el;
           }}
           label="Roth IRA/401(k) balance"
-          value={rothBalance || ""}
-          placeholder="0"
+          value={rothBalance ?? ""}
+          placeholder="Optional"
           min={0}
           error={errors.rothBalance}
-          helper="Existing Roth IRA/401(k) balance (optional)"
+          helper="Existing Roth IRA/401(k) balance"
           onChange={setRothBalance}
         />
       </div>

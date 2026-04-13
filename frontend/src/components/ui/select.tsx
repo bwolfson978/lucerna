@@ -11,26 +11,48 @@ interface SelectProps {
   className?: string;
   id?: string;
   disabled?: boolean;
+  placeholder?: string;
+  "aria-required"?: boolean;
+  "aria-invalid"?: boolean;
 }
 
 const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
-  ({ className, options, value, onChange, id, disabled }, ref) => {
+  (
+    {
+      className,
+      options,
+      value,
+      onChange,
+      id,
+      disabled,
+      placeholder,
+      "aria-required": ariaRequired,
+      "aria-invalid": ariaInvalid,
+    },
+    ref
+  ) => {
     const selectedLabel = options.find((o) => o.value === value)?.label ?? "";
+    // Radix reserves "" as "clear selection". Convert our null/empty state
+    // to `undefined` so the placeholder renders instead.
+    const radixValue = value ? value : undefined;
 
     return (
       <SelectPrimitive.Root
-        value={value}
+        value={radixValue}
         onValueChange={(val) => onChange?.({ target: { value: val } })}
         disabled={disabled}
       >
         <SelectPrimitive.Trigger
           ref={ref}
           id={id}
+          aria-required={ariaRequired || undefined}
+          aria-invalid={ariaInvalid || undefined}
           className={cn(
             "h-9 min-h-[44px] px-3 w-full",
             "rounded-lg bg-bg-alt",
             "border border-border",
             "text-body text-text-primary text-left",
+            "data-[placeholder]:text-text-tertiary",
             "focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10",
             "transition-all duration-300",
             "disabled:opacity-50 disabled:cursor-not-allowed",
@@ -38,7 +60,9 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
             className
           )}
         >
-          <SelectPrimitive.Value>{selectedLabel}</SelectPrimitive.Value>
+          <SelectPrimitive.Value placeholder={placeholder}>
+            {selectedLabel || undefined}
+          </SelectPrimitive.Value>
           <SelectPrimitive.Icon>
             <svg
               width="12"
