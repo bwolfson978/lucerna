@@ -11,10 +11,11 @@ interface FormSelectProps extends SelectProps {
   helper?: string;
   error?: string;
   tooltip?: string;
+  required?: boolean;
 }
 
 const FormSelect = React.forwardRef<HTMLButtonElement, FormSelectProps>(
-  ({ label, helper, error, tooltip, className, id, ...props }, ref) => {
+  ({ label, helper, error, tooltip, required, className, id, ...props }, ref) => {
     const selectId = id || label?.toLowerCase().replace(/\s+/g, "-");
 
     return (
@@ -22,12 +23,23 @@ const FormSelect = React.forwardRef<HTMLButtonElement, FormSelectProps>(
         {label && (
           <div className="flex items-center gap-1">
             <Label htmlFor={selectId}>{label}</Label>
+            {required && (
+              <span
+                aria-hidden="true"
+                className="text-negative -ml-0.5"
+                data-required-indicator
+              >
+                *
+              </span>
+            )}
             {tooltip && <Tooltip content={tooltip} />}
           </div>
         )}
         <Select
           ref={ref}
           id={selectId}
+          aria-required={required || undefined}
+          aria-invalid={!!error || undefined}
           className={cn(error && "border-negative", className)}
           {...props}
         />

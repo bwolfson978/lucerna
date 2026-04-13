@@ -230,8 +230,17 @@
     #B8B0D2,
     transparent 30%
   );
-  animation: glow-rotate 4s linear infinite;
+  animation: none;
   z-index: -2;
+}
+
+/* Rotating glow only runs while the user is actively interacting with the
+   button. At rest it reads as a static gold button so it doesn't look like
+   it's already loading before the form has been submitted. */
+.glow-button:hover::before,
+.glow-button:focus-visible::before,
+.glow-button:active::before {
+  animation: glow-rotate 4s linear infinite;
 }
 
 .glow-button::after {
@@ -253,6 +262,15 @@
 
 .glow-button:disabled::before {
   animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow-button::before,
+  .glow-button:hover::before,
+  .glow-button:focus-visible::before,
+  .glow-button:active::before {
+    animation: none;
+  }
 }
 
 /* Hide native number input spinners — they don't theme on dark backgrounds */

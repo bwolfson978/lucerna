@@ -15,13 +15,14 @@ interface CurrencyInputProps {
   placeholder?: string;
   min?: number;
   step?: number;
+  required?: boolean;
   onChange: (value: number) => void;
   className?: string;
   id?: string;
 }
 
 const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
-  ({ label, helper, error, tooltip, value, placeholder, min, onChange, className, id }, ref) => {
+  ({ label, helper, error, tooltip, value, placeholder, min, required, onChange, className, id }, ref) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
 
     return (
@@ -29,6 +30,15 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
         {label && (
           <div className="flex items-center gap-1">
             <Label htmlFor={inputId}>{label}</Label>
+            {required && (
+              <span
+                aria-hidden="true"
+                className="text-negative -ml-0.5"
+                data-required-indicator
+              >
+                *
+              </span>
+            )}
             {tooltip && <Tooltip content={tooltip} />}
           </div>
         )}
@@ -45,6 +55,8 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
             allowNegative={false}
             placeholder={placeholder}
             inputMode="decimal"
+            aria-required={required || undefined}
+            aria-invalid={!!error || undefined}
             isAllowed={(values) => {
               if (min !== undefined && values.floatValue !== undefined && values.floatValue < min) {
                 return false;

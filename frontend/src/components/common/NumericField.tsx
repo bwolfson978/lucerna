@@ -17,13 +17,14 @@ interface NumericFieldProps {
   max?: number;
   suffix?: string;
   decimalScale?: number;
+  required?: boolean;
   onChange: (value: number | null) => void;
   className?: string;
   id?: string;
 }
 
 const NumericField = React.forwardRef<HTMLInputElement, NumericFieldProps>(
-  ({ label, helper, error, tooltip, value, placeholder, min, max, suffix, decimalScale = 0, onChange, className, id }, ref) => {
+  ({ label, helper, error, tooltip, value, placeholder, min, max, suffix, decimalScale = 0, required, onChange, className, id }, ref) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
 
     return (
@@ -31,6 +32,15 @@ const NumericField = React.forwardRef<HTMLInputElement, NumericFieldProps>(
         {label && (
           <div className="flex items-center gap-1">
             <Label htmlFor={inputId}>{label}</Label>
+            {required && (
+              <span
+                aria-hidden="true"
+                className="text-negative -ml-0.5"
+                data-required-indicator
+              >
+                *
+              </span>
+            )}
             {tooltip && <Tooltip content={tooltip} />}
           </div>
         )}
@@ -43,6 +53,8 @@ const NumericField = React.forwardRef<HTMLInputElement, NumericFieldProps>(
           placeholder={placeholder}
           suffix={suffix}
           inputMode="decimal"
+          aria-required={required || undefined}
+          aria-invalid={!!error || undefined}
           isAllowed={(values) => {
             const v = values.floatValue;
             if (v === undefined) return true;
