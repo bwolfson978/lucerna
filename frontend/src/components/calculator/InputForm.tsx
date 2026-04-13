@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, FormEvent } from "react";
+import { useState, useEffect, useCallback, useRef, FormEvent } from "react";
 import type { ScenarioInput, YearlyIncome, FilingStatus, HealthcareInput } from "@/lib/types";
 import { NumericField } from "@/components/common/NumericField";
 import { CurrencyInput } from "@/components/common/CurrencyInput";
@@ -21,16 +21,37 @@ interface InputFormProps {
   loadingLabel?: string;
 }
 
+// Order must match the on-screen layout of fields. Used to find the first
+// invalid field to scroll & focus when submit fails validation.
+const FIELD_ORDER = [
+  "age",
+  "currentIncome",
+  "traditionalBalance",
+  "retirementAge",
+  "customStateRate",
+  "rothBalance",
+  "retirementSpending",
+  "timeline",
+  "yearsInRetirement",
+  "householdSize",
+  "monthlySlcspPremium",
+] as const;
 
 export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showMore, setShowAdvanced] = useState(false);
 
+  // Refs used to scroll & focus the first invalid field when validation fails.
+  const fieldRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const timelineRef = useRef<HTMLDivElement | null>(null);
+
   // Form state — nullable so fields can be fully cleared while typing
   const [age, setAge] = useState<number | null>(35);
   const [filingStatus, setFilingStatus] = useState<FilingStatus>("single");
-  const [currentIncome, setCurrentIncome] = useState<number>(0);
-  const [traditionalBalance, setTraditionalBalance] = useState<number>(0);
+  // Required fields start as null so they appear genuinely empty (placeholder
+  // only). A default of 0 would read as "already filled in" to users.
+  const [currentIncome, setCurrentIncome] = useState<number | null>(null);
+  const [traditionalBalance, setTraditionalBalance] = useState<number | null>(null);
   const [rothBalance, setRothBalance] = useState<number>(0);
   const [retirementAge, setRetirementAge] = useState<number | null>(65);
   const [incomeGrowthRate, setIncomeGrowthRate] = useState<number | null>(3);
@@ -66,7 +87,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
     const retVal = retirementAge ?? 65;
     const incGrowthVal = incomeGrowthRate ?? 0;
 
-    if (currentIncome <= 0) {
+    if (currentIncome == null || currentIncome <= 0) {
       setTimeline([]);
       return;
     }
@@ -79,11 +100,39 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
     const ageVal = age ?? 0;
     const retVal = retirementAge ?? 65;
     const incGrowthVal = incomeGrowthRate ?? 0;
-    setTimeline(generateTimeline(ageVal, retVal, currentIncome, incGrowthVal));
+    setTimeline(generateTimeline(ageVal, retVal, currentIncome ?? 0, incGrowthVal));
   }, [age, retirementAge, currentIncome, incomeGrowthRate]);
 
   const showTimeline = timeline.length > 0;
   const hasCustomizations = timeline.some((y) => (y.notes && y.notes.length > 0) || y.state != null);
+
+  function focusFirstInvalidField(errs: Record<string, string>) {
+    const firstKey = FIELD_ORDER.find((k) => k in errs);
+    if (!firstKey) return;
+
+    const reduced =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches === true;
+    const behavior: ScrollBehavior = reduced ? "auto" : "smooth";
+
+    // requestAnimationFrame lets React paint the error state (red border,
+    // error text) before we scroll so the user sees what changed.
+    requestAnimationFrame(() => {
+      if (firstKey === "timeline") {
+        // Timeline lives in its own block. If the editor isn't rendered
+        // (because current income is empty), fall back to the income field
+        // since that's the root cause of an empty timeline.
+        const target = timelineRef.current ?? fieldRefs.current.currentIncome;
+        target?.scrollIntoView({ behavior, block: "center" });
+        fieldRefs.current.currentIncome?.focus({ preventScroll: true });
+        return;
+      }
+
+      const el = fieldRefs.current[firstKey];
+      el?.scrollIntoView({ behavior, block: "center" });
+      el?.focus({ preventScroll: true });
+    });
+  }
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -99,8 +148,9 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
     if (ageVal < 0 || ageVal > 120) errs.age = "Age must be between 0 and 120";
     if (retVal < 1 || retVal > 120)
       errs.retirementAge = "Retirement age must be between 1 and 120";
-    if (currentIncome < 0) errs.currentIncome = "Income cannot be negative";
-    if (traditionalBalance <= 0)
+    if (currentIncome == null || currentIncome <= 0)
+      errs.currentIncome = "Enter your current income";
+    if (traditionalBalance == null || traditionalBalance <= 0)
       errs.traditionalBalance = "Enter your traditional IRA/401(k) balance";
     if (rothBalance < 0) errs.rothBalance = "Roth balance cannot be negative";
     if (yrsRetVal < 1)
@@ -118,7 +168,10 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
         errs.monthlySlcspPremium = "Premium cannot be negative";
     }
     setErrors(errs);
-    if (Object.keys(errs).length > 0) return;
+    if (Object.keys(errs).length > 0) {
+      focusFirstInvalidField(errs);
+      return;
+    }
 
     const healthcare: HealthcareInput | null = includeAca
       ? {
@@ -132,7 +185,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
       age: ageVal,
       filing_status: filingStatus,
       income_timeline: timeline,
-      traditional_ira_balance: traditionalBalance,
+      traditional_ira_balance: traditionalBalance ?? 0,
       roth_ira_balance: rothBalance,
       retirement_age: retVal,
       years_in_retirement: yrsRetVal,
@@ -151,6 +204,9 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
     <form onSubmit={handleSubmit} className="flex flex-col gap-section">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-default">
         <NumericField
+          ref={(el) => {
+            fieldRefs.current.age = el;
+          }}
           label="Age"
           value={age ?? ""}
           min={0}
@@ -171,24 +227,35 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
           onChange={(e) => setState(e.target.value)}
         />
         <CurrencyInput
+          ref={(el) => {
+            fieldRefs.current.currentIncome = el;
+          }}
           label="Current income"
-          value={currentIncome || ""}
-          placeholder="0"
+          value={currentIncome ?? ""}
+          placeholder="e.g. 85,000"
           min={0}
+          required
           error={errors.currentIncome}
           onChange={setCurrentIncome}
         />
         <CurrencyInput
+          ref={(el) => {
+            fieldRefs.current.traditionalBalance = el;
+          }}
           label="Traditional IRA/401(k) balance"
-          value={traditionalBalance || ""}
-          placeholder="0"
+          value={traditionalBalance ?? ""}
+          placeholder="e.g. 500,000"
           min={0}
+          required
           error={errors.traditionalBalance}
           helper="Includes 401k rollovers"
           tooltip="Your total pre-tax retirement savings eligible for Roth conversion. Include traditional IRAs and old 401(k) rollovers. Exclude a current employer 401(k) unless eligible for in-service conversions."
           onChange={setTraditionalBalance}
         />
         <NumericField
+          ref={(el) => {
+            fieldRefs.current.retirementAge = el;
+          }}
           label="Retirement age"
           value={retirementAge ?? ""}
           min={1}
@@ -216,6 +283,9 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
           />
         )}
         <CurrencyInput
+          ref={(el) => {
+            fieldRefs.current.rothBalance = el;
+          }}
           label="Roth IRA/401(k) balance"
           value={rothBalance || ""}
           placeholder="0"
@@ -229,6 +299,9 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
       {state === "custom" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-default">
           <NumericField
+            ref={(el) => {
+              fieldRefs.current.customStateRate = el;
+            }}
             label="State tax rate (%)"
             value={customStateRate ?? ""}
             decimalScale={2}
@@ -252,6 +325,9 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
           onChange={setIncomeGrowthRate}
         />
         <CurrencyInput
+          ref={(el) => {
+            fieldRefs.current.retirementSpending = el;
+          }}
           label="Yearly spend in retirement"
           value={retirementSpending || ""}
           placeholder="Auto (4% rule)"
@@ -263,18 +339,20 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
       </div>
 
       {/* Inline income timeline editor */}
-      {showTimeline && (
-        <IncomeTimelineEditor
-          timeline={timeline}
-          onChange={setTimeline}
-          onReset={hasCustomizations ? handleResetTimeline : undefined}
-          description="Projected from your inputs above. Adjust any year to reflect expected changes: job transitions, time off, or anything else on the horizon."
-          defaultState={state !== "none" ? state : undefined}
-        />
-      )}
-      {errors.timeline && (
-        <span className="text-caption text-negative">{errors.timeline}</span>
-      )}
+      <div ref={timelineRef}>
+        {showTimeline && (
+          <IncomeTimelineEditor
+            timeline={timeline}
+            onChange={setTimeline}
+            onReset={hasCustomizations ? handleResetTimeline : undefined}
+            description="Projected from your inputs above. Adjust any year to reflect expected changes: job transitions, time off, or anything else on the horizon."
+            defaultState={state !== "none" ? state : undefined}
+          />
+        )}
+        {errors.timeline && (
+          <span className="text-caption text-negative">{errors.timeline}</span>
+        )}
+      </div>
 
       {/* Additional settings */}
       <Collapsible open={showMore} onOpenChange={setShowAdvanced}>
@@ -291,6 +369,9 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
         <CollapsibleContent>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-default pt-default">
             <NumericField
+              ref={(el) => {
+                fieldRefs.current.yearsInRetirement = el;
+              }}
               label="Years in retirement"
               value={yearsInRetirement ?? ""}
               min={1}
@@ -336,6 +417,9 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
         {includeAca && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-default">
             <NumericField
+              ref={(el) => {
+                fieldRefs.current.householdSize = el;
+              }}
               label="Household size"
               value={householdSize ?? ""}
               min={1}
@@ -344,6 +428,9 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
               onChange={setHouseholdSize}
             />
             <CurrencyInput
+              ref={(el) => {
+                fieldRefs.current.monthlySlcspPremium = el;
+              }}
               label="Monthly benchmark premium"
               value={monthlySlcspPremium || ""}
               placeholder="620"

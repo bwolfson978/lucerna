@@ -4,12 +4,34 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { InputForm } from "../InputForm";
 
 // Radix UI Switch uses ResizeObserver which jsdom doesn't provide
+// jsdom also doesn't implement scrollIntoView — the form uses it to jump to
+// the first invalid field on submit failure. matchMedia is also missing and
+// the scroll helper reads prefers-reduced-motion.
 beforeAll(() => {
   global.ResizeObserver = class {
     observe() {}
     unobserve() {}
     disconnect() {}
   } as unknown as typeof ResizeObserver;
+  HTMLElement.prototype.scrollIntoView = vi.fn();
+  if (!window.matchMedia) {
+    window.matchMedia = vi.fn().mockReturnValue({
+      matches: false,
+      media: "",
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }) as unknown as typeof window.matchMedia;
+  }
+  // Run requestAnimationFrame callbacks synchronously so focus/scroll
+  // assertions can run immediately after fireEvent.click.
+  window.requestAnimationFrame = ((cb: FrameRequestCallback) => {
+    cb(0);
+    return 0;
+  }) as typeof window.requestAnimationFrame;
 });
 
 // Mock IncomeTimelineEditor to simplify testing and avoid deep rendering
@@ -190,10 +212,81 @@ describe("InputForm", () => {
     const form = screen.getByRole("button", { name: /run my scenario/i });
     fireEvent.click(form);
 
-    // Should show balance error (0 is invalid)
+    // Both required fields start as null and should show their own error
+    expect(
+      screen.getByText("Enter your current income")
+    ).toBeInTheDocument();
     expect(
       screen.getByText("Enter your traditional IRA/401(k) balance")
     ).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("does not pre-fill required fields with zero", () => {
+    renderInputForm({ onSubmit });
+
+    const incomeInput = screen.getByLabelText(
+      "Current income"
+    ) as HTMLInputElement;
+    const balanceInput = screen.getByLabelText(
+      "Traditional IRA/401(k) balance"
+    ) as HTMLInputElement;
+
+    expect(incomeInput.value).toBe("");
+    expect(balanceInput.value).toBe("");
+    expect(incomeInput.placeholder).toMatch(/^e\.g\./);
+    expect(balanceInput.placeholder).toMatch(/^e\.g\./);
+  });
+
+  it("marks required fields with an asterisk and omits it for optional fields", () => {
+    renderInputForm({ onSubmit });
+
+    // Helper: find the required indicator sibling adjacent to the given label
+    function hasRequiredIndicator(labelText: string): boolean {
+      const labelEl = screen.getByText(labelText);
+      const wrapper = labelEl.parentElement;
+      return !!wrapper?.querySelector("[data-required-indicator]");
+    }
+
+    // Required: Current income and Traditional IRA/401(k) balance
+    expect(hasRequiredIndicator("Current income")).toBe(true);
+    expect(hasRequiredIndicator("Traditional IRA/401(k) balance")).toBe(true);
+
+    // Optional: Roth balance should NOT have an asterisk
+    expect(hasRequiredIndicator("Roth IRA/401(k) balance")).toBe(false);
+  });
+
+  it("focuses first invalid field on submit failure", () => {
+    const scrollMock = HTMLElement.prototype.scrollIntoView as ReturnType<
+      typeof vi.fn
+    >;
+    scrollMock.mockClear();
+    renderInputForm({ onSubmit });
+
+    const submit = screen.getByRole("button", { name: /run my scenario/i });
+    fireEvent.click(submit);
+
+    // Current income is the first invalid field in DOM order
+    const incomeInput = screen.getByLabelText("Current income");
+    expect(document.activeElement).toBe(incomeInput);
+    expect(scrollMock).toHaveBeenCalled();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("focuses traditional balance when income is the only valid field", () => {
+    renderInputForm({ onSubmit });
+
+    // Fill just income — traditional balance should be the next invalid field
+    const incomeInput = screen.getByLabelText("Current income");
+    fireEvent.change(incomeInput, { target: { value: "85000" } });
+
+    const submit = screen.getByRole("button", { name: /run my scenario/i });
+    fireEvent.click(submit);
+
+    const balanceInput = screen.getByLabelText(
+      "Traditional IRA/401(k) balance"
+    );
+    expect(document.activeElement).toBe(balanceInput);
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
