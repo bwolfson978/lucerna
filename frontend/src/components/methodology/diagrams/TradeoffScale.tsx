@@ -24,15 +24,15 @@ export function TradeoffScale() {
   // Marginal cost curve: starts at ~10%, rises through brackets
   // Stepped line representing bracket boundaries
   const steps = [
-    { x: 0, y: 0.85 },     // 10% bracket
+    { x: 0, y: 0.85 }, // 10% bracket
     { x: 0.15, y: 0.85 },
-    { x: 0.15, y: 0.72 },  // 12% bracket
+    { x: 0.15, y: 0.72 }, // 12% bracket
     { x: 0.42, y: 0.72 },
-    { x: 0.42, y: 0.50 },  // 22% bracket step (crosses retirement line)
-    { x: 0.68, y: 0.50 },
-    { x: 0.68, y: 0.38 },  // 24% bracket
-    { x: 0.90, y: 0.38 },
-    { x: 0.90, y: 0.18 },  // 32% bracket
+    { x: 0.42, y: 0.5 }, // 22% bracket step (crosses retirement line)
+    { x: 0.68, y: 0.5 },
+    { x: 0.68, y: 0.38 }, // 24% bracket
+    { x: 0.9, y: 0.38 },
+    { x: 0.9, y: 0.18 }, // 32% bracket
     { x: 1.0, y: 0.18 },
   ];
 
@@ -50,40 +50,88 @@ export function TradeoffScale() {
   return (
     <svg
       viewBox="0 0 560 220"
-      className="w-full max-w-[560px] mx-auto"
+      className="mx-auto w-full max-w-[560px]"
       role="img"
       aria-label="Chart showing marginal tax cost rising with conversion amount, crossing the expected retirement rate at the optimal point"
     >
       {/* Y-axis */}
-      <line x1={left} y1={top} x2={left} y2={bottom}
-        stroke="rgba(255, 255, 255, 0.08)" strokeWidth="1" />
-      <text x={left - 8} y={top + 5} textAnchor="end" fill="#8B8A99"
-        fontFamily={labelFont} fontSize="9">
+      <line
+        x1={left}
+        y1={top}
+        x2={left}
+        y2={bottom}
+        stroke="rgba(255, 255, 255, 0.08)"
+        strokeWidth="1"
+      />
+      <text
+        x={left - 8}
+        y={top + 5}
+        textAnchor="end"
+        fill="#8B8A99"
+        fontFamily={labelFont}
+        fontSize="9"
+      >
         37%
       </text>
-      <text x={left - 8} y={bottom} textAnchor="end" fill="#8B8A99"
-        fontFamily={labelFont} fontSize="9">
+      <text
+        x={left - 8}
+        y={bottom}
+        textAnchor="end"
+        fill="#8B8A99"
+        fontFamily={labelFont}
+        fontSize="9"
+      >
         0%
       </text>
-      <text x={20} y={top + height / 2} textAnchor="middle" fill="#8B8A99"
-        fontFamily={labelFont} fontSize="9"
-        transform={`rotate(-90, 20, ${top + height / 2})`}>
+      <text
+        x={20}
+        y={top + height / 2}
+        textAnchor="middle"
+        fill="#8B8A99"
+        fontFamily={labelFont}
+        fontSize="9"
+        transform={`rotate(-90, 20, ${top + height / 2})`}
+      >
         Marginal rate
       </text>
 
       {/* X-axis */}
-      <line x1={left} y1={bottom} x2={right} y2={bottom}
-        stroke="rgba(255, 255, 255, 0.08)" strokeWidth="1" />
-      <text x={left + width / 2} y={bottom + 30} textAnchor="middle" fill="#8B8A99"
-        fontFamily={labelFont} fontSize="9">
+      <line
+        x1={left}
+        y1={bottom}
+        x2={right}
+        y2={bottom}
+        stroke="rgba(255, 255, 255, 0.08)"
+        strokeWidth="1"
+      />
+      <text
+        x={left + width / 2}
+        y={bottom + 30}
+        textAnchor="middle"
+        fill="#8B8A99"
+        fontFamily={labelFont}
+        fontSize="9"
+      >
         Conversion amount
       </text>
-      <text x={left} y={bottom + 16} textAnchor="start" fill="#8B8A99"
-        fontFamily={labelFont} fontSize="9">
+      <text
+        x={left}
+        y={bottom + 16}
+        textAnchor="start"
+        fill="#8B8A99"
+        fontFamily={labelFont}
+        fontSize="9"
+      >
         $0
       </text>
-      <text x={right} y={bottom + 16} textAnchor="end" fill="#8B8A99"
-        fontFamily={labelFont} fontSize="9">
+      <text
+        x={right}
+        y={bottom + 16}
+        textAnchor="end"
+        fill="#8B8A99"
+        fontFamily={labelFont}
+        fontSize="9"
+      >
         Full balance
       </text>
 
@@ -102,14 +150,33 @@ export function TradeoffScale() {
       ))}
 
       {/* Retirement rate line */}
-      <line x1={left} y1={retirementY} x2={right} y2={retirementY}
-        stroke="#5EBD8C" strokeWidth="1.5" strokeDasharray="6 4" />
-      <text x={right + 4} y={retirementY + 4} fill="#5EBD8C"
-        fontFamily={labelFont} fontSize="9" fontWeight="500">
+      <line
+        x1={left}
+        y1={retirementY}
+        x2={right}
+        y2={retirementY}
+        stroke="#5EBD8C"
+        strokeWidth="1.5"
+        strokeDasharray="6 4"
+      />
+      <text
+        x={right + 4}
+        y={retirementY + 4}
+        fill="#5EBD8C"
+        fontFamily={labelFont}
+        fontSize="9"
+        fontWeight="500"
+      >
         Expected
       </text>
-      <text x={right + 4} y={retirementY + 14} fill="#5EBD8C"
-        fontFamily={labelFont} fontSize="9" fontWeight="500">
+      <text
+        x={right + 4}
+        y={retirementY + 14}
+        fill="#5EBD8C"
+        fontFamily={labelFont}
+        fontSize="9"
+        fontWeight="500"
+      >
         retirement rate
       </text>
 
@@ -135,23 +202,43 @@ export function TradeoffScale() {
       />
 
       {/* Optimal point marker */}
-      <circle cx={intersectX} cy={retirementY} r="6"
-        fill="#F0C674" className="optimal-marker" />
+      <circle cx={intersectX} cy={retirementY} r="6" fill="#F0C674" className="optimal-marker" />
       <circle cx={intersectX} cy={retirementY} r="3" fill="#0F0E1A" />
 
       {/* Optimal label */}
-      <text x={intersectX} y={retirementY - 14} textAnchor="middle"
-        fill="#F0C674" fontFamily={DATA_FONT_FAMILY} fontSize="11" fontWeight="700">
+      <text
+        x={intersectX}
+        y={retirementY - 14}
+        textAnchor="middle"
+        fill="#F0C674"
+        fontFamily={DATA_FONT_FAMILY}
+        fontSize="11"
+        fontWeight="700"
+      >
         Optimal point
       </text>
 
       {/* Zone labels */}
-      <text x={left + (intersectX - left) / 2} y={bottom - 8} textAnchor="middle"
-        fill="#5EBD8C" fontFamily={labelFont} fontSize="9" opacity="0.8">
+      <text
+        x={left + (intersectX - left) / 2}
+        y={bottom - 8}
+        textAnchor="middle"
+        fill="#5EBD8C"
+        fontFamily={labelFont}
+        fontSize="9"
+        opacity="0.8"
+      >
         Conversion saves money
       </text>
-      <text x={intersectX + (right - intersectX) / 2} y={top + 20} textAnchor="middle"
-        fill="#E87070" fontFamily={labelFont} fontSize="9" opacity="0.7">
+      <text
+        x={intersectX + (right - intersectX) / 2}
+        y={top + 20}
+        textAnchor="middle"
+        fill="#E87070"
+        fontFamily={labelFont}
+        fontSize="9"
+        opacity="0.7"
+      >
         Conversion costs more than it saves
       </text>
     </svg>

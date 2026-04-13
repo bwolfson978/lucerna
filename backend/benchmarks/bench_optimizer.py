@@ -7,23 +7,22 @@ Usage:
 import time
 from contextlib import contextmanager
 
-from app.engine.demo import DEMO_SCENARIO
-from app.engine.optimizer import (
-    optimize,
-    calculate_npv,
-    _run_scipy,
-    compute_conversion_curve,
-    _finalize_conversions,
-)
-from app.engine.heuristic import greedy_bracket_fill
-from app.engine.trace import generate_reasoning_trace
-from app.engine.types import ScenarioInput, FilingStatus, YearlyIncome
-
 import numpy as np
 from scipy.optimize import minimize
 
+from app.engine.demo import DEMO_SCENARIO
+from app.engine.heuristic import greedy_bracket_fill
+from app.engine.optimizer import (
+    _finalize_conversions,
+    _run_scipy,
+    calculate_npv,
+    compute_conversion_curve,
+    optimize,
+)
+from app.engine.types import FilingStatus, ScenarioInput, YearlyIncome
 
 # --- Helpers ---
+
 
 @contextmanager
 def timer(label: str):
@@ -53,6 +52,7 @@ def short_scenario() -> ScenarioInput:
 
 # --- Which starting points win? ---
 
+
 def profile_starting_points(scenario: ScenarioInput):
     """Run each starting point individually and report which wins."""
     n_years = len(scenario.income_timeline)
@@ -75,7 +75,7 @@ def profile_starting_points(scenario: ScenarioInput):
     ]
 
     results = []
-    for name, x0 in zip(names, starting_points):
+    for name, x0 in zip(names, starting_points, strict=True):
         x0_arr = np.array(x0, dtype=float)
         for i, (lo, hi) in enumerate(bounds):
             x0_arr[i] = np.clip(x0_arr[i], lo, hi)
@@ -96,7 +96,7 @@ def profile_starting_points(scenario: ScenarioInput):
             elapsed = time.perf_counter() - start
             npv = -result.fun if result.success else float("-inf")
             results.append((name, npv, elapsed, result.nit, result.success))
-        except Exception as e:
+        except Exception:
             elapsed = time.perf_counter() - start
             results.append((name, float("-inf"), elapsed, 0, False))
 
@@ -105,9 +105,11 @@ def profile_starting_points(scenario: ScenarioInput):
 
     print(f"\n  Starting point analysis ({n_years}-year scenario):")
     print(f"  {'Name':<14} {'NPV':>14} {'Time':>8} {'Iters':>6} {'Success':>8}")
-    print(f"  {'-'*54}")
+    print(f"  {'-' * 54}")
     for name, npv, elapsed, nit, success in results:
-        print(f"  {name:<14} {npv:>14,.2f} {elapsed:>7.3f}s {nit:>6} {'OK' if success else 'FAIL':>8}")
+        print(
+            f"  {name:<14} {npv:>14,.2f} {elapsed:>7.3f}s {nit:>6} {'OK' if success else 'FAIL':>8}"
+        )
 
     winner = results[0][0]
     print(f"\n  Winner: {winner} (NPV={results[0][1]:,.2f})")
@@ -115,6 +117,7 @@ def profile_starting_points(scenario: ScenarioInput):
 
 
 # --- Main benchmark ---
+
 
 def run_benchmarks():
     print("=" * 60)
@@ -127,8 +130,10 @@ def run_benchmarks():
     with timer("Full optimize(DEMO_SCENARIO)"):
         result = optimize(DEMO_SCENARIO)
 
-    print(f"  Result: total_conversion=${result.total_conversion:,.0f}, "
-          f"savings=${result.estimated_lifetime_tax_savings:,.2f}")
+    print(
+        f"  Result: total_conversion=${result.total_conversion:,.0f}, "
+        f"savings=${result.estimated_lifetime_tax_savings:,.2f}"
+    )
     print(f"  Conversion curve points: {len(result.conversion_curve)}")
 
     # Phase-by-phase timing
@@ -144,17 +149,17 @@ def run_benchmarks():
     conversions = _finalize_conversions(raw, max_balance)
 
     with timer("compute_conversion_curve (8 points)"):
-        curve = compute_conversion_curve(DEMO_SCENARIO)
+        compute_conversion_curve(DEMO_SCENARIO)
 
     with timer("calculate_npv (single call)"):
         for _ in range(100):
             calculate_npv(DEMO_SCENARIO, conversions)
-    print(f"    ^ 100 calls averaged")
+    print("    ^ 100 calls averaged")
 
     with timer("greedy_bracket_fill"):
         for _ in range(100):
             greedy_bracket_fill(DEMO_SCENARIO)
-    print(f"    ^ 100 calls averaged")
+    print("    ^ 100 calls averaged")
 
     # Starting point analysis
     profile_starting_points(DEMO_SCENARIO)
@@ -166,8 +171,10 @@ def run_benchmarks():
     with timer("Full optimize(3-year)"):
         result_3yr = optimize(scenario_3yr)
 
-    print(f"  Result: total_conversion=${result_3yr.total_conversion:,.0f}, "
-          f"savings=${result_3yr.estimated_lifetime_tax_savings:,.2f}")
+    print(
+        f"  Result: total_conversion=${result_3yr.total_conversion:,.0f}, "
+        f"savings=${result_3yr.estimated_lifetime_tax_savings:,.2f}"
+    )
     print(f"  Conversion curve points: {len(result_3yr.conversion_curve)}")
 
     # Starting point analysis for short scenario

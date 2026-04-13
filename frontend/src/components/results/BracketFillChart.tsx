@@ -2,8 +2,7 @@
 
 import type { BracketFillResult } from "@/lib/types";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
-import { BRACKET_COLORS, CHART_COLORS } from "@/lib/utils/constants";
-import { DATA_FONT_FAMILY } from "@/lib/utils/constants";
+import { CHART_COLORS, DATA_FONT_FAMILY } from "@/lib/utils/constants";
 import { Tooltip } from "@/components/common/Tooltip";
 import { Card } from "@/components/ui/card";
 
@@ -20,24 +19,22 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
   return (
     <Card className="flex flex-col gap-default">
       <div className="flex items-center gap-2">
-        <h3 className="text-h3 text-text-primary">
-          Bracket fill{year ? `: ${year}` : ""}
-        </h3>
+        <h3 className="text-h3 text-text-primary">Bracket fill{year ? `: ${year}` : ""}</h3>
         <Tooltip content="Shows how your income and Roth conversion fill each federal tax bracket. Green brackets are cheaper; red brackets are more expensive." />
       </div>
 
       {/* Legend */}
       <div className="flex items-center gap-5 text-body-sm text-text-secondary">
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-neutral" />
+          <span className="h-3 w-3 rounded bg-neutral" />
           Earned Income
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-accent" />
+          <span className="h-3 w-3 rounded bg-accent" />
           Conversion
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded bg-bg-hover border border-border" />
+          <span className="h-3 w-3 rounded border border-border bg-bg-hover" />
           Remaining capacity
         </span>
       </div>
@@ -75,7 +72,7 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
               <text
                 x={labelX}
                 y={y + 23}
-                className="text-[13px] font-medium fill-text-secondary"
+                className="fill-text-secondary text-[13px] font-medium"
                 fontFamily={DATA_FONT_FAMILY}
               >
                 {formatPercent(bracket.bracket_rate)}
@@ -118,23 +115,14 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
               )}
 
               {/* Dollar amount label */}
-              {bracket.filled_by_income + bracket.filled_by_conversion >
-                0 && (
+              {bracket.filled_by_income + bracket.filled_by_conversion > 0 && (
                 <text
-                  x={
-                    barX +
-                    incomeWidth +
-                    conversionWidth +
-                    10
-                  }
+                  x={barX + incomeWidth + conversionWidth + 10}
                   y={y + 23}
-                  className="text-[11px] fill-text-tertiary"
+                  className="fill-text-tertiary text-[11px]"
                   fontFamily={DATA_FONT_FAMILY}
                 >
-                  {formatCurrency(
-                    bracket.filled_by_income +
-                      bracket.filled_by_conversion
-                  )}
+                  {formatCurrency(bracket.filled_by_income + bracket.filled_by_conversion)}
                 </text>
               )}
             </g>

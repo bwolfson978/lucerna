@@ -1,16 +1,15 @@
 """Tests for the greedy bracket-fill heuristic."""
 
-import pytest
-
 from app.engine.heuristic import greedy_bracket_fill
-from app.engine.types import ScenarioInput, FilingStatus, YearlyIncome
+from app.engine.types import FilingStatus, ScenarioInput, YearlyIncome
 
 
 class TestGreedyBracketFill:
     def test_returns_one_amount_per_year(self):
         """Should return exactly one conversion amount per year in timeline."""
         scenario = ScenarioInput(
-            age=38, filing_status=FilingStatus.SINGLE,
+            age=38,
+            filing_status=FilingStatus.SINGLE,
             income_timeline=[
                 YearlyIncome(year=2026, gross_income=35000),
                 YearlyIncome(year=2027, gross_income=30000),
@@ -24,7 +23,8 @@ class TestGreedyBracketFill:
     def test_low_income_years_get_more_conversion(self):
         """Conversions should be larger in low-income years."""
         scenario = ScenarioInput(
-            age=38, filing_status=FilingStatus.SINGLE,
+            age=38,
+            filing_status=FilingStatus.SINGLE,
             income_timeline=[
                 YearlyIncome(year=2026, gross_income=35000),
                 YearlyIncome(year=2027, gross_income=150000),
@@ -37,7 +37,8 @@ class TestGreedyBracketFill:
     def test_conversions_non_negative(self):
         """All conversion amounts should be >= 0."""
         scenario = ScenarioInput(
-            age=38, filing_status=FilingStatus.SINGLE,
+            age=38,
+            filing_status=FilingStatus.SINGLE,
             income_timeline=[
                 YearlyIncome(year=2026, gross_income=35000),
             ],
@@ -50,7 +51,8 @@ class TestGreedyBracketFill:
     def test_total_does_not_exceed_balance(self):
         """Total conversions should not exceed the traditional IRA balance."""
         scenario = ScenarioInput(
-            age=38, filing_status=FilingStatus.SINGLE,
+            age=38,
+            filing_status=FilingStatus.SINGLE,
             income_timeline=[
                 YearlyIncome(year=2026, gross_income=35000),
                 YearlyIncome(year=2027, gross_income=30000),
@@ -64,7 +66,8 @@ class TestGreedyBracketFill:
     def test_single_year_timeline(self):
         """Single-year timeline should return a single amount."""
         scenario = ScenarioInput(
-            age=45, filing_status=FilingStatus.SINGLE,
+            age=45,
+            filing_status=FilingStatus.SINGLE,
             income_timeline=[
                 YearlyIncome(year=2026, gross_income=25000),
             ],
@@ -77,7 +80,8 @@ class TestGreedyBracketFill:
     def test_high_income_gets_minimal_conversion(self):
         """Very high income should result in little or no conversion."""
         scenario = ScenarioInput(
-            age=45, filing_status=FilingStatus.SINGLE,
+            age=45,
+            filing_status=FilingStatus.SINGLE,
             income_timeline=[
                 YearlyIncome(year=2026, gross_income=500000),
             ],
@@ -89,7 +93,8 @@ class TestGreedyBracketFill:
     def test_already_retired_produces_valid_output(self):
         """Already-retired user (retirement_age < current age) should work."""
         scenario = ScenarioInput(
-            age=70, filing_status=FilingStatus.MFJ,
+            age=70,
+            filing_status=FilingStatus.MFJ,
             income_timeline=[
                 YearlyIncome(year=2026, gross_income=50000),
                 YearlyIncome(year=2027, gross_income=50000),

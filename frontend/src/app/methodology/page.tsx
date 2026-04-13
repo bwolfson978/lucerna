@@ -7,8 +7,7 @@ export const metadata: Metadata = {
     "A transparent look at the math behind Lucerna's Roth conversion analysis. Learn how our optimization engine finds the conversion schedule that maximizes your after-tax wealth.",
   openGraph: {
     title: "Methodology | Lucerna",
-    description:
-      "A transparent look at the math behind Lucerna's Roth conversion analysis.",
+    description: "A transparent look at the math behind Lucerna's Roth conversion analysis.",
     type: "website",
   },
 };

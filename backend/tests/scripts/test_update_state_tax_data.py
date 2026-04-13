@@ -1,17 +1,13 @@
 """Tests for the state tax data update tool."""
 
 import json
-import shutil
 from pathlib import Path
 
-import pytest
-
 from scripts.update_state_tax_data import (
+    NO_TAX_STATES,
+    build_scaffold,
     load_current_data,
     validate_against_current,
-    build_scaffold,
-    print_summary,
-    NO_TAX_STATES,
 )
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
@@ -93,7 +89,9 @@ class TestBuildScaffold:
 
     def test_scaffold_metadata_notes_review_needed(self):
         scaffold = build_scaffold(2099)
-        assert "Review" in scaffold["metadata"]["notes"] or "review" in scaffold["metadata"]["notes"]
+        assert (
+            "Review" in scaffold["metadata"]["notes"] or "review" in scaffold["metadata"]["notes"]
+        )
 
 
 class TestJsonIntegrity:
@@ -101,7 +99,7 @@ class TestJsonIntegrity:
 
     def test_json_is_valid(self):
         json_path = sorted(DATA_DIR.glob("tax_brackets_*.json"))[-1]
-        with open(json_path, "r") as f:
+        with open(json_path) as f:
             data = json.load(f)
         assert isinstance(data, dict)
 
@@ -128,7 +126,7 @@ class TestJsonIntegrity:
                     if prev_max == "inf":
                         continue
                     assert prev_max == curr_min, (
-                        f"{code} {fs}: gap between bracket {i-1} max ({prev_max}) "
+                        f"{code} {fs}: gap between bracket {i - 1} max ({prev_max}) "
                         f"and bracket {i} min ({curr_min})"
                     )
 
@@ -140,9 +138,7 @@ class TestJsonIntegrity:
             for fs in ["single", "married_filing_jointly"]:
                 brackets = state.get("brackets", {}).get(fs, [])
                 for bracket in brackets:
-                    assert bracket["rate"] >= 0, (
-                        f"{code} {fs}: negative rate {bracket['rate']}"
-                    )
+                    assert bracket["rate"] >= 0, f"{code} {fs}: negative rate {bracket['rate']}"
 
     def test_last_bracket_has_inf_max(self):
         data = load_current_data()
@@ -153,8 +149,7 @@ class TestJsonIntegrity:
                 brackets = state.get("brackets", {}).get(fs, [])
                 if brackets:
                     assert brackets[-1]["max"] == "inf", (
-                        f"{code} {fs}: last bracket max should be 'inf', "
-                        f"got {brackets[-1]['max']}"
+                        f"{code} {fs}: last bracket max should be 'inf', got {brackets[-1]['max']}"
                     )
 
     def test_federal_brackets_present(self):

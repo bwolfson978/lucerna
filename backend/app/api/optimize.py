@@ -2,8 +2,8 @@ import asyncio
 
 from fastapi import APIRouter
 
-from app.engine.types import ScenarioInput, OptimizationResult
 from app.engine.optimizer import optimize
+from app.engine.types import OptimizationResult, ScenarioInput
 
 router = APIRouter()
 

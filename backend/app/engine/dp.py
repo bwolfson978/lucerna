@@ -16,14 +16,16 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from app.engine.types import ScenarioInput, ConversionCurvePoint
-from app.engine.tax import vectorized_federal_tax, calculate_federal_tax
 from app.engine.aca import vectorized_subsidy_loss
-from app.engine.state_tax import (
-    vectorized_state_tax, calculate_state_tax, resolve_state_for_year,
-)
-from app.engine.rmd import rmd_start_age, vectorized_rmd
 from app.engine.constants import RETIREMENT_SPENDING_RATE, round_to_resolution
+from app.engine.rmd import rmd_start_age, vectorized_rmd
+from app.engine.state_tax import (
+    calculate_state_tax,
+    resolve_state_for_year,
+    vectorized_state_tax,
+)
+from app.engine.tax import calculate_federal_tax, vectorized_federal_tax
+from app.engine.types import ConversionCurvePoint, ScenarioInput
 
 
 def _aca_coverage_years(scenario: ScenarioInput) -> set[int]:
@@ -50,6 +52,7 @@ def _aca_coverage_years(scenario: ScenarioInput) -> set[int]:
 @dataclass
 class DPResult:
     """Output from the DP optimizer."""
+
     yearly_conversions: list[float]
     total_conversion: float
     npv: float
@@ -95,8 +98,8 @@ def _compute_retirement_values(
         year = years_until_retirement + year_offset
 
         # Grow at start of year
-        trad *= (1 + g)
-        roth *= (1 + g)
+        trad *= 1 + g
+        roth *= 1 + g
 
         # Determine age in this retirement year
         owner_age = scenario.age + year
@@ -161,10 +164,7 @@ def _dp_backward(
     years_until_retirement = max(0, scenario.retirement_age - scenario.age)
     remaining_growth_years = years_until_retirement - n_years
 
-    if remaining_growth_years > 0:
-        growth_factor = (1 + g) ** remaining_growth_years
-    else:
-        growth_factor = 1.0
+    growth_factor = (1 + g) ** remaining_growth_years if remaining_growth_years > 0 else 1.0
 
     initial_balance = scenario.traditional_ira_balance
     initial_roth = scenario.roth_ira_balance
@@ -207,9 +207,7 @@ def _dp_backward(
     trad_at_ret = extended_grid * growth_factor
     roth_at_ret = np.maximum(0.0, total_at_retirement - trad_at_ret)
 
-    value_table[n_years] = _compute_retirement_values(
-        trad_at_ret, roth_at_ret, scenario
-    )
+    value_table[n_years] = _compute_retirement_values(trad_at_ret, roth_at_ret, scenario)
 
     # Policy table: which conversion index is optimal at each (year, balance)
     policy_table = np.zeros((n_years, G), dtype=np.int64)
@@ -220,9 +218,7 @@ def _dp_backward(
 
     # Pre-compute tax without conversion for each year (scalar per year)
     tax_without_cache = [
-        calculate_federal_tax(
-            scenario.income_timeline[t].gross_income, scenario.filing_status
-        )
+        calculate_federal_tax(scenario.income_timeline[t].gross_income, scenario.filing_status)
         for t in range(n_years)
     ]
 
@@ -232,23 +228,24 @@ def _dp_backward(
     tax_cost_by_year: list[np.ndarray] = []
     for t in range(n_years):
         income_t = scenario.income_timeline[t].gross_income
-        tax_with = vectorized_federal_tax(
-            income_t + extended_grid, scenario.filing_status
-        )
+        tax_with = vectorized_federal_tax(income_t + extended_grid, scenario.filing_status)
         tax_cost_by_year.append(tax_with - tax_without_cache[t])
 
     # Pre-compute state tax costs per year
     state_cost_by_year: list[np.ndarray | None] = [None] * n_years
     for t in range(n_years):
-        yr_state = resolve_state_for_year(
-            scenario.income_timeline[t].state, scenario.state
-        )
+        yr_state = resolve_state_for_year(scenario.income_timeline[t].state, scenario.state)
         if yr_state:
             income_t = scenario.income_timeline[t].gross_income
             st_with = vectorized_state_tax(
-                income_t + extended_grid, yr_state, scenario.filing_status, scenario.custom_state_rate
+                income_t + extended_grid,
+                yr_state,
+                scenario.filing_status,
+                scenario.custom_state_rate,
             )
-            st_without = calculate_state_tax(income_t, yr_state, scenario.filing_status, scenario.custom_state_rate)
+            st_without = calculate_state_tax(
+                income_t, yr_state, scenario.filing_status, scenario.custom_state_rate
+            )
             state_cost_by_year[t] = st_with - st_without
 
     # Pre-compute ACA costs if applicable
@@ -259,8 +256,10 @@ def _dp_backward(
             if year_t in aca_years:
                 income_t = scenario.income_timeline[t].gross_income
                 aca_cost_by_year[t] = vectorized_subsidy_loss(
-                    income_t, extended_grid,
-                    hc.household_size, hc.monthly_slcsp_premium,
+                    income_t,
+                    extended_grid,
+                    hc.household_size,
+                    hc.monthly_slcsp_premium,
                 )
 
     # Backward induction — vectorized per balance state (row-by-row).
@@ -364,6 +363,7 @@ def dp_optimize(
 
     if balance <= 0 or n_years == 0:
         from app.engine.optimizer import calculate_npv
+
         npv = calculate_npv(scenario, [0.0] * n_years) if n_years > 0 else 0.0
         return DPResult(
             yearly_conversions=[0.0] * n_years,
@@ -375,32 +375,29 @@ def dp_optimize(
     input_grid = np.linspace(0, balance, coarse_grid_size)
 
     coarse_value_table, coarse_policy, coarse_ext_grid = _dp_backward(
-        scenario, input_grid,
+        scenario,
+        input_grid,
     )
     coarse_conversions = _forward_pass(scenario, coarse_ext_grid, coarse_policy)
-    coarse_total = sum(coarse_conversions)
 
     # --- Pass 2: Fine refinement ---
     # Use finer grid if balance / fine_resolution > coarse grid size
     fine_grid_size = int(balance / fine_resolution) + 1
     if fine_grid_size > coarse_grid_size:
         fine_input_grid = np.linspace(0, balance, fine_grid_size)
-        fine_value_table, fine_policy, fine_ext_grid = _dp_backward(
-            scenario, fine_input_grid,
+        _, fine_policy, fine_ext_grid = _dp_backward(
+            scenario,
+            fine_input_grid,
         )
         conversions = _forward_pass(scenario, fine_ext_grid, fine_policy)
-        # Use fine value table for conversion curve (mapped back to balance range)
-        result_ext_grid = fine_ext_grid
-        result_values = fine_value_table[0]
     else:
         conversions = coarse_conversions
-        result_ext_grid = coarse_ext_grid
-        result_values = coarse_value_table[0]
 
     total = sum(conversions)
 
     # Compute NPV using the authoritative calculate_npv for consistency
     from app.engine.optimizer import calculate_npv
+
     npv = calculate_npv(scenario, conversions)
 
     return DPResult(
@@ -441,9 +438,7 @@ def extract_conversion_curve(
             yearly_conv = [float(balance)] + [0.0] * (n_years - 1)
         elif opt_total > 0:
             scale = cap_rounded / opt_total
-            yearly_conv = [
-                round_to_resolution(c * scale) for c in opt_conversions
-            ]
+            yearly_conv = [round_to_resolution(c * scale) for c in opt_conversions]
             # Adjust rounding error on the largest year
             diff = cap_rounded - sum(yearly_conv)
             if abs(diff) >= 100 and yearly_conv:
@@ -460,6 +455,7 @@ def extract_conversion_curve(
             remaining_bal = (remaining_bal - yearly_conv[i]) * (1 + g)
 
         from app.engine.curve_strategy import build_curve_point
+
         points.append(build_curve_point(scenario, cap_rounded, yearly_conv))
 
     return points
@@ -490,10 +486,7 @@ def _dp_backward_3d(
     years_until_retirement = max(0, scenario.retirement_age - scenario.age)
     remaining_growth_years = years_until_retirement - n_years
 
-    if remaining_growth_years > 0:
-        growth_factor = (1 + g) ** remaining_growth_years
-    else:
-        growth_factor = 1.0
+    growth_factor = (1 + g) ** remaining_growth_years if remaining_growth_years > 0 else 1.0
 
     initial_balance = scenario.traditional_ira_balance
     initial_roth = scenario.roth_ira_balance
@@ -523,9 +516,7 @@ def _dp_backward_3d(
     trad_at_ret = extended_grid * growth_factor
     roth_at_ret = np.maximum(0.0, total_at_retirement - trad_at_ret)
 
-    terminal_values = _compute_retirement_values(
-        trad_at_ret, roth_at_ret, scenario
-    )
+    terminal_values = _compute_retirement_values(trad_at_ret, roth_at_ret, scenario)
     # Broadcast: same terminal value for all budget levels
     value_table[n_years] = terminal_values[:, np.newaxis]  # (G, 1) → (G, B)
 
@@ -535,32 +526,31 @@ def _dp_backward_3d(
 
     # Pre-compute tax costs (same as 2D)
     tax_without_cache = [
-        calculate_federal_tax(
-            scenario.income_timeline[t].gross_income, scenario.filing_status
-        )
+        calculate_federal_tax(scenario.income_timeline[t].gross_income, scenario.filing_status)
         for t in range(n_years)
     ]
 
     tax_cost_by_year: list[np.ndarray] = []
     for t in range(n_years):
         income_t = scenario.income_timeline[t].gross_income
-        tax_with = vectorized_federal_tax(
-            income_t + extended_grid, scenario.filing_status
-        )
+        tax_with = vectorized_federal_tax(income_t + extended_grid, scenario.filing_status)
         tax_cost_by_year.append(tax_with - tax_without_cache[t])
 
     # Pre-compute state tax costs per year (3D, same pattern as 2D)
     state_cost_by_year_3d: list[np.ndarray | None] = [None] * n_years
     for t in range(n_years):
-        yr_state = resolve_state_for_year(
-            scenario.income_timeline[t].state, scenario.state
-        )
+        yr_state = resolve_state_for_year(scenario.income_timeline[t].state, scenario.state)
         if yr_state:
             income_t = scenario.income_timeline[t].gross_income
             st_with = vectorized_state_tax(
-                income_t + extended_grid, yr_state, scenario.filing_status, scenario.custom_state_rate
+                income_t + extended_grid,
+                yr_state,
+                scenario.filing_status,
+                scenario.custom_state_rate,
             )
-            st_without = calculate_state_tax(income_t, yr_state, scenario.filing_status, scenario.custom_state_rate)
+            st_without = calculate_state_tax(
+                income_t, yr_state, scenario.filing_status, scenario.custom_state_rate
+            )
             state_cost_by_year_3d[t] = st_with - st_without
 
     aca_cost_by_year: list[np.ndarray | None] = [None] * n_years
@@ -570,8 +560,10 @@ def _dp_backward_3d(
             if year_t in aca_years:
                 income_t = scenario.income_timeline[t].gross_income
                 aca_cost_by_year[t] = vectorized_subsidy_loss(
-                    income_t, extended_grid,
-                    hc.household_size, hc.monthly_slcsp_premium,
+                    income_t,
+                    extended_grid,
+                    hc.household_size,
+                    hc.monthly_slcsp_premium,
                 )
 
     # Backward induction — vectorized bilinear interpolation.
@@ -613,8 +605,8 @@ def _dp_backward_3d(
             )
 
             # bal_interp[j, b] = future value at (remaining_bal[j], budget_grid[b])
-            lo_vals = future_ref[bal_indices, :]       # (n_opts, B)
-            hi_vals = future_ref[bal_indices + 1, :]   # (n_opts, B)
+            lo_vals = future_ref[bal_indices, :]  # (n_opts, B)
+            hi_vals = future_ref[bal_indices + 1, :]  # (n_opts, B)
             bal_interp = lo_vals + fracs_bal[:, np.newaxis] * (hi_vals - lo_vals)
 
             # Step 2: Budget remapping via bilinear interpolation.
@@ -625,8 +617,9 @@ def _dp_backward_3d(
             )  # (n_opts, B)
 
             bud_indices = (
-                np.searchsorted(budget_grid, remaining_budgets.ravel(), side="right")
-                .reshape(n_opts, B)
+                np.searchsorted(budget_grid, remaining_budgets.ravel(), side="right").reshape(
+                    n_opts, B
+                )
                 - 1
             )
             bud_indices = np.clip(bud_indices, 0, B - 2)
@@ -641,15 +634,12 @@ def _dp_backward_3d(
 
             # Fancy-index into bal_interp for budget interpolation
             j_idx = np.arange(n_opts)[:, np.newaxis]  # (n_opts, 1)
-            future_lo = bal_interp[j_idx, bud_indices]       # (n_opts, B)
-            future_hi = bal_interp[j_idx, bud_indices + 1]   # (n_opts, B)
+            future_lo = bal_interp[j_idx, bud_indices]  # (n_opts, B)
+            future_hi = bal_interp[j_idx, bud_indices + 1]  # (n_opts, B)
             future_matrix = future_lo + fracs_bud * (future_hi - future_lo)
 
             # Step 3: Mask invalid options (conversion > budget) and pick best.
-            invalid = (
-                extended_grid[:n_opts, np.newaxis]
-                > budget_grid[np.newaxis, :] + 1e-6
-            )
+            invalid = extended_grid[:n_opts, np.newaxis] > budget_grid[np.newaxis, :] + 1e-6
             values_matrix = -cost_row[:n_opts, np.newaxis] + future_matrix
             values_matrix[invalid] = -np.inf
 
@@ -683,7 +673,7 @@ def _forward_pass_3d(
     for t in range(n_years):
         if current_budget <= 0 or current_balance <= 0:
             conversions.append(0.0)
-            current_balance *= (1 + g)
+            current_balance *= 1 + g
             continue
 
         # Find bracketing balance index
@@ -756,7 +746,9 @@ def extract_conversion_curve_3d(
 
     # Single 3D backward pass (the expensive part)
     value_table, policy_table, extended_grid, budget_grid = _dp_backward_3d(
-        scenario, balance_grid, budget_grid,
+        scenario,
+        balance_grid,
+        budget_grid,
     )
 
     # Extract optimal schedule at many output caps via cheap forward passes.
@@ -772,7 +764,11 @@ def extract_conversion_curve_3d(
             yearly_conv = [0.0] * n_years
         else:
             yearly_conv = _forward_pass_3d(
-                scenario, extended_grid, budget_grid, policy_table, cap_rounded,
+                scenario,
+                extended_grid,
+                budget_grid,
+                policy_table,
+                cap_rounded,
             )
 
         # Clamp to non-negative and within sequential balance (with growth)
@@ -797,6 +793,7 @@ def extract_conversion_curve_3d(
                 remaining_bal -= yearly_conv[i]
 
         from app.engine.curve_strategy import build_curve_point
+
         points.append(build_curve_point(scenario, cap_rounded, yearly_conv))
 
     return points

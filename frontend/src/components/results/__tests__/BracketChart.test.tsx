@@ -73,15 +73,11 @@ describe("BracketChart", () => {
         },
       ];
 
-      const { container } = render(
-        <BracketChart years={years} filingStatus="single" />
-      );
+      const { container } = render(<BracketChart years={years} filingStatus="single" />);
 
       // Find all rects with the conversion gold color
       const rects = container.querySelectorAll("rect");
-      const conversionRects = Array.from(rects).filter(
-        (r) => r.getAttribute("fill") === "#F0C674"
-      );
+      const conversionRects = Array.from(rects).filter((r) => r.getAttribute("fill") === "#F0C674");
 
       // The small conversion should still produce a visible rect
       expect(conversionRects.length).toBeGreaterThan(0);
@@ -118,14 +114,10 @@ describe("BracketChart", () => {
         },
       ];
 
-      const { container } = render(
-        <BracketChart years={years} filingStatus="single" />
-      );
+      const { container } = render(<BracketChart years={years} filingStatus="single" />);
 
       const rects = container.querySelectorAll("rect");
-      const incomeRects = Array.from(rects).filter(
-        (r) => r.getAttribute("fill") === "#6C5CE7"
-      );
+      const incomeRects = Array.from(rects).filter((r) => r.getAttribute("fill") === "#6C5CE7");
 
       expect(incomeRects.length).toBeGreaterThan(0);
       const height = parseFloat(incomeRects[0].getAttribute("height") || "0");
@@ -159,18 +151,12 @@ describe("BracketChart", () => {
         },
       ];
 
-      const { container } = render(
-        <BracketChart years={years} filingStatus="single" />
-      );
+      const { container } = render(<BracketChart years={years} filingStatus="single" />);
 
       const rects = container.querySelectorAll("rect");
       // No income or conversion colored rects should appear
-      const incomeRects = Array.from(rects).filter(
-        (r) => r.getAttribute("fill") === "#6C5CE7"
-      );
-      const conversionRects = Array.from(rects).filter(
-        (r) => r.getAttribute("fill") === "#F0C674"
-      );
+      const incomeRects = Array.from(rects).filter((r) => r.getAttribute("fill") === "#6C5CE7");
+      const conversionRects = Array.from(rects).filter((r) => r.getAttribute("fill") === "#F0C674");
 
       expect(incomeRects.length).toBe(0);
       expect(conversionRects.length).toBe(0);

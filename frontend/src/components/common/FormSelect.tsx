@@ -24,11 +24,7 @@ const FormSelect = React.forwardRef<HTMLButtonElement, FormSelectProps>(
           <div className="flex items-center gap-1">
             <Label htmlFor={selectId}>{label}</Label>
             {required && (
-              <span
-                aria-hidden="true"
-                className="text-negative -ml-0.5"
-                data-required-indicator
-              >
+              <span aria-hidden="true" className="-ml-0.5 text-negative" data-required-indicator>
                 *
               </span>
             )}
@@ -43,12 +39,8 @@ const FormSelect = React.forwardRef<HTMLButtonElement, FormSelectProps>(
           className={cn(error && "border-negative", className)}
           {...props}
         />
-        {error && (
-          <span className="text-caption text-negative">{error}</span>
-        )}
-        {helper && !error && (
-          <span className="text-caption text-text-tertiary">{helper}</span>
-        )}
+        {error && <span className="text-caption text-negative">{error}</span>}
+        {helper && !error && <span className="text-caption text-text-tertiary">{helper}</span>}
       </div>
     );
   }

@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import fallbackData from "./federal-brackets-2026.json";
 
 export interface TaxBracket {
@@ -33,8 +27,7 @@ const fallbackConfig: TaxConfig = {
 
 const TaxConfigContext = createContext<TaxConfig>(fallbackConfig);
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export function TaxConfigProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<TaxConfig>(fallbackConfig);
@@ -57,11 +50,7 @@ export function TaxConfigProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  return (
-    <TaxConfigContext.Provider value={config}>
-      {children}
-    </TaxConfigContext.Provider>
-  );
+  return <TaxConfigContext.Provider value={config}>{children}</TaxConfigContext.Provider>;
 }
 
 export function useTaxConfig(): TaxConfig {

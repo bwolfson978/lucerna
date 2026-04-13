@@ -1,41 +1,41 @@
+from enum import StrEnum
+
 from pydantic import BaseModel, Field
-from typing import Optional
-from enum import Enum
 
 
-class FilingStatus(str, Enum):
+class FilingStatus(StrEnum):
     SINGLE = "single"
     MFJ = "married_filing_jointly"
 
 
 class YearlyIncome(BaseModel):
     """Income forecast for a single year in the timeline."""
+
     year: int
     gross_income: float = Field(ge=0)
     notes: str = Field(default="", description="Optional user notes for this year")
-    state: Optional[str] = Field(
-        default=None,
-        description="State override for this year. None = use scenario default."
+    state: str | None = Field(
+        default=None, description="State override for this year. None = use scenario default."
     )
 
 
 class ConversionPreferences(BaseModel):
     """Optional user constraints on the conversion schedule."""
-    max_annual_tax_cost: Optional[float] = Field(
-        default=None, ge=0,
-        description="Maximum tax the user can pay per year on conversions"
+
+    max_annual_tax_cost: float | None = Field(
+        default=None, ge=0, description="Maximum tax the user can pay per year on conversions"
     )
-    min_conversion_years: Optional[int] = Field(
-        default=None, ge=1, le=15,
-        description="Minimum number of years to spread conversions across"
+    min_conversion_years: int | None = Field(
+        default=None,
+        ge=1,
+        le=15,
+        description="Minimum number of years to spread conversions across",
     )
-    max_conversion_per_year: Optional[float] = Field(
-        default=None, ge=0,
-        description="Maximum conversion amount in any single year"
+    max_conversion_per_year: float | None = Field(
+        default=None, ge=0, description="Maximum conversion amount in any single year"
     )
-    max_conversion_total: Optional[float] = Field(
-        default=None, ge=0,
-        description="Maximum total conversion across all years"
+    max_conversion_total: float | None = Field(
+        default=None, ge=0, description="Maximum total conversion across all years"
     )
 
 
@@ -47,32 +47,33 @@ class HealthcareInput(BaseModel):
     for a single 40-year-old, 2026 national average estimate) so users
     can get started immediately and refine later.
     """
+
     household_size: int = Field(
-        default=1, ge=1,
-        description="Number of people in the tax household"
+        default=1, ge=1, description="Number of people in the tax household"
     )
     monthly_slcsp_premium: float = Field(
-        default=620.0, ge=0,
+        default=620.0,
+        ge=0,
         description=(
             "Monthly premium for the Second Lowest Cost Silver Plan. "
             "Look this up on healthcare.gov or your 1095-A form."
-        )
+        ),
     )
-    aca_coverage_years: Optional[list[int]] = Field(
+    aca_coverage_years: list[int] | None = Field(
         default=None,
         description=(
             "Calendar years when ACA marketplace coverage is needed. "
             "If not provided, defaults to all years in the income timeline "
             "where income is below the employer-coverage threshold."
-        )
+        ),
     )
-    has_employer_coverage_after: Optional[int] = Field(
+    has_employer_coverage_after: int | None = Field(
         default=None,
         description=(
             "Calendar year when employer coverage resumes. ACA subsidy "
             "impact is only modeled for years before this. If not provided, "
             "ACA impact is modeled for all timeline years."
-        )
+        ),
     )
 
 
@@ -86,19 +87,20 @@ class ScenarioInput(BaseModel):
     # Income timeline (the core input — replaces single-year income)
     income_timeline: list[YearlyIncome] = Field(
         min_length=1,
-        description="Year-by-year income forecast. The optimizer finds the best conversion schedule across all years."
+        description="Year-by-year income forecast. The optimizer finds the best conversion schedule across all years.",
     )
 
     # Retirement accounts
-    traditional_ira_balance: float = Field(ge=0, description="Traditional IRA + rollover 401k balance")
+    traditional_ira_balance: float = Field(
+        ge=0, description="Traditional IRA + rollover 401k balance"
+    )
     roth_ira_balance: float = Field(default=0, ge=0, description="Existing Roth IRA balance")
 
     # Retirement assumptions (with defaults)
     retirement_age: int = Field(default=65, ge=1, le=120)
     years_in_retirement: int = Field(default=25, ge=1)
-    annual_retirement_spending: Optional[float] = Field(
-        default=None,
-        description="If not provided, defaults to 4% rule on total balance"
+    annual_retirement_spending: float | None = Field(
+        default=None, description="If not provided, defaults to 4% rule on total balance"
     )
 
     # Growth/discount rates (with defaults)
@@ -106,28 +108,31 @@ class ScenarioInput(BaseModel):
     discount_rate: float = Field(default=0.05)
 
     # Conversion preferences (optional constraints)
-    conversion_preferences: Optional[ConversionPreferences] = None
+    conversion_preferences: ConversionPreferences | None = None
 
     # Healthcare / ACA subsidy inputs (optional — enables subsidy-aware optimization)
-    healthcare: Optional[HealthcareInput] = None
+    healthcare: HealthcareInput | None = None
 
     # State tax inputs (optional — enables state tax modeling)
-    state: Optional[str] = Field(
+    state: str | None = Field(
         default=None,
-        description="Default state of residence for working years. None = federal only."
+        description="Default state of residence for working years. None = federal only.",
     )
-    retirement_state: Optional[str] = Field(
+    retirement_state: str | None = Field(
         default=None,
-        description="State of residence in retirement. Defaults to `state` if not set."
+        description="State of residence in retirement. Defaults to `state` if not set.",
     )
-    custom_state_rate: Optional[float] = Field(
-        default=None, ge=0, le=0.20,
-        description="Custom flat state tax rate (used when state='custom')"
+    custom_state_rate: float | None = Field(
+        default=None,
+        ge=0,
+        le=0.20,
+        description="Custom flat state tax rate (used when state='custom')",
     )
 
 
 class BracketFillResult(BaseModel):
     """How a single tax bracket is filled by income and conversion."""
+
     bracket_rate: float
     bracket_min: float
     bracket_max: float
@@ -140,6 +145,7 @@ class BracketFillResult(BaseModel):
 
 class ScenarioComparison(BaseModel):
     """A single scenario for comparison (no conversion, optimal, full, etc.)."""
+
     label: str
     conversion_amount: float
     npv: float
@@ -152,6 +158,7 @@ class ScenarioComparison(BaseModel):
 
 class AcaSubsidyDetail(BaseModel):
     """Per-year ACA subsidy impact for a given conversion schedule."""
+
     year: int
     magi_without_conversion: float
     magi_with_conversion: float
@@ -181,15 +188,16 @@ class ReasoningTrace(BaseModel):
     summary_points: dict  # whatToConvert, whyThisAmount, howMuchYouSave, keyTradeoff
 
     # ACA subsidy impact (populated when healthcare inputs are provided)
-    aca_impact: Optional[list[AcaSubsidyDetail]] = None
-    aca_summary: Optional[dict] = None
+    aca_impact: list[AcaSubsidyDetail] | None = None
+    aca_summary: dict | None = None
 
     # RMD impact analysis
-    rmd_summary: Optional[dict] = None
+    rmd_summary: dict | None = None
 
 
 class RmdYearDetail(BaseModel):
     """Per-year RMD projection for a given conversion schedule."""
+
     year: int
     age: int
     trad_balance_start: float
@@ -201,6 +209,7 @@ class RmdYearDetail(BaseModel):
 
 class RmdProjection(BaseModel):
     """Summary of projected RMD impact across retirement."""
+
     rmd_start_age: int
     rmd_start_year: int
     yearly_detail: list[RmdYearDetail]
@@ -217,6 +226,7 @@ class NPVCurvePoint(BaseModel):
 class ConversionCurvePoint(BaseModel):
     """Pre-computed optimizer result at a specific total conversion cap.
     Powers the interactive slider on the frontend."""
+
     total_cap: float
     yearly_conversions: list[float]
     yearly_bracket_fill: list[list[BracketFillResult]]
@@ -240,7 +250,9 @@ class OptimizationResult(BaseModel):
     npv_at_zero: float
 
     # Per-year detail
-    yearly_detail: list[dict]  # Per year: {income, conversion, tax_cost, effective_rate, marginal_bracket}
+    yearly_detail: list[
+        dict
+    ]  # Per year: {income, conversion, tax_cost, effective_rate, marginal_bracket}
 
     # Bracket visualization data (per year)
     yearly_bracket_fill: list[list[BracketFillResult]]
@@ -262,18 +274,18 @@ class OptimizationResult(BaseModel):
     conversion_curve: list["ConversionCurvePoint"] = Field(default_factory=list)
 
     # Unconstrained comparison (populated when conversion_preferences are active)
-    unconstrained_npv: Optional[float] = None
-    unconstrained_conversions: Optional[list[float]] = None
+    unconstrained_npv: float | None = None
+    unconstrained_conversions: list[float] | None = None
 
     # ACA subsidy impact (populated when healthcare inputs are provided)
-    aca_subsidy_impact: Optional[list[AcaSubsidyDetail]] = None
-    total_subsidy_lost: Optional[float] = None
-    subsidy_cliff_income: Optional[float] = None
-    npv_without_aca: Optional[float] = None  # NPV from tax-only optimization for comparison
+    aca_subsidy_impact: list[AcaSubsidyDetail] | None = None
+    total_subsidy_lost: float | None = None
+    subsidy_cliff_income: float | None = None
+    npv_without_aca: float | None = None  # NPV from tax-only optimization for comparison
 
     # RMD projection (always computed — RMDs are mandatory)
-    rmd_projection: Optional[RmdProjection] = None
-    rmd_projection_no_conversion: Optional[RmdProjection] = None
+    rmd_projection: RmdProjection | None = None
+    rmd_projection_no_conversion: RmdProjection | None = None
 
     # Input echo
     input: ScenarioInput

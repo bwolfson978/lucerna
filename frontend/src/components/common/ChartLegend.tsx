@@ -18,11 +18,18 @@ interface ChartLegendProps {
 
 export function ChartLegend({ items, className }: ChartLegendProps) {
   return (
-    <div className={["flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-body-sm text-text-secondary", className].filter(Boolean).join(" ")}>
+    <div
+      className={[
+        "flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-body-sm text-text-secondary",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       {items.map((item) => (
         <span key={item.label} className="flex items-center gap-1.5">
           <span
-            className={`w-3 h-3 rounded ${item.outline ? "bg-bg-hover border border-border" : ""}`}
+            className={`h-3 w-3 rounded ${item.outline ? "border border-border bg-bg-hover" : ""}`}
             style={item.outline ? undefined : { backgroundColor: item.color }}
           />
           {item.label}

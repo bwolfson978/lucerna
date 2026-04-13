@@ -33,9 +33,7 @@ from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
-FRONTEND_FALLBACK = (
-    ROOT_DIR / "frontend" / "src" / "lib" / "tax" / "federal-brackets-2026.json"
-)
+FRONTEND_FALLBACK = ROOT_DIR / "frontend" / "src" / "lib" / "tax" / "federal-brackets-2026.json"
 
 
 # ──────────────────────────────────────────────
@@ -86,9 +84,7 @@ def validate_metadata(data: dict, filepath: Path) -> list[str]:
         try:
             datetime.strptime(last_updated, "%Y-%m-%d")
         except ValueError:
-            warnings.append(
-                f"[{name}] metadata.last_updated is not YYYY-MM-DD: {last_updated}"
-            )
+            warnings.append(f"[{name}] metadata.last_updated is not YYYY-MM-DD: {last_updated}")
 
     return warnings
 
@@ -129,15 +125,14 @@ def validate_tax_brackets(data: dict, filepath: Path) -> list[str]:
             curr_min = fs_brackets[i]["min"]
             if prev_max != "inf" and prev_max != curr_min:
                 warnings.append(
-                    f"[{name}] federal.brackets.{fs}: gap between bracket {i-1} "
+                    f"[{name}] federal.brackets.{fs}: gap between bracket {i - 1} "
                     f"(max={prev_max}) and bracket {i} (min={curr_min})"
                 )
 
         last_max = fs_brackets[-1]["max"]
         if last_max != "inf" and last_max is not None:
             warnings.append(
-                f"[{name}] federal.brackets.{fs}: last bracket max should be 'inf', "
-                f"got {last_max}"
+                f"[{name}] federal.brackets.{fs}: last bracket max should be 'inf', got {last_max}"
             )
 
     return warnings
@@ -156,13 +151,13 @@ def validate_rmd_tables(data: dict, filepath: Path) -> list[str]:
         if not entries:
             warnings.append(f"[{name}] uniform_lifetime_table.entries is empty")
         else:
-            ages = sorted(int(k) for k in entries.keys())
+            ages = sorted(int(k) for k in entries)
             values = [entries[str(a)] for a in ages]
             for i in range(1, len(values)):
                 if values[i] >= values[i - 1]:
                     warnings.append(
                         f"[{name}] uniform_lifetime_table NOT monotonically decreasing: "
-                        f"age {ages[i-1]}={values[i-1]} -> age {ages[i]}={values[i]}"
+                        f"age {ages[i - 1]}={values[i - 1]} -> age {ages[i]}={values[i]}"
                     )
                     break
 
@@ -190,14 +185,10 @@ def validate_rmd_tables(data: dict, filepath: Path) -> list[str]:
                 )
 
             thresholds = [
-                r["born_on_or_before"]
-                for r in rules
-                if r.get("born_on_or_before") is not None
+                r["born_on_or_before"] for r in rules if r.get("born_on_or_before") is not None
             ]
             if thresholds != sorted(thresholds):
-                warnings.append(
-                    f"[{name}] start_age_rules: born_on_or_before not ascending"
-                )
+                warnings.append(f"[{name}] start_age_rules: born_on_or_before not ascending")
 
     if ult and sar:
         min_age = ult.get("min_age")
@@ -231,7 +222,7 @@ def validate_file(filepath: Path) -> list[str]:
     name = filepath.stem
 
     try:
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
     except json.JSONDecodeError as e:
         return [f"[{name}] INVALID JSON: {e}"]
@@ -266,7 +257,7 @@ def validate_all() -> list[str]:
 def get_tax_year(filepath: Path) -> int | None:
     """Extract tax year from a data file."""
     try:
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
         return data.get("metadata", {}).get("tax_year")
     except (json.JSONDecodeError, KeyError):
@@ -283,7 +274,7 @@ def is_stale(filepath: Path, target_year: int) -> bool:
 
     # RMD tables: stale if last_updated is > 365 days old
     try:
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
         last_updated_str = data.get("metadata", {}).get("last_updated", "")
         last_updated = datetime.strptime(last_updated_str, "%Y-%m-%d").date()
@@ -309,16 +300,13 @@ def fetch_federal_brackets(year: int) -> dict | None:
     them into a convenient format.
     """
     try:
-        import urllib.request
-        import urllib.error
-
         # Tax Foundation publishes federal brackets as part of their annual
         # state tax rates page. The federal data is also on their dedicated
         # federal brackets page.
         url = f"https://taxfoundation.org/data/all/federal/{year}-tax-brackets/"
         print(f"  Checking Tax Foundation for {year} federal brackets...")
         print(f"  URL: {url}")
-        print(f"  Note: Automated parsing not yet implemented.")
+        print("  Note: Automated parsing not yet implemented.")
         print(f"  To update manually, edit backend/data/tax_brackets_{year}.json")
         return None
     except Exception as e:
@@ -374,13 +362,13 @@ def update_rmd_tables(target_year: int, dry_run: bool = False) -> str:
 
     # RMD tables rarely change — just bump the review date
     if not dry_run:
-        with open(filepath, "r") as f:
+        with open(filepath) as f:
             data = json.load(f)
         data["metadata"]["last_updated"] = date.today().isoformat()
         with open(filepath, "w") as f:
             json.dump(data, f, indent=2)
             f.write("\n")
-        print(f"  Updated last_updated date in rmd_tables.json")
+        print("  Updated last_updated date in rmd_tables.json")
 
     return "reviewed"
 
@@ -415,10 +403,10 @@ def sync_frontend_fallback(dry_run: bool = False) -> bool:
     # Load backend data
     bracket_files = sorted(DATA_DIR.glob("tax_brackets_*.json"))
     if not bracket_files:
-        print(f"  No tax_brackets file found — skipping frontend sync")
+        print("  No tax_brackets file found — skipping frontend sync")
         return False
 
-    with open(bracket_files[-1], "r") as f:
+    with open(bracket_files[-1]) as f:
         backend_data = json.load(f)
 
     federal = backend_data["federal"]
@@ -441,12 +429,18 @@ def sync_frontend_fallback(dry_run: bool = False) -> bool:
 
     # Check if already in sync
     if FRONTEND_FALLBACK.exists():
-        with open(FRONTEND_FALLBACK, "r") as f:
+        with open(FRONTEND_FALLBACK) as f:
             current = json.load(f)
-        current_data = {"standard_deduction": current.get("standard_deduction"), "brackets": current.get("brackets")}
-        new_data = {"standard_deduction": frontend_json["standard_deduction"], "brackets": frontend_json["brackets"]}
+        current_data = {
+            "standard_deduction": current.get("standard_deduction"),
+            "brackets": current.get("brackets"),
+        }
+        new_data = {
+            "standard_deduction": frontend_json["standard_deduction"],
+            "brackets": frontend_json["brackets"],
+        }
         if current_data == new_data:
-            print(f"  Frontend fallback already in sync")
+            print("  Frontend fallback already in sync")
             return False
 
     if dry_run:
@@ -471,23 +465,23 @@ def print_summary() -> None:
     files = discover_data_files()
     today = date.today()
 
-    print(f"\n{'='*65}")
-    print(f"  Lucerna Data Files — Staleness Dashboard")
+    print(f"\n{'=' * 65}")
+    print("  Lucerna Data Files — Staleness Dashboard")
     print(f"  Scanned: {DATA_DIR}")
     print(f"  Date: {today.isoformat()}")
-    print(f"{'='*65}")
+    print(f"{'=' * 65}")
 
     if not files:
         print("  No JSON data files found.")
         return
 
     print(f"\n  {'File':<30} {'Last Updated':<15} {'Age (days)':<12} {'Status'}")
-    print(f"  {'─'*30} {'─'*15} {'─'*12} {'─'*10}")
+    print(f"  {'─' * 30} {'─' * 15} {'─' * 12} {'─' * 10}")
 
     for filepath in files:
         name = filepath.name
         try:
-            with open(filepath, "r") as f:
+            with open(filepath) as f:
                 data = json.load(f)
         except json.JSONDecodeError:
             print(f"  {name:<30} {'INVALID JSON':<15} {'—':<12} ERROR")
@@ -513,34 +507,37 @@ def print_summary() -> None:
 
         print(f"  {name:<30} {last_updated_str:<15} {age_days:<12} {status}")
 
-    print(f"\n  Validation:")
+    print("\n  Validation:")
     all_warnings = validate_all()
     if all_warnings:
         print(f"  {len(all_warnings)} warning(s):")
         for w in all_warnings:
             print(f"    ⚠ {w}")
     else:
-        print(f"  All files pass validation.")
+        print("  All files pass validation.")
 
     # Frontend sync check
-    print(f"\n  Frontend fallback:")
+    print("\n  Frontend fallback:")
     if FRONTEND_FALLBACK.exists():
         # Quick check: does a sync report changes?
         bracket_files = sorted(DATA_DIR.glob("tax_brackets_*.json"))
         if bracket_files:
-            with open(bracket_files[-1], "r") as f:
+            with open(bracket_files[-1]) as f:
                 backend = json.load(f)
-            with open(FRONTEND_FALLBACK, "r") as f:
+            with open(FRONTEND_FALLBACK) as f:
                 frontend = json.load(f)
             backend_fed = backend["federal"]
             fe_brackets = frontend.get("brackets", {})
-            be_single = [{"min": b["min"], "max": None if b["max"] == "inf" else b["max"], "rate": b["rate"]} for b in backend_fed["brackets"].get("single", [])]
+            be_single = [
+                {"min": b["min"], "max": None if b["max"] == "inf" else b["max"], "rate": b["rate"]}
+                for b in backend_fed["brackets"].get("single", [])
+            ]
             if fe_brackets.get("single") == be_single:
-                print(f"  In sync with backend")
+                print("  In sync with backend")
             else:
-                print(f"  OUT OF SYNC — run: python -m scripts.update_data")
+                print("  OUT OF SYNC — run: python -m scripts.update_data")
         else:
-            print(f"  No backend tax brackets to compare against")
+            print("  No backend tax brackets to compare against")
     else:
         print(f"  Fallback file not found: {FRONTEND_FALLBACK}")
 
@@ -610,12 +607,12 @@ def main():
                 print(f"  ⚠ {w}")
             sys.exit(1)
         else:
-            print(f"\nAll files pass validation.")
+            print("\nAll files pass validation.")
         return
 
     # ── Update mode (default) ──
     print(f"\nLucerna Data Updater — target year: {target_year}")
-    print(f"{'='*50}")
+    print(f"{'=' * 50}")
 
     any_changes = False
 
@@ -628,23 +625,23 @@ def main():
             any_changes = True
 
     # Validate after updates
-    print(f"\nValidating...")
+    print("\nValidating...")
     warnings = validate_all()
     if warnings:
         print(f"  {len(warnings)} warning(s):")
         for w in warnings:
             print(f"    ⚠ {w}")
     else:
-        print(f"  All files pass validation.")
+        print("  All files pass validation.")
 
     # Sync frontend fallback
-    print(f"\nSyncing frontend fallback...")
+    print("\nSyncing frontend fallback...")
     sync_frontend_fallback(dry_run=args.dry_run)
 
     if not any_changes:
-        print(f"\nAll data files are up to date.")
+        print("\nAll data files are up to date.")
     else:
-        print(f"\nData files updated. Review changes before committing.")
+        print("\nData files updated. Review changes before committing.")
 
 
 if __name__ == "__main__":

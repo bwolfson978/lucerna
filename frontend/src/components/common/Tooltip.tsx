@@ -1,11 +1,7 @@
 "use client";
 
 import { ReactNode, useState } from "react";
-import {
-  Tooltip as TooltipRoot,
-  TooltipTrigger,
-  TooltipContent,
-} from "@/components/ui/tooltip";
+import { Tooltip as TooltipRoot, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 interface TooltipProps {
   content: string;
@@ -25,7 +21,7 @@ export function Tooltip({ content, children }: TooltipProps) {
               e.preventDefault();
               setOpen((prev) => !prev);
             }}
-            className="inline-flex items-center justify-center w-5 h-5 text-text-tertiary hover:text-text-secondary transition-colors duration-300"
+            className="inline-flex h-5 w-5 items-center justify-center text-text-tertiary transition-colors duration-300 hover:text-text-secondary"
             aria-label="More info"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -44,11 +40,7 @@ export function Tooltip({ content, children }: TooltipProps) {
           </button>
         )}
       </TooltipTrigger>
-      <TooltipContent
-        onPointerDownOutside={() => setOpen(false)}
-      >
-        {content}
-      </TooltipContent>
+      <TooltipContent onPointerDownOutside={() => setOpen(false)}>{content}</TooltipContent>
     </TooltipRoot>
   );
 }

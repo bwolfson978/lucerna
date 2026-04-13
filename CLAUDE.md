@@ -47,6 +47,22 @@ The AI conversation layer must use educational framing (legal requirement):
 - **Multi-year optimizer** is the only engine mode — `scipy.optimize.minimize` (SLSQP) with greedy bracket-fill heuristic as initialization and fallback. No separate single-year path; a 1-year timeline is just `len(income_timeline) == 1`.
 - Engine files: `types.py` → `tax.py` → `heuristic.py` → `optimizer.py` → `trace.py` → `demo.py`
 
+## Linting and formatting
+
+- **Frontend:** ESLint 9 flat config (`frontend/eslint.config.mjs`) with `typescript-eslint`, `@next/eslint-plugin-next`, and `react-hooks` rules. Prettier (`frontend/.prettierrc`) handles formatting, including Tailwind class sorting. Configs are tuned to catch real bugs without nitpicking style.
+- **Backend:** Ruff handles linting and formatting (config in `backend/pyproject.toml`). Replaces flake8/black/isort in a single tool. Rules: `E`, `F`, `W`, `I`, `UP`, `B`, `SIM`.
+- **Pre-commit hooks:** husky + lint-staged auto-fix staged files and block commits with remaining errors. Setup runs automatically via `npm install` at the repo root (via the `prepare` script).
+- **CI:** Both `test.yml` and the deploy workflows run lint and format checks before tests.
+
+Commands (from repo root):
+- `npm run lint:all` — lint both frontend and backend
+- `npm run format:all` — autoformat both frontend and backend
+- `npm run format:check` — check formatting without modifying files
+- `npm run lint:frontend` / `npm run lint:backend` — scope to one service
+- `npm run format:frontend` / `npm run format:backend` — scope to one service
+
+If a pre-commit hook blocks you on something you believe is correct, fix the root cause rather than using `--no-verify`. The hook catches real issues; bypassing it pushes the problem to CI.
+
 ## Project structure
 
 ```

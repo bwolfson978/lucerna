@@ -10,12 +10,7 @@ interface InfoTriggerProps {
   className?: string;
 }
 
-export function InfoTrigger({
-  label,
-  sectionId,
-  triggerId,
-  className,
-}: InfoTriggerProps) {
+export function InfoTrigger({ label, sectionId, triggerId, className }: InfoTriggerProps) {
   const { activeTrigger, openSidebar } = useMethodology();
   const isActive = activeTrigger === triggerId;
 
@@ -25,13 +20,13 @@ export function InfoTrigger({
       onClick={() => openSidebar(sectionId, triggerId)}
       className={cn(
         "inline-flex items-center gap-1.5",
-        "text-xs font-medium whitespace-nowrap",
-        "px-2.5 py-1 rounded-md",
+        "whitespace-nowrap text-xs font-medium",
+        "rounded-md px-2.5 py-1",
         "border border-transparent",
         "transition-all duration-200",
         isActive
-          ? "text-accent border-accent/30 bg-accent/15"
-          : "text-text-tertiary hover:text-accent hover:border-accent/15 hover:bg-accent/15",
+          ? "border-accent/30 bg-accent/15 text-accent"
+          : "text-text-tertiary hover:border-accent/15 hover:bg-accent/15 hover:text-accent",
         className
       )}
       aria-label={label}

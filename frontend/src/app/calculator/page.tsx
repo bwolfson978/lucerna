@@ -5,11 +5,7 @@ import posthog from "posthog-js";
 import { Header } from "@/components/common/Header";
 import { InputForm } from "@/components/calculator/InputForm";
 import { ResultsView } from "@/components/results/ResultsView";
-import {
-  MetricCardSkeleton,
-  ChartSkeleton,
-  TableSkeleton,
-} from "@/components/common/Skeleton";
+import { MetricCardSkeleton, ChartSkeleton, TableSkeleton } from "@/components/common/Skeleton";
 import { apiClient } from "@/lib/api/client";
 import type { ScenarioInput, OptimizationResult } from "@/lib/types";
 import { Card } from "@/components/ui/card";
@@ -37,19 +33,16 @@ export default function CalculatorPage() {
     posthog.capture("scenario_submitted", {
       filing_status: input.filing_status,
       num_years: input.income_timeline?.length ?? 1,
-      has_life_events: input.income_timeline?.some(y => y.notes && y.notes.trim() !== "") ?? false,
+      has_life_events:
+        input.income_timeline?.some((y) => y.notes && y.notes.trim() !== "") ?? false,
     });
 
     try {
-      const data = await apiClient.optimize(
-        input as unknown as Record<string, unknown>
-      );
+      const data = await apiClient.optimize(input as unknown as Record<string, unknown>);
       setResult(data as OptimizationResult);
       posthog.capture("scenario_completed");
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Optimization failed"
-      );
+      setError(err instanceof Error ? err.message : "Optimization failed");
     } finally {
       setLoading(false);
     }
@@ -59,18 +52,18 @@ export default function CalculatorPage() {
     <MethodologyProvider>
       <Header />
       <MethodologyLayout result={result ?? undefined}>
-        <main className="px-default md:px-page py-section-lg">
-          <div className="max-w-content mx-auto flex flex-col gap-section">
+        <main className="px-default py-section-lg md:px-page">
+          <div className="mx-auto flex max-w-content flex-col gap-section">
             {/* Form section */}
-            <div className={`pb-section -mx-default md:-mx-page px-default md:px-page pt-section border-b border-border${!result && !loading && !error ? "" : " shadow-sm"}`}>
-              <div className="max-w-content mx-auto flex flex-col gap-default">
+            <div
+              className={`-mx-default border-b px-default pb-section pt-section md:-mx-page md:px-page border-border${!result && !loading && !error ? "" : "shadow-sm"}`}
+            >
+              <div className="mx-auto flex max-w-content flex-col gap-default">
                 <div className="flex flex-col gap-1">
-                  <h1 className="text-h1 text-text-primary font-serif">
-                    Run your scenario
-                  </h1>
-                  <p className="text-body-sm text-text-secondary leading-relaxed">
-                    Enter your details and the optimizer will find the Roth conversion
-                    schedule that maximizes your after-tax wealth.
+                  <h1 className="font-serif text-h1 text-text-primary">Run your scenario</h1>
+                  <p className="text-body-sm leading-relaxed text-text-secondary">
+                    Enter your details and the optimizer will find the Roth conversion schedule that
+                    maximizes your after-tax wealth.
                   </p>
                 </div>
 
@@ -82,7 +75,7 @@ export default function CalculatorPage() {
             <div ref={resultsRef} className="scroll-mt-6">
               {loading && (
                 <div className="flex flex-col gap-section">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-default">
+                  <div className="grid grid-cols-2 gap-default sm:grid-cols-4">
                     {Array.from({ length: 4 }).map((_, i) => (
                       <MetricCardSkeleton key={i} />
                     ))}
@@ -101,20 +94,14 @@ export default function CalculatorPage() {
                       setError(null);
                       setResult(null);
                     }}
-                    className="text-body-sm text-accent hover:text-accent-hover font-medium mt-default transition-colors duration-300"
+                    className="mt-default text-body-sm font-medium text-accent transition-colors duration-300 hover:text-accent-hover"
                   >
                     Try again
                   </button>
                 </Card>
               )}
 
-              {result && (
-                <ResultsView
-                  result={result}
-                  onReRun={handleSubmit}
-                  loading={loading}
-                />
-              )}
+              {result && <ResultsView result={result} onReRun={handleSubmit} loading={loading} />}
             </div>
           </div>
         </main>

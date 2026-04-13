@@ -121,10 +121,14 @@ def calculate_subsidy_loss(
         The dollar amount of annual subsidy lost (>= 0).
     """
     subsidy_without = calculate_aca_subsidy(
-        base_income, household_size, monthly_slcsp_premium,
+        base_income,
+        household_size,
+        monthly_slcsp_premium,
     )
     subsidy_with = calculate_aca_subsidy(
-        base_income + conversion_amount, household_size, monthly_slcsp_premium,
+        base_income + conversion_amount,
+        household_size,
+        monthly_slcsp_premium,
     )
     return max(0.0, subsidy_without - subsidy_with)
 
@@ -171,7 +175,9 @@ def vectorized_subsidy_loss(
 
 
 def _vectorized_subsidy_at_pct_fpl(
-    pct_fpl: float, magi: float, annual_slcsp: float,
+    pct_fpl: float,
+    magi: float,
+    annual_slcsp: float,
 ) -> float:
     """Helper: compute scalar subsidy for a single income."""
     if pct_fpl < 100 or pct_fpl > 400:
@@ -214,7 +220,10 @@ def calculate_combined_marginal_rate(
     fed_cost = federal_tax_on_conversion(base_income, conversion_amount, filing_status)
 
     subsidy_loss = calculate_subsidy_loss(
-        base_income, conversion_amount, household_size, monthly_slcsp_premium,
+        base_income,
+        conversion_amount,
+        household_size,
+        monthly_slcsp_premium,
     )
 
     return (fed_cost + subsidy_loss) / conversion_amount

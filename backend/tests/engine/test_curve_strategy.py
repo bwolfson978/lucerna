@@ -3,16 +3,15 @@
 import pytest
 
 from app.engine.curve_strategy import (
-    build_curve_point,
-    generate_conversion_curve,
     DEFAULT_CURVE_STRATEGY,
     _get_strategy,
+    build_curve_point,
+    generate_conversion_curve,
 )
-from app.engine.heuristic import bracket_fill_curve, _global_bracket_fill_for_cap
 from app.engine.dp import dp_optimize, extract_conversion_curve_3d
+from app.engine.heuristic import _global_bracket_fill_for_cap, bracket_fill_curve
 from app.engine.optimizer import calculate_npv
-from app.engine.types import ScenarioInput, FilingStatus, YearlyIncome
-
+from app.engine.types import FilingStatus, ScenarioInput, YearlyIncome
 
 # ── Fixtures ──────────────────────────────────────────────────────────
 
@@ -47,14 +46,18 @@ class TestCurveStrategyContract:
     def test_returns_expected_point_count(self, strategy):
         scenario = _simple_scenario()
         curve = generate_conversion_curve(
-            scenario, n_curve_points=20, strategy=strategy,
+            scenario,
+            n_curve_points=20,
+            strategy=strategy,
         )
         assert len(curve) == 20
 
     def test_first_point_zero(self, strategy):
         scenario = _simple_scenario()
         curve = generate_conversion_curve(
-            scenario, n_curve_points=20, strategy=strategy,
+            scenario,
+            n_curve_points=20,
+            strategy=strategy,
         )
         first = curve[0]
         assert first.total_cap == 0
@@ -64,33 +67,35 @@ class TestCurveStrategyContract:
     def test_conversions_within_budget(self, strategy):
         scenario = _simple_scenario()
         curve = generate_conversion_curve(
-            scenario, n_curve_points=20, strategy=strategy,
+            scenario,
+            n_curve_points=20,
+            strategy=strategy,
         )
         for pt in curve:
             total = sum(pt.yearly_conversions)
             # Allow $200 tolerance for rounding
-            assert total <= pt.total_cap + 200, (
-                f"Conversions {total} exceed cap {pt.total_cap}"
-            )
+            assert total <= pt.total_cap + 200, f"Conversions {total} exceed cap {pt.total_cap}"
 
     def test_balance_constraint_respected(self, strategy):
         scenario = _simple_scenario()
         g = scenario.annual_growth_rate
         curve = generate_conversion_curve(
-            scenario, n_curve_points=20, strategy=strategy,
+            scenario,
+            n_curve_points=20,
+            strategy=strategy,
         )
         for pt in curve:
             remaining = scenario.traditional_ira_balance
             for c in pt.yearly_conversions:
-                assert c <= remaining + 1, (
-                    f"Conversion {c} exceeds balance {remaining}"
-                )
+                assert c <= remaining + 1, f"Conversion {c} exceeds balance {remaining}"
                 remaining = (remaining - c) * (1 + g)
 
     def test_fields_populated(self, strategy):
         scenario = _simple_scenario()
         curve = generate_conversion_curve(
-            scenario, n_curve_points=10, strategy=strategy,
+            scenario,
+            n_curve_points=10,
+            strategy=strategy,
         )
         for pt in curve:
             n = len(scenario.income_timeline)
@@ -103,7 +108,9 @@ class TestCurveStrategyContract:
     def test_nonzero_conversion_has_positive_tax(self, strategy):
         scenario = _simple_scenario()
         curve = generate_conversion_curve(
-            scenario, n_curve_points=20, strategy=strategy,
+            scenario,
+            n_curve_points=20,
+            strategy=strategy,
         )
         for pt in curve:
             if sum(pt.yearly_conversions) > 100:
@@ -166,10 +173,14 @@ class TestDispatch:
         scenario = _simple_scenario()
         # Both strategies should return a list of curve points
         curve_dp = generate_conversion_curve(
-            scenario, n_curve_points=5, strategy="dp_3d",
+            scenario,
+            n_curve_points=5,
+            strategy="dp_3d",
         )
         curve_bf = generate_conversion_curve(
-            scenario, n_curve_points=5, strategy="bracket_fill",
+            scenario,
+            n_curve_points=5,
+            strategy="bracket_fill",
         )
         assert len(curve_dp) == 5
         assert len(curve_bf) == 5
@@ -208,6 +219,7 @@ class TestBracketFillStrategy:
     def test_performance_faster_than_dp(self):
         """Bracket-fill curve should be significantly faster than 3D DP."""
         import time
+
         scenario = _simple_scenario()
 
         start = time.perf_counter()

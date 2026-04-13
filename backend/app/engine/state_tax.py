@@ -10,12 +10,12 @@ Verified against official state department of revenue publications.
 """
 
 import json
-import numpy as np
 from pathlib import Path
-from typing import Optional
 
-from app.engine.types import FilingStatus
+import numpy as np
+
 from app.engine.constants import NUMERIC_INFINITY
+from app.engine.types import FilingStatus
 
 __all__ = [
     "resolve_state_for_year",
@@ -43,26 +43,26 @@ def _load_tax_data() -> dict:
     """
     data_file = _DATA_DIR / "tax_brackets_2026.json"
     try:
-        with open(data_file, "r") as f:
+        with open(data_file) as f:
             data = json.load(f)
-    except FileNotFoundError:
+    except FileNotFoundError as err:
         raise RuntimeError(
             f"Tax data file not found at {data_file}. "
             f"Ensure backend/data/tax_brackets_2026.json exists."
-        )
-    except json.JSONDecodeError as e:
-        raise RuntimeError(f"Tax data file is malformed: {e}")
+        ) from err
+    except json.JSONDecodeError as err:
+        raise RuntimeError(f"Tax data file is malformed: {err}") from err
 
     # Convert "inf" strings to float("inf") in bracket max values
     for section_key in ["federal", "states"]:
         section = data.get(section_key, {})
         entries = section.items() if section_key == "states" else [("federal", section)]
 
-        for key, entry in entries:
+        for _key, entry in entries:
             if section_key == "states" and not entry.get("has_income_tax", False):
                 continue
             brackets = entry.get("brackets", {})
-            for filing_status, bracket_list in brackets.items():
+            for _filing_status, bracket_list in brackets.items():
                 for bracket in bracket_list:
                     if bracket["max"] == "inf":
                         bracket["max"] = float("inf")
@@ -79,7 +79,7 @@ _FILING_STATUS_KEY = {
 }
 
 
-def _get_state_data(state: str) -> Optional[dict]:
+def _get_state_data(state: str) -> dict | None:
     """Get the state entry from loaded tax data, or None if not found."""
     return _TAX_DATA.get("states", {}).get(state)
 
@@ -100,7 +100,7 @@ def _get_federal_deduction(filing_status: FilingStatus) -> float:
     return _TAX_DATA["federal"]["standard_deduction"][fs_key]
 
 
-def _get_brackets(state: str, filing_status: FilingStatus) -> Optional[list[dict]]:
+def _get_brackets(state: str, filing_status: FilingStatus) -> list[dict] | None:
     """Get the bracket list for a state and filing status."""
     state_data = _get_state_data(state)
     if not state_data or not state_data.get("has_income_tax", False):
@@ -116,9 +116,9 @@ def _get_brackets(state: str, filing_status: FilingStatus) -> Optional[list[dict
 
 
 def resolve_state_for_year(
-    year_state: Optional[str],
-    scenario_state: Optional[str],
-) -> Optional[str]:
+    year_state: str | None,
+    scenario_state: str | None,
+) -> str | None:
     """Resolve the effective state for a given year.
 
     Priority: year-level override > scenario default > None.
@@ -130,7 +130,7 @@ def calculate_state_tax(
     gross_income: float,
     state: str,
     filing_status: FilingStatus = FilingStatus.SINGLE,
-    custom_rate: Optional[float] = None,
+    custom_rate: float | None = None,
 ) -> float:
     """Calculate state income tax using progressive brackets.
 
@@ -168,7 +168,7 @@ def get_state_marginal_rate(
     gross_income: float,
     state: str,
     filing_status: FilingStatus = FilingStatus.SINGLE,
-    custom_rate: Optional[float] = None,
+    custom_rate: float | None = None,
 ) -> float:
     """Get the state marginal tax rate at a given gross income level."""
     if not state or state == "none":
@@ -198,7 +198,7 @@ def vectorized_state_tax(
     gross_incomes: np.ndarray,
     state: str,
     filing_status: FilingStatus = FilingStatus.SINGLE,
-    custom_rate: Optional[float] = None,
+    custom_rate: float | None = None,
 ) -> np.ndarray:
     """Calculate state income tax for an array of gross incomes.
 
@@ -247,12 +247,14 @@ def get_supported_states() -> list[dict]:
         # Get top rate from single brackets (last bracket's rate)
         single_brackets = brackets.get("single", [])
         top_rate = single_brackets[-1]["rate"] if single_brackets else 0.0
-        result.append({
-            "code": code,
-            "name": data["name"],
-            "top_rate": top_rate,
-            "tax_type": data.get("tax_type", "unknown"),
-        })
+        result.append(
+            {
+                "code": code,
+                "name": data["name"],
+                "top_rate": top_rate,
+                "tax_type": data.get("tax_type", "unknown"),
+            }
+        )
     result.sort(key=lambda s: s["name"])
     return result
 
@@ -274,13 +276,15 @@ def get_all_states() -> list[dict]:
             single_brackets = brackets.get("single", [])
             top_rate = single_brackets[-1]["rate"] if single_brackets else 0.0
             tax_type = data.get("tax_type", "unknown")
-        result.append({
-            "code": code,
-            "name": data["name"],
-            "has_income_tax": has_tax,
-            "top_rate": top_rate,
-            "tax_type": tax_type,
-        })
+        result.append(
+            {
+                "code": code,
+                "name": data["name"],
+                "has_income_tax": has_tax,
+                "top_rate": top_rate,
+                "tax_type": tax_type,
+            }
+        )
     result.sort(key=lambda s: s["name"])
     return result
 

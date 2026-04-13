@@ -1,28 +1,32 @@
 import numpy as np
 from scipy.optimize import minimize
 
-from app.engine.types import (
-    ScenarioInput, OptimizationResult, ScenarioComparison,
-    NPVCurvePoint, BracketFillResult, ConversionCurvePoint,
-    ConversionPreferences, AcaSubsidyDetail,
-    RmdYearDetail, RmdProjection,
-)
-from app.engine.tax import calculate_federal_tax, get_marginal_rate, analyze_bracket_fill
-from app.engine.heuristic import greedy_bracket_fill
 from app.engine.aca import calculate_aca_subsidy, find_subsidy_cliff_income
+from app.engine.constants import (
+    IMPROVEMENT_THRESHOLD,
+    RETIREMENT_SPENDING_RATE,
+    round_to_resolution,
+)
+from app.engine.heuristic import greedy_bracket_fill
+from app.engine.rmd import calculate_rmd, rmd_start_age
 from app.engine.state_tax import calculate_state_tax, resolve_state_for_year
-from app.engine.rmd import rmd_start_age, calculate_rmd
+from app.engine.tax import analyze_bracket_fill, calculate_federal_tax, get_marginal_rate
 from app.engine.tax_cost import (
+    combined_marginal_rate,
     federal_tax_on_conversion,
     state_tax_on_conversion,
     total_conversion_cost,
-    combined_marginal_rate,
 )
-from app.engine.constants import (
-    ROUNDING_RESOLUTION,
-    RETIREMENT_SPENDING_RATE,
-    IMPROVEMENT_THRESHOLD,
-    round_to_resolution,
+from app.engine.types import (
+    AcaSubsidyDetail,
+    BracketFillResult,
+    ConversionCurvePoint,
+    NPVCurvePoint,
+    OptimizationResult,
+    RmdProjection,
+    RmdYearDetail,
+    ScenarioComparison,
+    ScenarioInput,
 )
 
 
@@ -78,13 +82,13 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
     for t in range(n_years):
         income = scenario.income_timeline[t].gross_income
         conversion = min(max(0, yearly_conversions[t]), trad_balance)
-        year_state = resolve_state_for_year(
-            scenario.income_timeline[t].state, scenario.state
-        )
+        year_state = resolve_state_for_year(scenario.income_timeline[t].state, scenario.state)
         is_aca_year = hc is not None and scenario.income_timeline[t].year in aca_years
 
         cost = total_conversion_cost(
-            income, conversion, filing_status,
+            income,
+            conversion,
+            filing_status,
             state=year_state,
             custom_state_rate=scenario.custom_state_rate,
             healthcare=hc if is_aca_year else None,
@@ -99,8 +103,8 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
         roth_balance += conversion
 
         # Grow both accounts
-        trad_balance *= (1 + g)
-        roth_balance *= (1 + g)
+        trad_balance *= 1 + g
+        roth_balance *= 1 + g
 
     # Phase 2: Post-timeline growth until retirement
     years_until_retirement = max(0, scenario.retirement_age - scenario.age)
@@ -121,11 +125,12 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
     # RMD parameters
     owner_rmd_start = rmd_start_age(scenario.age)
 
-    for year in range(years_until_retirement + 1,
-                      years_until_retirement + scenario.years_in_retirement + 1):
+    for year in range(
+        years_until_retirement + 1, years_until_retirement + scenario.years_in_retirement + 1
+    ):
         # Grow at start of year
-        trad_balance *= (1 + g)
-        roth_balance *= (1 + g)
+        trad_balance *= 1 + g
+        roth_balance *= 1 + g
 
         # Determine age in this retirement year
         owner_age = scenario.age + year
@@ -140,7 +145,9 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
 
         tax_on_dist = calculate_federal_tax(distribution, filing_status)
         if ret_state:
-            tax_on_dist += calculate_state_tax(distribution, ret_state, filing_status, scenario.custom_state_rate)
+            tax_on_dist += calculate_state_tax(
+                distribution, ret_state, filing_status, scenario.custom_state_rate
+            )
         after_tax_dist = distribution - tax_on_dist
 
         # If traditional distribution doesn't cover spending, draw from Roth (tax-free)
@@ -160,7 +167,9 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
     if trad_balance > 0:
         tax_on_liquidation = calculate_federal_tax(trad_balance, filing_status)
         if ret_state:
-            tax_on_liquidation += calculate_state_tax(trad_balance, ret_state, filing_status, scenario.custom_state_rate)
+            tax_on_liquidation += calculate_state_tax(
+                trad_balance, ret_state, filing_status, scenario.custom_state_rate
+            )
         npv += (trad_balance - tax_on_liquidation) * discount_factor
 
     npv += roth_balance * discount_factor
@@ -238,7 +247,9 @@ def _run_scipy(
     return best_conversions
 
 
-def _finalize_conversions(raw: list[float], max_balance: float, growth_rate: float = 0.0) -> list[float]:
+def _finalize_conversions(
+    raw: list[float], max_balance: float, growth_rate: float = 0.0
+) -> list[float]:
     """Round to nearest ROUNDING_RESOLUTION, enforce non-negative and within balance.
 
     Accounts for inter-year growth so later years can access the grown
@@ -282,13 +293,18 @@ def _build_constrained_params(
         for t in range(n_years):
             income_t = scenario.income_timeline[t].gross_income
             filing_status = scenario.filing_status
-            yr_state = resolve_state_for_year(
-                scenario.income_timeline[t].state, scenario.state
-            )
+            yr_state = resolve_state_for_year(scenario.income_timeline[t].state, scenario.state)
             custom_rate = scenario.custom_state_rate
 
-            def _tax_constraint(x, _t=t, _income=income_t, _fs=filing_status,
-                                _cap=cap, _yr_state=yr_state, _custom_rate=custom_rate):
+            def _tax_constraint(
+                x,
+                _t=t,
+                _income=income_t,
+                _fs=filing_status,
+                _cap=cap,
+                _yr_state=yr_state,
+                _custom_rate=custom_rate,
+            ):
                 cost = federal_tax_on_conversion(_income, x[_t], _fs)
                 cost += state_tax_on_conversion(_income, x[_t], _yr_state, _fs, _custom_rate)
                 return _cap - cost
@@ -409,21 +425,26 @@ def _build_year_detail(
         income = scenario.income_timeline[t].gross_income
         conversion = conversions[t]
         year = scenario.income_timeline[t].year
-        year_state = resolve_state_for_year(
-            scenario.income_timeline[t].state, scenario.state
-        )
+        year_state = resolve_state_for_year(scenario.income_timeline[t].state, scenario.state)
 
         fed_cost = federal_tax_on_conversion(income, conversion, scenario.filing_status)
         state_cost = state_tax_on_conversion(
-            income, conversion, year_state, scenario.filing_status, scenario.custom_state_rate,
+            income,
+            conversion,
+            year_state,
+            scenario.filing_status,
+            scenario.custom_state_rate,
         )
         tax_cost = fed_cost + state_cost
         total_tax += tax_cost
 
         eff_rate = tax_cost / conversion if conversion > 0 else 0.0
         marginal = combined_marginal_rate(
-            income, conversion, scenario.filing_status,
-            state=year_state, custom_state_rate=scenario.custom_state_rate,
+            income,
+            conversion,
+            scenario.filing_status,
+            state=year_state,
+            custom_state_rate=scenario.custom_state_rate,
         )
         fed_marginal = get_marginal_rate(income + conversion, scenario.filing_status)
 
@@ -436,16 +457,22 @@ def _build_year_detail(
             "state_tax_cost": round(state_cost, 2),
             "effective_rate": round(eff_rate, 4),
             "marginal_bracket": f"{fed_marginal:.0%}",
-            "state_marginal_rate": round(marginal - get_marginal_rate(income + conversion, scenario.filing_status), 4),
+            "state_marginal_rate": round(
+                marginal - get_marginal_rate(income + conversion, scenario.filing_status), 4
+            ),
         }
 
         # Add ACA subsidy detail if applicable
         if hc and year in aca_years:
             subsidy_without = calculate_aca_subsidy(
-                income, hc.household_size, hc.monthly_slcsp_premium,
+                income,
+                hc.household_size,
+                hc.monthly_slcsp_premium,
             )
             subsidy_with = calculate_aca_subsidy(
-                income + conversion, hc.household_size, hc.monthly_slcsp_premium,
+                income + conversion,
+                hc.household_size,
+                hc.monthly_slcsp_premium,
             )
             subsidy_lost = max(0.0, subsidy_without - subsidy_with)
             combined_cost_val = tax_cost + subsidy_lost
@@ -458,19 +485,21 @@ def _build_year_detail(
             detail["combined_cost"] = round(combined_cost_val, 2)
             detail["combined_rate"] = round(combined_rate_val, 4)
 
-            aca_details.append(AcaSubsidyDetail(
-                year=year,
-                magi_without_conversion=income,
-                magi_with_conversion=income + conversion,
-                subsidy_without_conversion=round(subsidy_without, 2),
-                subsidy_with_conversion=round(subsidy_with, 2),
-                subsidy_lost=round(subsidy_lost, 2),
-                federal_tax_cost=round(tax_cost, 2),
-                combined_cost=round(combined_cost_val, 2),
-                combined_marginal_rate=round(combined_rate_val, 4),
-                income_pct_fpl=round(income_pct_fpl, 1),
-                hits_cliff=hits_cliff,
-            ))
+            aca_details.append(
+                AcaSubsidyDetail(
+                    year=year,
+                    magi_without_conversion=income,
+                    magi_with_conversion=income + conversion,
+                    subsidy_without_conversion=round(subsidy_without, 2),
+                    subsidy_with_conversion=round(subsidy_with, 2),
+                    subsidy_lost=round(subsidy_lost, 2),
+                    federal_tax_cost=round(tax_cost, 2),
+                    combined_cost=round(combined_cost_val, 2),
+                    combined_marginal_rate=round(combined_rate_val, 4),
+                    income_pct_fpl=round(income_pct_fpl, 1),
+                    hits_cliff=hits_cliff,
+                )
+            )
 
         yearly_detail.append(detail)
 
@@ -514,18 +543,21 @@ def compute_conversion_curve(
             conversions = _run_scipy_light(scenario, cap, cached_greedy=cached_greedy)
 
         yearly_detail, yearly_bracket_fill, total_tax, _ = _build_year_detail(
-            scenario, conversions,
+            scenario,
+            conversions,
         )
         npv = calculate_npv(scenario, conversions)
 
-        points.append(ConversionCurvePoint(
-            total_cap=cap,
-            yearly_conversions=conversions,
-            yearly_bracket_fill=yearly_bracket_fill,
-            yearly_detail=yearly_detail,
-            total_tax=round(total_tax, 2),
-            npv=round(npv, 2),
-        ))
+        points.append(
+            ConversionCurvePoint(
+                total_cap=cap,
+                yearly_conversions=conversions,
+                yearly_bracket_fill=yearly_bracket_fill,
+                yearly_detail=yearly_detail,
+                total_tax=round(total_tax, 2),
+                npv=round(npv, 2),
+            )
+        )
 
     return points
 
@@ -551,8 +583,8 @@ def _build_rmd_projection(
         conversion = min(max(0, conversions[t]), trad_balance)
         trad_balance -= conversion
         roth_balance += conversion
-        trad_balance *= (1 + g)
-        roth_balance *= (1 + g)
+        trad_balance *= 1 + g
+        roth_balance *= 1 + g
 
     # Phase 2: Post-trajectory growth until retirement
     years_until_retirement = scenario.retirement_age - scenario.age
@@ -572,7 +604,6 @@ def _build_rmd_projection(
 
     # Determine if RMDs will occur during the modeled retirement period
     first_year = scenario.income_timeline[0].year
-    retirement_start_year = first_year + years_until_retirement
 
     yearly_detail: list[RmdYearDetail] = []
     total_rmd_taxes = 0.0
@@ -583,8 +614,8 @@ def _build_rmd_projection(
         calendar_year = first_year + year_index
 
         # Grow at start of year
-        trad_balance *= (1 + g)
-        roth_balance *= (1 + g)
+        trad_balance *= 1 + g
+        roth_balance *= 1 + g
 
         rmd = calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
 
@@ -599,21 +630,25 @@ def _build_rmd_projection(
 
         tax = calculate_federal_tax(distribution, filing_status)
         if ret_state:
-            tax += calculate_state_tax(distribution, ret_state, filing_status, scenario.custom_state_rate)
+            tax += calculate_state_tax(
+                distribution, ret_state, filing_status, scenario.custom_state_rate
+            )
 
         eff_rate = tax / distribution if distribution > 0 else 0.0
 
         # Only include years where RMDs are active
         if rmd > 0:
-            yearly_detail.append(RmdYearDetail(
-                year=calendar_year,
-                age=owner_age,
-                trad_balance_start=round(trad_balance + distribution, 2),  # pre-withdrawal
-                rmd_amount=round(rmd, 2),
-                actual_distribution=round(distribution, 2),
-                tax_on_distribution=round(tax, 2),
-                effective_rate=round(eff_rate, 4),
-            ))
+            yearly_detail.append(
+                RmdYearDetail(
+                    year=calendar_year,
+                    age=owner_age,
+                    trad_balance_start=round(trad_balance + distribution, 2),  # pre-withdrawal
+                    rmd_amount=round(rmd, 2),
+                    actual_distribution=round(distribution, 2),
+                    tax_on_distribution=round(tax, 2),
+                    effective_rate=round(eff_rate, 4),
+                )
+            )
             total_rmd_taxes += tax
 
         # Draw shortfall from Roth
@@ -706,12 +741,14 @@ def _build_scenarios(
     npv_at_full = calculate_npv(scenario, full_conversions)
 
     yr0_income = scenario.income_timeline[0].gross_income
-    yr0_state = resolve_state_for_year(
-        scenario.income_timeline[0].state, scenario.state
-    )
+    yr0_state = resolve_state_for_year(scenario.income_timeline[0].state, scenario.state)
     tax_full = federal_tax_on_conversion(yr0_income, max_balance, scenario.filing_status)
     tax_full += state_tax_on_conversion(
-        yr0_income, max_balance, yr0_state, scenario.filing_status, scenario.custom_state_rate,
+        yr0_income,
+        max_balance,
+        yr0_state,
+        scenario.filing_status,
+        scenario.custom_state_rate,
     )
 
     return [
@@ -755,8 +792,8 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
     Falls back to scipy SLSQP for constrained optimization when user
     preferences (max tax cost, etc.) are active.
     """
-    from app.engine.dp import dp_optimize
     from app.engine.curve_strategy import generate_conversion_curve
+    from app.engine.dp import dp_optimize
 
     n_years = len(scenario.income_timeline)
     max_balance = scenario.traditional_ira_balance
@@ -770,10 +807,14 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
     if _has_active_preferences(scenario):
         prefs = scenario.conversion_preferences
         constrained_bounds, constrained_constraints = _build_constrained_params(
-            scenario, prefs, unconstrained_conversions,
+            scenario,
+            prefs,
+            unconstrained_conversions,
         )
         raw_constrained = _run_scipy(scenario, constrained_bounds, constrained_constraints)
-        final_conversions = _finalize_conversions(raw_constrained, max_balance, scenario.annual_growth_rate)
+        final_conversions = _finalize_conversions(
+            raw_constrained, max_balance, scenario.annual_growth_rate
+        )
     else:
         final_conversions = unconstrained_conversions
 
@@ -789,7 +830,8 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
 
     # Per-year detail and bracket fill
     yearly_detail, yearly_bracket_fill, total_tax, aca_details = _build_year_detail(
-        scenario, final_conversions,
+        scenario,
+        final_conversions,
     )
 
     timeline_chart = []
@@ -802,17 +844,19 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         c_t = final_conversions[t]
 
         bracket_fill = yearly_bracket_fill[t]
-        timeline_chart.append({
-            "year": scenario.income_timeline[t].year,
-            "income": income,
-            "conversion": c_t,
-            "bracket_boundaries": [b.bracket_max for b in bracket_fill],
-        })
+        timeline_chart.append(
+            {
+                "year": scenario.income_timeline[t].year,
+                "income": income,
+                "conversion": c_t,
+                "bracket_boundaries": [b.bracket_max for b in bracket_fill],
+            }
+        )
 
         trad_balance -= c_t
         roth_balance += c_t
-        trad_balance *= (1 + g)
-        roth_balance *= (1 + g)
+        trad_balance *= 1 + g
+        roth_balance *= 1 + g
 
     # Project to retirement
     years_until_retirement = max(0, scenario.retirement_age - scenario.age)
@@ -826,7 +870,11 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
 
     # Scenarios
     scenarios = _build_scenarios(
-        scenario, final_conversions, total_tax, npv_at_optimal, npv_at_zero,
+        scenario,
+        final_conversions,
+        total_tax,
+        npv_at_optimal,
+        npv_at_zero,
     )
 
     # NPV curve (sample points for the first year, holding others at 0)
@@ -839,8 +887,12 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
 
     # Generate reasoning trace
     from app.engine.trace import generate_reasoning_trace
+
     reasoning = generate_reasoning_trace(
-        scenario, final_conversions, yearly_bracket_fill, npv_curve,
+        scenario,
+        final_conversions,
+        yearly_bracket_fill,
+        npv_curve,
         aca_details=aca_details,
     )
 

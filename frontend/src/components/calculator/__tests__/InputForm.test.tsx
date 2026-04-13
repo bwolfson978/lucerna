@@ -18,8 +18,8 @@ interface MockSelectProps {
   "aria-required"?: boolean;
   "aria-invalid"?: boolean;
 }
-vi.mock("@/components/ui/select", () => ({
-  Select: forwardRef<HTMLSelectElement, MockSelectProps>(
+vi.mock("@/components/ui/select", () => {
+  const MockSelect = forwardRef<HTMLSelectElement, MockSelectProps>(
     ({ options, value, onChange, id, placeholder, ...rest }, ref) => (
       <select
         ref={ref}
@@ -27,9 +27,7 @@ vi.mock("@/components/ui/select", () => ({
         value={value ?? ""}
         aria-required={rest["aria-required"] || undefined}
         aria-invalid={rest["aria-invalid"] || undefined}
-        onChange={(e) =>
-          onChange?.({ target: { value: e.target.value } })
-        }
+        onChange={(e) => onChange?.({ target: { value: e.target.value } })}
       >
         {placeholder && <option value="">{placeholder}</option>}
         {options.map((o) => (
@@ -39,8 +37,10 @@ vi.mock("@/components/ui/select", () => ({
         ))}
       </select>
     )
-  ),
-}));
+  );
+  MockSelect.displayName = "MockSelect";
+  return { Select: MockSelect };
+});
 
 // Radix UI Switch uses ResizeObserver which jsdom doesn't provide
 // jsdom also doesn't implement scrollIntoView — the form uses it to jump to
@@ -141,10 +141,9 @@ describe("InputForm", () => {
     fireEvent.change(screen.getByLabelText("Current income"), {
       target: { value: "100000" },
     });
-    fireEvent.change(
-      screen.getByLabelText("Traditional IRA/401(k) balance"),
-      { target: { value: "500000" } }
-    );
+    fireEvent.change(screen.getByLabelText("Traditional IRA/401(k) balance"), {
+      target: { value: "500000" },
+    });
     fireEvent.change(screen.getByLabelText("Retirement age"), {
       target: { value: "65" },
     });
@@ -264,18 +263,10 @@ describe("InputForm", () => {
 
     // All five Tier-1 required fields should flag their own error
     expect(screen.getByText("Enter your age")).toBeInTheDocument();
-    expect(
-      screen.getByText("Select your filing status")
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Enter your current income")
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Enter your traditional IRA/401(k) balance")
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("Enter your retirement age")
-    ).toBeInTheDocument();
+    expect(screen.getByText("Select your filing status")).toBeInTheDocument();
+    expect(screen.getByText("Enter your current income")).toBeInTheDocument();
+    expect(screen.getByText("Enter your traditional IRA/401(k) balance")).toBeInTheDocument();
+    expect(screen.getByText("Enter your retirement age")).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
   });
 
@@ -284,15 +275,9 @@ describe("InputForm", () => {
 
     const age = screen.getByLabelText("Age") as HTMLInputElement;
     const filing = screen.getByLabelText("Filing status") as HTMLSelectElement;
-    const income = screen.getByLabelText(
-      "Current income"
-    ) as HTMLInputElement;
-    const balance = screen.getByLabelText(
-      "Traditional IRA/401(k) balance"
-    ) as HTMLInputElement;
-    const retAge = screen.getByLabelText(
-      "Retirement age"
-    ) as HTMLInputElement;
+    const income = screen.getByLabelText("Current income") as HTMLInputElement;
+    const balance = screen.getByLabelText("Traditional IRA/401(k) balance") as HTMLInputElement;
+    const retAge = screen.getByLabelText("Retirement age") as HTMLInputElement;
 
     expect(age.value).toBe("");
     expect(filing.value).toBe("");
@@ -309,9 +294,7 @@ describe("InputForm", () => {
     renderInputForm({ onSubmit });
 
     // Tier 2 — industry-standard assumptions users don't need to know
-    const growth = screen.getByLabelText(
-      "Income growth rate (%)"
-    ) as HTMLInputElement;
+    const growth = screen.getByLabelText("Income growth rate (%)") as HTMLInputElement;
     expect(growth.value).toBe("3");
   });
 
@@ -339,9 +322,7 @@ describe("InputForm", () => {
   });
 
   it("focuses first invalid field on submit failure", () => {
-    const scrollMock = HTMLElement.prototype.scrollIntoView as ReturnType<
-      typeof vi.fn
-    >;
+    const scrollMock = HTMLElement.prototype.scrollIntoView as ReturnType<typeof vi.fn>;
     scrollMock.mockClear();
     renderInputForm({ onSubmit });
 
@@ -362,21 +343,15 @@ describe("InputForm", () => {
     fireEvent.change(screen.getByLabelText("Age"), {
       target: { value: "42" },
     });
-    fireEvent.click(
-      screen.getByRole("button", { name: /run my scenario/i })
-    );
+    fireEvent.click(screen.getByRole("button", { name: /run my scenario/i }));
     expect(document.activeElement).toBe(screen.getByLabelText("Filing status"));
 
     // Then filing status — current income should be next
     fireEvent.change(screen.getByLabelText("Filing status"), {
       target: { value: "single" },
     });
-    fireEvent.click(
-      screen.getByRole("button", { name: /run my scenario/i })
-    );
-    expect(document.activeElement).toBe(
-      screen.getByLabelText("Current income")
-    );
+    fireEvent.click(screen.getByRole("button", { name: /run my scenario/i }));
+    expect(document.activeElement).toBe(screen.getByLabelText("Current income"));
 
     expect(onSubmit).not.toHaveBeenCalled();
   });
@@ -393,10 +368,9 @@ describe("InputForm", () => {
     fireEvent.change(screen.getByLabelText("Current income"), {
       target: { value: "50000" },
     });
-    fireEvent.change(
-      screen.getByLabelText("Traditional IRA/401(k) balance"),
-      { target: { value: "500000" } }
-    );
+    fireEvent.change(screen.getByLabelText("Traditional IRA/401(k) balance"), {
+      target: { value: "500000" },
+    });
 
     // Should NOT show the old validation error
     expect(
@@ -423,10 +397,9 @@ describe("InputForm", () => {
     fireEvent.change(screen.getByLabelText("Current income"), {
       target: { value: "50000" },
     });
-    fireEvent.change(
-      screen.getByLabelText("Traditional IRA/401(k) balance"),
-      { target: { value: "500000" } }
-    );
+    fireEvent.change(screen.getByLabelText("Traditional IRA/401(k) balance"), {
+      target: { value: "500000" },
+    });
 
     // Should generate timeline (3 years: 73 - 70)
     expect(Number(screen.getByTestId("timeline-count").textContent)).toBe(3);

@@ -9,37 +9,32 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header
-      className={cn(
-        "sticky top-0 z-40 bg-bg/80 backdrop-blur-md",
-        "border-b border-border"
-      )}
-    >
-      <div className="h-14 flex items-center px-default md:px-page">
-        <div className="w-full max-w-content mx-auto flex items-center justify-between">
-          <Link href="/" className="font-serif text-[18px] font-bold tracking-tight brand-gradient">
+    <header className={cn("sticky top-0 z-40 bg-bg/80 backdrop-blur-md", "border-b border-border")}>
+      <div className="flex h-14 items-center px-default md:px-page">
+        <div className="mx-auto flex w-full max-w-content items-center justify-between">
+          <Link href="/" className="brand-gradient font-serif text-[18px] font-bold tracking-tight">
             Lucerna
           </Link>
 
           {/* Desktop nav */}
-          <nav className="hidden sm:flex items-center gap-5">
+          <nav className="hidden items-center gap-5 sm:flex">
             <Link
               href="/demo"
-              className="text-body-sm text-text-secondary hover:text-accent transition-colors duration-300"
+              className="text-body-sm text-text-secondary transition-colors duration-300 hover:text-accent"
             >
               Demo
             </Link>
             <span className="text-text-tertiary opacity-40">|</span>
             <Link
               href="/calculator"
-              className="text-body-sm text-text-secondary hover:text-accent transition-colors duration-300"
+              className="text-body-sm text-text-secondary transition-colors duration-300 hover:text-accent"
             >
               Run Your Own Scenario
             </Link>
             <span className="text-text-tertiary opacity-40">|</span>
             <Link
               href="/methodology"
-              className="text-body-sm text-text-secondary hover:text-accent transition-colors duration-300"
+              className="text-body-sm text-text-secondary transition-colors duration-300 hover:text-accent"
             >
               Methodology
             </Link>
@@ -47,21 +42,37 @@ export function Header() {
           </nav>
 
           {/* Mobile: How It Works + hamburger */}
-          <div className="flex sm:hidden items-center gap-2">
+          <div className="flex items-center gap-2 sm:hidden">
             <HowItWorksButton />
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex items-center justify-center w-10 h-10 rounded-lg text-text-secondary hover:text-text-primary transition-colors duration-200"
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-text-secondary transition-colors duration-200 hover:text-text-primary"
               aria-label="Toggle menu"
               aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? (
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                >
                   <path d="M5 5l10 10M15 5L5 15" />
                 </svg>
               ) : (
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                >
                   <path d="M3 6h14M3 10h14M3 14h14" />
                 </svg>
               )}
@@ -72,25 +83,25 @@ export function Header() {
 
       {/* Mobile dropdown menu */}
       {mobileMenuOpen && (
-        <nav className="sm:hidden border-t border-border bg-bg/95 backdrop-blur-md px-default py-3 flex flex-col gap-1">
+        <nav className="flex flex-col gap-1 border-t border-border bg-bg/95 px-default py-3 backdrop-blur-md sm:hidden">
           <Link
             href="/demo"
             onClick={() => setMobileMenuOpen(false)}
-            className="text-body text-text-secondary hover:text-accent transition-colors duration-300 py-2.5 px-2 rounded-lg hover:bg-glass-bg"
+            className="rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-300 hover:bg-glass-bg hover:text-accent"
           >
             Demo
           </Link>
           <Link
             href="/calculator"
             onClick={() => setMobileMenuOpen(false)}
-            className="text-body text-text-secondary hover:text-accent transition-colors duration-300 py-2.5 px-2 rounded-lg hover:bg-glass-bg"
+            className="rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-300 hover:bg-glass-bg hover:text-accent"
           >
             Run Your Own Scenario
           </Link>
           <Link
             href="/methodology"
             onClick={() => setMobileMenuOpen(false)}
-            className="text-body text-text-secondary hover:text-accent transition-colors duration-300 py-2.5 px-2 rounded-lg hover:bg-glass-bg"
+            className="rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-300 hover:bg-glass-bg hover:text-accent"
           >
             Methodology
           </Link>

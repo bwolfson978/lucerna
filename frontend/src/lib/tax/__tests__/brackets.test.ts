@@ -30,20 +30,14 @@ describe("calculateFederalTax", () => {
 
   it("MFJ: wider brackets, lower tax", () => {
     // $50K gross - $32,200 deduction = $17,800 taxable, all in 10% = $1,780
-    expect(calculateFederalTax(50000, "married_filing_jointly")).toBeCloseTo(
-      1780,
-      0
-    );
+    expect(calculateFederalTax(50000, "married_filing_jointly")).toBeCloseTo(1780, 0);
   });
 
   it("MFJ: spans 10% and 12%", () => {
     // $100K gross - $32,200 deduction = $67,800 taxable
     // $24,800 * 10% = $2,480 + ($67,800 - $24,800) * 12% = $5,160
     // Total: $7,640
-    expect(calculateFederalTax(100000, "married_filing_jointly")).toBeCloseTo(
-      7640,
-      0
-    );
+    expect(calculateFederalTax(100000, "married_filing_jointly")).toBeCloseTo(7640, 0);
   });
 
   it("MFJ yields lower tax than single at same income", () => {
@@ -78,15 +72,9 @@ describe("analyzeBracketFill", () => {
   it("income + conversion = total filled across all brackets", () => {
     const results = analyzeBracketFill(80000, 50000, "single");
     const totalIncome = results.reduce((s, r) => s + r.filled_by_income, 0);
-    const totalConversion = results.reduce(
-      (s, r) => s + r.filled_by_conversion,
-      0
-    );
+    const totalConversion = results.reduce((s, r) => s + r.filled_by_conversion, 0);
     // Total filled should equal taxable income (gross - deduction)
-    expect(totalIncome + totalConversion).toBeCloseTo(
-      Math.max(0, 80000 + 50000 - 16100),
-      0
-    );
+    expect(totalIncome + totalConversion).toBeCloseTo(Math.max(0, 80000 + 50000 - 16100), 0);
   });
 
   it("zero income and zero conversion returns single bracket", () => {

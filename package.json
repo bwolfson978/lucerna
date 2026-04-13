@@ -9,12 +9,24 @@
     "test:frontend": "cd frontend && npm run test:run",
     "test:e2e": "cd e2e && npx playwright test",
     "test:e2e:smoke": "cd e2e && npx playwright test smoke.spec.ts",
-    "test:all": "npm run test:backend && npm run test:frontend && npm run test:e2e:smoke"
+    "test:all": "npm run test:backend && npm run test:frontend && npm run test:e2e:smoke",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:backend": "cd backend && ruff check .",
+    "lint:all": "npm run lint:frontend && npm run lint:backend",
+    "format:frontend": "cd frontend && npm run format",
+    "format:backend": "cd backend && ruff format .",
+    "format:all": "npm run format:frontend && npm run format:backend",
+    "format:check": "cd frontend && npm run format:check && cd ../backend && ruff format --check .",
+    "prepare": "husky"
   },
   "dependencies": {
     "@radix-ui/react-collapsible": "^1.1.12",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-switch": "^1.2.6",
     "@radix-ui/react-tooltip": "^1.2.8"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0"
   }
 }

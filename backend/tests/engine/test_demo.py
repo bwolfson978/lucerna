@@ -1,7 +1,7 @@
 """Tests for the demo scenario module."""
 
-from app.engine.demo import get_demo, DEMO_SCENARIO, DEMO_PERSONA
-from app.engine.types import ScenarioInput, OptimizationResult
+from app.engine.demo import DEMO_PERSONA, DEMO_SCENARIO, get_demo
+from app.engine.types import OptimizationResult, ScenarioInput
 
 
 class TestDemoScenario:

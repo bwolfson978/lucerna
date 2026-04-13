@@ -55,15 +55,11 @@ describe("ScenarioCards", () => {
   });
 
   it("reorders cards: non-best first, best last", () => {
-    const { container } = renderWithProviders(
-      <ScenarioCards scenarios={mockScenarios} />
-    );
+    const { container } = renderWithProviders(<ScenarioCards scenarios={mockScenarios} />);
     // Cards are inside the grid; each card's first span.text-h3 is its title
     const grid = container.querySelector(".grid");
     const cards = grid!.querySelectorAll(":scope > div");
-    const labels = Array.from(cards).map(
-      (card) => card.querySelector(".text-h3")?.textContent
-    );
+    const labels = Array.from(cards).map((card) => card.querySelector(".text-h3")?.textContent);
     expect(labels[0]).toBe("No conversion");
     expect(labels[1]).toBe("Full conversion (year 1)");
     expect(labels[2]).toBe("Highest estimated savings");
@@ -99,9 +95,7 @@ describe("ScenarioCards", () => {
   });
 
   it("returns null when scenarios is empty", () => {
-    const { container } = renderWithProviders(
-      <ScenarioCards scenarios={[]} />
-    );
+    const { container } = renderWithProviders(<ScenarioCards scenarios={[]} />);
     expect(container.textContent).toBe("");
   });
 

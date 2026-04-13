@@ -15,11 +15,8 @@ interface MethodologySidebarProps {
 }
 
 export function MethodologySidebar({ result, mobile }: MethodologySidebarProps) {
-  const { isOpen, activeSection, activeTrigger, closeSidebar } =
-    useMethodology();
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(
-    new Set()
-  );
+  const { isOpen, activeSection, activeTrigger, closeSidebar } = useMethodology();
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
   const sections = getSections(result);
 
@@ -52,31 +49,24 @@ export function MethodologySidebar({ result, mobile }: MethodologySidebarProps) 
   }, []);
 
   const sidebarContent = (
-    <div
-      ref={scrollRef}
-      className="h-full overflow-y-auto px-6 py-6 methodology-scrollbar"
-    >
+    <div ref={scrollRef} className="methodology-scrollbar h-full overflow-y-auto px-6 py-6">
       {/* Close button */}
       <button
         type="button"
         onClick={closeSidebar}
-        className="absolute top-4 right-4 w-7 h-7 flex items-center justify-center rounded-md text-text-tertiary hover:bg-glass-bg hover:text-text-primary transition-all duration-200"
+        className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-md text-text-tertiary transition-all duration-200 hover:bg-glass-bg hover:text-text-primary"
         aria-label="Close methodology sidebar"
       >
         &times;
       </button>
 
       {/* Header */}
-      <h2 className="font-serif text-xl text-text-primary mb-1 pr-8">
-        How It Works
-      </h2>
-      <p className="text-sm text-text-tertiary mb-5">
-        Understand the analysis behind your results
-      </p>
+      <h2 className="mb-1 pr-8 font-serif text-xl text-text-primary">How It Works</h2>
+      <p className="mb-5 text-sm text-text-tertiary">Understand the analysis behind your results</p>
 
       {/* Context badge */}
       {activeTrigger && activeSection && (
-        <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-accent bg-accent/10 border border-accent/20 rounded-full px-3 py-1 mb-4">
+        <div className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-accent/20 bg-accent/10 px-3 py-1 text-[11px] font-medium text-accent">
           <svg
             className="h-3 w-3"
             viewBox="0 0 16 16"
@@ -107,10 +97,10 @@ export function MethodologySidebar({ result, mobile }: MethodologySidebarProps) 
       </div>
 
       {/* Footer link */}
-      <div className="mt-5 pt-4 border-t border-glass-border">
+      <div className="mt-5 border-t border-glass-border pt-4">
         <Link
           href="/methodology"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:opacity-80 transition-opacity"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-accent transition-opacity hover:opacity-80"
         >
           Read our full methodology
           <svg
@@ -132,19 +122,15 @@ export function MethodologySidebar({ result, mobile }: MethodologySidebarProps) 
     return (
       <>
         {isOpen && (
-          <div
-            className="fixed inset-0 z-40 bg-bg/70"
-            onClick={closeSidebar}
-            aria-hidden="true"
-          />
+          <div className="fixed inset-0 z-40 bg-bg/70" onClick={closeSidebar} aria-hidden="true" />
         )}
         <aside
           role="complementary"
           aria-label="How it works"
           className={cn(
-            "fixed top-0 right-0 bottom-0 z-50",
+            "fixed bottom-0 right-0 top-0 z-50",
             "w-full max-w-[420px]",
-            "bg-bg-alt border-l border-glass-border",
+            "border-l border-glass-border bg-bg-alt",
             "transform transition-transform duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
             isOpen ? "translate-x-0" : "translate-x-full"
           )}
@@ -163,7 +149,7 @@ export function MethodologySidebar({ result, mobile }: MethodologySidebarProps) 
       className={cn(
         "sticky top-14 h-[calc(100vh-3.5rem)]",
         "w-[400px] shrink-0",
-        "bg-bg-alt border-l border-glass-border",
+        "border-l border-glass-border bg-bg-alt"
       )}
     >
       {sidebarContent}

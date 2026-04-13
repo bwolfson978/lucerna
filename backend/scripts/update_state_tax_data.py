@@ -21,7 +21,6 @@ import json
 import sys
 from datetime import date
 from pathlib import Path
-from typing import Optional
 
 try:
     import openpyxl
@@ -56,7 +55,7 @@ def load_current_data() -> dict:
         print("WARNING: No existing tax_brackets_*.json found in data/")
         return {}
     filepath = current_file[-1]  # Most recent year
-    with open(filepath, "r") as f:
+    with open(filepath) as f:
         return json.load(f)
 
 
@@ -66,8 +65,8 @@ def download_xlsx(year: int, output_path: Path) -> Path:
     Tries several URL patterns since the Tax Foundation occasionally
     changes their file naming conventions.
     """
-    import urllib.request
     import urllib.error
+    import urllib.request
 
     url_patterns = [
         f"https://taxfoundation.org/wp-content/uploads/{year}/02/{year}-State-Individual-Income-Tax-Rates-and-Brackets-{year}.xlsx",
@@ -80,7 +79,7 @@ def download_xlsx(year: int, output_path: Path) -> Path:
         try:
             print(f"  Trying: {url}")
             urllib.request.urlretrieve(url, output_path)
-            print(f"  Downloaded successfully.")
+            print("  Downloaded successfully.")
             return output_path
         except urllib.error.HTTPError as e:
             print(f"  HTTP {e.code} — trying next URL pattern...")
@@ -90,8 +89,10 @@ def download_xlsx(year: int, output_path: Path) -> Path:
             continue
 
     print(f"\nERROR: Could not download XLSX for {year}.")
-    print("Please download manually from https://taxfoundation.org/data/all/state/state-income-tax-rates/")
-    print(f"Save it and re-run with: --xlsx path/to/downloaded.xlsx")
+    print(
+        "Please download manually from https://taxfoundation.org/data/all/state/state-income-tax-rates/"
+    )
+    print("Save it and re-run with: --xlsx path/to/downloaded.xlsx")
     sys.exit(1)
 
 
@@ -112,7 +113,6 @@ def parse_xlsx(xlsx_path: Path) -> dict:
 
     wb = openpyxl.load_workbook(xlsx_path, data_only=True)
 
-    states = {}
     parse_warnings = []
 
     # The Tax Foundation spreadsheet typically has separate sheets or
@@ -143,7 +143,7 @@ def parse_xlsx(xlsx_path: Path) -> dict:
     print(f"  Total rows: {len(rows)}")
 
     if len(rows) > 0:
-        print(f"\n  First 5 rows (for format inspection):")
+        print("\n  First 5 rows (for format inspection):")
         for i, row in enumerate(rows[:5]):
             print(f"    Row {i}: {row[:10]}")
 
@@ -166,7 +166,9 @@ def validate_against_current(new_data: dict, current_data: dict) -> list[str]:
 
     for code, new_state in new_states.items():
         if code not in current_states:
-            warnings.append(f"NEW STATE: {code} ({new_state.get('name', '?')}) — not in current data")
+            warnings.append(
+                f"NEW STATE: {code} ({new_state.get('name', '?')}) — not in current data"
+            )
             continue
 
         current_state = current_states[code]
@@ -206,8 +208,12 @@ def write_output(data: dict, year: int, dry_run: bool = False) -> Path:
 
     if dry_run:
         print(f"\n[DRY RUN] Would write to: {output_path}")
-        print(f"[DRY RUN] States with income tax: {sum(1 for s in data.get('states', {}).values() if s.get('has_income_tax'))}")
-        print(f"[DRY RUN] No-tax states: {sum(1 for s in data.get('states', {}).values() if not s.get('has_income_tax'))}")
+        print(
+            f"[DRY RUN] States with income tax: {sum(1 for s in data.get('states', {}).values() if s.get('has_income_tax'))}"
+        )
+        print(
+            f"[DRY RUN] No-tax states: {sum(1 for s in data.get('states', {}).values() if not s.get('has_income_tax'))}"
+        )
         return output_path
 
     # Write with consistent formatting
@@ -234,11 +240,11 @@ def build_scaffold(year: int) -> dict:
         "metadata": {
             "tax_year": year,
             "primary_source": "Tax Foundation - State Individual Income Tax Rates and Brackets",
-            "primary_source_url": f"https://taxfoundation.org/data/all/state/state-income-tax-rates/",
+            "primary_source_url": "https://taxfoundation.org/data/all/state/state-income-tax-rates/",
             "federal_source": f"IRS Revenue Procedure (check for {year} update)",
             "last_updated": date.today().isoformat(),
             "notes": f"Scaffolded from {current.get('metadata', {}).get('tax_year', '?')} data. "
-                     f"Review and update all bracket thresholds and rates for {year}.",
+            f"Review and update all bracket thresholds and rates for {year}.",
         },
         "federal": current.get("federal", {}),
         "states": current.get("states", {}),
@@ -255,9 +261,9 @@ def print_summary(data: dict) -> None:
     flat = [c for c, s in states.items() if s.get("tax_type") == "flat"]
     progressive = [c for c, s in states.items() if s.get("tax_type") == "progressive"]
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Tax Data Summary — Tax Year {data.get('metadata', {}).get('tax_year', '?')}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")
     print(f"  Total states/territories: {len(states)}")
     print(f"  With income tax: {len(has_tax)}")
     print(f"    Flat tax: {len(flat)} ({', '.join(sorted(flat))})")
@@ -269,8 +275,10 @@ def print_summary(data: dict) -> None:
     single_brackets = federal.get("brackets", {}).get("single", [])
     if single_brackets:
         rates = [b["rate"] for b in single_brackets]
-        print(f"\n  Federal brackets (single): {len(single_brackets)} brackets, "
-              f"{min(rates):.0%} - {max(rates):.0%}")
+        print(
+            f"\n  Federal brackets (single): {len(single_brackets)} brackets, "
+            f"{min(rates):.0%} - {max(rates):.0%}"
+        )
 
     # Top 5 highest-tax states
     top_rates = []
@@ -282,7 +290,7 @@ def print_summary(data: dict) -> None:
             top_rates.append((code, s["name"], top_rate))
     top_rates.sort(key=lambda x: x[2], reverse=True)
 
-    print(f"\n  Top 5 highest state tax rates:")
+    print("\n  Top 5 highest state tax rates:")
     for code, name, rate in top_rates[:5]:
         print(f"    {code} ({name}): {rate:.2%}")
 
@@ -324,12 +332,12 @@ def main():
     args = parser.parse_args()
 
     print(f"Lucerna Tax Data Updater — Tax Year {args.year}")
-    print(f"{'='*50}")
+    print(f"{'=' * 50}")
 
     # Validation-only mode
     if args.validate:
         print(f"\nValidating: {args.validate}")
-        with open(args.validate, "r") as f:
+        with open(args.validate) as f:
             new_data = json.load(f)
         current = load_current_data()
         warnings = validate_against_current(new_data, current)
@@ -349,20 +357,22 @@ def main():
         print_summary(data)
         write_output(data, args.year, dry_run=args.dry_run)
         if not args.dry_run:
-            print(f"\nNext steps:")
+            print("\nNext steps:")
             print(f"  1. Download the Tax Foundation {args.year} XLSX")
-            print(f"  2. Manually update bracket thresholds in the JSON")
-            print(f"  3. Run: python -m scripts.update_state_tax_data --year {args.year} --validate data/tax_brackets_{args.year}.json")
-            print(f"  4. Update the engine import if the filename changed")
+            print("  2. Manually update bracket thresholds in the JSON")
+            print(
+                f"  3. Run: python -m scripts.update_state_tax_data --year {args.year} --validate data/tax_brackets_{args.year}.json"
+            )
+            print("  4. Update the engine import if the filename changed")
         return
 
     # Full mode: download/parse XLSX + scaffold
-    print(f"\nStep 1: Loading current data...")
+    print("\nStep 1: Loading current data...")
     current = load_current_data()
     current_year = current.get("metadata", {}).get("tax_year", "?")
     print(f"  Current data: tax year {current_year}")
 
-    print(f"\nStep 2: Getting Tax Foundation XLSX...")
+    print("\nStep 2: Getting Tax Foundation XLSX...")
     if args.xlsx:
         xlsx_path = args.xlsx
         print(f"  Using local file: {xlsx_path}")
@@ -370,20 +380,20 @@ def main():
         xlsx_path = DATA_DIR / f"tax_foundation_{args.year}.xlsx"
         download_xlsx(args.year, xlsx_path)
 
-    print(f"\nStep 3: Parsing XLSX...")
+    print("\nStep 3: Parsing XLSX...")
     parsed = parse_xlsx(xlsx_path)
 
     if "_warnings" in parsed:
-        print(f"\n  Parse warnings:")
+        print("\n  Parse warnings:")
         for w in parsed["_warnings"]:
             print(f"    ⚠ {w}")
 
     # Since full automated parsing is fragile (format changes yearly),
     # the recommended workflow is scaffold + manual review
-    print(f"\nStep 4: Creating scaffold from current data...")
+    print("\nStep 4: Creating scaffold from current data...")
     data = build_scaffold(args.year)
 
-    print(f"\nStep 5: Validation...")
+    print("\nStep 5: Validation...")
     warnings = validate_against_current(data, current)
     if warnings:
         print(f"\n  {len(warnings)} validation warning(s):")
@@ -393,12 +403,14 @@ def main():
     print_summary(data)
     write_output(data, args.year, dry_run=args.dry_run)
 
-    print(f"\nIMPORTANT: The scaffold copies last year's data. You must:")
-    print(f"  1. Review the XLSX for rate/threshold changes")
-    print(f"  2. Manually update the JSON for any changed states")
-    print(f"  3. Check for new legislation (states switching to flat tax, etc.)")
-    print(f"  4. Run: python -m scripts.update_state_tax_data --year {args.year} --validate data/tax_brackets_{args.year}.json")
-    print(f"  5. Run the test suite: python -m pytest tests/ -v")
+    print("\nIMPORTANT: The scaffold copies last year's data. You must:")
+    print("  1. Review the XLSX for rate/threshold changes")
+    print("  2. Manually update the JSON for any changed states")
+    print("  3. Check for new legislation (states switching to flat tax, etc.)")
+    print(
+        f"  4. Run: python -m scripts.update_state_tax_data --year {args.year} --validate data/tax_brackets_{args.year}.json"
+    )
+    print("  5. Run the test suite: python -m pytest tests/ -v")
 
     # Clean up downloaded XLSX (keep local files)
     if not args.xlsx and xlsx_path.exists():

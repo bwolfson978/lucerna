@@ -26,7 +26,7 @@ export const WithLabel: Story = {
   render: () => (
     <div className="flex items-center gap-3">
       <Switch id="aca" defaultChecked />
-      <Label htmlFor="aca" className="text-body text-text-primary cursor-pointer">
+      <Label htmlFor="aca" className="cursor-pointer text-body text-text-primary">
         I buy health insurance on the ACA marketplace
       </Label>
     </div>

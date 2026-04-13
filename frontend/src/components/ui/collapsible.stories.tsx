@@ -13,22 +13,34 @@ export const Default: Story = {
   render: () => (
     <Collapsible>
       <CollapsibleTrigger asChild>
-        <button className="flex items-center gap-1.5 text-body-sm text-text-secondary hover:text-text-primary transition-colors duration-150">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="transition-transform duration-150 group-data-[state=open]:rotate-90">
-            <path d="M4.5 2.5l3.5 3.5-3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        <button className="flex items-center gap-1.5 text-body-sm text-text-secondary transition-colors duration-150 hover:text-text-primary">
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+            className="transition-transform duration-150 group-data-[state=open]:rotate-90"
+          >
+            <path
+              d="M4.5 2.5l3.5 3.5-3.5 3.5"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
           Advanced settings
         </button>
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="pt-default grid grid-cols-3 gap-default">
-          <div className="h-20 bg-bg-alt rounded-md flex items-center justify-center text-text-tertiary text-body-sm">
+        <div className="grid grid-cols-3 gap-default pt-default">
+          <div className="flex h-20 items-center justify-center rounded-md bg-bg-alt text-body-sm text-text-tertiary">
             Field 1
           </div>
-          <div className="h-20 bg-bg-alt rounded-md flex items-center justify-center text-text-tertiary text-body-sm">
+          <div className="flex h-20 items-center justify-center rounded-md bg-bg-alt text-body-sm text-text-tertiary">
             Field 2
           </div>
-          <div className="h-20 bg-bg-alt rounded-md flex items-center justify-center text-text-tertiary text-body-sm">
+          <div className="flex h-20 items-center justify-center rounded-md bg-bg-alt text-body-sm text-text-tertiary">
             Field 3
           </div>
         </div>

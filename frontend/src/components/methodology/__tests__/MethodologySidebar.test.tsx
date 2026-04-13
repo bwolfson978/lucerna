@@ -133,11 +133,7 @@ describe("MethodologySidebar", () => {
 describe("InfoTrigger", () => {
   it("renders label text", () => {
     renderWithProviders(
-      <InfoTrigger
-        label="Test label"
-        sectionId="test"
-        triggerId="test-trigger"
-      />
+      <InfoTrigger label="Test label" sectionId="test" triggerId="test-trigger" />
     );
     expect(screen.getByText("Test label")).toBeInTheDocument();
   });
@@ -145,11 +141,7 @@ describe("InfoTrigger", () => {
   it("has active styling when its trigger is active", () => {
     renderWithProviders(
       <>
-        <InfoTrigger
-          label="Click me"
-          sectionId="savings-number"
-          triggerId="my-trigger"
-        />
+        <InfoTrigger label="Click me" sectionId="savings-number" triggerId="my-trigger" />
         <MethodologySidebar />
       </>
     );

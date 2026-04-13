@@ -17,14 +17,11 @@ export function generateTimeline(
   annualGrowthRate: number
 ): YearlyIncome[] {
   const yearsToRetirement = retAge - currentAge;
-  const trajectoryLength = yearsToRetirement > 0
-    ? yearsToRetirement
-    : Math.max(1, Math.min(10, 73 - currentAge));
+  const trajectoryLength =
+    yearsToRetirement > 0 ? yearsToRetirement : Math.max(1, Math.min(10, 73 - currentAge));
   return Array.from({ length: trajectoryLength }, (_, i) => ({
     year: CURRENT_YEAR + i,
-    gross_income: Math.round(
-      baseIncome * Math.pow(1 + annualGrowthRate / 100, i)
-    ),
+    gross_income: Math.round(baseIncome * Math.pow(1 + annualGrowthRate / 100, i)),
   }));
 }
 
@@ -32,10 +29,7 @@ export function generateTimeline(
  * Smart-merge: regenerate timeline from base inputs but preserve
  * years where the user customized values (notes or state override).
  */
-export function mergeTimeline(
-  fresh: YearlyIncome[],
-  existing: YearlyIncome[]
-): YearlyIncome[] {
+export function mergeTimeline(fresh: YearlyIncome[], existing: YearlyIncome[]): YearlyIncome[] {
   const pinned = new Map<number, YearlyIncome>();
   for (const row of existing) {
     if ((row.notes && row.notes.length > 0) || row.state != null) {

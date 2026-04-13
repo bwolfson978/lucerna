@@ -67,8 +67,6 @@ const buildStateYearOptions = (defaultState?: string) => [
   { value: "none", label: "No tax" },
 ];
 
-const STATE_YEAR_OPTIONS = buildStateYearOptions();
-
 export function IncomeTimelineEditor({
   timeline,
   onChange,
@@ -78,14 +76,8 @@ export function IncomeTimelineEditor({
 }: IncomeTimelineEditorProps) {
   const addYear = useCallback(() => {
     if (timeline.length >= 15) return;
-    const lastYear =
-      timeline.length > 0
-        ? timeline[timeline.length - 1].year
-        : CURRENT_YEAR - 1;
-    onChange([
-      ...timeline,
-      { year: lastYear + 1, gross_income: 0 },
-    ]);
+    const lastYear = timeline.length > 0 ? timeline[timeline.length - 1].year : CURRENT_YEAR - 1;
+    onChange([...timeline, { year: lastYear + 1, gross_income: 0 }]);
   }, [timeline, onChange]);
 
   const removeYear = useCallback(
@@ -109,23 +101,25 @@ export function IncomeTimelineEditor({
 
   const [open, setOpen] = useState(false);
 
-  const yearRange = timeline.length > 0
-    ? `${timeline[0].year}–${timeline[timeline.length - 1].year}`
-    : "";
+  const yearRange =
+    timeline.length > 0 ? `${timeline[0].year}–${timeline[timeline.length - 1].year}` : "";
 
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="flex flex-col gap-default">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <CollapsibleTrigger asChild>
           <button
             type="button"
-            className="flex items-center gap-2 text-h3 text-text-primary hover:text-accent transition-colors duration-300"
+            className="flex items-center gap-2 text-h3 text-text-primary transition-colors duration-300 hover:text-accent"
           >
-            <ChevronDownIcon className={`text-text-tertiary transition-transform duration-300 ${open ? "rotate-0" : "-rotate-90"}`} />
+            <ChevronDownIcon
+              className={`text-text-tertiary transition-transform duration-300 ${open ? "rotate-0" : "-rotate-90"}`}
+            />
             Income timeline
             {!open && (
-              <span className="text-body-sm text-text-tertiary font-normal ml-1">
-                {yearRange} · {timeline.length} yrs · <span className="text-accent/70">click to edit</span>
+              <span className="ml-1 text-body-sm font-normal text-text-tertiary">
+                {yearRange} · {timeline.length} yrs ·{" "}
+                <span className="text-accent/70">click to edit</span>
               </span>
             )}
           </button>
@@ -135,7 +129,7 @@ export function IncomeTimelineEditor({
             <button
               type="button"
               onClick={onReset}
-              className="text-body-sm text-text-tertiary hover:text-text-secondary transition-colors duration-300"
+              className="text-body-sm text-text-tertiary transition-colors duration-300 hover:text-text-secondary"
             >
               Reset
             </button>
@@ -154,104 +148,102 @@ export function IncomeTimelineEditor({
       <CollapsibleContent>
         <div className="flex flex-col gap-default">
           <p className="text-body-sm text-text-secondary">
-            {description ?? "Enter your expected income for each year. The optimizer finds the best conversion schedule across all years."}
+            {description ??
+              "Enter your expected income for each year. The optimizer finds the best conversion schedule across all years."}
           </p>
 
           <div className="flex flex-col gap-tight">
-        {timeline.map((row, index) => (
-          <Card
-            key={row.year}
-            className="relative flex flex-col gap-tight"
-          >
-            {/* Remove button — top-right on mobile, inline on desktop */}
-            {timeline.length > 1 && (
-              <button
-                type="button"
-                onClick={() => removeYear(index)}
-                className="absolute top-2 right-2 sm:hidden text-text-tertiary hover:text-negative transition-colors duration-300 p-1"
-                aria-label={`Remove year ${row.year}`}
-              >
-                <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-                  <path
-                    d="M4 4l8 8M12 4l-8 8"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </button>
-            )}
+            {timeline.map((row, index) => (
+              <Card key={row.year} className="relative flex flex-col gap-tight">
+                {/* Remove button — top-right on mobile, inline on desktop */}
+                {timeline.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeYear(index)}
+                    className="absolute right-2 top-2 p-1 text-text-tertiary transition-colors duration-300 hover:text-negative sm:hidden"
+                    aria-label={`Remove year ${row.year}`}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                      <path
+                        d="M4 4l8 8M12 4l-8 8"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </button>
+                )}
 
-            {/* Fields — stacked rows on mobile, single row on desktop */}
-            <div className="grid grid-cols-[4rem_1fr] gap-tight sm:flex sm:items-end sm:gap-tight">
-              <div className="shrink-0">
-                <FormField
-                  label="Year"
-                  type="number"
-                  value={row.year}
-                  numeric
-                  onChange={(e) =>
-                    updateYear(index, "year", parseInt(e.target.value) || CURRENT_YEAR)
-                  }
-                />
-              </div>
-
-              <div className="flex-1 min-w-0 pr-6 sm:pr-0">
-                <CurrencyInput
-                  label="Gross income"
-                  value={row.gross_income || ""}
-                  placeholder="0"
-                  onChange={(val) => updateYear(index, "gross_income", val)}
-                />
-              </div>
-
-              {defaultState && (
-                <div className="sm:w-24 sm:shrink-0">
-                  <FormSelect
-                    label="State"
-                    value={row.state ?? "default"}
-                    options={buildStateYearOptions(defaultState)}
-                    onChange={(e) =>
-                      updateYear(
-                        index,
-                        "state",
-                        e.target.value === "default" ? null : e.target.value
-                      )
-                    }
-                  />
-                </div>
-              )}
-
-              {/* Desktop-only inline remove button */}
-              {timeline.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeYear(index)}
-                  className="hidden sm:flex text-text-tertiary hover:text-negative transition-colors duration-300 p-2 min-h-[44px] items-center"
-                  aria-label={`Remove year ${row.year}`}
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path
-                      d="M4 4l8 8M12 4l-8 8"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
+                {/* Fields — stacked rows on mobile, single row on desktop */}
+                <div className="grid grid-cols-[4rem_1fr] gap-tight sm:flex sm:items-end sm:gap-tight">
+                  <div className="shrink-0">
+                    <FormField
+                      label="Year"
+                      type="number"
+                      value={row.year}
+                      numeric
+                      onChange={(e) =>
+                        updateYear(index, "year", parseInt(e.target.value) || CURRENT_YEAR)
+                      }
                     />
-                  </svg>
-                </button>
-              )}
-            </div>
+                  </div>
 
-            {/* Notes */}
-            <input
-              type="text"
-              value={row.notes ?? ""}
-              placeholder="Notes (e.g. sabbatical, startup, part-time)"
-              onChange={(e) => updateYear(index, "notes", e.target.value)}
-              className="w-full bg-transparent border border-border/50 rounded-md px-3 py-1.5 text-body-sm text-text-secondary placeholder:text-text-tertiary/50 focus:outline-none focus:border-accent/50 transition-colors duration-300"
-            />
-          </Card>
-        ))}
+                  <div className="min-w-0 flex-1 pr-6 sm:pr-0">
+                    <CurrencyInput
+                      label="Gross income"
+                      value={row.gross_income || ""}
+                      placeholder="0"
+                      onChange={(val) => updateYear(index, "gross_income", val)}
+                    />
+                  </div>
+
+                  {defaultState && (
+                    <div className="sm:w-24 sm:shrink-0">
+                      <FormSelect
+                        label="State"
+                        value={row.state ?? "default"}
+                        options={buildStateYearOptions(defaultState)}
+                        onChange={(e) =>
+                          updateYear(
+                            index,
+                            "state",
+                            e.target.value === "default" ? null : e.target.value
+                          )
+                        }
+                      />
+                    </div>
+                  )}
+
+                  {/* Desktop-only inline remove button */}
+                  {timeline.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeYear(index)}
+                      className="hidden min-h-[44px] items-center p-2 text-text-tertiary transition-colors duration-300 hover:text-negative sm:flex"
+                      aria-label={`Remove year ${row.year}`}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path
+                          d="M4 4l8 8M12 4l-8 8"
+                          stroke="currentColor"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
+                {/* Notes */}
+                <input
+                  type="text"
+                  value={row.notes ?? ""}
+                  placeholder="Notes (e.g. sabbatical, startup, part-time)"
+                  onChange={(e) => updateYear(index, "notes", e.target.value)}
+                  className="w-full rounded-md border border-border/50 bg-transparent px-3 py-1.5 text-body-sm text-text-secondary transition-colors duration-300 placeholder:text-text-tertiary/50 focus:border-accent/50 focus:outline-none"
+                />
+              </Card>
+            ))}
           </div>
         </div>
       </CollapsibleContent>

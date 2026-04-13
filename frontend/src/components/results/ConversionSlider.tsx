@@ -30,17 +30,15 @@ export function ConversionSlider({
   );
 
   const optimalPercent =
-    max > 0
-      ? Math.min(100, Math.max(0, ((optimalValue - min) / (max - min)) * 100))
-      : 0;
+    max > 0 ? Math.min(100, Math.max(0, ((optimalValue - min) / (max - min)) * 100)) : 0;
 
   return (
     <div className="flex flex-col gap-1">
       {/* Value + label row */}
       <div className="flex items-baseline justify-between gap-2">
-        <span className="text-data-xs text-text-tertiary whitespace-nowrap">Conversion amount</span>
+        <span className="whitespace-nowrap text-data-xs text-text-tertiary">Conversion amount</span>
         <span
-          className="text-body-sm font-medium text-text-primary tabular-nums"
+          className="text-body-sm font-medium tabular-nums text-text-primary"
           style={dataFontStyle}
         >
           {formatCurrency(value)}
@@ -56,7 +54,7 @@ export function ConversionSlider({
           step={100}
           value={value}
           onChange={handleChange}
-          className="w-full h-1.5 rounded-full appearance-none cursor-pointer accent-slider"
+          className="accent-slider h-1.5 w-full cursor-pointer appearance-none rounded-full"
           style={{
             background: `linear-gradient(to right, ${CHART_COLORS.conversion} 0%, ${CHART_COLORS.conversion} ${
               max > 0 ? ((value - min) / (max - min)) * 100 : 0
@@ -68,14 +66,20 @@ export function ConversionSlider({
 
         {/* Optimal marker — gold diamond with stem */}
         <div
-          className="absolute top-[-12px] pointer-events-none optimal-marker"
+          className="optimal-marker pointer-events-none absolute top-[-12px]"
           style={{
             left: `calc(8px + (100% - 16px) * ${optimalPercent / 100})`,
             transform: "translateX(-50%)",
           }}
           title={`Highest savings: ${formatCurrency(optimalValue)}`}
         >
-          <svg width="8" height="14" viewBox="0 0 14 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <svg
+            width="8"
+            height="14"
+            viewBox="0 0 14 20"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
             <path d="M7 0L12 6L7 12L2 6Z" fill="#F0C674" />
             <path d="M7 1.5L10.5 6L7 10.5L3.5 6Z" fill="#FAF7F2" fillOpacity="0.25" />
             <rect x="6" y="12" width="2" height="8" rx="1" fill="#F0C674" fillOpacity="0.6" />
@@ -87,9 +91,17 @@ export function ConversionSlider({
       <button
         type="button"
         onClick={() => onChange(optimalValue)}
-        className="flex items-center gap-1 text-data-xs text-text-tertiary hover:text-accent transition-colors cursor-pointer self-start text-left"
+        className="flex cursor-pointer items-center gap-1 self-start text-left text-data-xs text-text-tertiary transition-colors hover:text-accent"
       >
-        <svg width="8" height="11" viewBox="0 0 14 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0" style={{ filter: "drop-shadow(0 0 3px rgba(240,198,116,0.4))" }}>
+        <svg
+          width="8"
+          height="11"
+          viewBox="0 0 14 20"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="flex-shrink-0"
+          style={{ filter: "drop-shadow(0 0 3px rgba(240,198,116,0.4))" }}
+        >
           <path d="M7 0L12 6L7 12L2 6Z" fill="#F0C674" />
           <rect x="6" y="12" width="2" height="8" rx="1" fill="#F0C674" fillOpacity="0.6" />
         </svg>

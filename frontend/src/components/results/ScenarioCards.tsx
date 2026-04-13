@@ -29,7 +29,7 @@ export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
   return (
     <div className="flex flex-col gap-default">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
           <h3 className="text-h3 text-text-primary">Scenario comparison</h3>
           <Tooltip content="Compare different Roth conversion schedules to see how they affect your estimated lifetime tax savings." />
         </div>
@@ -41,7 +41,7 @@ export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-default">
+      <div className="grid grid-cols-1 gap-default sm:grid-cols-3">
         {ordered.map((scenario) => {
           const isBest = scenario.difference_from_optimal === 0;
 
@@ -63,25 +63,20 @@ export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
               : [];
 
           const hasSavings =
-            scenario.estimated_savings != null &&
-            !Number.isNaN(scenario.estimated_savings);
+            scenario.estimated_savings != null && !Number.isNaN(scenario.estimated_savings);
 
           return (
-            <Card
-              key={scenario.label}
-              recommended={isBest}
-              className="flex flex-col gap-3"
-            >
+            <Card key={scenario.label} recommended={isBest} className="flex flex-col gap-3">
               <span className="text-h3 text-text-primary">{label}</span>
 
               <div className="flex flex-col gap-2">
                 {/* Estimated savings */}
                 {hasSavings && (
                   <div className="flex justify-between text-body-sm">
-                    <span className="text-text-secondary">
-                      Estimated savings
-                    </span>
-                    <span className={`font-mono font-medium ${scenario.estimated_savings! > 0 ? "text-optimal" : "text-text-primary"}`}>
+                    <span className="text-text-secondary">Estimated savings</span>
+                    <span
+                      className={`font-mono font-medium ${scenario.estimated_savings! > 0 ? "text-optimal" : "text-text-primary"}`}
+                    >
                       {formatSavings(Math.round(scenario.estimated_savings!))}
                     </span>
                   </div>
@@ -89,15 +84,12 @@ export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
 
                 {/* Per-year conversion schedule (multi-year best scenario) */}
                 {scheduleRows.length > 0 && (
-                  <div className="flex flex-col gap-1 pt-1 border-t border-border">
-                    <span className="text-caption text-text-tertiary uppercase tracking-wide">
+                  <div className="flex flex-col gap-1 border-t border-border pt-1">
+                    <span className="text-caption uppercase tracking-wide text-text-tertiary">
                       Roth conversion schedule
                     </span>
                     {scheduleRows.map((row) => (
-                      <div
-                        key={row.year}
-                        className="flex justify-between text-body-sm"
-                      >
+                      <div key={row.year} className="flex justify-between text-body-sm">
                         <span className="text-text-secondary">{row.year}</span>
                         <span className="font-mono text-text-primary">
                           {formatCompactCurrency(row.amount)}
@@ -105,11 +97,9 @@ export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
                       </div>
                     ))}
                     {scheduleRows.length > 1 && (
-                      <div className="flex justify-between text-body-sm pt-1 border-t border-border">
-                        <span className="text-text-secondary font-medium">
-                          Total
-                        </span>
-                        <span className="font-mono text-text-primary font-medium">
+                      <div className="flex justify-between border-t border-border pt-1 text-body-sm">
+                        <span className="font-medium text-text-secondary">Total</span>
+                        <span className="font-mono font-medium text-text-primary">
                           {formatCompactCurrency(scenario.conversion_amount)}
                         </span>
                       </div>
@@ -119,9 +109,7 @@ export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
 
                 {/* Tax on conversions (aggregate) */}
                 <div className="flex justify-between text-body-sm">
-                  <span className="text-text-secondary">
-                    Tax on Roth conversions
-                  </span>
+                  <span className="text-text-secondary">Tax on Roth conversions</span>
                   <span className="font-mono text-text-primary">
                     {formatCurrency(scenario.tax_on_conversion)}
                   </span>
@@ -129,16 +117,17 @@ export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
 
                 {/* Impact on long-term wealth vs best */}
                 {scenario.difference_from_optimal !== 0 && (
-                  <div className="flex flex-col gap-1 pt-1 border-t border-border">
-                    <span className="text-caption text-text-tertiary uppercase tracking-wide">
+                  <div className="flex flex-col gap-1 border-t border-border pt-1">
+                    <span className="text-caption uppercase tracking-wide text-text-tertiary">
                       Impact on long-term wealth
                     </span>
                     <span
-                      className="flex items-center gap-1 text-body-sm text-negative font-medium"
+                      className="flex items-center gap-1 text-body-sm font-medium text-negative"
                       style={dataFontStyle}
                     >
                       <ArrowDownIcon />
-                      {formatCurrency(Math.abs(scenario.difference_from_optimal))} less than scenario with highest savings
+                      {formatCurrency(Math.abs(scenario.difference_from_optimal))} less than
+                      scenario with highest savings
                     </span>
                   </div>
                 )}

@@ -15,11 +15,11 @@ export function HowItWorksButton() {
       className={cn(
         "inline-flex items-center gap-1.5",
         "text-sm font-medium",
-        "px-3.5 py-1.5 rounded-lg",
+        "rounded-lg px-3.5 py-1.5",
         "border transition-all duration-200",
         isOpen
-          ? "text-accent bg-accent/15 border-accent/30"
-          : "text-text-secondary border-glass-border hover:text-accent hover:border-accent/30"
+          ? "border-accent/30 bg-accent/15 text-accent"
+          : "border-glass-border text-text-secondary hover:border-accent/30 hover:text-accent"
       )}
     >
       <svg

@@ -24,7 +24,25 @@ interface NumericFieldProps {
 }
 
 const NumericField = React.forwardRef<HTMLInputElement, NumericFieldProps>(
-  ({ label, helper, error, tooltip, value, placeholder, min, max, suffix, decimalScale = 0, required, onChange, className, id }, ref) => {
+  (
+    {
+      label,
+      helper,
+      error,
+      tooltip,
+      value,
+      placeholder,
+      min,
+      max,
+      suffix,
+      decimalScale = 0,
+      required,
+      onChange,
+      className,
+      id,
+    },
+    ref
+  ) => {
     const inputId = id || label?.toLowerCase().replace(/\s+/g, "-");
 
     return (
@@ -33,11 +51,7 @@ const NumericField = React.forwardRef<HTMLInputElement, NumericFieldProps>(
           <div className="flex items-center gap-1">
             <Label htmlFor={inputId}>{label}</Label>
             {required && (
-              <span
-                aria-hidden="true"
-                className="text-negative -ml-0.5"
-                data-required-indicator
-              >
+              <span aria-hidden="true" className="-ml-0.5 text-negative" data-required-indicator>
                 *
               </span>
             )}
@@ -66,25 +80,21 @@ const NumericField = React.forwardRef<HTMLInputElement, NumericFieldProps>(
             onChange(values.floatValue ?? null);
           }}
           className={cn(
-            "h-9 min-h-[44px] px-3 w-full",
+            "h-9 min-h-[44px] w-full px-3",
             "rounded-lg bg-bg-alt",
             "border border-border",
             "text-body text-text-primary",
             "placeholder:text-text-tertiary",
-            "focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10",
+            "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/10",
             "transition-all duration-300",
-            "disabled:opacity-50 disabled:cursor-not-allowed",
+            "disabled:cursor-not-allowed disabled:opacity-50",
             "font-mono",
             error && "border-negative",
             className
           )}
         />
-        {error && (
-          <span className="text-caption text-negative">{error}</span>
-        )}
-        {helper && !error && (
-          <span className="text-caption text-text-tertiary">{helper}</span>
-        )}
+        {error && <span className="text-caption text-negative">{error}</span>}
+        {helper && !error && <span className="text-caption text-text-tertiary">{helper}</span>}
       </div>
     );
   }

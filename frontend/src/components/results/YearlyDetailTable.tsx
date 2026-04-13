@@ -19,16 +19,14 @@ export function YearlyDetailTable({ details }: YearlyDetailTableProps) {
       <button
         type="button"
         onClick={() => setExpanded(!expanded)}
-        className="flex items-center gap-2 text-h3 text-text-primary hover:text-accent transition-colors duration-300"
+        className="flex items-center gap-2 text-h3 text-text-primary transition-colors duration-300 hover:text-accent"
       >
         <svg
           width="12"
           height="12"
           viewBox="0 0 12 12"
           fill="none"
-          className={`transition-transform duration-300 ${
-            expanded ? "rotate-90" : ""
-          }`}
+          className={`transition-transform duration-300 ${expanded ? "rotate-90" : ""}`}
         >
           <path
             d="M4 2l4 4-4 4"
@@ -45,17 +43,11 @@ export function YearlyDetailTable({ details }: YearlyDetailTableProps) {
         <Card className="overflow-x-auto">
           <table className="w-full text-body-sm">
             <thead>
-              <tr className="border-b border-border text-text-secondary text-left">
+              <tr className="border-b border-border text-left text-text-secondary">
                 <th className="py-3 pr-4 font-medium">Year</th>
-                <th className="py-3 pr-4 font-medium text-right">Earned Income</th>
-                <th className="py-3 pr-4 font-medium text-right">
-                  Conversion
-                </th>
-                <th className="py-3 pr-4 font-medium text-right">
-                  Added tax from conversion
-                </th>
-
-
+                <th className="py-3 pr-4 text-right font-medium">Earned Income</th>
+                <th className="py-3 pr-4 text-right font-medium">Conversion</th>
+                <th className="py-3 pr-4 text-right font-medium">Added tax from conversion</th>
               </tr>
             </thead>
             <tbody>
@@ -67,17 +59,11 @@ export function YearlyDetailTable({ details }: YearlyDetailTableProps) {
                   }`}
                 >
                   <td className="py-3 pr-4 font-mono">{row.year}</td>
-                  <td className="py-3 pr-4 font-mono text-right">
-                    {formatCurrency(row.income)}
-                  </td>
-                  <td className="py-3 pr-4 font-mono text-right text-accent">
+                  <td className="py-3 pr-4 text-right font-mono">{formatCurrency(row.income)}</td>
+                  <td className="py-3 pr-4 text-right font-mono text-accent">
                     {formatCurrency(row.conversion)}
                   </td>
-                  <td className="py-3 pr-4 font-mono text-right">
-                    {formatCurrency(row.tax_cost)}
-                  </td>
-
-
+                  <td className="py-3 pr-4 text-right font-mono">{formatCurrency(row.tax_cost)}</td>
                 </tr>
               ))}
             </tbody>

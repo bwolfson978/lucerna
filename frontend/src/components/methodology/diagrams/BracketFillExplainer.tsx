@@ -12,12 +12,54 @@ interface BracketRow {
 }
 
 const EXAMPLE_BRACKETS: BracketRow[] = [
-  { rate: "10%", rateKey: "0.10", label: "$0 - $11,600", capacity: 11600, filledByIncome: 11600, filledByConversion: 0 },
-  { rate: "12%", rateKey: "0.12", label: "$11,600 - $47,150", capacity: 35550, filledByIncome: 8800, filledByConversion: 26750 },
-  { rate: "22%", rateKey: "0.22", label: "$47,150 - $100,525", capacity: 53375, filledByIncome: 0, filledByConversion: 23250 },
-  { rate: "24%", rateKey: "0.24", label: "$100,525 - $191,950", capacity: 91425, filledByIncome: 0, filledByConversion: 0 },
-  { rate: "32%", rateKey: "0.32", label: "$191,950 - $243,700", capacity: 51750, filledByIncome: 0, filledByConversion: 0 },
-  { rate: "35%", rateKey: "0.35", label: "$243,700 - $609,350", capacity: 365650, filledByIncome: 0, filledByConversion: 0 },
+  {
+    rate: "10%",
+    rateKey: "0.10",
+    label: "$0 - $11,600",
+    capacity: 11600,
+    filledByIncome: 11600,
+    filledByConversion: 0,
+  },
+  {
+    rate: "12%",
+    rateKey: "0.12",
+    label: "$11,600 - $47,150",
+    capacity: 35550,
+    filledByIncome: 8800,
+    filledByConversion: 26750,
+  },
+  {
+    rate: "22%",
+    rateKey: "0.22",
+    label: "$47,150 - $100,525",
+    capacity: 53375,
+    filledByIncome: 0,
+    filledByConversion: 23250,
+  },
+  {
+    rate: "24%",
+    rateKey: "0.24",
+    label: "$100,525 - $191,950",
+    capacity: 91425,
+    filledByIncome: 0,
+    filledByConversion: 0,
+  },
+  {
+    rate: "32%",
+    rateKey: "0.32",
+    label: "$191,950 - $243,700",
+    capacity: 51750,
+    filledByIncome: 0,
+    filledByConversion: 0,
+  },
+  {
+    rate: "35%",
+    rateKey: "0.35",
+    label: "$243,700 - $609,350",
+    capacity: 365650,
+    filledByIncome: 0,
+    filledByConversion: 0,
+  },
 ];
 
 /**
@@ -39,13 +81,20 @@ export function BracketFillExplainer() {
   return (
     <svg
       viewBox={`0 0 560 ${svgHeight}`}
-      className="w-full max-w-[560px] mx-auto"
+      className="mx-auto w-full max-w-[560px]"
       role="img"
       aria-label="Diagram showing how income fills lower tax brackets and Roth conversions fill the next available space"
     >
       {/* Title annotation */}
-      <text x="280" y="20" textAnchor="middle" fill="#B8B0D2"
-        fontFamily={labelFont} fontSize="11" fontWeight="500">
+      <text
+        x="280"
+        y="20"
+        textAnchor="middle"
+        fill="#B8B0D2"
+        fontFamily={labelFont}
+        fontSize="11"
+        fontWeight="500"
+      >
         EXAMPLE: $35K INCOME + $50K CONVERSION (SINGLE FILER)
       </text>
 
@@ -60,25 +109,52 @@ export function BracketFillExplainer() {
         return (
           <g key={bracket.rate}>
             {/* Bracket color indicator */}
-            <rect x={leftMargin - 6} y={y} width="3" height={barHeight}
-              rx="1.5" fill={bracketColor} />
+            <rect
+              x={leftMargin - 6}
+              y={y}
+              width="3"
+              height={barHeight}
+              rx="1.5"
+              fill={bracketColor}
+            />
 
             {/* Rate label */}
-            <text x={leftMargin - 14} y={y + barHeight / 2 + 1}
-              textAnchor="end" dominantBaseline="middle"
-              fill="#FAF7F2" fontFamily={DATA_FONT_FAMILY} fontSize="13" fontWeight="700">
+            <text
+              x={leftMargin - 14}
+              y={y + barHeight / 2 + 1}
+              textAnchor="end"
+              dominantBaseline="middle"
+              fill="#FAF7F2"
+              fontFamily={DATA_FONT_FAMILY}
+              fontSize="13"
+              fontWeight="700"
+            >
               {bracket.rate}
             </text>
 
             {/* Background (total capacity) */}
-            <rect x={leftMargin} y={y} width={totalCapWidth} height={barHeight}
-              rx="4" fill="rgba(255, 255, 255, 0.04)"
-              stroke="rgba(255, 255, 255, 0.06)" strokeWidth="0.5" />
+            <rect
+              x={leftMargin}
+              y={y}
+              width={totalCapWidth}
+              height={barHeight}
+              rx="4"
+              fill="rgba(255, 255, 255, 0.04)"
+              stroke="rgba(255, 255, 255, 0.06)"
+              strokeWidth="0.5"
+            />
 
             {/* Income fill */}
             {incomeWidth > 0 && (
-              <rect x={leftMargin} y={y} width={incomeWidth} height={barHeight}
-                rx="4" fill={CHART_COLORS.income} opacity="0.7" />
+              <rect
+                x={leftMargin}
+                y={y}
+                width={incomeWidth}
+                height={barHeight}
+                rx="4"
+                fill={CHART_COLORS.income}
+                opacity="0.7"
+              />
             )}
 
             {/* Conversion fill */}
@@ -114,24 +190,61 @@ export function BracketFillExplainer() {
         const legendY = topMargin + EXAMPLE_BRACKETS.length * (barHeight + rowGap) + 16;
         return (
           <g>
-            <rect x={leftMargin} y={legendY} width="12" height="12" rx="2"
-              fill={CHART_COLORS.income} opacity="0.7" />
-            <text x={leftMargin + 18} y={legendY + 10} fill="#B8B0D2"
-              fontFamily={labelFont} fontSize="11">
+            <rect
+              x={leftMargin}
+              y={legendY}
+              width="12"
+              height="12"
+              rx="2"
+              fill={CHART_COLORS.income}
+              opacity="0.7"
+            />
+            <text
+              x={leftMargin + 18}
+              y={legendY + 10}
+              fill="#B8B0D2"
+              fontFamily={labelFont}
+              fontSize="11"
+            >
               Earned income
             </text>
 
-            <rect x={leftMargin + 130} y={legendY} width="12" height="12" rx="2"
-              fill={CHART_COLORS.conversion} opacity="0.75" />
-            <text x={leftMargin + 148} y={legendY + 10} fill="#B8B0D2"
-              fontFamily={labelFont} fontSize="11">
+            <rect
+              x={leftMargin + 130}
+              y={legendY}
+              width="12"
+              height="12"
+              rx="2"
+              fill={CHART_COLORS.conversion}
+              opacity="0.75"
+            />
+            <text
+              x={leftMargin + 148}
+              y={legendY + 10}
+              fill="#B8B0D2"
+              fontFamily={labelFont}
+              fontSize="11"
+            >
               Roth conversion
             </text>
 
-            <rect x={leftMargin + 270} y={legendY} width="12" height="12" rx="2"
-              fill="rgba(255, 255, 255, 0.04)" stroke="rgba(255, 255, 255, 0.08)" strokeWidth="0.5" />
-            <text x={leftMargin + 288} y={legendY + 10} fill="#B8B0D2"
-              fontFamily={labelFont} fontSize="11">
+            <rect
+              x={leftMargin + 270}
+              y={legendY}
+              width="12"
+              height="12"
+              rx="2"
+              fill="rgba(255, 255, 255, 0.04)"
+              stroke="rgba(255, 255, 255, 0.08)"
+              strokeWidth="0.5"
+            />
+            <text
+              x={leftMargin + 288}
+              y={legendY + 10}
+              fill="#B8B0D2"
+              fontFamily={labelFont}
+              fontSize="11"
+            >
               Remaining space
             </text>
           </g>

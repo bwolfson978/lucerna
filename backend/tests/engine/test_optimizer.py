@@ -1,12 +1,13 @@
 """Tests for the multi-year Roth conversion optimizer."""
 
-import pytest
-
-from app.engine.optimizer import optimize, calculate_npv
 from app.engine.heuristic import greedy_bracket_fill
+from app.engine.optimizer import calculate_npv, optimize
 from app.engine.types import (
-    ScenarioInput, FilingStatus, YearlyIncome, OptimizationResult,
     ConversionPreferences,
+    FilingStatus,
+    OptimizationResult,
+    ScenarioInput,
+    YearlyIncome,
 )
 
 
@@ -57,11 +58,14 @@ class TestOptimize:
     def test_low_income_favors_conversion(self):
         """A low-income person should benefit from filling the lower brackets."""
         scenario = ScenarioInput(
-            age=45, filing_status=FilingStatus.SINGLE,
+            age=45,
+            filing_status=FilingStatus.SINGLE,
             income_timeline=[YearlyIncome(year=2026, gross_income=25000)],
             traditional_ira_balance=100000,
-            retirement_age=65, years_in_retirement=25,
-            annual_growth_rate=0.07, discount_rate=0.05,
+            retirement_age=65,
+            years_in_retirement=25,
+            annual_growth_rate=0.07,
+            discount_rate=0.05,
         )
         result = optimize(scenario)
         assert result.total_conversion > 0
@@ -69,15 +73,18 @@ class TestOptimize:
     def test_multi_year_places_conversions_in_low_income_years(self):
         """Optimizer should convert more in low-income years than high-income years."""
         scenario = ScenarioInput(
-            age=38, filing_status=FilingStatus.SINGLE,
+            age=38,
+            filing_status=FilingStatus.SINGLE,
             income_timeline=[
                 YearlyIncome(year=2026, gross_income=35000),
                 YearlyIncome(year=2027, gross_income=30000),
                 YearlyIncome(year=2028, gross_income=150000),
             ],
             traditional_ira_balance=210000,
-            retirement_age=65, years_in_retirement=25,
-            annual_growth_rate=0.07, discount_rate=0.05,
+            retirement_age=65,
+            years_in_retirement=25,
+            annual_growth_rate=0.07,
+            discount_rate=0.05,
         )
         result = optimize(scenario)
         # Low-income years (0, 1) should have more conversion than high-income year (2)
@@ -88,11 +95,14 @@ class TestOptimize:
     def test_savings_positive_for_low_income(self):
         """Estimated lifetime tax savings should be positive for low-income scenario."""
         scenario = ScenarioInput(
-            age=45, filing_status=FilingStatus.SINGLE,
+            age=45,
+            filing_status=FilingStatus.SINGLE,
             income_timeline=[YearlyIncome(year=2026, gross_income=25000)],
             traditional_ira_balance=100000,
-            retirement_age=65, years_in_retirement=25,
-            annual_growth_rate=0.07, discount_rate=0.05,
+            retirement_age=65,
+            years_in_retirement=25,
+            annual_growth_rate=0.07,
+            discount_rate=0.05,
         )
         result = optimize(scenario)
         assert result.estimated_lifetime_tax_savings > 0
@@ -111,15 +121,18 @@ class TestOptimize:
         NPV directly — it should find an equal or better solution.
         """
         scenario = ScenarioInput(
-            age=38, filing_status=FilingStatus.SINGLE,
+            age=38,
+            filing_status=FilingStatus.SINGLE,
             income_timeline=[
                 YearlyIncome(year=2026, gross_income=35000),
                 YearlyIncome(year=2027, gross_income=30000),
                 YearlyIncome(year=2028, gross_income=150000),
             ],
             traditional_ira_balance=210000,
-            retirement_age=65, years_in_retirement=25,
-            annual_growth_rate=0.07, discount_rate=0.05,
+            retirement_age=65,
+            years_in_retirement=25,
+            annual_growth_rate=0.07,
+            discount_rate=0.05,
         )
         greedy = greedy_bracket_fill(scenario)
         npv_greedy = calculate_npv(scenario, greedy)
@@ -136,30 +149,36 @@ class TestConversionPreferences:
     def _alex_scenario(self, **pref_overrides):
         prefs = ConversionPreferences(**pref_overrides)
         return ScenarioInput(
-            age=38, filing_status=FilingStatus.SINGLE,
+            age=38,
+            filing_status=FilingStatus.SINGLE,
             income_timeline=[
                 YearlyIncome(year=2026, gross_income=35000),
                 YearlyIncome(year=2027, gross_income=30000),
                 YearlyIncome(year=2028, gross_income=150000),
             ],
             traditional_ira_balance=210000,
-            retirement_age=65, years_in_retirement=25,
-            annual_growth_rate=0.07, discount_rate=0.05,
+            retirement_age=65,
+            years_in_retirement=25,
+            annual_growth_rate=0.07,
+            discount_rate=0.05,
             conversion_preferences=prefs,
         )
 
     def test_no_preferences_same_as_unconstrained(self):
         """Empty preferences should not change the result."""
         unconstrained = ScenarioInput(
-            age=38, filing_status=FilingStatus.SINGLE,
+            age=38,
+            filing_status=FilingStatus.SINGLE,
             income_timeline=[
                 YearlyIncome(year=2026, gross_income=35000),
                 YearlyIncome(year=2027, gross_income=30000),
                 YearlyIncome(year=2028, gross_income=150000),
             ],
             traditional_ira_balance=210000,
-            retirement_age=65, years_in_retirement=25,
-            annual_growth_rate=0.07, discount_rate=0.05,
+            retirement_age=65,
+            years_in_retirement=25,
+            annual_growth_rate=0.07,
+            discount_rate=0.05,
         )
         constrained = self._alex_scenario()
         r1 = optimize(unconstrained)
@@ -225,15 +244,18 @@ class TestScenarioComparisonFields:
 
     def test_scenarios_have_yearly_conversions(self):
         scenario = ScenarioInput(
-            age=38, filing_status=FilingStatus.SINGLE,
+            age=38,
+            filing_status=FilingStatus.SINGLE,
             income_timeline=[
                 YearlyIncome(year=2026, gross_income=35000),
                 YearlyIncome(year=2027, gross_income=30000),
                 YearlyIncome(year=2028, gross_income=150000),
             ],
             traditional_ira_balance=210000,
-            retirement_age=65, years_in_retirement=25,
-            annual_growth_rate=0.07, discount_rate=0.05,
+            retirement_age=65,
+            years_in_retirement=25,
+            annual_growth_rate=0.07,
+            discount_rate=0.05,
         )
         result = optimize(scenario)
         for sc in result.scenarios:
@@ -243,11 +265,14 @@ class TestScenarioComparisonFields:
 
     def test_scenarios_have_estimated_savings(self):
         scenario = ScenarioInput(
-            age=45, filing_status=FilingStatus.SINGLE,
+            age=45,
+            filing_status=FilingStatus.SINGLE,
             income_timeline=[YearlyIncome(year=2026, gross_income=25000)],
             traditional_ira_balance=100000,
-            retirement_age=65, years_in_retirement=25,
-            annual_growth_rate=0.07, discount_rate=0.05,
+            retirement_age=65,
+            years_in_retirement=25,
+            annual_growth_rate=0.07,
+            discount_rate=0.05,
         )
         result = optimize(scenario)
         # "No conversion" should have 0 savings
@@ -261,11 +286,14 @@ class TestScenarioComparisonFields:
 
     def test_no_conversion_yearly_conversions_are_zero(self):
         scenario = ScenarioInput(
-            age=45, filing_status=FilingStatus.SINGLE,
+            age=45,
+            filing_status=FilingStatus.SINGLE,
             income_timeline=[YearlyIncome(year=2026, gross_income=25000)],
             traditional_ira_balance=100000,
-            retirement_age=65, years_in_retirement=25,
-            annual_growth_rate=0.07, discount_rate=0.05,
+            retirement_age=65,
+            years_in_retirement=25,
+            annual_growth_rate=0.07,
+            discount_rate=0.05,
         )
         result = optimize(scenario)
         no_conv = next(s for s in result.scenarios if s.label == "No conversion")
@@ -273,14 +301,17 @@ class TestScenarioComparisonFields:
 
     def test_full_conversion_puts_all_in_year_1(self):
         scenario = ScenarioInput(
-            age=38, filing_status=FilingStatus.SINGLE,
+            age=38,
+            filing_status=FilingStatus.SINGLE,
             income_timeline=[
                 YearlyIncome(year=2026, gross_income=35000),
                 YearlyIncome(year=2027, gross_income=30000),
             ],
             traditional_ira_balance=100000,
-            retirement_age=65, years_in_retirement=25,
-            annual_growth_rate=0.07, discount_rate=0.05,
+            retirement_age=65,
+            years_in_retirement=25,
+            annual_growth_rate=0.07,
+            discount_rate=0.05,
         )
         result = optimize(scenario)
         full = next(s for s in result.scenarios if "Full" in s.label)
@@ -291,22 +322,35 @@ class TestScenarioComparisonFields:
 class TestStateTaxIntegration:
     """Verify that state tax changes optimizer behavior vs federal-only."""
 
-    def _base_scenario(self, state=None, retirement_state=None, custom_state_rate=None,
-                       timeline_states=None):
+    def _base_scenario(
+        self, state=None, retirement_state=None, custom_state_rate=None, timeline_states=None
+    ):
         traj = [
-            YearlyIncome(year=2026, gross_income=150000,
-                         state=timeline_states[0] if timeline_states else None),
-            YearlyIncome(year=2027, gross_income=150000,
-                         state=timeline_states[1] if timeline_states else None),
-            YearlyIncome(year=2028, gross_income=150000,
-                         state=timeline_states[2] if timeline_states else None),
+            YearlyIncome(
+                year=2026,
+                gross_income=150000,
+                state=timeline_states[0] if timeline_states else None,
+            ),
+            YearlyIncome(
+                year=2027,
+                gross_income=150000,
+                state=timeline_states[1] if timeline_states else None,
+            ),
+            YearlyIncome(
+                year=2028,
+                gross_income=150000,
+                state=timeline_states[2] if timeline_states else None,
+            ),
         ]
         return ScenarioInput(
-            age=45, filing_status=FilingStatus.SINGLE,
+            age=45,
+            filing_status=FilingStatus.SINGLE,
             income_timeline=traj,
             traditional_ira_balance=300000,
-            retirement_age=65, years_in_retirement=25,
-            annual_growth_rate=0.07, discount_rate=0.05,
+            retirement_age=65,
+            years_in_retirement=25,
+            annual_growth_rate=0.07,
+            discount_rate=0.05,
             state=state,
             retirement_state=retirement_state,
             custom_state_rate=custom_state_rate,
@@ -315,18 +359,24 @@ class TestStateTaxIntegration:
     def test_state_none_backward_compat(self):
         """state=None should produce identical results to omitting state entirely."""
         scenario_no_state = ScenarioInput(
-            age=45, filing_status=FilingStatus.SINGLE,
+            age=45,
+            filing_status=FilingStatus.SINGLE,
             income_timeline=[YearlyIncome(year=2026, gross_income=100000)],
             traditional_ira_balance=200000,
-            retirement_age=65, years_in_retirement=25,
-            annual_growth_rate=0.07, discount_rate=0.05,
+            retirement_age=65,
+            years_in_retirement=25,
+            annual_growth_rate=0.07,
+            discount_rate=0.05,
         )
         scenario_explicit_none = ScenarioInput(
-            age=45, filing_status=FilingStatus.SINGLE,
+            age=45,
+            filing_status=FilingStatus.SINGLE,
             income_timeline=[YearlyIncome(year=2026, gross_income=100000)],
             traditional_ira_balance=200000,
-            retirement_age=65, years_in_retirement=25,
-            annual_growth_rate=0.07, discount_rate=0.05,
+            retirement_age=65,
+            years_in_retirement=25,
+            annual_growth_rate=0.07,
+            discount_rate=0.05,
             state=None,
         )
         npv1 = calculate_npv(scenario_no_state, [50000.0])
@@ -379,9 +429,10 @@ class TestStateTaxIntegration:
 
         # The TX year (index 2) should have at least as much conversion as either CA year
         # because the tax cost is lower in TX
-        assert result.yearly_conversions[2] >= min(
-            result.yearly_conversions[0], result.yearly_conversions[1]
-        ) - 1, (
+        assert (
+            result.yearly_conversions[2]
+            >= min(result.yearly_conversions[0], result.yearly_conversions[1]) - 1
+        ), (
             f"Expected TX year to have >= conversion than at least one CA year. "
             f"Schedule: {result.yearly_conversions}"
         )
@@ -393,9 +444,7 @@ class TestStateTaxIntegration:
 
         # At least one year with non-zero conversion should have state_tax_cost > 0
         has_state_tax = any(
-            d.get("state_tax_cost", 0) > 0
-            for d in result.yearly_detail
-            if d["conversion"] > 0
+            d.get("state_tax_cost", 0) > 0 for d in result.yearly_detail if d["conversion"] > 0
         )
         assert has_state_tax, (
             f"Expected state_tax_cost > 0 in yearly_detail for CA scenario. "
@@ -424,8 +473,7 @@ class TestAlreadyRetired:
             age=age,
             filing_status=FilingStatus.MFJ,
             income_timeline=[
-                YearlyIncome(year=2026 + i, gross_income=50000)
-                for i in range(n_years)
+                YearlyIncome(year=2026 + i, gross_income=50000) for i in range(n_years)
             ],
             traditional_ira_balance=500000,
             roth_ira_balance=50000,

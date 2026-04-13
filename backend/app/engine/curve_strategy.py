@@ -15,21 +15,20 @@ from __future__ import annotations
 
 from typing import Literal, Protocol
 
-from app.engine.types import (
-    ScenarioInput,
-    ConversionCurvePoint,
-    BracketFillResult,
-)
-from app.engine.tax import (
-    get_marginal_rate,
-    analyze_bracket_fill,
-)
 from app.engine.state_tax import resolve_state_for_year
+from app.engine.tax import (
+    analyze_bracket_fill,
+    get_marginal_rate,
+)
 from app.engine.tax_cost import (
     federal_tax_on_conversion,
     state_tax_on_conversion,
 )
-
+from app.engine.types import (
+    BracketFillResult,
+    ConversionCurvePoint,
+    ScenarioInput,
+)
 
 # ── Strategy type ────────────────────────────────────────────────────
 
@@ -84,30 +83,32 @@ def build_curve_point(
     for i in range(n_years):
         income = scenario.income_timeline[i].gross_income
         c = yearly_conv[i]
-        yr_state = resolve_state_for_year(
-            scenario.income_timeline[i].state, scenario.state
-        )
+        yr_state = resolve_state_for_year(scenario.income_timeline[i].state, scenario.state)
 
         tax_cost = federal_tax_on_conversion(income, c, scenario.filing_status)
         tax_cost += state_tax_on_conversion(
-            income, c, yr_state, scenario.filing_status, scenario.custom_state_rate,
+            income,
+            c,
+            yr_state,
+            scenario.filing_status,
+            scenario.custom_state_rate,
         )
         total_tax += tax_cost
 
         eff_rate = tax_cost / c if c > 0 else 0.0
         marginal = get_marginal_rate(income + c, scenario.filing_status)
 
-        yearly_detail.append({
-            "year": scenario.income_timeline[i].year,
-            "income": income,
-            "conversion": c,
-            "tax_cost": round(tax_cost, 2),
-            "effective_rate": round(eff_rate, 4),
-            "marginal_bracket": f"{marginal:.0%}",
-        })
-        yearly_bracket_fill.append(
-            analyze_bracket_fill(income, c, scenario.filing_status)
+        yearly_detail.append(
+            {
+                "year": scenario.income_timeline[i].year,
+                "income": income,
+                "conversion": c,
+                "tax_cost": round(tax_cost, 2),
+                "effective_rate": round(eff_rate, 4),
+                "marginal_bracket": f"{marginal:.0%}",
+            }
         )
+        yearly_bracket_fill.append(analyze_bracket_fill(income, c, scenario.filing_status))
 
     return ConversionCurvePoint(
         total_cap=cap_rounded,
@@ -129,9 +130,11 @@ def _get_strategy(name: CurveStrategyName) -> CurveStrategy:
     """
     if name == "dp_3d":
         from app.engine.dp import extract_conversion_curve_3d
+
         return extract_conversion_curve_3d  # type: ignore[return-value]
     if name == "bracket_fill":
         from app.engine.heuristic import bracket_fill_curve
+
         return bracket_fill_curve  # type: ignore[return-value]
     raise ValueError(f"Unknown curve strategy: {name!r}")
 

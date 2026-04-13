@@ -3,13 +3,18 @@
 import numpy as np
 import pytest
 
-from app.engine.dp import dp_optimize, extract_conversion_curve, extract_conversion_curve_3d, _compute_retirement_values
+from app.engine.dp import (
+    _compute_retirement_values,
+    dp_optimize,
+    extract_conversion_curve,
+    extract_conversion_curve_3d,
+)
 from app.engine.optimizer import calculate_npv
-from app.engine.tax import vectorized_federal_tax, calculate_federal_tax
-from app.engine.types import ScenarioInput, FilingStatus, YearlyIncome
-
+from app.engine.tax import calculate_federal_tax, vectorized_federal_tax
+from app.engine.types import FilingStatus, ScenarioInput, YearlyIncome
 
 # ── Fixtures ──────────────────────────────────────────────────────────
+
 
 def _simple_scenario(
     balance: float = 100_000,
@@ -22,8 +27,7 @@ def _simple_scenario(
         age=40,
         filing_status=FilingStatus.SINGLE,
         income_timeline=[
-            YearlyIncome(year=2026 + i, gross_income=inc)
-            for i, inc in enumerate(incomes)
+            YearlyIncome(year=2026 + i, gross_income=inc) for i, inc in enumerate(incomes)
         ],
         traditional_ira_balance=balance,
         roth_ira_balance=0,
@@ -36,6 +40,7 @@ def _simple_scenario(
 
 
 # ── Vectorized tax tests ─────────────────────────────────────────────
+
 
 class TestVectorizedTax:
     def test_matches_scalar(self):
@@ -57,6 +62,7 @@ class TestVectorizedTax:
 
 
 # ── Core DP tests ────────────────────────────────────────────────────
+
 
 class TestDPOptimize:
     def test_zero_balance(self):
@@ -114,7 +120,7 @@ class TestDPBeatsScipyOrMatches:
 
     def test_simple_3year(self):
         """DP NPV >= scipy NPV on a simple 3-year scenario."""
-        from app.engine.optimizer import _run_scipy, _finalize_conversions
+        from app.engine.optimizer import _finalize_conversions, _run_scipy
 
         scenario = _simple_scenario()
         n = len(scenario.income_timeline)
@@ -137,7 +143,7 @@ class TestDPBeatsScipyOrMatches:
     def test_demo_scenario(self):
         """DP NPV >= scipy NPV on the 27-year demo scenario."""
         from app.engine.demo import DEMO_SCENARIO
-        from app.engine.optimizer import _run_scipy, _finalize_conversions
+        from app.engine.optimizer import _finalize_conversions, _run_scipy
 
         n = len(DEMO_SCENARIO.income_timeline)
         bal = DEMO_SCENARIO.traditional_ira_balance
@@ -198,6 +204,7 @@ class TestRetirementValues:
 
 # ── Large balance tests ─────────────────────────────────────────────
 
+
 class TestLargeBalance:
     """Tests with $2M+ balances to verify correctness and performance at scale."""
 
@@ -245,6 +252,7 @@ class TestLargeBalance:
     def test_performance_under_5s(self):
         """$2M balance should complete within 5 seconds."""
         import time
+
         scenario = self._large_scenario(2_000_000)
         start = time.monotonic()
         dp_optimize(scenario)
@@ -254,11 +262,13 @@ class TestLargeBalance:
 
 # ── ACA subsidy integration tests ───────────────────────────────────
 
+
 class TestDPWithACA:
     """Tests that DP correctly accounts for ACA subsidy loss."""
 
     def _aca_scenario(self, with_healthcare: bool = True) -> ScenarioInput:
         from app.engine.types import HealthcareInput
+
         kwargs = {}
         if with_healthcare:
             kwargs["healthcare"] = HealthcareInput(
@@ -320,11 +330,13 @@ class TestDPWithACA:
 
 # ── Constrained optimization cross-path tests ───────────────────────
 
+
 class TestConstrainedWithDP:
     """Tests that constrained scipy path works correctly alongside DP."""
 
     def _constrained_scenario(self) -> ScenarioInput:
         from app.engine.types import ConversionPreferences
+
         return ScenarioInput(
             age=40,
             filing_status=FilingStatus.SINGLE,
@@ -353,14 +365,12 @@ class TestConstrainedWithDP:
 
         for detail in result.yearly_detail:
             assert detail["tax_cost"] <= 3_000 + 50, (
-                f"Year {detail['year']} tax cost {detail['tax_cost']:.0f} "
-                f"exceeds $3,000 limit"
+                f"Year {detail['year']} tax cost {detail['tax_cost']:.0f} exceeds $3,000 limit"
             )
 
     def test_constrained_npv_le_unconstrained(self):
         """Constrained NPV should be <= unconstrained DP NPV."""
         from app.engine.optimizer import optimize
-        from app.engine.types import ConversionPreferences
 
         # Unconstrained
         unconstrained = ScenarioInput(
@@ -401,6 +411,7 @@ class TestConstrainedWithDP:
 
 
 # ── 3D DP (budget-constrained curve) tests ─────────────────────────
+
 
 class TestConversionCurve3D:
     def test_curve_has_expected_points(self):
@@ -508,6 +519,7 @@ class TestConversionCurve3D:
     def test_performance_under_5s(self):
         """3D DP for a 3-year scenario should complete quickly."""
         import time
+
         scenario = _simple_scenario()
         start = time.monotonic()
         extract_conversion_curve_3d(scenario, n_curve_points=50, balance_grid_size=300)
@@ -536,8 +548,7 @@ class TestConversionCurve3D:
         for point in curve:
             actual_total = sum(point.yearly_conversions)
             assert actual_total <= point.total_cap + 200, (
-                f"At cap=${point.total_cap:,.0f}: actual total "
-                f"${actual_total:,.0f} exceeds cap"
+                f"At cap=${point.total_cap:,.0f}: actual total ${actual_total:,.0f} exceeds cap"
             )
 
     def test_decoupled_curve_points_from_budget_grid(self):
@@ -549,7 +560,10 @@ class TestConversionCurve3D:
         scenario = _simple_scenario()
         # 100 output points from only 20 internal budget states
         curve = extract_conversion_curve_3d(
-            scenario, n_curve_points=100, balance_grid_size=150, budget_grid_size=20,
+            scenario,
+            n_curve_points=100,
+            balance_grid_size=150,
+            budget_grid_size=20,
         )
         assert len(curve) == 100
 
@@ -584,17 +598,19 @@ class TestConversionCurve3D:
 
         # Count small spurious amounts in sparse vs dense curves
         def count_small(curve):
-            return sum(
-                1 for pt in curve
-                for c in pt.yearly_conversions
-                if 0 < c < 500
-            )
+            return sum(1 for pt in curve for c in pt.yearly_conversions if 0 < c < 500)
 
         sparse = extract_conversion_curve_3d(
-            scenario, n_curve_points=20, balance_grid_size=300, budget_grid_size=50,
+            scenario,
+            n_curve_points=20,
+            balance_grid_size=300,
+            budget_grid_size=50,
         )
         dense = extract_conversion_curve_3d(
-            scenario, n_curve_points=200, balance_grid_size=300, budget_grid_size=50,
+            scenario,
+            n_curve_points=200,
+            balance_grid_size=300,
+            budget_grid_size=50,
         )
 
         sparse_count = count_small(sparse)

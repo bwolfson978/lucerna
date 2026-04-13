@@ -1,11 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
 interface AccordionSectionProps {
@@ -39,8 +35,8 @@ export function AccordionSection({
         <CollapsibleTrigger
           className={cn(
             "flex w-full items-center justify-between px-4 py-3.5",
-            "bg-glass-bg border border-glass-border rounded-lg",
-            "text-sm font-medium text-text-primary text-left",
+            "rounded-lg border border-glass-border bg-glass-bg",
+            "text-left text-sm font-medium text-text-primary",
             "transition-all duration-200",
             "hover:bg-[rgba(255,255,255,0.06)]",
             open && "text-accent",
@@ -62,9 +58,7 @@ export function AccordionSection({
           </svg>
         </CollapsibleTrigger>
         <CollapsibleContent className="methodology-accordion-content overflow-hidden">
-          <div className="px-4 pt-1 pb-4 space-y-3">
-            {children}
-          </div>
+          <div className="space-y-3 px-4 pb-4 pt-1">{children}</div>
         </CollapsibleContent>
       </Collapsible>
     </div>

@@ -4,9 +4,7 @@ import { useEffect, useRef, useState, type RefObject } from "react";
  * Synchronizes horizontal scroll position across multiple scrollable elements.
  * When one scrolls, all others follow to the same scrollLeft pixel offset.
  */
-export function useSyncedScroll(
-  ...refs: RefObject<HTMLElement | null>[]
-): void {
+export function useSyncedScroll(...refs: RefObject<HTMLElement | null>[]): void {
   const scrollingRef = useRef<HTMLElement | null>(null);
   // Force re-run after mount when refs are populated
   const [mounted, setMounted] = useState(false);
@@ -51,6 +49,6 @@ export function useSyncedScroll(
         el.removeEventListener("scroll", onScroll);
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted]);
 }

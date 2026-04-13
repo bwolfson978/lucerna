@@ -1,5 +1,5 @@
-from app.engine.types import ScenarioInput, FilingStatus, YearlyIncome
 from app.engine.optimizer import optimize
+from app.engine.types import FilingStatus, ScenarioInput, YearlyIncome
 
 DEMO_SCENARIO = ScenarioInput(
     age=38,
@@ -55,7 +55,11 @@ DEMO_PERSONA = {
     "previous_salary": "$145,000/year",
     "situation": "Left job 6 months ago to co-found a startup",
     "income_timeline": [
-        {"year": 2026, "income": "$35K", "notes": "Startup year 1 (6 months salary before leaving)"},
+        {
+            "year": 2026,
+            "income": "$35K",
+            "notes": "Startup year 1 (6 months salary before leaving)",
+        },
         {"year": 2027, "income": "$30K", "notes": "Startup year 2 (minimal founder salary)"},
         {"year": 2028, "income": "$150K", "notes": "Back to work (startup acquired / new role)"},
     ],
