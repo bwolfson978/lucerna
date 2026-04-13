@@ -119,7 +119,8 @@ export const sampleOptimizationResult: OptimizationResult = {
       whatToConvert: "Convert $45K in 2026 and $50K in 2027",
       whyThisAmount: "Fills the 12% and part of the 22% bracket in both low-income years",
       howMuchYouSave: "Approximately $28,500 in lifetime tax savings vs. not converting",
-      keyTradeoff: "Converting more would push into the 24% bracket, where the marginal cost exceeds the benefit",
+      keyTradeoff:
+        "Converting more would push into the 24% bracket, where the marginal cost exceeds the benefit",
     },
   },
   traditional_at_retirement: 345000,

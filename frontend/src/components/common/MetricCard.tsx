@@ -22,7 +22,7 @@ export function MetricCard({
   valueClassName,
 }: MetricCardProps) {
   return (
-    <Card className={cn("flex flex-col gap-2 min-w-0", className)}>
+    <Card className={cn("flex min-w-0 flex-col gap-2", className)}>
       <span className="metric-label flex items-center gap-1">
         {label}
         {tooltip && <Tooltip content={tooltip} />}

@@ -8,32 +8,27 @@ interface IncomeMilestonesTableProps {
   timeline: YearlyIncome[];
 }
 
-export function IncomeMilestonesTable({
-  timeline,
-}: IncomeMilestonesTableProps) {
+export function IncomeMilestonesTable({ timeline }: IncomeMilestonesTableProps) {
   const colWidth = 66;
 
   return (
     <div className="flex text-body-sm">
       {/* Fixed row labels */}
-      <div className="flex-shrink-0 w-[80px] flex flex-col border-r border-border">
-        <div className="h-8 flex items-center text-text-tertiary text-data-xs font-medium px-1">
+      <div className="flex w-[80px] flex-shrink-0 flex-col border-r border-border">
+        <div className="flex h-8 items-center px-1 text-data-xs font-medium text-text-tertiary">
           Year
         </div>
-        <div className="h-8 flex items-center text-text-tertiary text-data-xs font-medium px-1">
+        <div className="flex h-8 items-center px-1 text-data-xs font-medium text-text-tertiary">
           Income
         </div>
-        <div className="h-8 flex items-center text-text-tertiary text-data-xs font-medium px-1">
+        <div className="flex h-8 items-center px-1 text-data-xs font-medium text-text-tertiary">
           Notes
         </div>
       </div>
 
       {/* Scrollable columns */}
-      <div className="overflow-x-auto flex-1">
-        <div
-          className="flex"
-          style={{ width: `${timeline.length * colWidth}px` }}
-        >
+      <div className="flex-1 overflow-x-auto">
+        <div className="flex" style={{ width: `${timeline.length * colWidth}px` }}>
           {timeline.map((yi) => (
             <div
               key={yi.year}
@@ -42,7 +37,7 @@ export function IncomeMilestonesTable({
             >
               {/* Year */}
               <div
-                className="h-8 flex items-center justify-center text-data-xs text-text-secondary"
+                className="flex h-8 items-center justify-center text-data-xs text-text-secondary"
                 style={dataFontStyle}
               >
                 {yi.year}
@@ -50,14 +45,17 @@ export function IncomeMilestonesTable({
 
               {/* Income */}
               <div
-                className="h-8 flex items-center justify-center text-data-xs text-text-primary px-0.5"
+                className="flex h-8 items-center justify-center px-0.5 text-data-xs text-text-primary"
                 style={dataFontStyle}
               >
                 {formatCompactCurrency(yi.gross_income)}
               </div>
 
               {/* Notes */}
-              <div className="h-8 flex items-center justify-center text-center text-[11px] text-text-tertiary px-0.5" title={yi.notes || undefined}>
+              <div
+                className="flex h-8 items-center justify-center px-0.5 text-center text-[11px] text-text-tertiary"
+                title={yi.notes || undefined}
+              >
                 {yi.notes || "-"}
               </div>
             </div>

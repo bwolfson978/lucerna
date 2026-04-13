@@ -3,13 +3,9 @@ import type {
   OptimizationResult,
   ConversionCurvePoint,
   BracketFillResult,
-  FilingStatus,
   YearlyDetail,
 } from "@/lib/types";
-import {
-  analyzeBracketFill,
-  calculateFederalTax,
-} from "@/lib/tax/brackets";
+import { analyzeBracketFill, calculateFederalTax } from "@/lib/tax/brackets";
 import { useTaxConfig } from "@/lib/tax/TaxConfigProvider";
 import { computeSnapThreshold } from "@/lib/utils/snap";
 
@@ -57,10 +53,7 @@ export function distributeConversion(
 
   // When at the optimizer's optimal total, use the authoritative result
   // directly — it comes from the 2D DP and has no interpolation artifacts.
-  if (
-    optimizerTotal !== undefined &&
-    Math.abs(totalConversion - optimizerTotal) < 1
-  ) {
+  if (optimizerTotal !== undefined && Math.abs(totalConversion - optimizerTotal) < 1) {
     return optimizerWeights.map((w) => Math.max(0, w));
   }
 
@@ -113,9 +106,7 @@ interface UseConversionSliderParams {
 }
 
 export function useConversionSlider({ result }: UseConversionSliderParams) {
-  const [totalConversion, setTotalConversion] = useState(
-    result.total_conversion
-  );
+  const [totalConversion, setTotalConversion] = useState(result.total_conversion);
 
   const taxConfig = useTaxConfig();
   const filingStatus = result.input.filing_status;
@@ -143,7 +134,13 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
         result.input.traditional_ira_balance,
         result.total_conversion
       ),
-    [totalConversion, result.yearly_conversions, sortedCurve, result.input.traditional_ira_balance, result.total_conversion]
+    [
+      totalConversion,
+      result.yearly_conversions,
+      sortedCurve,
+      result.input.traditional_ira_balance,
+      result.total_conversion,
+    ]
   );
 
   const yearlyBracketFills: BracketFillResult[][] = useMemo(
@@ -164,11 +161,7 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
         // Find marginal bracket rate from the bracket fill data
         const fills = yearlyBracketFills[i];
         const topFilled = fills
-          ? [...fills]
-              .reverse()
-              .find(
-                (f) => f.filled_by_income + f.filled_by_conversion > 0
-              )
+          ? [...fills].reverse().find((f) => f.filled_by_income + f.filled_by_conversion > 0)
           : null;
         const marginalRate = topFilled ? topFilled.bracket_rate : 0.1;
 
@@ -180,7 +173,14 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
           marginal_bracket: marginalRate,
         };
       }),
-    [incomes, yearlyConversions, yearlyBracketFills, filingStatus, taxConfig, result.input.income_timeline]
+    [
+      incomes,
+      yearlyConversions,
+      yearlyBracketFills,
+      filingStatus,
+      taxConfig,
+      result.input.income_timeline,
+    ]
   );
 
   const displayTotalConversion = yearlyConversions.reduce((a, b) => a + b, 0);
@@ -192,7 +192,10 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
   // so hero metric and scenario cards always agree.
   const estimatedSavings = useMemo(() => {
     // Snap to backend value when at (or very near) the optimizer's answer
-    const snapThreshold = computeSnapThreshold(0, Math.max(result.input.traditional_ira_balance, result.total_conversion));
+    const snapThreshold = computeSnapThreshold(
+      0,
+      Math.max(result.input.traditional_ira_balance, result.total_conversion)
+    );
     if (Math.abs(totalConversion - result.total_conversion) <= snapThreshold) {
       return result.estimated_lifetime_tax_savings;
     }
@@ -217,10 +220,7 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
         sortedCurve[i + 1].total_cap >= totalConversion
       ) {
         const range = sortedCurve[i + 1].total_cap - sortedCurve[i].total_cap;
-        const t =
-          range > 0
-            ? (totalConversion - sortedCurve[i].total_cap) / range
-            : 0;
+        const t = range > 0 ? (totalConversion - sortedCurve[i].total_cap) / range : 0;
         const interpolatedNpv =
           sortedCurve[i].npv + t * (sortedCurve[i + 1].npv - sortedCurve[i].npv);
         return interpolatedNpv - npvAtZero;

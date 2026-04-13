@@ -2,13 +2,13 @@
 
 import pytest
 
-from app.engine.types import FilingStatus, HealthcareInput
 from app.engine.tax_cost import (
+    combined_marginal_rate,
     federal_tax_on_conversion,
     state_tax_on_conversion,
     total_conversion_cost,
-    combined_marginal_rate,
 )
+from app.engine.types import FilingStatus, HealthcareInput
 
 
 class TestFederalTaxOnConversion:
@@ -29,9 +29,8 @@ class TestFederalTaxOnConversion:
         conversion = 20_000
         fs = FilingStatus.SINGLE
 
-        expected = (
-            calculate_federal_tax(income + conversion, fs)
-            - calculate_federal_tax(income, fs)
+        expected = calculate_federal_tax(income + conversion, fs) - calculate_federal_tax(
+            income, fs
         )
         assert federal_tax_on_conversion(income, conversion, fs) == pytest.approx(expected)
 
@@ -56,7 +55,11 @@ class TestStateTaxOnConversion:
 
     def test_custom_rate(self):
         cost = state_tax_on_conversion(
-            50_000, 10_000, "custom", FilingStatus.SINGLE, custom_state_rate=0.05,
+            50_000,
+            10_000,
+            "custom",
+            FilingStatus.SINGLE,
+            custom_state_rate=0.05,
         )
         assert cost > 0
 
@@ -75,7 +78,10 @@ class TestTotalConversionCost:
 
     def test_federal_plus_state(self):
         cost = total_conversion_cost(
-            80_000, 20_000, FilingStatus.SINGLE, state="CA",
+            80_000,
+            20_000,
+            FilingStatus.SINGLE,
+            state="CA",
         )
         fed = federal_tax_on_conversion(80_000, 20_000, FilingStatus.SINGLE)
         assert cost > fed  # State adds cost
@@ -83,11 +89,16 @@ class TestTotalConversionCost:
     def test_with_aca(self):
         hc = HealthcareInput(household_size=1, monthly_slcsp_premium=620)
         cost_with_aca = total_conversion_cost(
-            30_000, 10_000, FilingStatus.SINGLE,
-            healthcare=hc, is_aca_year=True,
+            30_000,
+            10_000,
+            FilingStatus.SINGLE,
+            healthcare=hc,
+            is_aca_year=True,
         )
         cost_without_aca = total_conversion_cost(
-            30_000, 10_000, FilingStatus.SINGLE,
+            30_000,
+            10_000,
+            FilingStatus.SINGLE,
         )
         # ACA subsidy loss should increase the cost
         assert cost_with_aca >= cost_without_aca
@@ -95,11 +106,16 @@ class TestTotalConversionCost:
     def test_aca_not_applied_when_not_aca_year(self):
         hc = HealthcareInput(household_size=1, monthly_slcsp_premium=620)
         cost = total_conversion_cost(
-            30_000, 10_000, FilingStatus.SINGLE,
-            healthcare=hc, is_aca_year=False,
+            30_000,
+            10_000,
+            FilingStatus.SINGLE,
+            healthcare=hc,
+            is_aca_year=False,
         )
         cost_no_hc = total_conversion_cost(
-            30_000, 10_000, FilingStatus.SINGLE,
+            30_000,
+            10_000,
+            FilingStatus.SINGLE,
         )
         assert cost == pytest.approx(cost_no_hc)
 
@@ -117,6 +133,9 @@ class TestCombinedMarginalRate:
     def test_with_state_adds_to_rate(self):
         fed_rate = combined_marginal_rate(80_000, 20_000, FilingStatus.SINGLE)
         combined = combined_marginal_rate(
-            80_000, 20_000, FilingStatus.SINGLE, state="CA",
+            80_000,
+            20_000,
+            FilingStatus.SINGLE,
+            state="CA",
         )
         assert combined > fed_rate

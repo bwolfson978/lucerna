@@ -23,18 +23,11 @@ export function MethodologySection({
   className,
 }: MethodologySectionProps) {
   return (
-    <section
-      id={id}
-      className={cn("scroll-mt-20", className)}
-    >
+    <section id={id} className={cn("scroll-mt-20", className)}>
       <div className="flex flex-col gap-comfortable">
         <div className="flex flex-col gap-tight">
-          <span className="text-caption text-accent font-semibold font-ui">
-            {number}
-          </span>
-          <h2 className="text-display md:text-display text-text-primary font-serif">
-            {title}
-          </h2>
+          <span className="font-ui text-caption font-semibold text-accent">{number}</span>
+          <h2 className="font-serif text-display text-text-primary md:text-display">{title}</h2>
         </div>
         <div className="card">
           <div className="flex flex-col gap-section">{children}</div>

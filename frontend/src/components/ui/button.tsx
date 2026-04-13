@@ -11,14 +11,12 @@ const buttonVariants = cva(
       variant: {
         default:
           "btn-gradient-primary text-bg active:scale-[0.98]  hover:shadow-[0_8px_30px_rgba(240,198,116,0.25)]",
-        secondary:
-          "btn-gradient-secondary text-purple border border-purple/30 ",
+        secondary: "btn-gradient-secondary text-purple border border-purple/30 ",
         outline:
           "bg-transparent border border-[rgba(255,255,255,0.15)] text-text-primary hover:border-[rgba(255,255,255,0.25)] ",
         ghost:
           "bg-transparent text-text-primary border border-[rgba(255,255,255,0.12)] hover:border-[rgba(255,255,255,0.25)] ",
-        destructive:
-          "bg-negative text-white hover:bg-negative/90 active:scale-[0.98]",
+        destructive: "bg-negative text-white hover:bg-negative/90 active:scale-[0.98]",
         link: "text-accent underline-offset-4 hover:underline",
       },
       size: {
@@ -36,8 +34,7 @@ const buttonVariants = cva(
 );
 
 interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   loading?: boolean;
 }
 
@@ -51,11 +48,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {loading && (
-          <svg
-            className="animate-spin -ml-1 mr-2 h-4 w-4"
-            viewBox="0 0 24 24"
-            fill="none"
-          >
+          <svg className="-ml-1 mr-2 h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
             <circle
               className="opacity-25"
               cx="12"

@@ -33,7 +33,7 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
           </div>
         )}
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-body select-none pointer-events-none">
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 select-none text-body text-text-tertiary">
             $
           </span>
           <NumericFormat
@@ -55,14 +55,14 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
               onChange(values.floatValue ?? 0);
             }}
             className={cn(
-              "h-9 min-h-[44px] px-3 w-full",
+              "h-9 min-h-[44px] w-full px-3",
               "rounded-lg bg-bg-alt",
               "border border-border",
               "text-body text-text-primary",
               "placeholder:text-text-tertiary",
-              "focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10",
+              "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/10",
               "transition-all duration-300",
-              "disabled:opacity-50 disabled:cursor-not-allowed",
+              "disabled:cursor-not-allowed disabled:opacity-50",
               "font-mono",
               "pl-7",
               error && "border-negative",
@@ -70,12 +70,8 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
             )}
           />
         </div>
-        {error && (
-          <span className="text-caption text-negative">{error}</span>
-        )}
-        {helper && !error && (
-          <span className="text-caption text-text-tertiary">{helper}</span>
-        )}
+        {error && <span className="text-caption text-negative">{error}</span>}
+        {helper && !error && <span className="text-caption text-text-tertiary">{helper}</span>}
       </div>
     );
   }

@@ -8,11 +8,12 @@ Source: IRS Revenue Procedure 2025-32 (2026 tax year)
 """
 
 import json
-import numpy as np
 from pathlib import Path
 
-from app.engine.types import FilingStatus, BracketFillResult
-from app.engine.constants import NUMERIC_INFINITY, DISPLAY_BRACKET_CAP
+import numpy as np
+
+from app.engine.constants import DISPLAY_BRACKET_CAP, NUMERIC_INFINITY
+from app.engine.types import BracketFillResult, FilingStatus
 
 __all__ = [
     "BRACKETS",
@@ -40,20 +41,20 @@ def _load_federal_data() -> dict:
     """Load federal bracket data from the tax brackets JSON file."""
     data_file = _DATA_DIR / "tax_brackets_2026.json"
     try:
-        with open(data_file, "r") as f:
+        with open(data_file) as f:
             data = json.load(f)
-    except FileNotFoundError:
+    except FileNotFoundError as err:
         raise RuntimeError(
             f"Tax data file not found at {data_file}. "
             f"Ensure backend/data/tax_brackets_2026.json exists."
-        )
-    except json.JSONDecodeError as e:
-        raise RuntimeError(f"Tax data file is malformed: {e}")
+        ) from err
+    except json.JSONDecodeError as err:
+        raise RuntimeError(f"Tax data file is malformed: {err}") from err
 
     federal = data["federal"]
 
     # Convert "inf" strings to float("inf") in bracket max values
-    for filing_status, bracket_list in federal["brackets"].items():
+    for _filing_status, bracket_list in federal["brackets"].items():
         for bracket in bracket_list:
             if bracket["max"] == "inf":
                 bracket["max"] = float("inf")
@@ -176,18 +177,24 @@ def analyze_bracket_fill(
         remaining = max(0, capacity - total_filled)
         tax_in_bracket = total_filled * bracket["rate"]
 
-        display_max = bracket["max"] if bracket["max"] != float("inf") else bracket["min"] + DISPLAY_BRACKET_CAP
+        display_max = (
+            bracket["max"]
+            if bracket["max"] != float("inf")
+            else bracket["min"] + DISPLAY_BRACKET_CAP
+        )
 
-        results.append(BracketFillResult(
-            bracket_rate=bracket["rate"],
-            bracket_min=bracket["min"],
-            bracket_max=display_max,
-            bracket_capacity=capacity,
-            filled_by_income=filled_by_income,
-            filled_by_conversion=filled_by_conversion,
-            remaining_capacity=remaining,
-            tax_in_bracket=tax_in_bracket,
-        ))
+        results.append(
+            BracketFillResult(
+                bracket_rate=bracket["rate"],
+                bracket_min=bracket["min"],
+                bracket_max=display_max,
+                bracket_capacity=capacity,
+                filled_by_income=filled_by_income,
+                filled_by_conversion=filled_by_conversion,
+                remaining_capacity=remaining,
+                tax_in_bracket=tax_in_bracket,
+            )
+        )
 
         if total_taxable <= bracket["max"]:
             break

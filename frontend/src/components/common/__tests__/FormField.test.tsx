@@ -14,9 +14,7 @@ describe("FormField", () => {
   });
 
   it("renders tooltip icon when tooltip prop is provided", () => {
-    renderWithProviders(
-      <FormField label="Discount rate" tooltip="Explanation text" />
-    );
+    renderWithProviders(<FormField label="Discount rate" tooltip="Explanation text" />);
     expect(screen.getByLabelText("More info")).toBeInTheDocument();
   });
 
@@ -26,9 +24,7 @@ describe("FormField", () => {
   });
 
   it("renders helper text below input", () => {
-    renderWithProviders(
-      <FormField label="Growth" helper="Annual growth assumption" />
-    );
+    renderWithProviders(<FormField label="Growth" helper="Annual growth assumption" />);
     expect(screen.getByText("Annual growth assumption")).toBeInTheDocument();
   });
 
@@ -46,9 +42,7 @@ describe("FormField", () => {
   });
 
   it("shows error instead of helper when error is present", () => {
-    renderWithProviders(
-      <FormField label="Balance" helper="Include rollovers" error="Required" />
-    );
+    renderWithProviders(<FormField label="Balance" helper="Include rollovers" error="Required" />);
     expect(screen.getByText("Required")).toBeInTheDocument();
     expect(screen.queryByText("Include rollovers")).not.toBeInTheDocument();
   });

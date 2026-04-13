@@ -14,14 +14,14 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         type={type}
         inputMode={numeric ? "decimal" : undefined}
         className={cn(
-          "h-9 min-h-[44px] px-3 w-full",
+          "h-9 min-h-[44px] w-full px-3",
           "rounded-lg bg-bg-alt",
           "border border-border",
           "text-body text-text-primary",
           "placeholder:text-text-tertiary",
-          "focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/10",
+          "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/10",
           "transition-all duration-300",
-          "disabled:opacity-50 disabled:cursor-not-allowed",
+          "disabled:cursor-not-allowed disabled:opacity-50",
           numeric && "font-mono",
           className
         )}

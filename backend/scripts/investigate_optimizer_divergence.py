@@ -18,6 +18,7 @@ import sys
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -26,12 +27,12 @@ import numpy as np
 # Ensure backend is on the path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.engine.types import ScenarioInput, YearlyIncome, FilingStatus
-from app.engine.tax import BRACKETS, STANDARD_DEDUCTION
+from app.engine.demo import DEMO_SCENARIO
+from app.engine.dp import dp_optimize, extract_conversion_curve_3d
 from app.engine.heuristic import greedy_bracket_fill
 from app.engine.optimizer import calculate_npv
-from app.engine.dp import extract_conversion_curve_3d, dp_optimize
-from app.engine.demo import DEMO_SCENARIO
+from app.engine.tax import BRACKETS, STANDARD_DEDUCTION
+from app.engine.types import FilingStatus, ScenarioInput, YearlyIncome
 
 OUTPUT_DIR = Path(__file__).resolve().parent / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
@@ -143,6 +144,7 @@ SCENARIOS["Valley Year"] = ScenarioInput(
 # Global bracket-fill algorithm (the proposed slider alternative)
 # ---------------------------------------------------------------------------
 
+
 def global_bracket_fill(scenario: ScenarioInput, target_total: float) -> list[float]:
     """Fill the cheapest available bracket slots globally across all years.
 
@@ -188,11 +190,13 @@ def global_bracket_fill(scenario: ScenarioInput, target_total: float) -> list[fl
             if room <= 0:
                 continue
 
-            slots.append({
-                "rate": rate,
-                "year": t,
-                "room": room,
-            })
+            slots.append(
+                {
+                    "rate": rate,
+                    "year": t,
+                    "room": room,
+                }
+            )
 
     # Sort by bracket rate (cheapest first), then by year (earlier first)
     slots.sort(key=lambda s: (s["rate"], s["year"]))
@@ -292,11 +296,12 @@ def find_nearest_curve_point(curve, target_total):
 # Analysis
 # ---------------------------------------------------------------------------
 
+
 def analyze_scenario(name: str, scenario: ScenarioInput, n_points: int = 50):
     """Run comparison for a single scenario. Returns analysis dict."""
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"  Scenario: {name}")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     n_years = len(scenario.income_timeline)
 
@@ -307,14 +312,14 @@ def analyze_scenario(name: str, scenario: ScenarioInput, n_points: int = 50):
     # Get bracket-fill at greedy total (to show the full allocation)
     bf_at_greedy = global_bracket_fill(scenario, greedy_total)
     print(f"  Greedy total: ${greedy_total:,.0f}")
-    print(f"  Greedy per-year:       {['${:,.0f}'.format(c) for c in greedy]}")
-    print(f"  Bracket-fill per-year: {['${:,.0f}'.format(c) for c in bf_at_greedy]}")
+    print(f"  Greedy per-year:       {[f'${c:,.0f}' for c in greedy]}")
+    print(f"  Bracket-fill per-year: {[f'${c:,.0f}' for c in bf_at_greedy]}")
 
     # Get DP optimal
     dp_result = dp_optimize(scenario)
     dp_optimal_total = dp_result.total_conversion
     print(f"  DP optimal total: ${dp_optimal_total:,.0f}")
-    print(f"  DP per-year:           {['${:,.0f}'.format(c) for c in dp_result.yearly_conversions]}")
+    print(f"  DP per-year:           {[f'${c:,.0f}' for c in dp_result.yearly_conversions]}")
 
     # NPV at zero conversion
     npv_zero = calculate_npv(scenario, [0.0] * n_years)
@@ -342,14 +347,16 @@ def analyze_scenario(name: str, scenario: ScenarioInput, n_points: int = 50):
         dp_alloc = nearest.yearly_conversions if nearest else [0.0] * n_years
         npv_dp = calculate_npv(scenario, dp_alloc)
 
-        results.append({
-            "target_total": target,
-            "npv_bf": npv_bf,
-            "npv_dp": npv_dp,
-            "npv_diff": npv_dp - npv_bf,
-            "bf_alloc": bf_alloc,
-            "dp_alloc": dp_alloc,
-        })
+        results.append(
+            {
+                "target_total": target,
+                "npv_bf": npv_bf,
+                "npv_dp": npv_dp,
+                "npv_diff": npv_dp - npv_bf,
+                "bf_alloc": bf_alloc,
+                "dp_alloc": dp_alloc,
+            }
+        )
 
     # Print summary table
     max_savings = max(r["npv_dp"] for r in results) - npv_zero
@@ -362,13 +369,15 @@ def analyze_scenario(name: str, scenario: ScenarioInput, n_points: int = 50):
     print()
 
     # Print at key absolute totals
-    key_targets = [t for t in [10000, 25000, 50000, 75000, 100000, 150000, 200000] if t <= curve_max]
+    key_targets = [
+        t for t in [10000, 25000, 50000, 75000, 100000, 150000, 200000] if t <= curve_max
+    ]
     if dp_optimal_total > 0:
         key_targets.append(dp_optimal_total)
     key_targets = sorted(set(key_targets))
 
     print(f"  {'Target':>12} {'NPV(BrFill)':>14} {'NPV(DP)':>14} {'Diff($)':>10} {'Diff(%)':>10}")
-    print(f"  {'-'*12} {'-'*14} {'-'*14} {'-'*10} {'-'*10}")
+    print(f"  {'-' * 12} {'-' * 14} {'-' * 14} {'-' * 10} {'-' * 10}")
 
     for target in key_targets:
         closest = min(results, key=lambda r: abs(r["target_total"] - target))
@@ -385,13 +394,15 @@ def analyze_scenario(name: str, scenario: ScenarioInput, n_points: int = 50):
     # Find worst divergence
     worst = max(results, key=lambda r: abs(r["npv_diff"]))
     worst_pct = (worst["npv_diff"] / max_savings * 100) if max_savings > 0 else 0
-    print(f"\n  Worst divergence: ${worst['npv_diff']:,.0f} ({worst_pct:.2f}% of max savings) at ${worst['target_total']:,.0f}")
+    print(
+        f"\n  Worst divergence: ${worst['npv_diff']:,.0f} ({worst_pct:.2f}% of max savings) at ${worst['target_total']:,.0f}"
+    )
 
     if abs(worst["npv_diff"]) > 1:
         n_show = min(n_years, 10)
         suffix = f" ... +{n_years - n_show} more" if n_years > n_show else ""
-        print(f"    BrFill alloc: {['${:,.0f}'.format(c) for c in worst['bf_alloc'][:n_show]]}{suffix}")
-        print(f"    DP alloc:     {['${:,.0f}'.format(c) for c in worst['dp_alloc'][:n_show]]}{suffix}")
+        print(f"    BrFill alloc: {[f'${c:,.0f}' for c in worst['bf_alloc'][:n_show]]}{suffix}")
+        print(f"    DP alloc:     {[f'${c:,.0f}' for c in worst['dp_alloc'][:n_show]]}{suffix}")
 
     return {
         "name": name,
@@ -408,6 +419,7 @@ def analyze_scenario(name: str, scenario: ScenarioInput, n_points: int = 50):
 # Charts
 # ---------------------------------------------------------------------------
 
+
 def plot_scenario(analysis: dict, idx: int):
     """Generate Chart A (NPV curves) and Chart B (NPV gap) for a scenario."""
     results = analysis["results"]
@@ -421,13 +433,26 @@ def plot_scenario(analysis: dict, idx: int):
     # Chart A: NPV Curves
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.plot(totals, [v / 1000 for v in npv_dp], "b-", linewidth=2, label="DP-Optimal")
-    ax.plot(totals, [v / 1000 for v in npv_bf], color="orange", linewidth=2, linestyle="--", label="Global Bracket-Fill")
-    ax.axvline(analysis["dp_optimal_total"], color="blue", alpha=0.4, linestyle=":", label=f"DP optimal (${analysis['dp_optimal_total']:,.0f})")
+    ax.plot(
+        totals,
+        [v / 1000 for v in npv_bf],
+        color="orange",
+        linewidth=2,
+        linestyle="--",
+        label="Global Bracket-Fill",
+    )
+    ax.axvline(
+        analysis["dp_optimal_total"],
+        color="blue",
+        alpha=0.4,
+        linestyle=":",
+        label=f"DP optimal (${analysis['dp_optimal_total']:,.0f})",
+    )
     ax.set_xlabel("Total Conversion Amount ($)")
     ax.set_ylabel("NPV ($K)")
     ax.set_title(f"{name}: NPV by Strategy")
     ax.legend(loc="best", fontsize=9)
-    ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f"${x/1000:.0f}K"))
+    ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f"${x / 1000:.0f}K"))
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     fig.savefig(OUTPUT_DIR / f"{idx:02d}_npv_curves_{_safe_name(name)}.png", dpi=150)
@@ -438,12 +463,14 @@ def plot_scenario(analysis: dict, idx: int):
     ax.plot(totals, npv_diff, "r-", linewidth=2)
     ax.fill_between(totals, 0, npv_diff, alpha=0.2, color="red")
     ax.axhline(0, color="gray", linewidth=0.5)
-    ax.axvline(analysis["dp_optimal_total"], color="blue", alpha=0.4, linestyle=":", label=f"DP optimal")
+    ax.axvline(
+        analysis["dp_optimal_total"], color="blue", alpha=0.4, linestyle=":", label="DP optimal"
+    )
     ax.set_xlabel("Total Conversion Amount ($)")
     ax.set_ylabel("NPV Gap: DP minus Bracket-Fill ($)")
     ax.set_title(f"{name}: NPV Advantage of DP over Global Bracket-Fill")
     ax.legend(loc="best", fontsize=9)
-    ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f"${x/1000:.0f}K"))
+    ax.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f"${x / 1000:.0f}K"))
     ax.grid(True, alpha=0.3)
     plt.tight_layout()
     fig.savefig(OUTPUT_DIR / f"{idx:02d}_npv_gap_{_safe_name(name)}.png", dpi=150)
@@ -470,7 +497,7 @@ def plot_combined(all_analyses: list[dict]):
     ax1.set_ylabel("NPV Gap: DP minus Bracket-Fill ($)")
     ax1.set_title("DP Advantage Over Global Bracket-Fill — Absolute $ Gap")
     ax1.legend(loc="best", fontsize=9)
-    ax1.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f"${x/1000:.0f}K"))
+    ax1.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f"${x / 1000:.0f}K"))
     ax1.grid(True, alpha=0.3)
 
     for i, analysis in enumerate(meaningful):
@@ -485,7 +512,7 @@ def plot_combined(all_analyses: list[dict]):
     ax2.set_ylabel("NPV Gap as % of Max Savings")
     ax2.set_title("DP Advantage Over Global Bracket-Fill — % of Max Savings")
     ax2.legend(loc="best", fontsize=9)
-    ax2.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f"${x/1000:.0f}K"))
+    ax2.xaxis.set_major_formatter(ticker.FuncFormatter(lambda x, _: f"${x / 1000:.0f}K"))
     ax2.grid(True, alpha=0.3)
 
     plt.tight_layout()
@@ -520,15 +547,29 @@ def plot_allocation_comparison(all_analyses: list[dict]):
 
         x = np.arange(max_show)
         width = 0.35
-        ax.bar(x - width/2, [g/1000 for g in bf_alloc[:max_show]], width,
-               label="Global Bracket-Fill", color="orange", alpha=0.8)
-        ax.bar(x + width/2, [d/1000 for d in dp_alloc[:max_show]], width,
-               label="DP-Optimal", color="blue", alpha=0.8)
+        ax.bar(
+            x - width / 2,
+            [g / 1000 for g in bf_alloc[:max_show]],
+            width,
+            label="Global Bracket-Fill",
+            color="orange",
+            alpha=0.8,
+        )
+        ax.bar(
+            x + width / 2,
+            [d / 1000 for d in dp_alloc[:max_show]],
+            width,
+            label="DP-Optimal",
+            color="blue",
+            alpha=0.8,
+        )
         ax.set_ylabel("Conversion ($K)")
-        ax.set_title(f"{analysis['name']}: Allocation at ${worst['target_total']:,.0f} "
-                     f"(gap: ${worst['npv_diff']:,.0f})")
+        ax.set_title(
+            f"{analysis['name']}: Allocation at ${worst['target_total']:,.0f} "
+            f"(gap: ${worst['npv_diff']:,.0f})"
+        )
         ax.set_xticks(x)
-        ax.set_xticklabels([f"Yr {j+1}" for j in range(max_show)], fontsize=8)
+        ax.set_xticklabels([f"Yr {j + 1}" for j in range(max_show)], fontsize=8)
         ax.legend(fontsize=9)
         ax.grid(True, alpha=0.3, axis="y")
 
@@ -544,6 +585,7 @@ def _safe_name(name: str) -> str:
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def main():
     print("=" * 70)
@@ -565,7 +607,7 @@ def main():
     print("  OVERALL SUMMARY")
     print("=" * 70)
     print(f"\n  {'Scenario':<25} {'Max Gap ($)':>12} {'Max Gap (%)':>12} {'Avg |Gap| ($)':>14}")
-    print(f"  {'-'*25} {'-'*12} {'-'*12} {'-'*14}")
+    print(f"  {'-' * 25} {'-' * 12} {'-' * 12} {'-' * 14}")
 
     for analysis in all_analyses:
         results = analysis["results"]

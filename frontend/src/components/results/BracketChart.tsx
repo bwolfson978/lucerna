@@ -29,7 +29,12 @@ interface BracketChartProps {
   filingStatus: "single" | "married_filing_jointly";
   scrollRef?: RefObject<HTMLDivElement | null>;
   onBarWidthChange?: (barWidth: number) => void;
-  onLayoutChange?: (layout: { leftOffset: number; rightOffset: number; verticalLabelWidth: number; axisLabelStart: number }) => void;
+  onLayoutChange?: (layout: {
+    leftOffset: number;
+    rightOffset: number;
+    verticalLabelWidth: number;
+    axisLabelStart: number;
+  }) => void;
   /** Content rendered below the chart SVG inside the shared scroll container */
   children?: React.ReactNode;
   /** Content rendered below the left axis (fixed, for row labels) */
@@ -77,7 +82,16 @@ function niceInterval(range: number, targetTicks: number): number {
   return nice * magnitude;
 }
 
-export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef, onBarWidthChange, onLayoutChange, children, leftBottomContent, hideLegend }: BracketChartProps) {
+export function BracketChart({
+  years,
+  filingStatus,
+  scrollRef: externalScrollRef,
+  onBarWidthChange,
+  onLayoutChange,
+  children,
+  leftBottomContent,
+  hideLegend,
+}: BracketChartProps) {
   const internalScrollRef = useRef<HTMLDivElement>(null);
   const scrollRef = externalScrollRef || internalScrollRef;
   const fadeRef = useRef<HTMLDivElement>(null);
@@ -145,14 +159,21 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
       }
     }
 
-    const totalBarWidth = years.length > 0
-      ? years.length * (barWidth + BAR_GAP) - BAR_GAP
-      : 0;
+    const totalBarWidth = years.length > 0 ? years.length * (barWidth + BAR_GAP) - BAR_GAP : 0;
 
-    return { isMobile, chartHeight, leftAxisWidth, rightAxisWidth, barWidth, totalBarWidth, barsFit };
+    return {
+      isMobile,
+      chartHeight,
+      leftAxisWidth,
+      rightAxisWidth,
+      barWidth,
+      totalBarWidth,
+      barsFit,
+    };
   }, [containerWidth, viewportHeight, years.length]);
 
-  const { isMobile, chartHeight, leftAxisWidth, rightAxisWidth, barWidth, totalBarWidth, barsFit } = layout;
+  const { isMobile, chartHeight, leftAxisWidth, rightAxisWidth, barWidth, totalBarWidth, barsFit } =
+    layout;
 
   // Notify parent of bar slot width for table column alignment
   useEffect(() => {
@@ -173,19 +194,22 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
   }, [onLayoutChange, verticalLabelWidth, leftAxisWidth, rightAxisWidth]);
 
   // Tooltip handler: only show if chart is already engaged
-  const handleBarInteraction = useCallback((e: React.MouseEvent | React.PointerEvent, yearData: YearData) => {
-    if (!isEngaged) return;
-    const container = containerRef.current;
-    if (!container) return;
-    const rect = container.getBoundingClientRect();
-    setTooltip({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-      year: yearData.year,
-      age: yearData.age,
-      bracketFill: yearData.bracketFill,
-    });
-  }, [isEngaged]);
+  const handleBarInteraction = useCallback(
+    (e: React.MouseEvent | React.PointerEvent, yearData: YearData) => {
+      if (!isEngaged) return;
+      const container = containerRef.current;
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      setTooltip({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top,
+        year: yearData.year,
+        age: yearData.age,
+        bracketFill: yearData.bracketFill,
+      });
+    },
+    [isEngaged]
+  );
 
   const handleBarLeave = useCallback(() => setTooltip(null), []);
 
@@ -213,9 +237,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
   const maxBracket = useMemo(() => {
     const idx = brackets.findIndex((b) => b.rate >= maxFilledBracketRate);
     // If rate not found (-1), show the highest bracket; otherwise show one above
-    const showIdx = idx === -1
-      ? brackets.length - 1
-      : Math.min(idx + 1, brackets.length - 1);
+    const showIdx = idx === -1 ? brackets.length - 1 : Math.min(idx + 1, brackets.length - 1);
     return brackets[showIdx];
   }, [brackets, maxFilledBracketRate]);
 
@@ -250,15 +272,18 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
       {!hideLegend && (
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-body-sm text-text-secondary">
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.income }} />
+            <span className="h-3 w-3 rounded" style={{ backgroundColor: CHART_COLORS.income }} />
             Earned Income
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded" style={{ backgroundColor: CHART_COLORS.conversion }} />
+            <span
+              className="h-3 w-3 rounded"
+              style={{ backgroundColor: CHART_COLORS.conversion }}
+            />
             Roth Conversion
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded bg-bg-hover border border-border" />
+            <span className="h-3 w-3 rounded border border-border bg-bg-hover" />
             Remaining space in tax bracket
           </span>
         </div>
@@ -266,7 +291,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
 
       <div
         ref={containerRef}
-        className="flex relative"
+        className="relative flex"
         onPointerDown={handleChartPointerDown}
         onMouseLeave={() => {
           setIsEngaged(false);
@@ -275,9 +300,12 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
       >
         {/* Left axis label (desktop only) */}
         {!isMobile && (
-          <div className="flex-shrink-0 flex items-center self-start" style={{ width: VERTICAL_LABEL_WIDTH, height: chartHeight }}>
+          <div
+            className="flex flex-shrink-0 items-center self-start"
+            style={{ width: VERTICAL_LABEL_WIDTH, height: chartHeight }}
+          >
             <span
-              className="text-caption text-text-tertiary tracking-wider uppercase"
+              className="text-caption uppercase tracking-wider text-text-tertiary"
               style={{
                 writingMode: "vertical-rl",
                 transform: "rotate(180deg)",
@@ -290,12 +318,8 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
         )}
 
         {/* Fixed left axis: evenly spaced income tick marks + bottom label slot */}
-        <div className="flex-shrink-0 flex flex-col" style={{ width: leftAxisWidth }}>
-          <svg
-            className="overflow-hidden"
-            width={leftAxisWidth}
-            height={chartHeight}
-          >
+        <div className="flex flex-shrink-0 flex-col" style={{ width: leftAxisWidth }}>
+          <svg className="overflow-hidden" width={leftAxisWidth} height={chartHeight}>
             {incomeTicks.map((val) => {
               const y = yScale(val);
               return (
@@ -312,7 +336,7 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
                     x={leftAxisWidth - 6}
                     y={y + 4}
                     textAnchor="end"
-                    className="text-data-xs fill-text-tertiary"
+                    className="fill-text-tertiary text-data-xs"
                     fontFamily={DATA_FONT_FAMILY}
                   >
                     {formatAxisCurrency(val)}
@@ -325,121 +349,123 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
         </div>
 
         {/* Scrollable bar area */}
-        <div ref={fadeRef} className={`flex-1 min-w-0 ${!barsFit ? "scroll-fade mb-2" : ""}`}>
+        <div ref={fadeRef} className={`min-w-0 flex-1 ${!barsFit ? "scroll-fade mb-2" : ""}`}>
           {/* Scroll hint pill — shown until first scroll */}
           {!barsFit && !hasScrolled && (
-            <div className="absolute inset-0 flex items-center justify-end pr-3 pointer-events-none z-10 animate-fade-out-delayed">
-              <div className="flex items-center gap-1 text-data-xs text-accent/70 bg-card/80 backdrop-blur-sm rounded-full px-2.5 py-1">
+            <div className="animate-fade-out-delayed pointer-events-none absolute inset-0 z-10 flex items-center justify-end pr-3">
+              <div className="flex items-center gap-1 rounded-full bg-card/80 px-2.5 py-1 text-data-xs text-accent/70 backdrop-blur-sm">
                 <span>Scroll</span>
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4.5 2.5L8 6L4.5 9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M4.5 2.5L8 6L4.5 9.5"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               </div>
             </div>
           )}
           <div
             ref={scrollRef}
-            className={!barsFit ? "overflow-x-auto bracket-chart-scroll pb-2" : ""}
+            className={!barsFit ? "bracket-chart-scroll overflow-x-auto pb-2" : ""}
           >
             <div style={!barsFit ? { width: Math.max(totalBarWidth, 200) } : undefined}>
-            <svg
-              width="100%"
-              height={chartHeight}
-              className="block"
-            >
-              <defs>
-                <linearGradient id="barFadeGrad" x1="0" y1="1" x2="0" y2="0">
-                  <stop offset="0%" stopColor="white" stopOpacity="0.85" />
-                  <stop offset="70%" stopColor="white" stopOpacity="0.6" />
-                  <stop offset="100%" stopColor="white" stopOpacity="0.3" />
-                </linearGradient>
-                {years.map((yearData, i) => {
-                  const maskX = i * (barWidth + BAR_GAP);
+              <svg width="100%" height={chartHeight} className="block">
+                <defs>
+                  <linearGradient id="barFadeGrad" x1="0" y1="1" x2="0" y2="0">
+                    <stop offset="0%" stopColor="white" stopOpacity="0.85" />
+                    <stop offset="70%" stopColor="white" stopOpacity="0.6" />
+                    <stop offset="100%" stopColor="white" stopOpacity="0.3" />
+                  </linearGradient>
+                  {years.map((yearData, i) => {
+                    const maskX = i * (barWidth + BAR_GAP);
+                    return (
+                      <mask key={`mask-${yearData.year}`} id={`barMask-${i}`}>
+                        <rect
+                          x={maskX}
+                          y={0}
+                          width={barWidth}
+                          height={chartHeight}
+                          fill="url(#barFadeGrad)"
+                        />
+                      </mask>
+                    );
+                  })}
+                </defs>
+                {/* Bracket boundary lines */}
+                {visibleBrackets.map((b) => {
+                  const y = yScale(b.max);
+                  const color = BRACKET_COLORS[b.rate.toFixed(2)] || "#E5E7EB";
                   return (
-                    <mask key={`mask-${yearData.year}`} id={`barMask-${i}`}>
-                      <rect
-                        x={maskX}
-                        y={0}
-                        width={barWidth}
-                        height={chartHeight}
-                        fill="url(#barFadeGrad)"
-                      />
-                    </mask>
+                    <line
+                      key={`line-${b.rate}`}
+                      x1={0}
+                      y1={y}
+                      x2={barsFit ? "100%" : totalBarWidth}
+                      y2={y}
+                      stroke={color}
+                      strokeWidth={1}
+                      strokeDasharray="4 3"
+                      opacity={0.5}
+                    />
                   );
                 })}
-              </defs>
-              {/* Bracket boundary lines */}
-              {visibleBrackets.map((b) => {
-                const y = yScale(b.max);
-                const color =
-                  BRACKET_COLORS[b.rate.toFixed(2)] || "#E5E7EB";
-                return (
-                  <line
-                    key={`line-${b.rate}`}
-                    x1={0}
-                    y1={y}
-                    x2={barsFit ? "100%" : totalBarWidth}
-                    y2={y}
-                    stroke={color}
-                    strokeWidth={1}
-                    strokeDasharray="4 3"
-                    opacity={0.5}
-                  />
-                );
-              })}
 
-              {/* Bars */}
-              {years.map((yearData, i) => {
-                const x = i * (barWidth + BAR_GAP);
-                return (
-                  <BracketBar
-                    key={yearData.year}
-                    x={x}
-                    yearData={yearData}
-                    chartMax={chartMax}
-                    yScale={yScale}
-                    barWidth={barWidth}
-                    chartHeight={chartHeight}
-                    bottomPadding={BOTTOM_PADDING}
-                    onHover={handleBarInteraction}
-                    onLeave={handleBarLeave}
-                    maskIndex={i}
-                  />
-                );
-              })}
+                {/* Bars */}
+                {years.map((yearData, i) => {
+                  const x = i * (barWidth + BAR_GAP);
+                  return (
+                    <BracketBar
+                      key={yearData.year}
+                      x={x}
+                      yearData={yearData}
+                      chartMax={chartMax}
+                      yScale={yScale}
+                      barWidth={barWidth}
+                      chartHeight={chartHeight}
+                      bottomPadding={BOTTOM_PADDING}
+                      onHover={handleBarInteraction}
+                      onLeave={handleBarLeave}
+                      maskIndex={i}
+                    />
+                  );
+                })}
 
-              {/* X axis: year labels */}
-              {years.map((yearData, i) => {
-                const x = i * (barWidth + BAR_GAP) + barWidth / 2;
-                return (
-                  <text
-                    key={`label-${yearData.year}`}
-                    x={x}
-                    y={chartHeight - 6}
-                    textAnchor="middle"
-                    className={`${barWidth < 36 ? "text-[11px]" : "text-data-xs"} fill-text-tertiary`}
-                    fontFamily={DATA_FONT_FAMILY}
-                  >
-                    {yearData.year}
-                  </text>
-                );
-              })}
-            </svg>
-            {children}
+                {/* X axis: year labels */}
+                {years.map((yearData, i) => {
+                  const x = i * (barWidth + BAR_GAP) + barWidth / 2;
+                  return (
+                    <text
+                      key={`label-${yearData.year}`}
+                      x={x}
+                      y={chartHeight - 6}
+                      textAnchor="middle"
+                      className={`${barWidth < 36 ? "text-[11px]" : "text-data-xs"} fill-text-tertiary`}
+                      fontFamily={DATA_FONT_FAMILY}
+                    >
+                      {yearData.year}
+                    </text>
+                  );
+                })}
+              </svg>
+              {children}
             </div>
           </div>
         </div>
 
         {/* Fixed right axis: bracket rates — always visible */}
-        <svg
-          width={rightAxisWidth}
-          height={chartHeight}
-          className="flex-shrink-0 self-start"
-        >
+        <svg width={rightAxisWidth} height={chartHeight} className="flex-shrink-0 self-start">
           {visibleBrackets.map((b) => {
             const y = yScale(b.max);
-            const color =
-              BRACKET_COLORS[b.rate.toFixed(2)] || "#6B7280";
+            const color = BRACKET_COLORS[b.rate.toFixed(2)] || "#6B7280";
             return (
               <text
                 key={b.rate}
@@ -459,9 +485,12 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
 
         {/* Right axis label (desktop only) */}
         {!isMobile && (
-          <div className="flex-shrink-0 flex items-center self-start" style={{ width: VERTICAL_LABEL_WIDTH, height: chartHeight }}>
+          <div
+            className="flex flex-shrink-0 items-center self-start"
+            style={{ width: VERTICAL_LABEL_WIDTH, height: chartHeight }}
+          >
             <span
-              className="text-caption text-text-tertiary tracking-wider uppercase"
+              className="text-caption uppercase tracking-wider text-text-tertiary"
               style={{
                 writingMode: "vertical-rl",
                 fontFamily: "'Inter', system-ui",
@@ -475,14 +504,14 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
         {/* Hover tooltip — only shown when chart is engaged */}
         {tooltip && (
           <div
-            className="absolute z-50 pointer-events-none"
+            className="pointer-events-none absolute z-50"
             style={{
               left: Math.min(tooltip.x + 16, (containerWidth || 400) - 200),
               top: tooltip.y - 8,
             }}
           >
             <div
-              className="rounded-[12px] border border-glass-border px-4 py-3 text-body-sm min-w-[180px]"
+              className="min-w-[180px] rounded-[12px] border border-glass-border px-4 py-3 text-body-sm"
               style={{
                 background: "rgba(26, 24, 50, 0.95)",
                 backdropFilter: "blur(20px)",
@@ -490,33 +519,50 @@ export function BracketChart({ years, filingStatus, scrollRef: externalScrollRef
                 boxShadow: "0 12px 40px rgba(15, 14, 26, 0.5)",
               }}
             >
-              <div className="text-text-primary font-semibold mb-2">
-                {tooltip.year} <span className="text-text-tertiary font-normal">(age {tooltip.age})</span>
+              <div className="mb-2 font-semibold text-text-primary">
+                {tooltip.year}{" "}
+                <span className="font-normal text-text-tertiary">(age {tooltip.age})</span>
               </div>
               {(() => {
-                const totalIncome = tooltip.bracketFill.reduce((s, bf) => s + bf.filled_by_income, 0);
-                const totalConversion = tooltip.bracketFill.reduce((s, bf) => s + bf.filled_by_conversion, 0);
+                const totalIncome = tooltip.bracketFill.reduce(
+                  (s, bf) => s + bf.filled_by_income,
+                  0
+                );
+                const totalConversion = tooltip.bracketFill.reduce(
+                  (s, bf) => s + bf.filled_by_conversion,
+                  0
+                );
                 return (
                   <div className="flex flex-col gap-1.5">
                     {totalIncome > 0 && (
                       <div className="flex items-center justify-between gap-4">
                         <span className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: CHART_COLORS.income }} />
+                          <span
+                            className="h-2 w-2 rounded-sm"
+                            style={{ backgroundColor: CHART_COLORS.income }}
+                          />
                           <span className="text-text-secondary">Earned Income</span>
                         </span>
-                        <span className="text-text-primary font-medium">{formatCurrency(totalIncome)}</span>
+                        <span className="font-medium text-text-primary">
+                          {formatCurrency(totalIncome)}
+                        </span>
                       </div>
                     )}
                     {totalConversion > 0 && (
                       <div className="flex items-center justify-between gap-4">
                         <span className="flex items-center gap-1.5">
-                          <span className="w-2 h-2 rounded-sm" style={{ backgroundColor: CHART_COLORS.conversion }} />
+                          <span
+                            className="h-2 w-2 rounded-sm"
+                            style={{ backgroundColor: CHART_COLORS.conversion }}
+                          />
                           <span className="text-text-secondary">Conversion</span>
                         </span>
-                        <span className="text-text-primary font-medium">{formatCurrency(totalConversion)}</span>
+                        <span className="font-medium text-text-primary">
+                          {formatCurrency(totalConversion)}
+                        </span>
                       </div>
                     )}
-                    <div className="border-t border-glass-border mt-1 pt-1.5 flex justify-between text-text-primary text-caption font-medium">
+                    <div className="mt-1 flex justify-between border-t border-glass-border pt-1.5 text-caption font-medium text-text-primary">
                       <span>Total</span>
                       <span>{formatCurrency(totalIncome + totalConversion)}</span>
                     </div>
@@ -572,13 +618,7 @@ function BracketBar({
       mask={`url(#barMask-${maskIndex})`}
     >
       {/* Invisible hit area for entire column */}
-      <rect
-        x={x}
-        y={0}
-        width={barWidth}
-        height={barBottom}
-        fill="transparent"
-      />
+      <rect x={x} y={0} width={barWidth} height={barBottom} fill="transparent" />
       {yearData.bracketFill.map((bf) => {
         if (bf.bracket_min >= chartMax) return null;
 
@@ -595,9 +635,7 @@ function BracketBar({
 
         // Enforce minimum height for nonzero income
         const incomeHeight =
-          bf.filled_by_income > 0
-            ? Math.max(rawIncomeHeight, MIN_SEGMENT_HEIGHT)
-            : 0;
+          bf.filled_by_income > 0 ? Math.max(rawIncomeHeight, MIN_SEGMENT_HEIGHT) : 0;
         const incomeBottom = rawIncomeBottom;
         const incomeTop = incomeBottom - incomeHeight;
 
@@ -605,9 +643,7 @@ function BracketBar({
         const rawConvHeight = yScale(bf.bracket_min + bf.filled_by_income) - yScale(segmentTop);
 
         const convHeight =
-          bf.filled_by_conversion > 0
-            ? Math.max(rawConvHeight, MIN_SEGMENT_HEIGHT)
-            : 0;
+          bf.filled_by_conversion > 0 ? Math.max(rawConvHeight, MIN_SEGMENT_HEIGHT) : 0;
         const convBottom = incomeTop;
         const convTop = convBottom - convHeight;
 
@@ -655,7 +691,6 @@ function BracketBar({
                 rx={2}
               />
             )}
-
           </g>
         );
       })}

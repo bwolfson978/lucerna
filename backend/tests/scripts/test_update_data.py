@@ -1,22 +1,17 @@
 """Tests for the generalized data update script (scripts/update_data.py)."""
 
 import json
-from pathlib import Path
-
-import pytest
 
 from scripts.update_data import (
     DATA_DIR,
     discover_data_files,
-    validate_metadata,
-    validate_tax_brackets,
-    validate_rmd_tables,
-    validate_file,
-    validate_all,
-    is_stale,
     get_tax_year,
+    is_stale,
+    validate_all,
+    validate_metadata,
+    validate_rmd_tables,
+    validate_tax_brackets,
 )
-
 
 # ── Discovery ──
 
@@ -160,9 +155,7 @@ class TestValidateRmdTables:
     def test_last_rule_not_catchall(self, tmp_path):
         data = {
             "uniform_lifetime_table": {"min_age": 72, "entries": {"72": 27.4}},
-            "start_age_rules": {
-                "rules": [{"born_on_or_before": 1959, "rmd_start_age": 73}]
-            },
+            "start_age_rules": {"rules": [{"born_on_or_before": 1959, "rmd_start_age": 73}]},
         }
         filepath = tmp_path / "rmd_tables.json"
         warnings = validate_rmd_tables(data, filepath)

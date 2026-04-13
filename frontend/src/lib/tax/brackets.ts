@@ -18,9 +18,7 @@ interface Bracket {
 }
 
 // Parse JSON brackets, converting null max to Infinity
-function parseBrackets(
-  raw: { min: number; max: number | null; rate: number }[]
-): Bracket[] {
+function parseBrackets(raw: { min: number; max: number | null; rate: number }[]): Bracket[] {
   return raw.map((b) => ({
     min: b.min,
     max: b.max === null ? Infinity : b.max,
@@ -28,18 +26,12 @@ function parseBrackets(
   }));
 }
 
-function getBrackets(
-  filingStatus: FilingStatus,
-  config?: TaxConfig
-): Bracket[] {
+function getBrackets(filingStatus: FilingStatus, config?: TaxConfig): Bracket[] {
   const c = config ?? getFallbackTaxConfig();
   return parseBrackets(c.brackets[filingStatus]);
 }
 
-function getDeduction(
-  filingStatus: FilingStatus,
-  config?: TaxConfig
-): number {
+function getDeduction(filingStatus: FilingStatus, config?: TaxConfig): number {
   const c = config ?? getFallbackTaxConfig();
   return c.standard_deduction[filingStatus];
 }
@@ -69,8 +61,7 @@ export function calculateFederalTax(
   let tax = 0;
   for (const bracket of brackets) {
     if (taxableIncome <= bracket.min) break;
-    const taxableInBracket =
-      Math.min(taxableIncome, bracket.max) - bracket.min;
+    const taxableInBracket = Math.min(taxableIncome, bracket.max) - bracket.min;
     tax += taxableInBracket * bracket.rate;
   }
 
@@ -90,23 +81,15 @@ export function analyzeBracketFill(
 
   const results: BracketFillResult[] = [];
   for (const bracket of brackets) {
-    const capacity =
-      bracket.max === Infinity ? 500000 : bracket.max - bracket.min;
+    const capacity = bracket.max === Infinity ? 500000 : bracket.max - bracket.min;
 
-    const filledByIncome = Math.max(
-      0,
-      Math.min(baseTaxable, bracket.max) - bracket.min
-    );
-    const totalFilled = Math.max(
-      0,
-      Math.min(totalTaxable, bracket.max) - bracket.min
-    );
+    const filledByIncome = Math.max(0, Math.min(baseTaxable, bracket.max) - bracket.min);
+    const totalFilled = Math.max(0, Math.min(totalTaxable, bracket.max) - bracket.min);
     const filledByConversion = totalFilled - filledByIncome;
     const remaining = Math.max(0, capacity - totalFilled);
     const taxInBracket = totalFilled * bracket.rate;
 
-    const displayMax =
-      bracket.max === Infinity ? bracket.min + 500000 : bracket.max;
+    const displayMax = bracket.max === Infinity ? bracket.min + 500000 : bracket.max;
 
     results.push({
       bracket_rate: bracket.rate,

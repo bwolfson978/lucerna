@@ -37,15 +37,14 @@ def _load_rmd_data() -> tuple[dict[int, float], int, list[dict]]:
     """
     data_file = _DATA_DIR / "rmd_tables.json"
     try:
-        with open(data_file, "r") as f:
+        with open(data_file) as f:
             data = json.load(f)
-    except FileNotFoundError:
+    except FileNotFoundError as err:
         raise RuntimeError(
-            f"RMD data file not found at {data_file}. "
-            f"Ensure backend/data/rmd_tables.json exists."
-        )
-    except json.JSONDecodeError as e:
-        raise RuntimeError(f"RMD data file is malformed: {e}")
+            f"RMD data file not found at {data_file}. Ensure backend/data/rmd_tables.json exists."
+        ) from err
+    except json.JSONDecodeError as err:
+        raise RuntimeError(f"RMD data file is malformed: {err}") from err
 
     ult = data["uniform_lifetime_table"]
     table = {int(age): divisor for age, divisor in ult["entries"].items()}

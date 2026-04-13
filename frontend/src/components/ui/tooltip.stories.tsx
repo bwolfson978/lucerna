@@ -8,7 +8,7 @@ const meta: Meta<typeof Tooltip> = {
   decorators: [
     (Story) => (
       <TooltipProvider delayDuration={0}>
-        <div className="p-16 flex items-center justify-center">
+        <div className="flex items-center justify-center p-16">
           <Story />
         </div>
       </TooltipProvider>
@@ -26,12 +26,13 @@ export const InfoIcon: Story = {
 export const WithChild: Story = {
   args: {
     content: "Click to view detailed bracket breakdown",
-    children: <span className="text-accent underline cursor-pointer">Hover me</span>,
+    children: <span className="cursor-pointer text-accent underline">Hover me</span>,
   },
 };
 
 export const LongContent: Story = {
   args: {
-    content: "This analysis shows the projected impact on your after-tax wealth in today's dollars, accounting for investment growth, tax rates, and the time value of money across your full retirement horizon.",
+    content:
+      "This analysis shows the projected impact on your after-tax wealth in today's dollars, accounting for investment growth, tax rates, and the time value of money across your full retirement horizon.",
   },
 };

@@ -5,16 +5,15 @@ per SECURE 2.0, and basic RMD amount calculations.
 """
 
 import numpy as np
-import pytest
 
 from app.engine.rmd import (
-    rmd_start_age,
-    get_distribution_period,
-    calculate_rmd,
-    vectorized_rmd,
-    UNIFORM_LIFETIME_TABLE,
     _MIN_RMD_AGE,
     _START_AGE_RULES,
+    UNIFORM_LIFETIME_TABLE,
+    calculate_rmd,
+    get_distribution_period,
+    rmd_start_age,
+    vectorized_rmd,
 )
 
 

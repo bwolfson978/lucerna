@@ -191,9 +191,7 @@ describe("InputForm", () => {
     fireEvent.click(form);
 
     // Should show balance error (0 is invalid)
-    expect(
-      screen.getByText("Enter your traditional IRA/401(k) balance")
-    ).toBeInTheDocument();
+    expect(screen.getByText("Enter your traditional IRA/401(k) balance")).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
   });
 

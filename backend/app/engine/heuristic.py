@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import numpy as np
 
-from app.engine.types import ScenarioInput, FilingStatus, ConversionCurvePoint
-from app.engine.tax import BRACKETS, STANDARD_DEDUCTION, get_marginal_rate
-from app.engine.state_tax import get_state_marginal_rate
 from app.engine.constants import RETIREMENT_SPENDING_RATE, round_to_resolution
+from app.engine.state_tax import get_state_marginal_rate
+from app.engine.tax import BRACKETS, STANDARD_DEDUCTION, get_marginal_rate
+from app.engine.types import ConversionCurvePoint, ScenarioInput
 
 
 def _estimate_retirement_rate(scenario: ScenarioInput) -> float:
@@ -21,7 +21,9 @@ def _estimate_retirement_rate(scenario: ScenarioInput) -> float:
         total_balance = scenario.traditional_ira_balance + scenario.roth_ira_balance
         # Estimate retirement spending: balance grows to retirement, then 4% rule
         years_to_retire = max(0, scenario.retirement_age - scenario.age)
-        future_balance = total_balance * (1 + scenario.annual_growth_rate) ** max(1, years_to_retire)
+        future_balance = total_balance * (1 + scenario.annual_growth_rate) ** max(
+            1, years_to_retire
+        )
         spending = future_balance * RETIREMENT_SPENDING_RATE
     rate = get_marginal_rate(spending, scenario.filing_status)
 
@@ -114,7 +116,7 @@ def _global_bracket_fill_for_cap(
     bal = scenario.traditional_ira_balance
     for _ in range(n_years):
         year_balance_cap.append(bal)
-        bal *= (1 + g)
+        bal *= 1 + g
 
     # Build (rate, year, room) slots
     slots: list[tuple[float, int, float]] = []

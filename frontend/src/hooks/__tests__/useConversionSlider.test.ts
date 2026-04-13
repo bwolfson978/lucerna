@@ -2,10 +2,7 @@ import { describe, it, expect } from "vitest";
 import { distributeConversion } from "../useConversionSlider";
 import type { ConversionCurvePoint } from "@/lib/types";
 
-function makeCurvePoint(
-  cap: number,
-  conversions: number[]
-): ConversionCurvePoint {
+function makeCurvePoint(cap: number, conversions: number[]): ConversionCurvePoint {
   return {
     total_cap: cap,
     yearly_conversions: conversions,

@@ -1,18 +1,24 @@
-from app.engine.types import (
-    ScenarioInput, ReasoningTrace, BracketFillResult, NPVCurvePoint,
-    AcaSubsidyDetail,
-)
-from app.engine.tax import get_marginal_rate
-from app.engine.state_tax import resolve_state_for_year, get_state_marginal_rate
-from app.engine.tax_cost import federal_tax_on_conversion, total_conversion_cost, combined_marginal_rate
 from app.engine.constants import (
     BRACKET_FULL_THRESHOLD,
+    HIGH_GROWTH_RATE,
     LARGE_BALANCE_THRESHOLD,
     LARGE_INCOME_VARIATION,
-    HIGH_GROWTH_RATE,
-    LOW_GROWTH_RATE,
     LONG_RETIREMENT_YEARS,
+    LOW_GROWTH_RATE,
     RETIREMENT_SPENDING_RATE,
+)
+from app.engine.state_tax import resolve_state_for_year
+from app.engine.tax import get_marginal_rate
+from app.engine.tax_cost import (
+    combined_marginal_rate,
+    total_conversion_cost,
+)
+from app.engine.types import (
+    AcaSubsidyDetail,
+    BracketFillResult,
+    NPVCurvePoint,
+    ReasoningTrace,
+    ScenarioInput,
 )
 
 
@@ -28,7 +34,6 @@ def generate_reasoning_trace(
     Analyzes the optimization result and produces a human-readable explanation
     of why the optimal conversion amounts are what they are.
     """
-    total_conversion = sum(optimal_conversions)
     n_years = len(optimal_conversions)
 
     # Find binding constraint
@@ -39,12 +44,13 @@ def generate_reasoning_trace(
     for t in range(n_years):
         income = scenario.income_timeline[t].gross_income
         conversion = optimal_conversions[t]
-        yr_state = resolve_state_for_year(
-            scenario.income_timeline[t].state, scenario.state
-        )
+        yr_state = resolve_state_for_year(scenario.income_timeline[t].state, scenario.state)
         rate = combined_marginal_rate(
-            income, conversion, scenario.filing_status,
-            state=yr_state, custom_state_rate=scenario.custom_state_rate,
+            income,
+            conversion,
+            scenario.filing_status,
+            state=yr_state,
+            custom_state_rate=scenario.custom_state_rate,
         )
         marginal_rates.append(rate)
 
@@ -63,9 +69,7 @@ def generate_reasoning_trace(
     sensitivity_notes = _build_sensitivity_notes(scenario, optimal_conversions)
 
     # Summary points
-    summary_points = _build_summary_points(
-        scenario, optimal_conversions, marginal_benefit
-    )
+    summary_points = _build_summary_points(scenario, optimal_conversions, marginal_benefit)
 
     # ACA impact analysis
     aca_impact = None
@@ -99,14 +103,14 @@ def _find_binding_constraint(
 
     # Check if conversions are filling to a specific bracket boundary
     bracket_labels = []
-    for t, fills in enumerate(bracket_fill):
+    for fills in bracket_fill:
         for fill in fills:
             if fill.filled_by_conversion > 0 and fill.remaining_capacity < BRACKET_FULL_THRESHOLD:
                 bracket_labels.append(f"{fill.bracket_rate:.0%}")
 
     if bracket_labels:
         most_common = max(set(bracket_labels), key=bracket_labels.count)
-        years_hitting = sum(1 for l in bracket_labels if l == most_common)
+        years_hitting = sum(1 for label in bracket_labels if label == most_common)
         if years_hitting == 1:
             return f"Top of {most_common} bracket"
         return f"Top of {most_common} bracket in {years_hitting} years"
@@ -124,21 +128,21 @@ def _cost_of_next_bracket(
     for t in range(len(conversions)):
         income = scenario.income_timeline[t].gross_income
         conversion = conversions[t]
-        yr_state = resolve_state_for_year(
-            scenario.income_timeline[t].state, scenario.state
-        )
+        yr_state = resolve_state_for_year(scenario.income_timeline[t].state, scenario.state)
         # Cost of next $extra on top of existing income + conversion
         total_extra_cost += total_conversion_cost(
-            income + conversion, extra, scenario.filing_status,
-            state=yr_state, custom_state_rate=scenario.custom_state_rate,
+            income + conversion,
+            extra,
+            scenario.filing_status,
+            state=yr_state,
+            custom_state_rate=scenario.custom_state_rate,
         )
 
     rate = combined_marginal_rate(
-        scenario.income_timeline[0].gross_income, conversions[0] + extra,
+        scenario.income_timeline[0].gross_income,
+        conversions[0] + extra,
         scenario.filing_status,
-        state=resolve_state_for_year(
-            scenario.income_timeline[0].state, scenario.state
-        ),
+        state=resolve_state_for_year(scenario.income_timeline[0].state, scenario.state),
         custom_state_rate=scenario.custom_state_rate,
     )
 
@@ -157,12 +161,13 @@ def _benefit_of_current_bracket(
     total_tax_paid = 0.0
     for t in range(len(conversions)):
         income = scenario.income_timeline[t].gross_income
-        yr_state = resolve_state_for_year(
-            scenario.income_timeline[t].state, scenario.state
-        )
+        yr_state = resolve_state_for_year(scenario.income_timeline[t].state, scenario.state)
         total_tax_paid += total_conversion_cost(
-            income, conversions[t], scenario.filing_status,
-            state=yr_state, custom_state_rate=scenario.custom_state_rate,
+            income,
+            conversions[t],
+            scenario.filing_status,
+            state=yr_state,
+            custom_state_rate=scenario.custom_state_rate,
         )
 
     total_conversion = sum(conversions)
@@ -192,21 +197,31 @@ def _build_sensitivity_notes(
     notes = []
 
     if scenario.annual_growth_rate > HIGH_GROWTH_RATE:
-        notes.append("Result is sensitive to the assumed growth rate — a lower return reduces the benefit of conversion")
+        notes.append(
+            "Result is sensitive to the assumed growth rate — a lower return reduces the benefit of conversion"
+        )
     elif scenario.annual_growth_rate < LOW_GROWTH_RATE:
-        notes.append("Conservative growth assumption — higher returns would increase conversion benefit")
+        notes.append(
+            "Conservative growth assumption — higher returns would increase conversion benefit"
+        )
     else:
-        notes.append(f"Moderate growth assumption ({scenario.annual_growth_rate:.0%}) — result changes modestly with ±2% variation")
+        notes.append(
+            f"Moderate growth assumption ({scenario.annual_growth_rate:.0%}) — result changes modestly with ±2% variation"
+        )
 
     n_years = len(conversions)
     if n_years > 1:
         incomes = [y.gross_income for y in scenario.income_timeline]
         income_range = max(incomes) - min(incomes)
         if income_range > LARGE_INCOME_VARIATION:
-            notes.append("Large income variation across years creates significant conversion opportunities in low-income years")
+            notes.append(
+                "Large income variation across years creates significant conversion opportunities in low-income years"
+            )
 
     if scenario.years_in_retirement >= LONG_RETIREMENT_YEARS:
-        notes.append("Long retirement horizon amplifies the tax-free growth benefit of Roth conversions")
+        notes.append(
+            "Long retirement horizon amplifies the tax-free growth benefit of Roth conversions"
+        )
 
     if scenario.healthcare:
         notes.append(
@@ -216,6 +231,7 @@ def _build_sensitivity_notes(
 
     # RMD impact note
     from app.engine.rmd import rmd_start_age
+
     owner_rmd_start = rmd_start_age(scenario.age)
     years_to_rmd = owner_rmd_start - scenario.age
     if years_to_rmd <= 15:
@@ -234,18 +250,20 @@ def _build_sensitivity_notes(
         state_rates = []
         for t in range(len(conversions)):
             if conversions[t] > 0:
-                yr_state = resolve_state_for_year(
-                    scenario.income_timeline[t].state, scenario.state
-                )
+                yr_state = resolve_state_for_year(scenario.income_timeline[t].state, scenario.state)
                 if yr_state:
                     income = scenario.income_timeline[t].gross_income
                     # State-only marginal = combined - federal
                     total_rate = combined_marginal_rate(
-                        income, conversions[t], scenario.filing_status,
-                        state=yr_state, custom_state_rate=scenario.custom_state_rate,
+                        income,
+                        conversions[t],
+                        scenario.filing_status,
+                        state=yr_state,
+                        custom_state_rate=scenario.custom_state_rate,
                     )
                     federal_rate = get_marginal_rate(
-                        income + conversions[t], scenario.filing_status,
+                        income + conversions[t],
+                        scenario.filing_status,
                     )
                     state_rates.append(total_rate - federal_rate)
         if state_rates:
@@ -279,7 +297,9 @@ def _build_aca_summary(
         "total_subsidy_lost": round(total_subsidy_lost, 2),
         "total_federal_tax": round(total_federal_tax, 2),
         "total_combined_cost": round(total_combined, 2),
-        "effective_combined_rate": round(total_combined / total_conversion, 4) if total_conversion > 0 else 0.0,
+        "effective_combined_rate": round(total_combined / total_conversion, 4)
+        if total_conversion > 0
+        else 0.0,
         "years_with_subsidy_loss": len(years_with_loss),
         "years_hitting_cliff": len(years_hitting_cliff),
     }
@@ -336,9 +356,7 @@ def _build_summary_points(
 
     # Why this amount
     low_income_years = [
-        scenario.income_timeline[t].year
-        for t in range(n_years)
-        if conversions[t] > 0
+        scenario.income_timeline[t].year for t in range(n_years) if conversions[t] > 0
     ]
     if low_income_years:
         why = f"Fills lower tax brackets during {'low-income years' if n_years > 1 else 'current income level'} without pushing into expensive higher brackets"
@@ -346,7 +364,9 @@ def _build_summary_points(
         why = "Current income already fills brackets efficiently"
 
     # How much saved
-    how_much = f"Estimated ${abs(lifetime_savings):,.0f} in lifetime tax savings (in today's dollars)"
+    how_much = (
+        f"Estimated ${abs(lifetime_savings):,.0f} in lifetime tax savings (in today's dollars)"
+    )
 
     # Key tradeoff
     key_tradeoff = (

@@ -3,14 +3,14 @@
 import numpy as np
 import pytest
 
-from app.engine.types import FilingStatus
 from app.engine.state_tax import (
     calculate_state_tax,
     get_state_marginal_rate,
-    vectorized_state_tax,
-    resolve_state_for_year,
     get_supported_states,
+    resolve_state_for_year,
+    vectorized_state_tax,
 )
+from app.engine.types import FilingStatus
 
 
 class TestResolveStateForYear:

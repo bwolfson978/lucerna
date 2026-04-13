@@ -9,21 +9,22 @@ Tests cover:
 6. Integration with the optimizer (subsidy-aware NPV)
 """
 
-import pytest
-
 from app.engine.aca import (
-    federal_poverty_level,
     _applicable_percentage,
     calculate_aca_subsidy,
-    calculate_subsidy_loss,
-    find_subsidy_cliff_income,
     calculate_combined_marginal_rate,
+    calculate_subsidy_loss,
+    federal_poverty_level,
+    find_subsidy_cliff_income,
 )
+from app.engine.optimizer import calculate_npv, optimize
 from app.engine.types import (
-    ScenarioInput, FilingStatus, YearlyIncome, HealthcareInput,
+    FilingStatus,
+    HealthcareInput,
     OptimizationResult,
+    ScenarioInput,
+    YearlyIncome,
 )
-from app.engine.optimizer import optimize, calculate_npv
 
 
 class TestFederalPovertyLevel:
@@ -163,6 +164,7 @@ class TestCombinedMarginalRate:
     def test_combined_exceeds_federal_only(self):
         """When ACA subsidy is affected, combined rate > federal-only rate."""
         from app.engine.tax import calculate_federal_tax
+
         income = 30000
         conversion = 10000
         fs = FilingStatus.SINGLE
@@ -248,7 +250,9 @@ class TestOptimizerWithACA:
         result_with_aca = optimize(scenario_with_aca)
 
         # ACA-aware should convert equal or less (subsidy loss is an additional cost)
-        assert result_with_aca.total_conversion <= result_no_aca.total_conversion + 100  # rounding tolerance
+        assert (
+            result_with_aca.total_conversion <= result_no_aca.total_conversion + 100
+        )  # rounding tolerance
 
     def test_aca_subsidy_detail_per_year(self):
         """Each ACA coverage year should have a detailed subsidy breakdown."""

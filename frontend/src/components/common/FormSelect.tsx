@@ -31,12 +31,8 @@ const FormSelect = React.forwardRef<HTMLButtonElement, FormSelectProps>(
           className={cn(error && "border-negative", className)}
           {...props}
         />
-        {error && (
-          <span className="text-caption text-negative">{error}</span>
-        )}
-        {helper && !error && (
-          <span className="text-caption text-text-tertiary">{helper}</span>
-        )}
+        {error && <span className="text-caption text-negative">{error}</span>}
+        {helper && !error && <span className="text-caption text-text-tertiary">{helper}</span>}
       </div>
     );
   }

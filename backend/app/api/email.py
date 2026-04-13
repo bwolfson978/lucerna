@@ -2,7 +2,7 @@
 
 import re
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel, field_validator
 
 router = APIRouter()

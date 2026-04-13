@@ -1,21 +1,27 @@
 """Tests for the reasoning trace generator."""
 
-from app.engine.trace import generate_reasoning_trace
 from app.engine.tax import analyze_bracket_fill
+from app.engine.trace import generate_reasoning_trace
 from app.engine.types import (
-    ScenarioInput, FilingStatus, YearlyIncome,
-    ReasoningTrace, NPVCurvePoint,
+    FilingStatus,
+    NPVCurvePoint,
+    ReasoningTrace,
+    ScenarioInput,
+    YearlyIncome,
 )
 
 
 class TestGenerateReasoningTrace:
     def _make_scenario(self):
         return ScenarioInput(
-            age=45, filing_status=FilingStatus.SINGLE,
+            age=45,
+            filing_status=FilingStatus.SINGLE,
             income_timeline=[YearlyIncome(year=2026, gross_income=50000)],
             traditional_ira_balance=250000,
-            retirement_age=65, years_in_retirement=25,
-            annual_growth_rate=0.07, discount_rate=0.05,
+            retirement_age=65,
+            years_in_retirement=25,
+            annual_growth_rate=0.07,
+            discount_rate=0.05,
         )
 
     def test_returns_reasoning_trace(self):

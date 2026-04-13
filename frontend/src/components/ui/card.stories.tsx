@@ -26,9 +26,7 @@ export const Recommended: Story = {
     children: (
       <div className="flex flex-col gap-2">
         <span className="text-h3 text-text-primary">Highest estimated savings</span>
-        <span className="text-body text-text-secondary">
-          Convert $50,000 per year for 3 years
-        </span>
+        <span className="text-body text-text-secondary">Convert $50,000 per year for 3 years</span>
       </div>
     ),
   },
@@ -42,7 +40,7 @@ export const WithStructure: Story = {
         <CardDescription>Federal tax brackets used by conversions</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="h-32 bg-bg-alt rounded-md flex items-center justify-center text-text-tertiary">
+        <div className="flex h-32 items-center justify-center rounded-md bg-bg-alt text-text-tertiary">
           Chart placeholder
         </div>
       </CardContent>

@@ -1,8 +1,6 @@
 import { useState, useEffect, type RefObject } from "react";
 
-export function useContainerWidth(
-  ref: RefObject<HTMLElement | null>
-): number | undefined {
+export function useContainerWidth(ref: RefObject<HTMLElement | null>): number | undefined {
   const [width, setWidth] = useState<number>();
 
   useEffect(() => {

@@ -27,7 +27,7 @@ export function OptimizationPipeline() {
   return (
     <svg
       viewBox="0 0 560 130"
-      className="w-full max-w-[560px] mx-auto"
+      className="mx-auto w-full max-w-[560px]"
       role="img"
       aria-label="Flowchart showing optimization pipeline: your inputs, bracket fill heuristic, numerical optimizer, your results"
     >
@@ -39,7 +39,11 @@ export function OptimizationPipeline() {
           <g key={i}>
             {/* Node box */}
             <rect
-              x={x} y={startY} width={nodeW} height={nodeH} rx="12"
+              x={x}
+              y={startY}
+              width={nodeW}
+              height={nodeH}
+              rx="12"
               fill="rgba(255, 255, 255, 0.04)"
               stroke={node.color}
               strokeWidth="1.5"
@@ -47,16 +51,29 @@ export function OptimizationPipeline() {
             />
 
             {/* Label */}
-            <text x={centerX} y={startY + 20} textAnchor="middle"
-              fill="#FAF7F2" fontFamily={DATA_FONT_FAMILY} fontSize="11" fontWeight="700">
+            <text
+              x={centerX}
+              y={startY + 20}
+              textAnchor="middle"
+              fill="#FAF7F2"
+              fontFamily={DATA_FONT_FAMILY}
+              fontSize="11"
+              fontWeight="700"
+            >
               {node.label}
             </text>
 
             {/* Sublabel */}
             {node.sublabel.split("\n").map((line, li) => (
-              <text key={li} x={centerX} y={startY + 36 + li * 13}
-                textAnchor="middle" fill="#8B8A99"
-                fontFamily={labelFont} fontSize="9">
+              <text
+                key={li}
+                x={centerX}
+                y={startY + 36 + li * 13}
+                textAnchor="middle"
+                fill="#8B8A99"
+                fontFamily={labelFont}
+                fontSize="9"
+              >
                 {line}
               </text>
             ))}
@@ -65,13 +82,18 @@ export function OptimizationPipeline() {
             {i < nodes.length - 1 && (
               <g>
                 <line
-                  x1={x + nodeW + 3} y1={startY + nodeH / 2}
-                  x2={x + nodeW + arrowGap - 5} y2={startY + nodeH / 2}
-                  stroke="#F0C674" strokeWidth="1.5" strokeOpacity="0.4"
+                  x1={x + nodeW + 3}
+                  y1={startY + nodeH / 2}
+                  x2={x + nodeW + arrowGap - 5}
+                  y2={startY + nodeH / 2}
+                  stroke="#F0C674"
+                  strokeWidth="1.5"
+                  strokeOpacity="0.4"
                 />
                 <polygon
                   points={`${x + nodeW + arrowGap - 7},${startY + nodeH / 2 - 3.5} ${x + nodeW + arrowGap - 1},${startY + nodeH / 2} ${x + nodeW + arrowGap - 7},${startY + nodeH / 2 + 3.5}`}
-                  fill="#F0C674" opacity="0.5"
+                  fill="#F0C674"
+                  opacity="0.5"
                 />
               </g>
             )}

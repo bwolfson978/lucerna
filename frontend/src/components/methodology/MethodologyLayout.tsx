@@ -25,7 +25,7 @@ export function MethodologyLayout({ result, children }: MethodologyLayoutProps) 
       {/* Main content area — shrinks when sidebar is open on desktop */}
       <div
         className={cn(
-          "flex-1 min-w-0 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+          "min-w-0 flex-1 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
         )}
       >
         {children}

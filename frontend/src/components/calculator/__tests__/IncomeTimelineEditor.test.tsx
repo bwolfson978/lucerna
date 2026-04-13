@@ -15,9 +15,7 @@ describe("IncomeTimelineEditor", () => {
 
   it("renders collapsed by default with summary info", () => {
     const onChange = vi.fn();
-    render(
-      <IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />
-    );
+    render(<IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />);
     expect(screen.queryByText(/Enter your expected income/)).not.toBeInTheDocument();
     expect(screen.getByText(/click to edit/)).toBeInTheDocument();
     expect(screen.getByText(/3 yrs/)).toBeInTheDocument();
@@ -26,9 +24,7 @@ describe("IncomeTimelineEditor", () => {
 
   it("renders a card for each year in the timeline when expanded", () => {
     const onChange = vi.fn();
-    render(
-      <IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />
-    );
+    render(<IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />);
     expand();
     // 3 years × 2 buttons each (mobile + desktop) = 6
     expect(screen.getAllByLabelText(/Remove year/)).toHaveLength(6);
@@ -36,14 +32,10 @@ describe("IncomeTimelineEditor", () => {
 
   it("displays the header and description when expanded", () => {
     const onChange = vi.fn();
-    render(
-      <IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />
-    );
+    render(<IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />);
     expect(screen.getByText("Income timeline")).toBeInTheDocument();
     expand();
-    expect(
-      screen.getByText(/Enter your expected income/)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Enter your expected income/)).toBeInTheDocument();
   });
 
   it("shows custom description when provided", () => {
@@ -61,9 +53,7 @@ describe("IncomeTimelineEditor", () => {
 
   it("calls onChange with new year when + Add year is clicked", () => {
     const onChange = vi.fn();
-    render(
-      <IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />
-    );
+    render(<IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />);
 
     fireEvent.click(screen.getByText("+ Add year"));
 
@@ -81,9 +71,7 @@ describe("IncomeTimelineEditor", () => {
       gross_income: 100000,
     }));
 
-    render(
-      <IncomeTimelineEditor timeline={maxTimeline} onChange={onChange} />
-    );
+    render(<IncomeTimelineEditor timeline={maxTimeline} onChange={onChange} />);
 
     const addButton = screen.getByText("+ Add year");
     expect(addButton).toBeDisabled();
@@ -91,9 +79,7 @@ describe("IncomeTimelineEditor", () => {
 
   it("calls onChange to remove a year when X is clicked", () => {
     const onChange = vi.fn();
-    render(
-      <IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />
-    );
+    render(<IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />);
     expand();
 
     // Use desktop remove buttons (hidden sm:flex); they come after mobile ones in DOM
@@ -109,13 +95,9 @@ describe("IncomeTimelineEditor", () => {
 
   it("does not show remove buttons for single-year timeline", () => {
     const onChange = vi.fn();
-    const singleYear: YearlyIncome[] = [
-      { year: 2026, gross_income: 100000 },
-    ];
+    const singleYear: YearlyIncome[] = [{ year: 2026, gross_income: 100000 }];
 
-    render(
-      <IncomeTimelineEditor timeline={singleYear} onChange={onChange} />
-    );
+    render(<IncomeTimelineEditor timeline={singleYear} onChange={onChange} />);
     expand();
 
     expect(screen.queryByLabelText(/Remove year/)).not.toBeInTheDocument();
@@ -124,13 +106,7 @@ describe("IncomeTimelineEditor", () => {
   it("shows reset button when onReset prop is provided", () => {
     const onChange = vi.fn();
     const onReset = vi.fn();
-    render(
-      <IncomeTimelineEditor
-        timeline={baseTimeline}
-        onChange={onChange}
-        onReset={onReset}
-      />
-    );
+    render(<IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} onReset={onReset} />);
 
     const resetButton = screen.getByText("Reset");
     expect(resetButton).toBeInTheDocument();
@@ -141,11 +117,8 @@ describe("IncomeTimelineEditor", () => {
 
   it("does not show reset button when onReset is not provided", () => {
     const onChange = vi.fn();
-    render(
-      <IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />
-    );
+    render(<IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />);
 
     expect(screen.queryByText("Reset")).not.toBeInTheDocument();
   });
-
 });

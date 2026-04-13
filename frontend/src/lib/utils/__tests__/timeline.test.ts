@@ -91,9 +91,7 @@ describe("mergeTimeline", () => {
       { year: 2027, gross_income: 110_000 },
       { year: 2028, gross_income: 120_000 },
     ];
-    const existing = [
-      { year: 2026, gross_income: 50_000, notes: "keep" },
-    ];
+    const existing = [{ year: 2026, gross_income: 50_000, notes: "keep" }];
     const result = mergeTimeline(fresh, existing);
     expect(result).toHaveLength(3);
     expect(result[0].gross_income).toBe(50_000);

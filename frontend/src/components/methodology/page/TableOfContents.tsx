@@ -33,11 +33,11 @@ export function TableOfContents({ items, activeId }: TableOfContentsProps) {
     <>
       {/* Desktop sidebar */}
       <nav
-        className="hidden lg:block sticky top-20 h-fit w-[240px] shrink-0"
+        className="sticky top-20 hidden h-fit w-[240px] shrink-0 lg:block"
         aria-label="Table of contents"
       >
-        <div className="card !p-4 !rounded-lg">
-          <h3 className="text-caption font-ui text-text-tertiary uppercase tracking-wider mb-3">
+        <div className="card !rounded-lg !p-4">
+          <h3 className="mb-3 font-ui text-caption uppercase tracking-wider text-text-tertiary">
             On this page
           </h3>
           <ul className="flex flex-col gap-0.5">
@@ -47,14 +47,14 @@ export function TableOfContents({ items, activeId }: TableOfContentsProps) {
                   type="button"
                   onClick={() => scrollToSection(item.id)}
                   className={cn(
-                    "w-full text-left px-3 py-2 rounded-lg text-body-sm transition-all duration-200",
+                    "w-full rounded-lg px-3 py-2 text-left text-body-sm transition-all duration-200",
                     "hover:bg-glass-bg-hover",
                     activeId === item.id
-                      ? "text-accent border-l-2 border-accent bg-accent-muted"
+                      ? "border-l-2 border-accent bg-accent-muted text-accent"
                       : "text-text-secondary"
                   )}
                 >
-                  <span className="font-mono text-[11px] text-text-tertiary mr-2">
+                  <span className="mr-2 font-mono text-[11px] text-text-tertiary">
                     {item.number}
                   </span>
                   {item.title}
@@ -66,16 +66,16 @@ export function TableOfContents({ items, activeId }: TableOfContentsProps) {
       </nav>
 
       {/* Mobile sticky bar */}
-      <div className="lg:hidden sticky top-14 z-30 bg-bg/90 backdrop-blur-md border-b border-border">
+      <div className="sticky top-14 z-30 border-b border-border bg-bg/90 backdrop-blur-md lg:hidden">
         <button
           type="button"
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="w-full flex items-center justify-between px-default py-2.5 min-h-[44px]"
+          className="flex min-h-[44px] w-full items-center justify-between px-default py-2.5"
         >
-          <span className="text-body-sm text-text-secondary truncate">
+          <span className="truncate text-body-sm text-text-secondary">
             {activeItem ? (
               <>
-                <span className="font-mono text-[11px] text-text-tertiary mr-1.5">
+                <span className="mr-1.5 font-mono text-[11px] text-text-tertiary">
                   {activeItem.number}
                 </span>
                 {activeItem.title}
@@ -100,7 +100,7 @@ export function TableOfContents({ items, activeId }: TableOfContentsProps) {
 
         {/* Dropdown */}
         {mobileOpen && (
-          <div className="absolute top-full left-0 right-0 bg-bg-alt/95 backdrop-blur-md border-b border-border shadow-elevated px-default py-2 z-40">
+          <div className="absolute left-0 right-0 top-full z-40 border-b border-border bg-bg-alt/95 px-default py-2 shadow-elevated backdrop-blur-md">
             <ul className="flex flex-col gap-0.5">
               {items.map((item) => (
                 <li key={item.id}>
@@ -111,13 +111,13 @@ export function TableOfContents({ items, activeId }: TableOfContentsProps) {
                       setMobileOpen(false);
                     }}
                     className={cn(
-                      "w-full text-left px-3 py-2.5 rounded-lg text-body-sm transition-all duration-200 min-h-[44px]",
+                      "min-h-[44px] w-full rounded-lg px-3 py-2.5 text-left text-body-sm transition-all duration-200",
                       activeId === item.id
-                        ? "text-accent bg-accent-muted"
+                        ? "bg-accent-muted text-accent"
                         : "text-text-secondary hover:bg-glass-bg"
                     )}
                   >
-                    <span className="font-mono text-[11px] text-text-tertiary mr-2">
+                    <span className="mr-2 font-mono text-[11px] text-text-tertiary">
                       {item.number}
                     </span>
                     {item.title}

@@ -11,10 +11,7 @@ const GlowButton = React.forwardRef<HTMLButtonElement, GlowButtonProps>(
     return (
       <Button
         ref={ref}
-        className={cn(
-          "glow-button text-bg active:scale-[0.98]",
-          className
-        )}
+        className={cn("glow-button text-bg active:scale-[0.98]", className)}
         {...props}
       >
         {children}

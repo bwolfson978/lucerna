@@ -4,9 +4,7 @@ All calculations use 2026 brackets. calculate_federal_tax takes gross income
 and subtracts the standard deduction internally.
 """
 
-import pytest
-
-from app.engine.tax import calculate_federal_tax, get_marginal_rate, analyze_bracket_fill
+from app.engine.tax import analyze_bracket_fill, calculate_federal_tax, get_marginal_rate
 from app.engine.types import FilingStatus
 
 

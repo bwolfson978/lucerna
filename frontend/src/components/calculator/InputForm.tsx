@@ -21,7 +21,6 @@ interface InputFormProps {
   loadingLabel?: string;
 }
 
-
 export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showMore, setShowAdvanced] = useState(false);
@@ -34,9 +33,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
   const [rothBalance, setRothBalance] = useState<number>(0);
   const [retirementAge, setRetirementAge] = useState<number | null>(65);
   const [incomeGrowthRate, setIncomeGrowthRate] = useState<number | null>(3);
-  const [retirementSpending, setRetirementSpending] = useState<number | null>(
-    null
-  );
+  const [retirementSpending, setRetirementSpending] = useState<number | null>(null);
 
   // Additional settings
   const [yearsInRetirement, setYearsInRetirement] = useState<number | null>(25);
@@ -53,9 +50,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
   const [includeAca, setIncludeAca] = useState(false);
   const [householdSize, setHouseholdSize] = useState<number | null>(1);
   const [monthlySlcspPremium, setMonthlySlcspPremium] = useState<number>(620);
-  const [employerCoverageYear, setEmployerCoverageYear] = useState<
-    number | null
-  >(null);
+  const [employerCoverageYear, setEmployerCoverageYear] = useState<number | null>(null);
 
   // Income timeline state
   const [timeline, setTimeline] = useState<YearlyIncome[]>([]);
@@ -83,7 +78,9 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
   }, [age, retirementAge, currentIncome, incomeGrowthRate]);
 
   const showTimeline = timeline.length > 0;
-  const hasCustomizations = timeline.some((y) => (y.notes && y.notes.length > 0) || y.state != null);
+  const hasCustomizations = timeline.some(
+    (y) => (y.notes && y.notes.length > 0) || y.state != null
+  );
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -97,25 +94,20 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
     const hhSize = householdSize ?? 1;
 
     if (ageVal < 0 || ageVal > 120) errs.age = "Age must be between 0 and 120";
-    if (retVal < 1 || retVal > 120)
-      errs.retirementAge = "Retirement age must be between 1 and 120";
+    if (retVal < 1 || retVal > 120) errs.retirementAge = "Retirement age must be between 1 and 120";
     if (currentIncome < 0) errs.currentIncome = "Income cannot be negative";
     if (traditionalBalance <= 0)
       errs.traditionalBalance = "Enter your traditional IRA/401(k) balance";
     if (rothBalance < 0) errs.rothBalance = "Roth balance cannot be negative";
-    if (yrsRetVal < 1)
-      errs.yearsInRetirement = "Must be at least 1 year";
+    if (yrsRetVal < 1) errs.yearsInRetirement = "Must be at least 1 year";
     if (retirementSpending !== null && retirementSpending < 0)
       errs.retirementSpending = "Spending cannot be negative";
     if (timeline.length === 0)
       errs.timeline = "Enter your income and retirement age to generate a timeline";
-    if (timeline.some((y) => y.gross_income < 0))
-      errs.timeline = "Income cannot be negative";
+    if (timeline.some((y) => y.gross_income < 0)) errs.timeline = "Income cannot be negative";
     if (includeAca) {
-      if (hhSize < 1)
-        errs.householdSize = "Household must have at least 1 person";
-      if (monthlySlcspPremium < 0)
-        errs.monthlySlcspPremium = "Premium cannot be negative";
+      if (hhSize < 1) errs.householdSize = "Household must have at least 1 person";
+      if (monthlySlcspPremium < 0) errs.monthlySlcspPremium = "Premium cannot be negative";
     }
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
@@ -141,7 +133,11 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
       discount_rate: discountVal / 100,
       healthcare,
       state: state !== "none" ? state : null,
-      retirement_state: retirementStateSameAsCurrent ? null : (retirementState !== "none" ? retirementState : null),
+      retirement_state: retirementStateSameAsCurrent
+        ? null
+        : retirementState !== "none"
+          ? retirementState
+          : null,
       custom_state_rate: state === "custom" && customStateRate ? customStateRate / 100 : null,
     };
     onSubmit(input);
@@ -149,7 +145,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-section">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-default">
+      <div className="grid grid-cols-1 gap-default sm:grid-cols-2">
         <NumericField
           label="Age"
           value={age ?? ""}
@@ -201,8 +197,11 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
             label="Retirement state"
             value={retirementStateSameAsCurrent ? "same" : retirementState}
             options={[
-              { value: "same", label: `Same as current${state !== "custom" ? ` (${STATE_OPTIONS.find(s => s.value === state)?.label.split(" (")[0] || state})` : ""}` },
-              ...STATE_OPTIONS.filter(s => s.value !== "none"),
+              {
+                value: "same",
+                label: `Same as current${state !== "custom" ? ` (${STATE_OPTIONS.find((s) => s.value === state)?.label.split(" (")[0] || state})` : ""}`,
+              },
+              ...STATE_OPTIONS.filter((s) => s.value !== "none"),
             ]}
             onChange={(e) => {
               if (e.target.value === "same") {
@@ -227,7 +226,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
       </div>
 
       {state === "custom" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-default">
+        <div className="grid grid-cols-1 gap-default sm:grid-cols-2">
           <NumericField
             label="State tax rate (%)"
             value={customStateRate ?? ""}
@@ -242,7 +241,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-default">
+      <div className="grid grid-cols-1 gap-default sm:grid-cols-2">
         <NumericField
           label="Income growth rate (%)"
           value={incomeGrowthRate ?? ""}
@@ -272,24 +271,24 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
           defaultState={state !== "none" ? state : undefined}
         />
       )}
-      {errors.timeline && (
-        <span className="text-caption text-negative">{errors.timeline}</span>
-      )}
+      {errors.timeline && <span className="text-caption text-negative">{errors.timeline}</span>}
 
       {/* Additional settings */}
       <Collapsible open={showMore} onOpenChange={setShowAdvanced}>
         <CollapsibleTrigger asChild>
           <button
             type="button"
-            className="flex items-center gap-1.5 text-body-sm text-text-secondary hover:text-text-primary transition-colors duration-300 self-start"
+            className="flex items-center gap-1.5 self-start text-body-sm text-text-secondary transition-colors duration-300 hover:text-text-primary"
           >
-            <ChevronIcon className={`transition-transform duration-300 ${showMore ? "rotate-90" : ""}`} />
+            <ChevronIcon
+              className={`transition-transform duration-300 ${showMore ? "rotate-90" : ""}`}
+            />
             Additional settings
           </button>
         </CollapsibleTrigger>
 
         <CollapsibleContent>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-default pt-default">
+          <div className="grid grid-cols-1 gap-default pt-default sm:grid-cols-3">
             <NumericField
               label="Years in retirement"
               value={yearsInRetirement ?? ""}
@@ -320,21 +319,17 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
       {/* ACA marketplace coverage */}
       <div className="flex flex-col gap-default">
         <div className="flex items-center gap-3">
-          <Switch
-            id="aca-toggle"
-            checked={includeAca}
-            onCheckedChange={setIncludeAca}
-          />
-          <Label htmlFor="aca-toggle" className="text-body text-text-primary cursor-pointer">
+          <Switch id="aca-toggle" checked={includeAca} onCheckedChange={setIncludeAca} />
+          <Label htmlFor="aca-toggle" className="cursor-pointer text-body text-text-primary">
             I buy health insurance on the ACA marketplace
           </Label>
         </div>
-        <p className="text-body-sm text-text-tertiary -mt-1">
+        <p className="-mt-1 text-body-sm text-text-tertiary">
           Accounts for how Roth conversions affect your premium subsidy
         </p>
 
         {includeAca && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-default">
+          <div className="grid grid-cols-1 gap-default sm:grid-cols-3">
             <NumericField
               label="Household size"
               value={householdSize ?? ""}
@@ -366,7 +361,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
       </div>
 
       {/* Submit */}
-      <div className="pt-comfortable border-t border-border">
+      <div className="border-t border-border pt-comfortable">
         <GlowButton type="submit" loading={loading}>
           {loading && loadingLabel ? loadingLabel : "Run my scenario"}
         </GlowButton>

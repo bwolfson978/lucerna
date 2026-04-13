@@ -15,7 +15,7 @@ export function MetricCardSkeleton() {
 export function ChartSkeleton() {
   return (
     <Card>
-      <Skeleton className="h-4 w-48 mb-4" />
+      <Skeleton className="mb-4 h-4 w-48" />
       <Skeleton className="h-[200px] w-full rounded-lg" />
     </Card>
   );
