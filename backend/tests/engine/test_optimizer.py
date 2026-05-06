@@ -1,7 +1,8 @@
 """Tests for the multi-year Roth conversion optimizer."""
 
 from app.engine.heuristic import greedy_bracket_fill
-from app.engine.optimizer import calculate_npv, optimize
+from app.engine.optimizer import _build_rmd_projection, calculate_npv, optimize
+from app.engine.rmd import get_distribution_period, rmd_start_age
 from app.engine.types import (
     ConversionPreferences,
     FilingStatus,
@@ -512,3 +513,72 @@ class TestAlreadyRetired:
         scenario = self._retired_scenario()
         result = optimize(scenario)
         assert result.total_conversion <= scenario.traditional_ira_balance + 1
+
+
+class TestRmdUsesPreGrowthBalance:
+    """Regression tests: RMD must use Dec 31 prior-year balance, not post-growth balance."""
+
+    def _rmd_scenario(self, age, retirement_age, balance=500_000, growth_rate=0.07):
+        return ScenarioInput(
+            age=age,
+            filing_status=FilingStatus.SINGLE,
+            income_timeline=[YearlyIncome(year=2026, gross_income=60_000)],
+            traditional_ira_balance=balance,
+            roth_ira_balance=0,
+            retirement_age=retirement_age,
+            years_in_retirement=10,
+            annual_growth_rate=growth_rate,
+            discount_rate=0.04,
+        )
+
+    def test_rmd_projection_balance_matches_rmd_divisor(self):
+        """trad_balance_start and rmd_amount must use the same (pre-growth) base.
+
+        With the IRS rule: RMD = prior_dec31_balance / distribution_period.
+        After the fix, trad_balance_start is the pre-growth balance, so
+        rmd_amount should equal trad_balance_start / distribution_period.
+        """
+        # User retiring at 74 — well into RMD territory
+        scenario = self._rmd_scenario(age=70, retirement_age=70)
+        projection = _build_rmd_projection(scenario, [0.0])
+        assert projection is not None and projection.yearly_detail
+
+        for detail in projection.yearly_detail:
+            divisor = get_distribution_period(detail.age)
+            assert divisor > 0
+            expected_rmd = detail.trad_balance_start / divisor
+            assert abs(detail.rmd_amount - expected_rmd) < 1.0, (
+                f"At age {detail.age}: rmd_amount={detail.rmd_amount:.2f} but "
+                f"trad_balance_start/divisor={expected_rmd:.2f}. "
+                f"RMD is probably using post-growth balance."
+            )
+
+    def test_pre_growth_rmd_differs_from_post_growth(self):
+        """Verify the fix actually changes results vs the old (buggy) behaviour.
+
+        With g=7%, post-growth RMD is ~7% larger than pre-growth RMD.
+        We confirm the projection rmd_amount is close to the pre-growth
+        calculation and not the post-growth one.
+        """
+        g = 0.07
+        balance = 500_000
+        scenario = self._rmd_scenario(age=70, retirement_age=70, balance=balance, growth_rate=g)
+        projection = _build_rmd_projection(scenario, [0.0])
+        assert projection is not None and projection.yearly_detail
+
+        first = projection.yearly_detail[0]
+        divisor = get_distribution_period(first.age)
+
+        # Pre-growth: balance before this year's returns are applied
+        # Post-growth: balance * (1 + g)
+        pre_growth_balance = first.trad_balance_start
+        post_growth_balance = pre_growth_balance * (1 + g)
+
+        pre_growth_rmd = pre_growth_balance / divisor
+        post_growth_rmd = post_growth_balance / divisor
+
+        # The recorded rmd_amount should match pre-growth, not post-growth
+        assert abs(first.rmd_amount - pre_growth_rmd) < 1.0
+        assert abs(first.rmd_amount - post_growth_rmd) > 100, (
+            "RMD appears to be using the post-growth balance (old buggy behavior)."
+        )

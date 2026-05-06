@@ -648,7 +648,7 @@ def _build_rmd_projection(
                 RmdYearDetail(
                     year=calendar_year,
                     age=owner_age,
-                    trad_balance_start=round(trad_balance + distribution, 2),  # pre-withdrawal
+                    trad_balance_start=round(pre_growth_trad, 2),  # Dec 31 prior year (IRS basis for RMD)
                     rmd_amount=round(rmd, 2),
                     actual_distribution=round(distribution, 2),
                     tax_on_distribution=round(tax, 2),
