@@ -2,7 +2,7 @@
 
 from app.engine.heuristic import greedy_bracket_fill
 from app.engine.optimizer import _build_rmd_projection, calculate_npv, optimize
-from app.engine.rmd import get_distribution_period, rmd_start_age
+from app.engine.rmd import get_distribution_period
 from app.engine.types import (
     ConversionPreferences,
     FilingStatus,
