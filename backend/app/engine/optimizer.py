@@ -128,6 +128,9 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
     for year in range(
         years_until_retirement + 1, years_until_retirement + scenario.years_in_retirement + 1
     ):
+        # IRS RMD uses Dec 31 of the prior year — save balance before growth
+        pre_growth_trad = trad_balance
+
         # Grow at start of year
         trad_balance *= 1 + g
         roth_balance *= 1 + g
@@ -136,7 +139,7 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
         owner_age = scenario.age + year
 
         # Calculate RMD (mandatory minimum withdrawal from traditional)
-        rmd = calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
+        rmd = calculate_rmd(pre_growth_trad, owner_age) if owner_age >= owner_rmd_start else 0.0
 
         # Withdraw at least the RMD from traditional, or spending if larger
         distribution = max(rmd, min(spending, trad_balance))
@@ -613,11 +616,14 @@ def _build_rmd_projection(
         owner_age = scenario.age + year_index
         calendar_year = first_year + year_index
 
+        # IRS RMD uses Dec 31 of the prior year — save balance before growth
+        pre_growth_trad = trad_balance
+
         # Grow at start of year
         trad_balance *= 1 + g
         roth_balance *= 1 + g
 
-        rmd = calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
+        rmd = calculate_rmd(pre_growth_trad, owner_age) if owner_age >= owner_rmd_start else 0.0
 
         if rmd <= 0:
             # Withdraw normally (no RMD yet)
@@ -642,7 +648,9 @@ def _build_rmd_projection(
                 RmdYearDetail(
                     year=calendar_year,
                     age=owner_age,
-                    trad_balance_start=round(trad_balance + distribution, 2),  # pre-withdrawal
+                    trad_balance_start=round(
+                        pre_growth_trad, 2
+                    ),  # Dec 31 prior year (IRS basis for RMD)
                     rmd_amount=round(rmd, 2),
                     actual_distribution=round(distribution, 2),
                     tax_on_distribution=round(tax, 2),
