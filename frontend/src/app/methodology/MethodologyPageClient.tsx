@@ -183,7 +183,7 @@ export function MethodologyPageClient() {
               {/* Section 4: Multi-Year Allocation */}
               <MethodologySection id="multi-year" number="04" title="Multi-Year Allocation">
                 <P>
-                  Lucerna does not optimize one year at a time. It looks across your entire income
+                  This tool does not optimize one year at a time. It looks across your entire income
                   timeline and finds the cheapest bracket slots across all years, then fills them
                   from cheapest to most expensive. This is what makes multi-year planning so much
                   more powerful than a single-year calculator.
@@ -248,7 +248,7 @@ export function MethodologyPageClient() {
               <MethodologySection id="optimization" number="06" title="Optimization Approach">
                 <P>
                   Finding the best conversion schedule across multiple years with progressive tax
-                  brackets is a non-trivial optimization problem. Lucerna uses a two-stage approach:
+                  brackets is a non-trivial optimization problem. The optimizer uses a two-stage approach:
                   a fast heuristic provides a strong starting point, then a numerical optimizer
                   refines it.
                 </P>
@@ -379,7 +379,7 @@ export function MethodologyPageClient() {
 
                 <SubHeading>Important disclaimer</SubHeading>
                 <P>
-                  Lucerna is an educational tool for scenario analysis. It does not provide
+                  This is an educational tool for scenario analysis. It does not provide
                   financial, tax, or investment advice. The analysis is based on the inputs you
                   provide and the assumptions described above. Tax laws change. Consult a qualified
                   professional before making financial decisions.
@@ -394,7 +394,7 @@ export function MethodologyPageClient() {
               {/* Legal footer */}
               <footer className="pb-page">
                 <p className="text-body-sm text-text-tertiary">
-                  Lucerna is an educational tool for scenario analysis. It does not provide
+                  This is an educational tool for scenario analysis. It does not provide
                   financial, tax, or investment advice. Consult a qualified professional before
                   making financial decisions.
                 </p>

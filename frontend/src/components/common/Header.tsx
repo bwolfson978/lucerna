@@ -28,8 +28,27 @@ export function Header() {
             <Link
               href="/"
               className="brand-gradient font-serif text-[18px] font-bold tracking-tight"
+              aria-label="Home"
             >
-              Lucerna
+              <svg
+                width="22"
+                height="28"
+                viewBox="0 0 22 28"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+                aria-hidden="true"
+              >
+                <path
+                  d="M11 2C11 2 5 8.5 5 14.5C5 18.09 7.69 21 11 21C14.31 21 17 18.09 17 14.5C17 8.5 11 2 11 2Z"
+                  fill="#F0C674"
+                  fillOpacity="0.9"
+                />
+                <path
+                  d="M11 14C11 14 8.5 11 8.5 14.5C8.5 15.88 9.62 17 11 17C12.38 17 13.5 15.88 13.5 14.5C13.5 11 11 14 11 14Z"
+                  fill="#1a1510"
+                />
+                <rect x="9.5" y="21" width="3" height="5" rx="1.5" fill="#F0C674" fillOpacity="0.5" />
+              </svg>
             </Link>
 
             {/* Desktop nav */}
