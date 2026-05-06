@@ -81,9 +81,9 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobile dropdown menu */}
+      {/* Mobile dropdown menu — absolute so it overlays content instead of pushing it down */}
       {mobileMenuOpen && (
-        <nav className="flex flex-col gap-1 border-t border-border bg-bg/95 px-default py-3 backdrop-blur-md sm:hidden">
+        <nav className="absolute left-0 right-0 top-full z-50 flex flex-col gap-1 border-b border-border bg-bg px-default py-3 shadow-elevated sm:hidden">
           <Link
             href="/demo"
             onClick={() => setMobileMenuOpen(false)}
