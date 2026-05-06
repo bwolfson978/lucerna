@@ -100,7 +100,7 @@ export function TableOfContents({ items, activeId }: TableOfContentsProps) {
 
         {/* Dropdown */}
         {mobileOpen && (
-          <div className="absolute left-0 right-0 top-full z-40 border-b border-border bg-bg-alt/95 px-default py-2 shadow-elevated backdrop-blur-md">
+          <div className="absolute left-0 right-0 top-full z-40 border-b border-border bg-bg-alt px-default py-2 shadow-elevated">
             <ul className="flex flex-col gap-0.5">
               {items.map((item) => (
                 <li key={item.id}>
