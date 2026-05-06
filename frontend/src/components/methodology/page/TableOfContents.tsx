@@ -128,6 +128,15 @@ export function TableOfContents({ items, activeId }: TableOfContentsProps) {
           </div>
         )}
       </div>
+
+      {/* Scrim — dims page content behind the dropdown, closes on tap */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-[29] bg-bg/85 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
     </>
   );
 }
