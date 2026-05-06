@@ -25,15 +25,15 @@ export function Header() {
       >
         <div className="flex h-14 items-center px-default md:px-page">
           <div className="mx-auto flex w-full max-w-content items-center justify-between">
-            <Link
-              href="/"
-              className="brand-gradient font-serif text-[18px] font-bold tracking-tight"
-            >
-              Lucerna
-            </Link>
-
-            {/* Desktop nav */}
+            {/* Desktop nav — left-aligned, no logo */}
             <nav className="hidden items-center gap-5 sm:flex">
+              <Link
+                href="/"
+                className="text-body-sm text-text-secondary transition-colors duration-300 hover:text-accent"
+              >
+                Home
+              </Link>
+              <span className="text-text-tertiary opacity-40">|</span>
               <Link
                 href="/demo"
                 className="text-body-sm text-text-secondary transition-colors duration-300 hover:text-accent"
@@ -54,45 +54,51 @@ export function Header() {
               >
                 Methodology
               </Link>
-              <HowItWorksButton />
             </nav>
 
-            {/* Mobile: How It Works + hamburger */}
-            <div className="flex items-center gap-2 sm:hidden">
+            {/* Desktop: How It Works on far right */}
+            <div className="hidden sm:flex">
               <HowItWorksButton />
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="flex h-10 w-10 items-center justify-center rounded-lg text-text-secondary transition-colors duration-200 hover:text-text-primary"
-                aria-label="Toggle menu"
-                aria-expanded={mobileMenuOpen}
-              >
-                {mobileMenuOpen ? (
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  >
-                    <path d="M5 5l10 10M15 5L5 15" />
-                  </svg>
-                ) : (
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  >
-                    <path d="M3 6h14M3 10h14M3 14h14" />
-                  </svg>
-                )}
-              </button>
+            </div>
+
+            {/* Mobile: hamburger on left */}
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-text-secondary transition-colors duration-200 hover:text-text-primary sm:hidden"
+              aria-label="Toggle menu"
+              aria-expanded={mobileMenuOpen}
+            >
+              {mobileMenuOpen ? (
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                >
+                  <path d="M5 5l10 10M15 5L5 15" />
+                </svg>
+              ) : (
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                >
+                  <path d="M3 6h14M3 10h14M3 14h14" />
+                </svg>
+              )}
+            </button>
+
+            {/* Mobile: How It Works on right */}
+            <div className="sm:hidden">
+              <HowItWorksButton />
             </div>
           </div>
         </div>
@@ -100,6 +106,13 @@ export function Header() {
         {/* Mobile dropdown menu — absolute so it overlays content instead of pushing it down */}
         {mobileMenuOpen && (
           <nav className="absolute left-0 right-0 top-full z-50 flex flex-col gap-1 border-b border-border bg-bg px-default py-3 shadow-elevated sm:hidden">
+            <Link
+              href="/"
+              onClick={() => handleNavClick("/")}
+              className="rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-300 hover:bg-glass-bg hover:text-accent"
+            >
+              Home
+            </Link>
             <Link
               href="/demo"
               onClick={() => handleNavClick("/demo")}
