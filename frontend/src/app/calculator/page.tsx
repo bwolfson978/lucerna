@@ -58,7 +58,7 @@ export default function CalculatorPage() {
             {/* Form section */}
             <div
               className={cn(
-                "-mx-default border-b px-default pb-section md:-mx-page md:px-page border-border",
+                "-mx-default border-b border-border px-default pb-section md:-mx-page md:px-page",
                 !result && !loading && !error ? "" : "shadow-sm"
               )}
             >
