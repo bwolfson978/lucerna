@@ -2,11 +2,21 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { HowItWorksButton } from "@/components/methodology/HowItWorksButton";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Only close the menu explicitly when tapping the current page's link —
+  // cross-page navigation unmounts this component, so the menu resets naturally.
+  // Closing on cross-page clicks causes a flash: the scrim disappears before
+  // the new page loads, briefly exposing the current page without the overlay.
+  const handleNavClick = (href: string) => {
+    if (pathname === href) setMobileMenuOpen(false);
+  };
 
   return (
     <>
@@ -92,21 +102,21 @@ export function Header() {
           <nav className="absolute left-0 right-0 top-full z-50 flex flex-col gap-1 border-b border-border bg-bg px-default py-3 shadow-elevated sm:hidden">
             <Link
               href="/demo"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={() => handleNavClick("/demo")}
               className="rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-300 hover:bg-glass-bg hover:text-accent"
             >
               Demo
             </Link>
             <Link
               href="/calculator"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={() => handleNavClick("/calculator")}
               className="rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-300 hover:bg-glass-bg hover:text-accent"
             >
               Run Your Own Scenario
             </Link>
             <Link
               href="/methodology"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={() => handleNavClick("/methodology")}
               className="rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-300 hover:bg-glass-bg hover:text-accent"
             >
               Methodology
