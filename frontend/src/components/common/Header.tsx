@@ -9,6 +9,7 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
+    <>
     <header className={cn("sticky top-0 z-40 bg-bg/80 backdrop-blur-md", "border-b border-border")}>
       <div className="flex h-14 items-center px-default md:px-page">
         <div className="mx-auto flex w-full max-w-content items-center justify-between">
@@ -86,21 +87,18 @@ export function Header() {
         <nav className="absolute left-0 right-0 top-full z-50 flex flex-col gap-1 border-b border-border bg-bg px-default py-3 shadow-elevated sm:hidden">
           <Link
             href="/demo"
-            onClick={() => setMobileMenuOpen(false)}
             className="rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-300 hover:bg-glass-bg hover:text-accent"
           >
             Demo
           </Link>
           <Link
             href="/calculator"
-            onClick={() => setMobileMenuOpen(false)}
             className="rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-300 hover:bg-glass-bg hover:text-accent"
           >
             Run Your Own Scenario
           </Link>
           <Link
             href="/methodology"
-            onClick={() => setMobileMenuOpen(false)}
             className="rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-300 hover:bg-glass-bg hover:text-accent"
           >
             Methodology
@@ -108,5 +106,14 @@ export function Header() {
         </nav>
       )}
     </header>
+    {/* Scrim — covers page content behind the mobile menu, closes on tap */}
+    {mobileMenuOpen && (
+      <div
+        className="fixed inset-0 z-[39] bg-bg/85 sm:hidden"
+        onClick={() => setMobileMenuOpen(false)}
+        aria-hidden="true"
+      />
+    )}
+    </>
   );
 }
