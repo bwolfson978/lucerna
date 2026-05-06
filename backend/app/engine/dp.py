@@ -97,6 +97,9 @@ def _compute_retirement_values(
     for year_offset in range(1, n_retirement + 1):
         year = years_until_retirement + year_offset
 
+        # IRS RMD uses Dec 31 of the prior year — save balance before growth
+        pre_growth_trad = trad.copy()
+
         # Grow at start of year
         trad *= 1 + g
         roth *= 1 + g
@@ -106,7 +109,7 @@ def _compute_retirement_values(
 
         # Calculate RMD (mandatory minimum withdrawal from traditional)
         if owner_age >= owner_rmd_start:
-            rmd = vectorized_rmd(trad, owner_age)
+            rmd = vectorized_rmd(pre_growth_trad, owner_age)
         else:
             rmd = np.zeros_like(trad)
 
