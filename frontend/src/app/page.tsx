@@ -108,8 +108,8 @@ export default function Home() {
         <footer className="border-t border-border px-section py-section md:px-page">
           <div className="mx-auto max-w-content text-body-sm text-text-tertiary">
             <p>
-              This is an educational tool for scenario analysis. It does not provide financial,
-              tax, or investment advice. Consult a qualified professional before making financial
+              This is an educational tool for scenario analysis. It does not provide financial, tax,
+              or investment advice. Consult a qualified professional before making financial
               decisions.
             </p>
           </div>
