@@ -122,7 +122,7 @@ export function MethodologySidebar({ result, mobile }: MethodologySidebarProps) 
     return (
       <>
         {isOpen && (
-          <div className="fixed inset-0 z-40 bg-bg/70" onClick={closeSidebar} aria-hidden="true" />
+          <div className="fixed inset-0 z-40 bg-bg/85" onClick={closeSidebar} aria-hidden="true" />
         )}
         <aside
           role="complementary"

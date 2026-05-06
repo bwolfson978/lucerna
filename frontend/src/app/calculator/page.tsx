@@ -9,6 +9,7 @@ import { MetricCardSkeleton, ChartSkeleton, TableSkeleton } from "@/components/c
 import { apiClient } from "@/lib/api/client";
 import type { ScenarioInput, OptimizationResult } from "@/lib/types";
 import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { MethodologyProvider } from "@/components/methodology/MethodologyContext";
 import { MethodologyLayout } from "@/components/methodology/MethodologyLayout";
 
@@ -56,7 +57,10 @@ export default function CalculatorPage() {
           <div className="mx-auto flex max-w-content flex-col gap-section">
             {/* Form section */}
             <div
-              className={`-mx-default border-b px-default pb-section pt-section md:-mx-page md:px-page border-border${!result && !loading && !error ? "" : "shadow-sm"}`}
+              className={cn(
+                "-mx-default border-b border-border px-default pb-section md:-mx-page md:px-page",
+                !result && !loading && !error ? "" : "shadow-sm"
+              )}
             >
               <div className="mx-auto flex max-w-content flex-col gap-default">
                 <div className="flex flex-col gap-1">
