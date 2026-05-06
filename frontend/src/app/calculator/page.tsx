@@ -56,7 +56,7 @@ export default function CalculatorPage() {
           <div className="mx-auto flex max-w-content flex-col gap-section">
             {/* Form section */}
             <div
-              className={`-mx-default border-b px-default pb-section pt-section md:-mx-page md:px-page border-border${!result && !loading && !error ? "" : "shadow-sm"}`}
+              className={`-mx-default border-b px-default pb-section md:-mx-page md:px-page border-border${!result && !loading && !error ? "" : "shadow-sm"}`}
             >
               <div className="mx-auto flex max-w-content flex-col gap-default">
                 <div className="flex flex-col gap-1">
