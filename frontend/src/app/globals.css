@@ -238,6 +238,8 @@
   height: 200%;
   background: conic-gradient(transparent, #f0c674, #6c5ce7, #e8a838, #b8b0d2, transparent 30%);
   animation: none;
+  opacity: 0;
+  transition: opacity 180ms ease;
   z-index: -2;
 }
 
@@ -248,6 +250,7 @@
 .glow-button:focus-visible::before,
 .glow-button:active::before {
   animation: glow-rotate 4s linear infinite;
+  opacity: 1;
 }
 
 .glow-button::after {
@@ -269,6 +272,7 @@
 
 .glow-button:disabled::before {
   animation: none;
+  opacity: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
