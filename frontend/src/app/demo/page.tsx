@@ -19,10 +19,24 @@ export default function DemoPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const start = Date.now();
     apiClient
       .getDemo()
-      .then((data) => setDemo(data as DemoResponse))
-      .catch((err) => setError(err.message))
+      .then((data) => {
+        posthog.capture("demo_api_response_time", {
+          duration_ms: Date.now() - start,
+          success: true,
+        });
+        setDemo(data as DemoResponse);
+      })
+      .catch((err) => {
+        posthog.capture("demo_api_response_time", {
+          duration_ms: Date.now() - start,
+          success: false,
+          error: err.message,
+        });
+        setError(err.message);
+      })
       .finally(() => setLoading(false));
   }, []);
 
