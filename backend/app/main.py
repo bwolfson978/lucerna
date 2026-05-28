@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_fastapi_instrumentator import Instrumentator
 
 
 @asynccontextmanager
@@ -19,6 +20,10 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Lucerna API", lifespan=lifespan)
+
+Instrumentator(excluded_handlers=["/health", "/metrics"]).instrument(app).expose(
+    app, include_in_schema=False
+)
 
 _default_origins = ["http://localhost:3000"]
 _env_origins = os.environ.get("ALLOWED_ORIGINS", "")

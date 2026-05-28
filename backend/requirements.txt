@@ -3,3 +3,4 @@ uvicorn
 pydantic
 scipy
 numpy
+prometheus-fastapi-instrumentator
