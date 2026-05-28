@@ -37,26 +37,26 @@ export default function DemoPage() {
           <div className="mx-auto flex max-w-content flex-col gap-section">
             {/* Persona intro */}
             <div className="flex flex-col gap-comfortable">
-              <h1 className="font-serif text-h1 text-text-primary">Meet Alex</h1>
+              <h1 className="font-serif text-h1 text-text-primary">Meet Margaret</h1>
 
               <Card className="bg-bg-alt">
                 <div className="flex flex-col gap-default">
                   <p className="text-body leading-relaxed text-text-primary">
-                    <strong>Alex, 38.</strong> Senior Software Engineer who left a $145K/year role 6
-                    months ago to co-found a startup.
+                    <strong>Margaret, 63.</strong> Registered nurse who retired last year after a
+                    35-year career, living off a taxable brokerage account and cash savings.
                   </p>
                   <p className="text-body leading-relaxed text-text-secondary">
-                    Alex has a $210,000 traditional IRA/401(k) (rolled over from 14 years of 401k
-                    contributions) and is filing single. With two low-income years ahead,
-                    there&apos;s a rare window to convert at the 10-22% brackets instead of the
-                    usual 24%.
+                    She has $1,400,000 in a traditional 401(k) and hasn&apos;t claimed Social
+                    Security yet. Taxable income right now is about $20,000 per year, well inside
+                    the 12% bracket for married couples. At 73, required minimum distributions on a
+                    balance that may exceed $2.7 million will force six-figure taxable income
+                    whether she needs it or not. She has 10 years to act.
                   </p>
 
                   <div className="mt-tight">
                     <h3 className="mb-default text-h3 text-text-primary">Key income milestones</h3>
                     <p className="mb-2 text-caption text-text-tertiary">
-                      {timeline?.length ?? 0} years modeled through retirement at age{" "}
-                      {retirementAge}
+                      {timeline?.length ?? 0} years modeled through age {retirementAge}
                     </p>
                     {timeline && timeline.length > 0 && (
                       <IncomeMilestonesTable timeline={timeline} />

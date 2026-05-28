@@ -149,19 +149,21 @@ export const sampleOptimizationResult: OptimizationResult = {
 
 export const sampleDemoResponse: DemoResponse = {
   persona: {
-    name: "Alex",
-    age: 38,
-    occupation: "Senior Software Engineer",
-    previous_salary: "$145,000/year",
-    situation: "Left job 6 months ago to co-found a startup",
+    name: "Margaret",
+    age: 63,
+    occupation: "Registered Nurse",
+    previous_salary: "$88,000/year",
+    situation:
+      "Retired last year after a 35-year nursing career. Living off a taxable brokerage account and cash. Social Security deferred. Traditional 401(k) of $1.4M will trigger mandatory distributions at 73.",
     income_timeline: [
-      { year: 2026, income: "$35K", event: "Startup year 1" },
-      { year: 2027, income: "$30K", event: "Startup year 2" },
-      { year: 2028, income: "$150K", event: "Back to work" },
+      { year: 2026, income: "$20K", event: "Living off brokerage, no Social Security yet" },
+      { year: 2030, income: "$46K", event: "Claims Social Security at full retirement age" },
+      { year: 2036, income: "RMDs begin", event: "Mandatory distributions on $1.4M+ balance" },
     ],
-    ira_balance: "$210,000",
-    filing_status: "Single",
-    key_insight: "Two low-income years create a window to convert at 10-22% instead of 24%",
+    ira_balance: "$1,400,000 traditional + $52,000 Roth",
+    filing_status: "Married Filing Jointly",
+    key_insight:
+      "The 10-year window between retirement and mandatory distributions lets Margaret convert at 12-22% today. Once RMDs begin on a balance that may exceed $2.7M, combined income could push her marginal rate significantly higher.",
   },
   input: sampleOptimizationResult.input,
   result: sampleOptimizationResult,

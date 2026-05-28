@@ -2,71 +2,70 @@ from app.engine.optimizer import optimize
 from app.engine.types import FilingStatus, ScenarioInput, YearlyIncome
 
 DEMO_SCENARIO = ScenarioInput(
-    age=38,
-    filing_status=FilingStatus.SINGLE,
+    age=63,
+    filing_status=FilingStatus.MFJ,
     income_timeline=[
-        # Startup window — the conversion opportunity
-        YearlyIncome(year=2026, gross_income=35000, notes="Startup year 1"),
-        YearlyIncome(year=2027, gross_income=30000, notes="Startup year 2"),
-        # Back to work — acquired / new senior role
-        YearlyIncome(year=2028, gross_income=150000, notes="Back to work"),
-        # Career growth
-        YearlyIncome(year=2029, gross_income=155000),
-        YearlyIncome(year=2030, gross_income=160000),
-        YearlyIncome(year=2031, gross_income=165000),
-        YearlyIncome(year=2032, gross_income=170000),
-        YearlyIncome(year=2033, gross_income=175000),
-        YearlyIncome(year=2034, gross_income=180000),
-        YearlyIncome(year=2035, gross_income=185000),
-        # Sabbatical year
-        YearlyIncome(year=2036, gross_income=100000, notes="Sabbatical"),
-        # Senior IC / management
-        YearlyIncome(year=2037, gross_income=190000),
-        YearlyIncome(year=2038, gross_income=195000),
-        YearlyIncome(year=2039, gross_income=200000),
-        YearlyIncome(year=2040, gross_income=205000),
-        YearlyIncome(year=2041, gross_income=210000),
-        YearlyIncome(year=2042, gross_income=210000),
-        YearlyIncome(year=2043, gross_income=210000),
-        YearlyIncome(year=2044, gross_income=205000),
-        YearlyIncome(year=2045, gross_income=200000),
-        # Winding down
-        YearlyIncome(year=2046, gross_income=195000),
-        YearlyIncome(year=2047, gross_income=190000),
-        YearlyIncome(year=2048, gross_income=180000),
-        YearlyIncome(year=2049, gross_income=160000, notes="Part-time"),
-        YearlyIncome(year=2050, gross_income=140000, notes="Part-time"),
-        YearlyIncome(year=2051, gross_income=120000, notes="Part-time"),
-        YearlyIncome(year=2052, gross_income=80000, notes="Part-time"),
+        # Income valley: retired, living off brokerage, no Social Security yet
+        YearlyIncome(
+            year=2026, gross_income=20000, notes="Living off brokerage, no Social Security yet"
+        ),
+        YearlyIncome(
+            year=2027, gross_income=20000, notes="Bridge year, drawing from brokerage and cash"
+        ),
+        YearlyIncome(
+            year=2028, gross_income=20000, notes="Medicare starts, deferring Social Security"
+        ),
+        YearlyIncome(
+            year=2029, gross_income=20000, notes="Waiting for full retirement age benefit"
+        ),
+        # Social Security claims
+        YearlyIncome(
+            year=2030, gross_income=46000, notes="Claims Social Security at full retirement age"
+        ),
+        YearlyIncome(
+            year=2031,
+            gross_income=58000,
+            notes="Spouse claims Social Security, combined income rises",
+        ),
+        YearlyIncome(
+            year=2032,
+            gross_income=60000,
+            notes="Full combined Social Security and brokerage income",
+        ),
+        YearlyIncome(year=2033, gross_income=60000, notes="Stable income phase"),
+        YearlyIncome(year=2034, gross_income=62000, notes="Final years before RMD window closes"),
+        YearlyIncome(
+            year=2035, gross_income=62000, notes="Last year before required minimum distributions"
+        ),
     ],
-    traditional_ira_balance=210000,
-    roth_ira_balance=5000,
-    retirement_age=65,
-    years_in_retirement=25,
-    annual_retirement_spending=70000,
+    traditional_ira_balance=1_400_000,
+    roth_ira_balance=52_000,
+    retirement_age=73,
+    years_in_retirement=20,
+    annual_retirement_spending=95_000,
     annual_growth_rate=0.07,
     discount_rate=0.05,
 )
 
 DEMO_PERSONA = {
-    "name": "Alex",
-    "age": 38,
-    "occupation": "Senior Software Engineer",
-    "previous_salary": "$145,000/year",
-    "situation": "Left job 6 months ago to co-found a startup",
+    "name": "Margaret",
+    "age": 63,
+    "occupation": "Registered Nurse",
+    "previous_salary": "$88,000/year",
+    "situation": "Retired last year after a 35-year nursing career. Living off a taxable brokerage account and cash. Social Security deferred. Traditional 401(k) of $1.4M will trigger mandatory distributions at 73.",
     "income_timeline": [
+        {"year": 2026, "income": "$20K", "notes": "Living off brokerage, no Social Security yet"},
+        {"year": 2030, "income": "$46K", "notes": "Claims Social Security at full retirement age"},
         {
-            "year": 2026,
-            "income": "$35K",
-            "notes": "Startup year 1 (6 months salary before leaving)",
+            "year": 2036,
+            "income": "RMDs begin",
+            "notes": "Mandatory distributions on $1.4M+ balance",
         },
-        {"year": 2027, "income": "$30K", "notes": "Startup year 2 (minimal founder salary)"},
-        {"year": 2028, "income": "$150K", "notes": "Back to work (startup acquired / new role)"},
     ],
-    "career_arc": "Career growth to $210K peak, sabbatical at 48, winding down to part-time before retiring at 65",
-    "ira_balance": "$210,000 (traditional 401k rollover from 14 years of work)",
-    "filing_status": "Single",
-    "key_insight": "Two low-income startup years create a window to convert at 10-22% instead of the 24% bracket Alex would be in at $150K+",
+    "career_arc": "35 years as a registered nurse, saving consistently in her employer 401(k). Roth contributions started in her final decade once pre-tax balance grew large. No earned income planned; income rises sharply at 73 when mandatory distributions begin.",
+    "ira_balance": "$1,400,000 traditional 401(k) + $52,000 Roth, from 35 years of consistent saving",
+    "filing_status": "Married Filing Jointly",
+    "key_insight": "The 10-year window between retirement and mandatory distributions lets Margaret convert at 12-22% today. Once RMDs begin on a balance that may exceed $2.7M, combined income could push her marginal rate significantly higher.",
 }
 
 

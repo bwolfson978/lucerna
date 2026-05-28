@@ -9,10 +9,10 @@ class TestDemoScenario:
         assert isinstance(DEMO_SCENARIO, ScenarioInput)
 
     def test_demo_has_full_timeline(self):
-        assert len(DEMO_SCENARIO.income_timeline) == 27
+        assert len(DEMO_SCENARIO.income_timeline) == 10
 
     def test_demo_persona_has_name(self):
-        assert DEMO_PERSONA["name"] == "Alex"
+        assert DEMO_PERSONA["name"] == "Margaret"
 
     def test_demo_persona_has_required_fields(self):
         assert "age" in DEMO_PERSONA
