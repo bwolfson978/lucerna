@@ -2,7 +2,6 @@ import type { ScenarioComparison } from "@/lib/types";
 import { Card } from "@/components/ui/card";
 import { formatCurrency, formatCompactCurrency, formatSavings } from "@/lib/utils/formatting";
 import { Tooltip } from "@/components/common/Tooltip";
-import { ArrowDownIcon } from "@/components/common/icons";
 import { dataFontStyle } from "@/lib/utils/constants";
 import { InfoTrigger } from "@/components/methodology/InfoTrigger";
 
@@ -125,7 +124,6 @@ export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
                       className="flex items-center gap-1 text-body-sm font-medium text-negative"
                       style={dataFontStyle}
                     >
-                      <ArrowDownIcon />
                       {formatCurrency(Math.abs(scenario.difference_from_optimal))} less than
                       scenario with highest savings
                     </span>
