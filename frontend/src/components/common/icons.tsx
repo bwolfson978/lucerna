@@ -51,4 +51,3 @@ export function ChevronDownIcon({ className, size = 12 }: IconProps) {
     </svg>
   );
 }
-
