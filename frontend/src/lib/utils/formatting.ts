@@ -78,7 +78,7 @@ export function formatPercent(decimal: number): string {
 
 export function formatSavings(amount: number): string {
   const formatted = currencyFormatter.format(Math.abs(amount));
-  if (amount > 0) return `+${formatted}`;
+  if (amount > 0) return formatted;
   if (amount < 0) return `-${formatted}`;
   return formatted;
 }

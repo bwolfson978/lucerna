@@ -118,8 +118,8 @@ describe("formatAxisCurrency", () => {
 });
 
 describe("formatSavings", () => {
-  it("adds + prefix for positive values", () => {
-    expect(formatSavings(5000)).toBe("+$5,000");
+  it("formats positive values without prefix", () => {
+    expect(formatSavings(5000)).toBe("$5,000");
   });
 
   it("adds - prefix for negative values", () => {
@@ -131,6 +131,6 @@ describe("formatSavings", () => {
   });
 
   it("formats large positive values", () => {
-    expect(formatSavings(150000)).toBe("+$150,000");
+    expect(formatSavings(150000)).toBe("$150,000");
   });
 });

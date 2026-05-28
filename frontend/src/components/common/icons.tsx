@@ -52,24 +52,3 @@ export function ChevronDownIcon({ className, size = 12 }: IconProps) {
   );
 }
 
-/** Downward arrow icon used for "less than optimal" indicators. */
-export function ArrowDownIcon({ className, size = 12 }: IconProps) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 12 12"
-      fill="none"
-      className={className}
-      aria-hidden="true"
-    >
-      <path
-        d="M6 2v8M6 10l-3-3M6 10l3-3"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}

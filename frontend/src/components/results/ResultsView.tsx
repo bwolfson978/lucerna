@@ -4,7 +4,6 @@ import { useMemo, useRef, useState } from "react";
 import type { OptimizationResult, ScenarioInput } from "@/lib/types";
 import { MetricCard } from "@/components/common/MetricCard";
 import { Tooltip } from "@/components/common/Tooltip";
-import { ArrowDownIcon } from "@/components/common/icons";
 import { ChartLegend } from "@/components/common/ChartLegend";
 import { formatCurrency, formatSavings, formatTableCurrency } from "@/lib/utils/formatting";
 import { CHART_COLORS } from "@/lib/utils/constants";
@@ -119,7 +118,6 @@ export function ResultsView({ result }: ResultsViewProps) {
                     className="flex items-center gap-1 whitespace-nowrap text-body-sm font-medium text-negative"
                     style={dataFontStyle}
                   >
-                    <ArrowDownIcon />
                     {formatCurrency(Math.max(1, Math.abs(savingsDifference)))} less than highest
                     savings
                   </span>
