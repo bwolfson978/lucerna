@@ -139,8 +139,9 @@ export function getSections(_result?: OptimizationResult): MethodologySection[] 
           </P>
           <SectionHeading>What&apos;s not included</SectionHeading>
           <P>
-            Social Security taxation and Medicare surcharges (IRMAA) are not yet modeled. These
-            could shift the optimal amount in either direction depending on your situation.
+            Social Security benefits and income are not modeled. IRMAA surcharges are factored in
+            during optimization but are not a direct user input. These omissions could shift the
+            optimal amount depending on your situation.
           </P>
         </>
       ),

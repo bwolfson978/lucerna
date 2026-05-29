@@ -371,10 +371,10 @@ export function MethodologyPageClient() {
 
                 <SubHeading>What is not modeled</SubHeading>
                 <P>
-                  Social Security taxation, Medicare surcharges (IRMAA), and the net investment
-                  income tax (NIIT) are not yet included. These could shift the optimal amount in
-                  either direction depending on your situation. Inflation adjustments to future tax
-                  brackets are also not modeled: the analysis uses current-year brackets throughout.
+                  Social Security benefits and income are not modeled. IRMAA surcharges are factored
+                  into the optimization but are not a direct user input. The net investment income
+                  tax (NIIT) is also not included. Inflation adjustments to future tax brackets are
+                  not modeled: the analysis uses current-year brackets throughout.
                 </P>
 
                 <SubHeading>Important disclaimer</SubHeading>
