@@ -13,9 +13,7 @@ interface ScenarioCardsProps {
  * Reorder scenarios: Highest savings → Full conversion → No conversion (best to worst).
  */
 function reorderScenarios(scenarios: ScenarioComparison[]): ScenarioComparison[] {
-  return [...scenarios].sort(
-    (a, b) => (b.estimated_savings ?? 0) - (a.estimated_savings ?? 0),
-  );
+  return [...scenarios].sort((a, b) => (b.estimated_savings ?? 0) - (a.estimated_savings ?? 0));
 }
 
 export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
