@@ -17,6 +17,7 @@ import {
   AcaSubsidyCurve,
   RmdComparison,
 } from "@/components/methodology/diagrams";
+import { METHODOLOGY_LEGAL_DISCLAIMER } from "@/lib/utils/constants";
 
 const TOC_ITEMS: TocItem[] = [
   { id: "roth-basics", number: "01", title: "What is a Roth Conversion?" },
@@ -378,12 +379,7 @@ export function MethodologyPageClient() {
                 </P>
 
                 <SubHeading>Important disclaimer</SubHeading>
-                <P>
-                  This is an educational tool for scenario analysis. It does not provide financial,
-                  tax, or investment advice. The analysis is based on the inputs you provide and the
-                  assumptions described above. Tax laws change. Consult a qualified professional
-                  before making financial decisions.
-                </P>
+                <P>{METHODOLOGY_LEGAL_DISCLAIMER}</P>
               </MethodologySection>
 
               {/* Footer CTA */}
