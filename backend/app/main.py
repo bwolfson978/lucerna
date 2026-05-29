@@ -1,9 +1,12 @@
 import os
+import secrets
 import threading
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI, HTTPException, Response, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from prometheus_fastapi_instrumentator import Instrumentator
 
 
@@ -21,9 +24,25 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Lucerna API", lifespan=lifespan)
 
-Instrumentator(excluded_handlers=["/health", "/metrics"]).instrument(app).expose(
-    app, include_in_schema=False
-)
+Instrumentator(excluded_handlers=["/health", "/metrics"]).instrument(app)
+
+_metrics_bearer = HTTPBearer(auto_error=False)
+
+
+def _verify_metrics_token(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_metrics_bearer),
+) -> None:
+    token = os.environ.get("METRICS_TOKEN", "")
+    if not token:
+        return  # no token configured — allow in local dev
+    if credentials is None or not secrets.compare_digest(credentials.credentials, token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+
+
+@app.get("/metrics", include_in_schema=False, dependencies=[Depends(_verify_metrics_token)])
+def metrics() -> Response:
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+
 
 _default_origins = ["http://localhost:3000"]
 _env_origins = os.environ.get("ALLOWED_ORIGINS", "")
