@@ -651,21 +651,22 @@ function BracketBar({
 
   // Heights for the three solid bar segments
   const incomeBottom = yScale(0);
-  const incomeTop = grossIncome > 0
-    ? Math.min(yScale(grossIncome), incomeBottom - MIN_SEGMENT_HEIGHT)
-    : incomeBottom;
+  const incomeTop =
+    grossIncome > 0
+      ? Math.min(yScale(grossIncome), incomeBottom - MIN_SEGMENT_HEIGHT)
+      : incomeBottom;
   const incomeHeight = incomeBottom - incomeTop;
 
   const rmdBottom = incomeTop;
-  const rmdTop = grossRmd > 0
-    ? Math.min(yScale(grossIncome + grossRmd), rmdBottom - MIN_SEGMENT_HEIGHT)
-    : rmdBottom;
+  const rmdTop =
+    grossRmd > 0
+      ? Math.min(yScale(grossIncome + grossRmd), rmdBottom - MIN_SEGMENT_HEIGHT)
+      : rmdBottom;
   const rmdHeight = rmdBottom - rmdTop;
 
   const convBottom = rmdTop;
-  const convTop = grossConv > 0
-    ? Math.min(yScale(grossTotal), convBottom - MIN_SEGMENT_HEIGHT)
-    : convBottom;
+  const convTop =
+    grossConv > 0 ? Math.min(yScale(grossTotal), convBottom - MIN_SEGMENT_HEIGHT) : convBottom;
   const convHeight = convBottom - convTop;
 
   return (
@@ -722,14 +723,7 @@ function BracketBar({
 
       {/* RMD (above income, amber) */}
       {rmdHeight > 0 && (
-        <rect
-          x={x}
-          y={rmdTop}
-          width={barWidth}
-          height={rmdHeight}
-          fill={CHART_COLORS.rmd}
-          rx={0}
-        />
+        <rect x={x} y={rmdTop} width={barWidth} height={rmdHeight} fill={CHART_COLORS.rmd} rx={0} />
       )}
 
       {/* Conversion (top, gold) */}
