@@ -6,11 +6,7 @@ import { MetricCard } from "@/components/common/MetricCard";
 import { Tooltip } from "@/components/common/Tooltip";
 import { ChartLegend } from "@/components/common/ChartLegend";
 import { formatCurrency, formatSavings, formatTableCurrency } from "@/lib/utils/formatting";
-import {
-  CHART_COLORS,
-  buildResultsDisclaimer,
-  dataFontStyle,
-} from "@/lib/utils/constants";
+import { CHART_COLORS, buildResultsDisclaimer, dataFontStyle } from "@/lib/utils/constants";
 import { BracketChart } from "./BracketChart";
 import { ConversionSlider } from "./ConversionSlider";
 import { ScenarioCards } from "./ScenarioCards";
@@ -209,8 +205,7 @@ export function ResultsView({ result }: ResultsViewProps) {
         <div className="flex items-start justify-between gap-4">
           <p>
             {buildResultsDisclaimer({
-              hasStateTax:
-                !!result.input.state && result.input.state !== "none",
+              hasStateTax: !!result.input.state && result.input.state !== "none",
               acaSentence: result.aca_subsidy_impact
                 ? "ACA marketplace subsidy impact is included based on your healthcare inputs."
                 : "",
