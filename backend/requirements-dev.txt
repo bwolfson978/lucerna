@@ -3,6 +3,7 @@ uvicorn
 pydantic
 scipy
 numpy
+prometheus-fastapi-instrumentator
 pytest
 pytest-asyncio
 pytest-cov
