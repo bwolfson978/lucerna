@@ -54,15 +54,15 @@ describe("ScenarioCards", () => {
     expect(screen.getByText("Full conversion (year 1)")).toBeInTheDocument();
   });
 
-  it("reorders cards: non-best first, best last", () => {
+  it("reorders cards: best first, worst last", () => {
     const { container } = renderWithProviders(<ScenarioCards scenarios={mockScenarios} />);
     // Cards are inside the grid; each card's first span.text-h3 is its title
     const grid = container.querySelector(".grid");
     const cards = grid!.querySelectorAll(":scope > div");
     const labels = Array.from(cards).map((card) => card.querySelector(".text-h3")?.textContent);
-    expect(labels[0]).toBe("No conversion");
+    expect(labels[0]).toBe("Highest estimated savings");
     expect(labels[1]).toBe("Full conversion (year 1)");
-    expect(labels[2]).toBe("Highest estimated savings");
+    expect(labels[2]).toBe("No conversion");
   });
 
   it("shows estimated savings when provided", () => {
