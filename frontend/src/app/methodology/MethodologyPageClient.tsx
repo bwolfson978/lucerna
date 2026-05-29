@@ -17,6 +17,8 @@ import {
   AcaSubsidyCurve,
   RmdComparison,
 } from "@/components/methodology/diagrams";
+import { PAGE_FOOTER_DISCLAIMER } from "@/lib/utils/constants";
+import { PageFooter } from "@/components/common/PageFooter";
 
 const TOC_ITEMS: TocItem[] = [
   { id: "roth-basics", number: "01", title: "What is a Roth Conversion?" },
@@ -371,19 +373,14 @@ export function MethodologyPageClient() {
 
                 <SubHeading>What is not modeled</SubHeading>
                 <P>
-                  Social Security taxation, Medicare surcharges (IRMAA), and the net investment
-                  income tax (NIIT) are not yet included. These could shift the optimal amount in
-                  either direction depending on your situation. Inflation adjustments to future tax
-                  brackets are also not modeled: the analysis uses current-year brackets throughout.
+                  Social Security benefits and income are not modeled. IRMAA surcharges are factored
+                  into the optimization but are not a direct user input. The net investment income
+                  tax (NIIT) is also not included. Inflation adjustments to future tax brackets are
+                  not modeled: the analysis uses current-year brackets throughout.
                 </P>
 
                 <SubHeading>Important disclaimer</SubHeading>
-                <P>
-                  This is an educational tool for scenario analysis. It does not provide financial,
-                  tax, or investment advice. The analysis is based on the inputs you provide and the
-                  assumptions described above. Tax laws change. Consult a qualified professional
-                  before making financial decisions.
-                </P>
+                <P>{PAGE_FOOTER_DISCLAIMER}</P>
               </MethodologySection>
 
               {/* Footer CTA */}
@@ -391,14 +388,7 @@ export function MethodologyPageClient() {
                 <MethodologyFooterCTA />
               </div>
 
-              {/* Legal footer */}
-              <footer className="pb-page">
-                <p className="text-body-sm text-text-tertiary">
-                  This is an educational tool for scenario analysis. It does not provide financial,
-                  tax, or investment advice. Consult a qualified professional before making
-                  financial decisions.
-                </p>
-              </footer>
+              <PageFooter />
             </div>
           </div>
         </main>
