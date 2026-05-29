@@ -1,8 +1,4 @@
-fastapi
-uvicorn
-pydantic
-scipy
-numpy
+-r requirements.txt
 pytest
 pytest-asyncio
 pytest-cov
