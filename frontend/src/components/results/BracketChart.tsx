@@ -17,6 +17,8 @@ interface ChartTooltip {
   age: number;
   bracketFill: BracketFillResult[];
   rmdAmount?: number;
+  conversion?: number;
+  income?: number;
 }
 
 interface YearData {
@@ -24,6 +26,8 @@ interface YearData {
   age: number;
   bracketFill: BracketFillResult[];
   rmdAmount?: number;
+  conversion?: number;
+  income?: number;
 }
 
 interface BracketChartProps {
@@ -45,13 +49,21 @@ interface BracketChartProps {
   hideLegend?: boolean;
 }
 
-// Derive bracket boundaries from tax config.
-// For the top bracket (max: null/Infinity), use min + 500K as display max.
-function buildBoundaries(raw: TaxBracket[]) {
-  return raw.map((b) => ({
-    rate: b.rate,
-    max: b.max === null ? b.min + 500000 : b.max,
-  }));
+// Build gross-scale bracket boundaries from tax config.
+// Prepends a 0% standard-deduction zone so bars represent gross income/conversion
+// and bracket lines sit at the correct gross-dollar positions.
+function buildGrossBrackets(
+  raw: TaxBracket[],
+  deduction: number
+): { rate: number; min: number; max: number }[] {
+  const result: { rate: number; min: number; max: number }[] = [
+    { rate: 0, min: 0, max: deduction },
+  ];
+  for (const b of raw) {
+    const taxableMax = b.max === null ? b.min + 500000 : b.max;
+    result.push({ rate: b.rate, min: deduction + b.min, max: deduction + taxableMax });
+  }
+  return result;
 }
 
 export const BAR_GAP = 10;
@@ -99,9 +111,13 @@ export function BracketChart({
   const fadeRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const taxConfig = useTaxConfig();
-  const brackets = useMemo(
-    () => buildBoundaries(taxConfig.brackets[filingStatus]),
+  const standardDeduction = useMemo(
+    () => taxConfig.standard_deduction[filingStatus],
     [taxConfig, filingStatus]
+  );
+  const grossBrackets = useMemo(
+    () => buildGrossBrackets(taxConfig.brackets[filingStatus], standardDeduction),
+    [taxConfig, filingStatus, standardDeduction]
   );
   const [tooltip, setTooltip] = useState<ChartTooltip | null>(null);
   const [isEngaged, setIsEngaged] = useState(false);
@@ -209,6 +225,8 @@ export function BracketChart({
         age: yearData.age,
         bracketFill: yearData.bracketFill,
         rmdAmount: yearData.rmdAmount,
+        conversion: yearData.conversion,
+        income: yearData.income,
       });
     },
     [isEngaged]
@@ -225,26 +243,26 @@ export function BracketChart({
 
   const hasRmd = useMemo(() => years.some((y) => (y.rmdAmount ?? 0) > 0), [years]);
 
-  // Determine max Y value: highest bracket that any year reaches into, plus one
-  const maxFilledBracketRate = useMemo(() => {
-    let maxRate = 0.12;
-    for (const year of years) {
-      for (const bf of year.bracketFill) {
-        if (bf.filled_by_income + bf.filled_by_conversion > 0) {
-          maxRate = Math.max(maxRate, bf.bracket_rate);
-        }
-      }
+  // Max gross amount (income + rmd + conversion) across all years — drives chart scale
+  const maxGrossAmount = useMemo(() => {
+    let max = 0;
+    for (const y of years) {
+      const gross = (y.income ?? 0) + (y.rmdAmount ?? 0) + (y.conversion ?? 0);
+      if (gross > max) max = gross;
     }
-    return maxRate;
-  }, [years]);
+    // Minimum scale: show at least through the 12% bracket on the gross scale
+    return Math.max(max, grossBrackets[2]?.max ?? 0);
+  }, [years, grossBrackets]);
 
-  // Find the bracket boundary to use as chart max
+  // Find the gross bracket one level above the highest filled year — gives headroom
   const maxBracket = useMemo(() => {
-    const idx = brackets.findIndex((b) => b.rate >= maxFilledBracketRate);
-    // If rate not found (-1), show the highest bracket; otherwise show one above
-    const showIdx = idx === -1 ? brackets.length - 1 : Math.min(idx + 1, brackets.length - 1);
-    return brackets[showIdx];
-  }, [brackets, maxFilledBracketRate]);
+    let containingIdx = 0;
+    for (let i = 0; i < grossBrackets.length; i++) {
+      if (grossBrackets[i].min <= maxGrossAmount) containingIdx = i;
+    }
+    const showIdx = Math.min(containingIdx + 1, grossBrackets.length - 1);
+    return grossBrackets[showIdx];
+  }, [grossBrackets, maxGrossAmount]);
 
   const chartMax = maxBracket.max;
   const drawableHeight = chartHeight - TOP_PADDING - BOTTOM_PADDING;
@@ -266,9 +284,9 @@ export function BracketChart({
     return ticks;
   }, [chartMax, isMobile]);
 
-  const visibleBrackets = useMemo(
-    () => brackets.filter((b) => b.max <= chartMax),
-    [brackets, chartMax]
+  const visibleGrossBrackets = useMemo(
+    () => grossBrackets.filter((b) => b.max <= chartMax),
+    [grossBrackets, chartMax]
   );
 
   return (
@@ -411,13 +429,13 @@ export function BracketChart({
                     );
                   })}
                 </defs>
-                {/* Bracket boundary lines */}
-                {visibleBrackets.map((b) => {
+                {/* Bracket boundary lines (gross-scale positions) */}
+                {visibleGrossBrackets.map((b) => {
                   const y = yScale(b.max);
                   const color = BRACKET_COLORS[b.rate.toFixed(2)] || "#E5E7EB";
                   return (
                     <line
-                      key={`line-${b.rate}`}
+                      key={`line-${b.rate}-${b.min}`}
                       x1={0}
                       y1={y}
                       x2={barsFit ? "100%" : totalBarWidth}
@@ -438,6 +456,7 @@ export function BracketChart({
                       key={yearData.year}
                       x={x}
                       yearData={yearData}
+                      grossBrackets={visibleGrossBrackets}
                       chartMax={chartMax}
                       yScale={yScale}
                       barWidth={barWidth}
@@ -472,14 +491,14 @@ export function BracketChart({
           </div>
         </div>
 
-        {/* Fixed right axis: bracket rates — always visible */}
+        {/* Fixed right axis: bracket rates at gross-scale positions */}
         <svg width={rightAxisWidth} height={chartHeight} className="flex-shrink-0 self-start">
-          {visibleBrackets.map((b) => {
+          {visibleGrossBrackets.map((b) => {
             const y = yScale(b.max);
             const color = BRACKET_COLORS[b.rate.toFixed(2)] || "#6B7280";
             return (
               <text
-                key={b.rate}
+                key={`${b.rate}-${b.min}`}
                 x={6}
                 y={y + 4}
                 className={`${isMobile ? "text-[11px]" : "text-caption"} font-medium`}
@@ -535,16 +554,10 @@ export function BracketChart({
                 <span className="font-normal text-text-tertiary">(age {tooltip.age})</span>
               </div>
               {(() => {
-                const totalIncome = tooltip.bracketFill.reduce(
-                  (s, bf) => s + bf.filled_by_income,
-                  0
-                );
-                const totalConversion = tooltip.bracketFill.reduce(
-                  (s, bf) => s + bf.filled_by_conversion,
-                  0
-                );
+                const baseIncome = tooltip.income ?? 0;
                 const rmd = tooltip.rmdAmount ?? 0;
-                const baseIncome = totalIncome - rmd;
+                const conversion = tooltip.conversion ?? 0;
+                const grandTotal = baseIncome + rmd + conversion;
                 return (
                   <div className="flex flex-col gap-1.5">
                     {baseIncome > 0 && (
@@ -573,7 +586,7 @@ export function BracketChart({
                         <span className="font-medium text-text-primary">{formatCurrency(rmd)}</span>
                       </div>
                     )}
-                    {totalConversion > 0 && (
+                    {conversion > 0 && (
                       <div className="flex items-center justify-between gap-4">
                         <span className="flex items-center gap-1.5">
                           <span
@@ -583,13 +596,13 @@ export function BracketChart({
                           <span className="text-text-secondary">Conversion</span>
                         </span>
                         <span className="font-medium text-text-primary">
-                          {formatCurrency(totalConversion)}
+                          {formatCurrency(conversion)}
                         </span>
                       </div>
                     )}
                     <div className="mt-1 flex justify-between border-t border-glass-border pt-1.5 text-caption font-medium text-text-primary">
                       <span>Total</span>
-                      <span>{formatCurrency(totalIncome + totalConversion)}</span>
+                      <span>{formatCurrency(grandTotal)}</span>
                     </div>
                   </div>
                 );
@@ -605,6 +618,7 @@ export function BracketChart({
 interface BracketBarProps {
   x: number;
   yearData: YearData;
+  grossBrackets: { rate: number; min: number; max: number }[];
   chartMax: number;
   yScale: (dollars: number) => number;
   barWidth: number;
@@ -618,6 +632,7 @@ interface BracketBarProps {
 function BracketBar({
   x,
   yearData,
+  grossBrackets,
   chartMax,
   yScale,
   barWidth,
@@ -629,12 +644,30 @@ function BracketBar({
 }: BracketBarProps) {
   const barBottom = chartHeight - bottomPadding;
 
-  // RMD fraction: what proportion of total income is from mandatory withdrawals
-  const totalIncome = yearData.bracketFill.reduce((s, bf) => s + bf.filled_by_income, 0);
-  const rmdFraction =
-    totalIncome > 0 && (yearData.rmdAmount ?? 0) > 0
-      ? Math.min((yearData.rmdAmount ?? 0) / totalIncome, 1)
-      : 0;
+  const grossIncome = yearData.income ?? 0;
+  const grossRmd = yearData.rmdAmount ?? 0;
+  const grossConv = yearData.conversion ?? 0;
+  const grossTotal = grossIncome + grossRmd + grossConv;
+
+  // Heights for the three solid bar segments
+  const incomeBottom = yScale(0);
+  const incomeTop =
+    grossIncome > 0
+      ? Math.min(yScale(grossIncome), incomeBottom - MIN_SEGMENT_HEIGHT)
+      : incomeBottom;
+  const incomeHeight = incomeBottom - incomeTop;
+
+  const rmdBottom = incomeTop;
+  const rmdTop =
+    grossRmd > 0
+      ? Math.min(yScale(grossIncome + grossRmd), rmdBottom - MIN_SEGMENT_HEIGHT)
+      : rmdBottom;
+  const rmdHeight = rmdBottom - rmdTop;
+
+  const convBottom = rmdTop;
+  const convTop =
+    grossConv > 0 ? Math.min(yScale(grossTotal), convBottom - MIN_SEGMENT_HEIGHT) : convBottom;
+  const convHeight = convBottom - convTop;
 
   return (
     <g
@@ -649,99 +682,61 @@ function BracketBar({
       className="cursor-pointer"
       mask={`url(#barMask-${maskIndex})`}
     >
-      {/* Invisible hit area for entire column */}
+      {/* Invisible hit area */}
       <rect x={x} y={0} width={barWidth} height={barBottom} fill="transparent" />
-      {yearData.bracketFill.map((bf) => {
-        if (bf.bracket_min >= chartMax) return null;
 
-        const segmentTop = Math.min(
-          bf.bracket_min + bf.filled_by_income + bf.filled_by_conversion,
-          bf.bracket_max
-        );
-        const bracketVisibleMax = Math.min(bf.bracket_max, chartMax);
-
-        // Income segment (natural)
-        const rawIncomeBottom = yScale(bf.bracket_min);
-        const rawIncomeTop = yScale(bf.bracket_min + bf.filled_by_income);
-        const rawIncomeHeight = rawIncomeBottom - rawIncomeTop;
-
-        // Enforce minimum height for nonzero income
-        const incomeHeight =
-          bf.filled_by_income > 0 ? Math.max(rawIncomeHeight, MIN_SEGMENT_HEIGHT) : 0;
-        const incomeBottom = rawIncomeBottom;
-        const incomeTop = incomeBottom - incomeHeight;
-
-        // Split income into base (bottom) and RMD (top)
-        const rmdHeight = incomeHeight * rmdFraction;
-        const baseHeight = incomeHeight - rmdHeight;
-
-        // Conversion segment stacks on top of (possibly expanded) income
-        const rawConvHeight = yScale(bf.bracket_min + bf.filled_by_income) - yScale(segmentTop);
-
-        const convHeight =
-          bf.filled_by_conversion > 0 ? Math.max(rawConvHeight, MIN_SEGMENT_HEIGHT) : 0;
-        const convBottom = incomeTop;
-        const convTop = convBottom - convHeight;
-
-        // Remaining capacity sits on top of the filled segments
-        const remainingTop = yScale(bracketVisibleMax);
-        const remainingBottom = convHeight > 0 ? convTop : incomeTop;
+      {/* Remaining capacity boxes — one per gross bracket, drawn bottom-to-top */}
+      {grossBrackets.map((b) => {
+        if (b.min >= chartMax) return null;
+        const filledInBracket = Math.max(0, Math.min(grossTotal, b.max) - b.min);
+        const visibleMax = Math.min(b.max, chartMax);
+        const remainingTop = yScale(visibleMax);
+        const remainingBottom = yScale(b.min + filledInBracket);
         const remainingHeight = Math.max(remainingBottom - remainingTop, 0);
-
+        if (remainingHeight <= 1) return null;
         return (
-          <g key={bf.bracket_rate}>
-            {/* Remaining capacity (warm light background) */}
-            {remainingHeight > 1 && (
-              <rect
-                x={x}
-                y={remainingTop}
-                width={barWidth}
-                height={remainingHeight}
-                fill={CHART_COLORS.remaining}
-                stroke={CHART_COLORS.remainingStroke}
-                strokeWidth={0.5}
-                rx={2}
-              />
-            )}
-
-            {/* Base income portion (bottom of income stack) */}
-            {baseHeight > 0 && (
-              <rect
-                x={x}
-                y={incomeTop + rmdHeight}
-                width={barWidth}
-                height={baseHeight}
-                fill={CHART_COLORS.income}
-                rx={rmdHeight > 0 ? 0 : 2}
-              />
-            )}
-
-            {/* RMD portion (top of income stack, above base income) */}
-            {rmdHeight > 0 && (
-              <rect
-                x={x}
-                y={incomeTop}
-                width={barWidth}
-                height={rmdHeight}
-                fill={CHART_COLORS.rmd}
-                rx={0}
-              />
-            )}
-
-            {/* Conversion portion */}
-            {convHeight > 0 && (
-              <rect
-                x={x}
-                y={convTop}
-                width={barWidth}
-                height={convHeight}
-                fill={CHART_COLORS.conversion}
-                rx={2}
-              />
-            )}
-          </g>
+          <rect
+            key={`rem-${b.rate}-${b.min}`}
+            x={x}
+            y={remainingTop}
+            width={barWidth}
+            height={remainingHeight}
+            fill={CHART_COLORS.remaining}
+            stroke={CHART_COLORS.remainingStroke}
+            strokeWidth={0.5}
+            rx={2}
+          />
         );
       })}
+
+      {/* Base income (bottom, blue) */}
+      {incomeHeight > 0 && (
+        <rect
+          x={x}
+          y={incomeTop}
+          width={barWidth}
+          height={incomeHeight}
+          fill={CHART_COLORS.income}
+          rx={2}
+        />
+      )}
+
+      {/* RMD (above income, amber) */}
+      {rmdHeight > 0 && (
+        <rect x={x} y={rmdTop} width={barWidth} height={rmdHeight} fill={CHART_COLORS.rmd} rx={0} />
+      )}
+
+      {/* Conversion (top, gold) */}
+      {convHeight > 0 && (
+        <rect
+          x={x}
+          y={convTop}
+          width={barWidth}
+          height={convHeight}
+          fill={CHART_COLORS.conversion}
+          rx={2}
+        />
+      )}
     </g>
   );
 }

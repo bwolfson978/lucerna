@@ -67,8 +67,10 @@ export function ResultsView({ result }: ResultsViewProps) {
       age: result.input.age + i,
       bracketFill: yearlyBracketFills[i] || [],
       rmdAmount: rmdByYear.get(yi.year),
+      conversion: yearlyConversions[i],
+      income: yi.gross_income,
     }));
-  }, [result.input, yearlyBracketFills, rmdByYear]);
+  }, [result.input, yearlyBracketFills, rmdByYear, yearlyConversions]);
 
   const yearInfos = result.input.timeline.map((yi, i) => ({
     year: yi.year,

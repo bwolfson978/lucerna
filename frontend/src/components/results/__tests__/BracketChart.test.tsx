@@ -44,11 +44,13 @@ function makeBracketFill(overrides: {
 describe("BracketChart", () => {
   describe("minimum segment visibility", () => {
     it("renders a visible rect for a very small conversion amount", () => {
-      // A tiny $50 conversion in a large bracket — would normally be <1px
+      // A tiny $50 conversion on top of substantial income — would normally be <1px
       const years = [
         {
           year: 2026,
           age: 50,
+          income: 20000,
+          conversion: 50,
           bracketFill: [
             makeBracketFill({
               bracket_rate: 0.1,
@@ -92,12 +94,14 @@ describe("BracketChart", () => {
         {
           year: 2026,
           age: 50,
+          income: 100, // tiny gross income
+          conversion: 0,
           bracketFill: [
             makeBracketFill({
               bracket_rate: 0.1,
               bracket_min: 0,
               bracket_max: 11925,
-              filled_by_income: 100, // tiny income
+              filled_by_income: 100,
               filled_by_conversion: 0,
             }),
             makeBracketFill({
