@@ -64,9 +64,9 @@ describe("IncomeTimelineEditor", () => {
     expect(newTimeline[3].gross_income).toBe(0);
   });
 
-  it("disables + Add year when at 15-year max", () => {
+  it("disables + Add year when at 40-year max", () => {
     const onChange = vi.fn();
-    const maxTimeline: YearlyIncome[] = Array.from({ length: 15 }, (_, i) => ({
+    const maxTimeline: YearlyIncome[] = Array.from({ length: 40 }, (_, i) => ({
       year: 2026 + i,
       gross_income: 100000,
     }));
