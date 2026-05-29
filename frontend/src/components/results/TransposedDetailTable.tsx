@@ -90,7 +90,7 @@ export function TransposedDetailTable({
       >
         {showIncomeRow && (
           <div className="flex h-8 items-center justify-end px-2 text-data-xs font-medium text-text-tertiary">
-            Earned Income
+            Other income
           </div>
         )}
         <div className="flex h-8 items-center justify-end px-2 text-data-xs font-medium text-text-tertiary">

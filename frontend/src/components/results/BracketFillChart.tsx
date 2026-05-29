@@ -27,7 +27,7 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
       <div className="flex items-center gap-5 text-body-sm text-text-secondary">
         <span className="flex items-center gap-1.5">
           <span className="h-3 w-3 rounded bg-neutral" />
-          Earned Income
+          Other income
         </span>
         <span className="flex items-center gap-1.5">
           <span className="h-3 w-3 rounded bg-accent" />

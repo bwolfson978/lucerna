@@ -61,10 +61,12 @@ export default function DemoPage() {
                   </p>
                   <p className="text-body leading-relaxed text-text-secondary">
                     She has $1,400,000 in a traditional 401(k) and hasn&apos;t claimed Social
-                    Security yet. Taxable income right now is about $20,000 per year, well inside
-                    the 12% bracket for married couples. At 73, required minimum distributions on a
-                    balance that may exceed $2.7 million will force six-figure taxable income
-                    whether she needs it or not. She has 10 years to act.
+                    Security yet. Gross income right now is about $20,000 per year, which is below
+                    the $30,000 standard deduction for married couples, so taxable income is $0.
+                    Those early years have the entire 10% and 12% federal bracket available for Roth
+                    conversions. At 73, required minimum distributions on a balance that may exceed
+                    $2.7 million will force six-figure taxable income whether she needs it or not.
+                    She has 10 years to act.
                   </p>
 
                   <div className="mt-tight">

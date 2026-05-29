@@ -12,6 +12,7 @@ import { ConversionSlider } from "./ConversionSlider";
 import { ScenarioCards } from "./ScenarioCards";
 import { BalanceProjections } from "./BalanceProjections";
 import { AcaSubsidyImpact } from "./AcaSubsidyImpact";
+import { RmdImpactChart } from "./RmdImpactChart";
 import { Card } from "@/components/ui/card";
 import { useConversionSlider } from "@/hooks/useConversionSlider";
 import { useScrollOnTransition } from "@/hooks/useScrollOnTransition";
@@ -51,14 +52,24 @@ export function ResultsView({ result }: ResultsViewProps) {
   // Auto-scroll bracket chart when a bar activates or deactivates
   useScrollOnTransition(yearlyConversions, chartScrollRef, tableColWidth);
 
+  // RMD amounts keyed by year, for income bar segmentation
+  const rmdByYear = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const d of result.rmd_projection?.yearly_detail ?? []) {
+      map.set(d.year, d.rmd_amount);
+    }
+    return map;
+  }, [result.rmd_projection]);
+
   // Build chart data from client-side bracket fills
   const chartYears = useMemo(() => {
     return result.input.timeline.map((yi, i) => ({
       year: yi.year,
       age: result.input.age + i,
       bracketFill: yearlyBracketFills[i] || [],
+      rmdAmount: rmdByYear.get(yi.year),
     }));
-  }, [result.input, yearlyBracketFills]);
+  }, [result.input, yearlyBracketFills, rmdByYear]);
 
   const yearInfos = result.input.timeline.map((yi, i) => ({
     year: yi.year,
@@ -178,7 +189,10 @@ export function ResultsView({ result }: ResultsViewProps) {
           {/* Series legend */}
           <ChartLegend
             items={[
-              { color: CHART_COLORS.income, label: "Earned Income" },
+              { color: CHART_COLORS.income, label: "Other income" },
+              ...(chartYears.some((y) => (y.rmdAmount ?? 0) > 0)
+                ? [{ color: CHART_COLORS.rmd, label: "Required withdrawal" }]
+                : []),
               { color: CHART_COLORS.conversion, label: "Roth Conversion" },
               { color: "", label: "Remaining space in tax bracket", outline: true },
             ]}
@@ -191,6 +205,11 @@ export function ResultsView({ result }: ResultsViewProps) {
 
       {/* ACA subsidy impact (only when healthcare inputs provided) */}
       {result.aca_subsidy_impact && <AcaSubsidyImpact result={result} />}
+
+      {/* RMD impact (shown when RMD projection data is available) */}
+      {result.rmd_projection &&
+        result.rmd_projection_no_conversion &&
+        result.rmd_projection.yearly_detail.length > 0 && <RmdImpactChart result={result} />}
 
       {/* Balance projections */}
       <BalanceProjections

@@ -1,5 +1,6 @@
 export const CHART_COLORS = {
   income: "#6C5CE7",
+  rmd: "#7EC8C8",
   conversion: "#F0C674",
   taxable: "#A8C5A0",
   remaining: "rgba(255, 255, 255, 0.04)",
