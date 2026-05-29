@@ -22,6 +22,7 @@ interface YearData {
   year: number;
   age: number;
   bracketFill: BracketFillResult[];
+  rmdAmount?: number;
 }
 
 interface BracketChartProps {
@@ -220,6 +221,8 @@ export function BracketChart({
     }
   }, [isEngaged]);
 
+  const hasRmd = useMemo(() => years.some((y) => (y.rmdAmount ?? 0) > 0), [years]);
+
   // Determine max Y value: highest bracket that any year reaches into, plus one
   const maxFilledBracketRate = useMemo(() => {
     let maxRate = 0.12;
@@ -275,6 +278,12 @@ export function BracketChart({
             <span className="h-3 w-3 rounded" style={{ backgroundColor: CHART_COLORS.income }} />
             Earned Income
           </span>
+          {hasRmd && (
+            <span className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded" style={{ backgroundColor: CHART_COLORS.rmd }} />
+              Required withdrawal
+            </span>
+          )}
           <span className="flex items-center gap-1.5">
             <span
               className="h-3 w-3 rounded"
@@ -604,6 +613,13 @@ function BracketBar({
 }: BracketBarProps) {
   const barBottom = chartHeight - bottomPadding;
 
+  // RMD fraction: what proportion of total income is from mandatory withdrawals
+  const totalIncome = yearData.bracketFill.reduce((s, bf) => s + bf.filled_by_income, 0);
+  const rmdFraction =
+    totalIncome > 0 && (yearData.rmdAmount ?? 0) > 0
+      ? Math.min((yearData.rmdAmount ?? 0) / totalIncome, 1)
+      : 0;
+
   return (
     <g
       onMouseMove={(e) => onHover(e, yearData)}
@@ -639,6 +655,10 @@ function BracketBar({
         const incomeBottom = rawIncomeBottom;
         const incomeTop = incomeBottom - incomeHeight;
 
+        // Split income into base (bottom) and RMD (top)
+        const rmdHeight = Math.round(incomeHeight * rmdFraction);
+        const baseHeight = incomeHeight - rmdHeight;
+
         // Conversion segment stacks on top of (possibly expanded) income
         const rawConvHeight = yScale(bf.bracket_min + bf.filled_by_income) - yScale(segmentTop);
 
@@ -668,14 +688,26 @@ function BracketBar({
               />
             )}
 
-            {/* Income portion */}
-            {incomeHeight > 0 && (
+            {/* Base income portion (bottom of income stack) */}
+            {baseHeight > 0 && (
+              <rect
+                x={x}
+                y={incomeTop + rmdHeight}
+                width={barWidth}
+                height={baseHeight}
+                fill={CHART_COLORS.income}
+                rx={2}
+              />
+            )}
+
+            {/* RMD portion (top of income stack, above base income) */}
+            {rmdHeight > 0 && (
               <rect
                 x={x}
                 y={incomeTop}
                 width={barWidth}
-                height={incomeHeight}
-                fill={CHART_COLORS.income}
+                height={rmdHeight}
+                fill={CHART_COLORS.rmd}
                 rx={2}
               />
             )}

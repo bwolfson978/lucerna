@@ -53,14 +53,24 @@ export function ResultsView({ result }: ResultsViewProps) {
   // Auto-scroll bracket chart when a bar activates or deactivates
   useScrollOnTransition(yearlyConversions, chartScrollRef, tableColWidth);
 
+  // RMD amounts keyed by year, for income bar segmentation
+  const rmdByYear = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const d of result.rmd_projection?.yearly_detail ?? []) {
+      map.set(d.year, d.rmd_amount);
+    }
+    return map;
+  }, [result.rmd_projection]);
+
   // Build chart data from client-side bracket fills
   const chartYears = useMemo(() => {
     return result.input.timeline.map((yi, i) => ({
       year: yi.year,
       age: result.input.age + i,
       bracketFill: yearlyBracketFills[i] || [],
+      rmdAmount: rmdByYear.get(yi.year),
     }));
-  }, [result.input, yearlyBracketFills]);
+  }, [result.input, yearlyBracketFills, rmdByYear]);
 
   const yearInfos = result.input.timeline.map((yi, i) => ({
     year: yi.year,
@@ -181,6 +191,9 @@ export function ResultsView({ result }: ResultsViewProps) {
           <ChartLegend
             items={[
               { color: CHART_COLORS.income, label: "Earned Income" },
+              ...(rmdByYear.size > 0
+                ? [{ color: CHART_COLORS.rmd, label: "Required withdrawal" }]
+                : []),
               { color: CHART_COLORS.conversion, label: "Roth Conversion" },
               { color: "", label: "Remaining space in tax bracket", outline: true },
             ]}
