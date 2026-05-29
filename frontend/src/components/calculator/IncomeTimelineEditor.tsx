@@ -244,6 +244,15 @@ export function IncomeTimelineEditor({
                 />
               </Card>
             ))}
+
+            <button
+              type="button"
+              onClick={addYear}
+              disabled={timeline.length >= 40}
+              className="w-full rounded-md border border-dashed border-border/50 py-2 text-body-sm text-text-tertiary transition-colors duration-300 hover:border-accent/50 hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              + Add year
+            </button>
           </div>
         </div>
       </CollapsibleContent>
