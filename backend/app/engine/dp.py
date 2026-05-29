@@ -668,24 +668,35 @@ def _dp_backward_3d(
         for t in range(n_years)
     ]
 
-    tax_cost_by_year: list[np.ndarray] = []
+    # Pre-compute per-year RMD arrays. None for non-RMD years.
+    # For RMD years, tax/state/IRMAA costs depend on the balance state (via the RMD
+    # income base), so they must be computed per-state inside the backward loop.
+    # For non-RMD years, costs are balance-independent and can be pre-computed once.
+    rmd_arrays_per_year_3d: list[np.ndarray | None] = []
     for t in range(n_years):
         owner_age = scenario.age + t
-        income_t = scenario.timeline[t].gross_income
-
         if owner_age >= owner_rmd_start:
-            rmd_by_state = vectorized_rmd(extended_grid, owner_age)  # shape (G,)
-            effective_income = income_t + rmd_by_state  # shape (G,)
-            tax_with = vectorized_federal_tax(effective_income + extended_grid, scenario.filing_status)
-            tax_without = vectorized_federal_tax(effective_income, scenario.filing_status)
-            tax_cost_by_year.append(tax_with - tax_without)
+            rmd_arrays_per_year_3d.append(
+                np.minimum(vectorized_rmd(extended_grid, owner_age), extended_grid)
+            )
         else:
+            rmd_arrays_per_year_3d.append(None)
+
+    # Tax cost indexed by conversion amount j. None for RMD years (computed per-state).
+    tax_cost_by_year: list[np.ndarray | None] = []
+    for t in range(n_years):
+        if rmd_arrays_per_year_3d[t] is not None:
+            tax_cost_by_year.append(None)
+        else:
+            income_t = scenario.timeline[t].gross_income
             tax_with = vectorized_federal_tax(income_t + extended_grid, scenario.filing_status)
             tax_cost_by_year.append(tax_with - tax_without_cache[t])
 
-    # Pre-compute state tax costs per year (3D, same pattern as 2D)
+    # State tax cost indexed by conversion amount j. None for RMD years.
     state_cost_by_year_3d: list[np.ndarray | None] = [None] * n_years
     for t in range(n_years):
+        if rmd_arrays_per_year_3d[t] is not None:
+            continue  # per-state in loop
         yr_state = resolve_state_for_year(scenario.timeline[t].state, scenario.state)
         if yr_state:
             income_t = scenario.timeline[t].gross_income
@@ -703,6 +714,8 @@ def _dp_backward_3d(
     aca_cost_by_year: list[np.ndarray | None] = [None] * n_years
     if hc:
         for t in range(n_years):
+            if rmd_arrays_per_year_3d[t] is not None:
+                continue  # ACA and RMDs don't overlap (ACA < 65, RMDs >= 73)
             year_t = scenario.timeline[t].year
             if year_t in aca_years:
                 income_t = scenario.timeline[t].gross_income
@@ -713,40 +726,49 @@ def _dp_backward_3d(
                     hc.monthly_slcsp_premium,
                 )
 
-    # Pre-compute IRMAA costs for years near or in Medicare eligibility
+    # IRMAA cost indexed by conversion amount j. extended_grid is treated as
+    # conversion amounts here (not balance states). None for RMD years.
     irmaa_cost_by_year_3d: list[np.ndarray | None] = [None] * n_years
     irmaa_discount_ratio = (1 + d) ** (-IRMAA_LOOKBACK_YEARS)
     for t in range(n_years):
+        if rmd_arrays_per_year_3d[t] is not None:
+            continue  # per-state in loop (income base includes rmd(grid[i]))
         if scenario.age + t >= MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS:
-            owner_age = scenario.age + t
             income_t = scenario.timeline[t].gross_income
-            if owner_age >= owner_rmd_start:
-                rmd_by_state = vectorized_rmd(extended_grid, owner_age)
-                base_magi_arr = income_t + rmd_by_state
-            else:
-                base_magi_arr = np.full(len(extended_grid), income_t)
-            irmaa_arr = np.array([
-                vectorized_irmaa_surcharge_loss(float(base_magi_arr[i]), np.array([extended_grid[i]]), scenario.filing_status)[0]
-                for i in range(len(extended_grid))
-            ], dtype=float)
+            irmaa_arr = vectorized_irmaa_surcharge_loss(
+                income_t, extended_grid, scenario.filing_status
+            )
             irmaa_cost_by_year_3d[t] = irmaa_arr * irmaa_discount_ratio
 
-    # Backward induction — vectorized bilinear interpolation.
-    # For each balance state i, we process ALL budget states k at once
-    # using numpy broadcasting, eliminating the inner k and j loops.
+    # Backward induction — vectorized bilinear interpolation across the budget dimension.
+    # For non-RMD years: cost_row[j] is pre-computed (balance-independent), shared across
+    # all states i. For RMD years: cost_opts[j] is computed per-state using the correct
+    # income base income_t + rmd(grid[i]).
     for t in range(n_years - 1, -1, -1):
         discount_factor = (1 + d) ** (-t)
         future_ref = value_table[t + 1]  # shape (G, B)
 
-        # Discounted cost for each conversion amount
-        cost_row = tax_cost_by_year[t].copy()
-        if state_cost_by_year_3d[t] is not None:
-            cost_row += state_cost_by_year_3d[t]
-        if aca_cost_by_year[t] is not None:
-            cost_row += aca_cost_by_year[t]
-        if irmaa_cost_by_year_3d[t] is not None:
-            cost_row += irmaa_cost_by_year_3d[t]
-        cost_row *= discount_factor
+        entry_t = scenario.timeline[t]
+        owner_age_t = scenario.age + t
+        income_t = entry_t.gross_income
+        drawdown_t = float(entry_t.drawdown) if entry_t.drawdown is not None else 0.0
+        yr_state = resolve_state_for_year(entry_t.state, scenario.state)
+        rmd_arr_t = rmd_arrays_per_year_3d[t]
+        has_rmd = rmd_arr_t is not None
+        irmaa_exposed_t = owner_age_t >= MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS
+
+        # Build shared cost_row for non-RMD years (cost_row[j] = cost of converting grid[j])
+        if not has_rmd:
+            cost_row = tax_cost_by_year[t].copy()
+            if state_cost_by_year_3d[t] is not None:
+                cost_row += state_cost_by_year_3d[t]
+            if aca_cost_by_year[t] is not None:
+                cost_row += aca_cost_by_year[t]
+            if irmaa_cost_by_year_3d[t] is not None:
+                cost_row += irmaa_cost_by_year_3d[t]
+            cost_row *= discount_factor
+        else:
+            cost_row = None  # computed per-state below
 
         for i in range(G):
             available = extended_grid[i]
@@ -755,8 +777,45 @@ def _dp_backward_3d(
                 policy_table[t, i, :] = 0
                 continue
 
-            n_opts = i + 1
-            remaining_bal = (available - extended_grid[:n_opts]) * (1 + g)
+            # Deduct RMD before conversion; this caps the conversion option range.
+            rmd_i = float(rmd_arr_t[i]) if has_rmd else 0.0
+            rmd_i = min(rmd_i, available)
+            available_for_conv = available - rmd_i
+
+            n_opts = int(np.searchsorted(extended_grid, available_for_conv + 1e-9, side="right"))
+            n_opts = max(1, min(n_opts, i + 1))
+            conv_options = extended_grid[:n_opts]
+
+            # State transition: conversion + drawdown, then grow.
+            avail_after_conv = available_for_conv - conv_options  # shape (n_opts,)
+            if drawdown_t > 0:
+                draw_from_trad = np.minimum(drawdown_t, avail_after_conv)
+                remaining_bal = (avail_after_conv - draw_from_trad) * (1 + g)
+            else:
+                remaining_bal = avail_after_conv * (1 + g)
+
+            # Per-state cost for RMD years: income base is income_t + rmd(grid[i]).
+            if has_rmd:
+                eff_income = income_t + rmd_i
+                cost_opts = vectorized_federal_tax(
+                    eff_income + conv_options, scenario.filing_status
+                ) - calculate_federal_tax(eff_income, scenario.filing_status)
+                if yr_state:
+                    cost_opts = cost_opts + vectorized_state_tax(
+                        eff_income + conv_options,
+                        yr_state,
+                        scenario.filing_status,
+                        scenario.custom_state_rate,
+                    ) - calculate_state_tax(
+                        eff_income, yr_state, scenario.filing_status, scenario.custom_state_rate
+                    )
+                if irmaa_exposed_t:
+                    cost_opts = cost_opts + vectorized_irmaa_surcharge_loss(
+                        eff_income, conv_options, scenario.filing_status
+                    ) * irmaa_discount_ratio
+                cost_opts = cost_opts * discount_factor
+            else:
+                cost_opts = cost_row[:n_opts]
 
             # Step 1: Balance interpolation for all (j, b) pairs.
             # For each conversion j, find balance bracket and interpolate
@@ -777,10 +836,9 @@ def _dp_backward_3d(
             bal_interp = lo_vals + fracs_bal[:, np.newaxis] * (hi_vals - lo_vals)
 
             # Step 2: Budget remapping via bilinear interpolation.
-            # For conversion j at budget state k, remaining_budget = budget_grid[k] - extended_grid[j].
-            # We need to look up bal_interp[j, :] at that remaining budget position.
+            # For conversion j at budget state k, remaining_budget = budget_grid[k] - grid[j].
             remaining_budgets = (
-                budget_grid[np.newaxis, :] - extended_grid[:n_opts, np.newaxis]
+                budget_grid[np.newaxis, :] - conv_options[:, np.newaxis]
             )  # (n_opts, B)
 
             bud_indices = (
@@ -806,8 +864,8 @@ def _dp_backward_3d(
             future_matrix = future_lo + fracs_bud * (future_hi - future_lo)
 
             # Step 3: Mask invalid options (conversion > budget) and pick best.
-            invalid = extended_grid[:n_opts, np.newaxis] > budget_grid[np.newaxis, :] + 1e-6
-            values_matrix = -cost_row[:n_opts, np.newaxis] + future_matrix
+            invalid = conv_options[:, np.newaxis] > budget_grid[np.newaxis, :] + 1e-6
+            values_matrix = -cost_opts[:, np.newaxis] + future_matrix
             values_matrix[invalid] = -np.inf
 
             best_indices = np.argmax(values_matrix, axis=0)  # (B,)
