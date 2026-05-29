@@ -66,13 +66,18 @@ export function RmdImpactChart({ result }: RmdImpactChartProps) {
   const toY = (v: number) => TOP_PAD + PLOT_HEIGHT * (1 - Math.min(v, yMax) / yMax);
   const toX = (i: number) => LEFT_PAD + (n <= 1 ? plotWidth / 2 : (i / (n - 1)) * plotWidth);
 
-  const withoutPts = typedPoints.map((p: RmdPoint, i: number) => `${toX(i)},${toY(p.without)}`).join(" ");
+  const withoutPts = typedPoints
+    .map((p: RmdPoint, i: number) => `${toX(i)},${toY(p.without)}`)
+    .join(" ");
   const withPts = typedPoints.map((p: RmdPoint, i: number) => `${toX(i)},${toY(p.with)}`).join(" ");
 
   // Closed polygon for the shaded area between lines
   const fillPath = [
     `M ${typedPoints.map((p: RmdPoint, i: number) => `${toX(i)},${toY(p.without)}`).join(" L ")}`,
-    `L ${[...typedPoints].reverse().map((p: RmdPoint, i: number) => `${toX(n - 1 - i)},${toY(p.with)}`).join(" L ")}`,
+    `L ${[...typedPoints]
+      .reverse()
+      .map((p: RmdPoint, i: number) => `${toX(n - 1 - i)},${toY(p.with)}`)
+      .join(" L ")}`,
     "Z",
   ].join(" ");
 
@@ -84,10 +89,8 @@ export function RmdImpactChart({ result }: RmdImpactChartProps) {
   const peakWithout = withoutProj!.peak_rmd_amount;
   const peakWith = withProj?.peak_rmd_amount ?? 0;
   const peakReduction = peakWithout - peakWith;
-  const peakPct =
-    peakWithout > 0 ? Math.round((peakReduction / peakWithout) * 100) : 0;
-  const peakAgeWithout =
-    withoutProj!.yearly_detail.find((d) => d.rmd_amount === peakWithout)?.age;
+  const peakPct = peakWithout > 0 ? Math.round((peakReduction / peakWithout) * 100) : 0;
+  const peakAgeWithout = withoutProj!.yearly_detail.find((d) => d.rmd_amount === peakWithout)?.age;
 
   return (
     <div className="flex flex-col gap-default">
@@ -144,13 +147,7 @@ export function RmdImpactChart({ result }: RmdImpactChartProps) {
                       stroke="rgba(255,255,255,0.07)"
                       strokeWidth={1}
                     />
-                    <text
-                      x={LEFT_PAD - 8}
-                      y={y + 4}
-                      textAnchor="end"
-                      fontSize={11}
-                      fill="#8B8A99"
-                    >
+                    <text x={LEFT_PAD - 8} y={y + 4} textAnchor="end" fontSize={11} fill="#8B8A99">
                       {formatAxisCurrency(val)}
                     </text>
                   </g>
@@ -171,12 +168,7 @@ export function RmdImpactChart({ result }: RmdImpactChartProps) {
               />
 
               {/* With-conversion line (solid) */}
-              <polyline
-                points={withPts}
-                fill="none"
-                stroke={COLOR_WITH}
-                strokeWidth={2.5}
-              />
+              <polyline points={withPts} fill="none" stroke={COLOR_WITH} strokeWidth={2.5} />
 
               {/* X-axis age labels */}
               {typedPoints.map((p: RmdPoint, i: number) => {
