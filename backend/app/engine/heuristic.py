@@ -126,11 +126,11 @@ def _global_bracket_fill_for_cap(
         bal *= 1 + g
 
     # Build (rate, year, room) slots
+    owner_rmd_start = rmd_start_age(scenario.age)
     slots: list[tuple[float, int, float]] = []
     for t in range(n_years):
         income = scenario.timeline[t].gross_income
         owner_age = scenario.age + t
-        owner_rmd_start = rmd_start_age(scenario.age)
         if owner_age >= owner_rmd_start:
             expected_rmd = calculate_rmd(scenario.traditional_ira_balance, owner_age)
             taxable = max(0, income + expected_rmd - deduction)

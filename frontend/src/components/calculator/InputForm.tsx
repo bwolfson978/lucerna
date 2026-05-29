@@ -155,7 +155,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
       errs.retirementAge = "Retirement age must be between 1 and 120";
     if (rothBalance != null && rothBalance < 0)
       errs.rothBalance = "Roth balance cannot be negative";
-    if (planningHorizonVal < 1) errs.yearsInRetirement = "Must be at least 1 year";
+    if (planningHorizonVal < 50) errs.yearsInRetirement = "Planning horizon must be age 50 or later";
     if (retirementSpending !== null && retirementSpending < 0)
       errs.retirementSpending = "Spending cannot be negative";
     if (timeline.length === 0)

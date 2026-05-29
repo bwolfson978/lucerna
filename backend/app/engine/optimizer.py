@@ -588,40 +588,41 @@ def _build_irmaa_projection(
     yearly_detail: list[IrmaaYearDetail] = []
 
     for t in range(n_years):
-        if t not in irmaa_exposed:
-            trad_balance *= 1 + scenario.annual_growth_rate
-            continue
-
         entry = scenario.timeline[t]
-        income = entry.gross_income
         owner_age = scenario.age + t
         conversion = conversions[t]
+        g = scenario.annual_growth_rate
 
         rmd = calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
         rmd = min(rmd, trad_balance)
-        effective_income = income + rmd
-        magi = effective_income + conversion
-
-        irmaa_cost = calculate_irmaa(magi, scenario.filing_status)
-        tier = irmaa_tier_index(magi, scenario.filing_status)
-
-        if irmaa_cost > 0:
-            yearly_detail.append(
-                IrmaaYearDetail(
-                    conversion_year=entry.year,
-                    surcharge_year=entry.year + IRMAA_LOOKBACK_YEARS,
-                    surcharge_age=owner_age + IRMAA_LOOKBACK_YEARS,
-                    magi=round(magi, 2),
-                    irmaa_annual_cost=round(irmaa_cost, 2),
-                    irmaa_tier=tier,
-                )
-            )
-
         available_for_conv = max(0.0, trad_balance - rmd)
         actual_conv = min(conversion, available_for_conv)
+
+        if t in irmaa_exposed:
+            income = entry.gross_income
+            effective_income = income + rmd
+            magi = effective_income + conversion
+
+            irmaa_cost = calculate_irmaa(magi, scenario.filing_status)
+            tier = irmaa_tier_index(magi, scenario.filing_status)
+
+            if irmaa_cost > 0:
+                yearly_detail.append(
+                    IrmaaYearDetail(
+                        conversion_year=entry.year,
+                        surcharge_year=entry.year + IRMAA_LOOKBACK_YEARS,
+                        surcharge_age=owner_age + IRMAA_LOOKBACK_YEARS,
+                        magi=round(magi, 2),
+                        irmaa_annual_cost=round(irmaa_cost, 2),
+                        irmaa_tier=tier,
+                    )
+                )
+
         trad_balance -= rmd
         trad_balance -= actual_conv
-        trad_balance *= 1 + scenario.annual_growth_rate
+        if entry.drawdown is not None and entry.drawdown > 0:
+            trad_balance -= min(float(entry.drawdown), trad_balance)
+        trad_balance *= 1 + g
 
     if not yearly_detail:
         return None
@@ -709,9 +710,10 @@ def _build_rmd_projection(
         rmd = min(rmd, trad_balance)
 
         if rmd > 0:
-            tax = calculate_federal_tax(rmd, filing_status)
+            income = entry.gross_income
+            tax = calculate_federal_tax(income + rmd, filing_status) - calculate_federal_tax(income, filing_status)
             if ret_state:
-                tax += calculate_state_tax(rmd, ret_state, filing_status, scenario.custom_state_rate)
+                tax += calculate_state_tax(income + rmd, ret_state, filing_status, scenario.custom_state_rate) - calculate_state_tax(income, ret_state, filing_status, scenario.custom_state_rate)
             eff_rate = tax / rmd
 
             yearly_detail.append(
@@ -732,6 +734,9 @@ def _build_rmd_projection(
         trad_balance -= rmd
         trad_balance -= actual_conv
         roth_balance += actual_conv
+        if entry.drawdown is not None and entry.drawdown > 0:
+            draw = min(float(entry.drawdown), trad_balance)
+            trad_balance -= draw
         trad_balance *= 1 + g
         roth_balance *= 1 + g
 
@@ -1032,6 +1037,9 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         trad_balance -= rmd
         trad_balance -= actual_conv
         roth_balance += actual_conv
+        if entry.drawdown is not None and entry.drawdown > 0:
+            draw = min(float(entry.drawdown), trad_balance)
+            trad_balance -= draw
         trad_balance *= 1 + g
         roth_balance *= 1 + g
 
