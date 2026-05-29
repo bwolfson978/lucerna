@@ -139,8 +139,9 @@ export function MethodologyPageClient() {
                 </P>
                 <P>
                   Roth conversions add to your taxable income for the year. They fill whatever
-                  bracket space remains above your earned income. If your salary fills through the
-                  12% bracket, a conversion starts filling the 22% bracket. The key insight:
+                  bracket space remains above your other income. If wages, Social Security, or
+                  brokerage income fills through the 12% bracket, a conversion starts filling the
+                  22% bracket. The key insight:
                   lower-income years leave more room in cheaper brackets. That room is the
                   conversion opportunity.
                 </P>

@@ -276,7 +276,7 @@ export function BracketChart({
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-body-sm text-text-secondary">
           <span className="flex items-center gap-1.5">
             <span className="h-3 w-3 rounded" style={{ backgroundColor: CHART_COLORS.income }} />
-            Earned Income
+            Other income
           </span>
           {hasRmd && (
             <span className="flex items-center gap-1.5">
@@ -550,7 +550,7 @@ export function BracketChart({
                             className="h-2 w-2 rounded-sm"
                             style={{ backgroundColor: CHART_COLORS.income }}
                           />
-                          <span className="text-text-secondary">Earned Income</span>
+                          <span className="text-text-secondary">Other income</span>
                         </span>
                         <span className="font-medium text-text-primary">
                           {formatCurrency(totalIncome)}

@@ -190,7 +190,7 @@ export function ResultsView({ result }: ResultsViewProps) {
           {/* Series legend */}
           <ChartLegend
             items={[
-              { color: CHART_COLORS.income, label: "Earned Income" },
+              { color: CHART_COLORS.income, label: "Other income" },
               ...(rmdByYear.size > 0
                 ? [{ color: CHART_COLORS.rmd, label: "Required withdrawal" }]
                 : []),
