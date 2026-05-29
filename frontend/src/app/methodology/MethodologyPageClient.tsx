@@ -17,7 +17,8 @@ import {
   AcaSubsidyCurve,
   RmdComparison,
 } from "@/components/methodology/diagrams";
-import { METHODOLOGY_LEGAL_DISCLAIMER } from "@/lib/utils/constants";
+import { PAGE_FOOTER_DISCLAIMER } from "@/lib/utils/constants";
+import { PageFooter } from "@/components/common/PageFooter";
 
 const TOC_ITEMS: TocItem[] = [
   { id: "roth-basics", number: "01", title: "What is a Roth Conversion?" },
@@ -379,7 +380,7 @@ export function MethodologyPageClient() {
                 </P>
 
                 <SubHeading>Important disclaimer</SubHeading>
-                <P>{METHODOLOGY_LEGAL_DISCLAIMER}</P>
+                <P>{PAGE_FOOTER_DISCLAIMER}</P>
               </MethodologySection>
 
               {/* Footer CTA */}
@@ -387,14 +388,7 @@ export function MethodologyPageClient() {
                 <MethodologyFooterCTA />
               </div>
 
-              {/* Legal footer */}
-              <footer className="pb-page">
-                <p className="text-body-sm text-text-tertiary">
-                  This is an educational tool for scenario analysis. It does not provide financial,
-                  tax, or investment advice. Consult a qualified professional before making
-                  financial decisions.
-                </p>
-              </footer>
+              <PageFooter />
             </div>
           </div>
         </main>

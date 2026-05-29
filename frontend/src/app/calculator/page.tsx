@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { MethodologyProvider } from "@/components/methodology/MethodologyContext";
 import { MethodologyLayout } from "@/components/methodology/MethodologyLayout";
+import { PageFooter } from "@/components/common/PageFooter";
 
 export default function CalculatorPage() {
   const [result, setResult] = useState<OptimizationResult | null>(null);
@@ -107,6 +108,7 @@ export default function CalculatorPage() {
               {result && <ResultsView result={result} onReRun={handleSubmit} loading={loading} />}
             </div>
           </div>
+          <PageFooter />
         </main>
       </MethodologyLayout>
     </MethodologyProvider>

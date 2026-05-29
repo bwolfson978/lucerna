@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Header } from "@/components/common/Header";
+import { PageFooter } from "@/components/common/PageFooter";
 import { Card } from "@/components/ui/card";
 
 export default function Home() {
@@ -105,16 +106,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className="border-t border-border px-section py-section md:px-page">
-          <div className="mx-auto max-w-content text-body-sm text-text-tertiary">
-            <p>
-              This is an educational tool for scenario analysis. It does not provide financial, tax,
-              or investment advice. Consult a qualified professional before making financial
-              decisions.
-            </p>
-          </div>
-        </footer>
+        <PageFooter />
       </main>
     </>
   );

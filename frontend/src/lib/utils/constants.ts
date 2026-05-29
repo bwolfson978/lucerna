@@ -39,11 +39,10 @@ export function buildResultsDisclaimer({
   );
 }
 
-/** Full legal disclaimer used on the methodology page. */
-export const METHODOLOGY_LEGAL_DISCLAIMER =
+/** Legal disclaimer shown in the footer of every page. */
+export const PAGE_FOOTER_DISCLAIMER =
   "This is an educational tool for scenario analysis. It does not provide financial, " +
-  "tax, or investment advice. The analysis is based on the inputs you provide and the " +
-  "assumptions described above. Tax laws change. Consult a qualified professional " +
+  "tax, or investment advice. Tax laws change. Consult a qualified professional " +
   "before making financial decisions.";
 
 /** Font family for numeric/data values throughout the app. */

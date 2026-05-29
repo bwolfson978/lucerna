@@ -12,6 +12,7 @@ import type { DemoResponse } from "@/lib/types";
 import { Card } from "@/components/ui/card";
 import { MethodologyProvider } from "@/components/methodology/MethodologyContext";
 import { MethodologyLayout } from "@/components/methodology/MethodologyLayout";
+import { PageFooter } from "@/components/common/PageFooter";
 
 export default function DemoPage() {
   const [demo, setDemo] = useState<DemoResponse | null>(null);
@@ -120,6 +121,7 @@ export default function DemoPage() {
               </Link>
             </div>
           </div>
+          <PageFooter />
         </main>
       </MethodologyLayout>
     </MethodologyProvider>
