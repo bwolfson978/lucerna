@@ -73,7 +73,7 @@ def build_curve_point(
     """
     from app.engine.optimizer import calculate_npv  # lazy — avoid circular
 
-    n_years = len(scenario.income_timeline)
+    n_years = len(scenario.timeline)
     npv_val = calculate_npv(scenario, yearly_conv)
 
     yearly_bracket_fill: list[list[BracketFillResult]] = []
@@ -81,9 +81,9 @@ def build_curve_point(
     total_tax = 0.0
 
     for i in range(n_years):
-        income = scenario.income_timeline[i].gross_income
+        income = scenario.timeline[i].gross_income
         c = yearly_conv[i]
-        yr_state = resolve_state_for_year(scenario.income_timeline[i].state, scenario.state)
+        yr_state = resolve_state_for_year(scenario.timeline[i].state, scenario.state)
 
         tax_cost = federal_tax_on_conversion(income, c, scenario.filing_status)
         tax_cost += state_tax_on_conversion(
@@ -100,7 +100,7 @@ def build_curve_point(
 
         yearly_detail.append(
             {
-                "year": scenario.income_timeline[i].year,
+                "year": scenario.timeline[i].year,
                 "income": income,
                 "conversion": c,
                 "tax_cost": round(tax_cost, 2),

@@ -8,15 +8,27 @@ class FilingStatus(StrEnum):
     MFJ = "married_filing_jointly"
 
 
-class YearlyIncome(BaseModel):
-    """Income forecast for a single year in the timeline."""
+class PlanYear(BaseModel):
+    """A single year in the planning timeline."""
 
     year: int
     gross_income: float = Field(ge=0)
+    drawdown: float | None = Field(
+        default=None,
+        ge=0,
+        description=(
+            "Draw this amount from accounts this year. "
+            "None = externally funded (no engine drawdown)."
+        ),
+    )
     notes: str = Field(default="", description="Optional user notes for this year")
     state: str | None = Field(
         default=None, description="State override for this year. None = use scenario default."
     )
+
+
+# Backward-compat alias — remove once all callers are updated
+YearlyIncome = PlanYear
 
 
 class ConversionPreferences(BaseModel):
@@ -84,10 +96,14 @@ class ScenarioInput(BaseModel):
     age: int = Field(ge=0, le=120, description="Current age")
     filing_status: FilingStatus
 
-    # Income timeline (the core input — replaces single-year income)
-    income_timeline: list[YearlyIncome] = Field(
+    # Planning timeline (replaces income_timeline)
+    timeline: list[PlanYear] = Field(
         min_length=1,
-        description="Year-by-year income forecast. The optimizer finds the best conversion schedule across all years.",
+        description=(
+            "Year-by-year plan. gross_income sets the marginal tax base for conversion cost. "
+            "drawdown (if set) funds spending from accounts this year. "
+            "The optimizer finds the best conversion schedule across all years."
+        ),
     )
 
     # Retirement accounts
@@ -96,11 +112,23 @@ class ScenarioInput(BaseModel):
     )
     roth_ira_balance: float = Field(default=0, ge=0, description="Existing Roth IRA balance")
 
-    # Retirement assumptions (with defaults)
-    retirement_age: int = Field(default=65, ge=1, le=120)
-    years_in_retirement: int = Field(default=25, ge=1)
-    annual_retirement_spending: float | None = Field(
-        default=None, description="If not provided, defaults to 4% rule on total balance"
+    # Drawdown parameters (with defaults)
+    drawdown_start_age: int = Field(
+        default=65,
+        ge=1,
+        le=120,
+        description="Age when account distributions begin (post-timeline fallback)",
+    )
+    default_drawdown: float | None = Field(
+        default=None,
+        ge=0,
+        description="Annual drawdown from accounts in post-timeline fallback. Defaults to 4% rule.",
+    )
+    planning_horizon_age: int = Field(
+        default=90,
+        ge=50,
+        le=120,
+        description="Age at end of plan (terminal liquidation year).",
     )
 
     # Growth/discount rates (with defaults)
@@ -172,6 +200,26 @@ class AcaSubsidyDetail(BaseModel):
     hits_cliff: bool
 
 
+class IrmaaYearDetail(BaseModel):
+    """Per-year IRMAA surcharge detail for a given conversion schedule."""
+
+    conversion_year: int
+    surcharge_year: int
+    surcharge_age: int
+    magi: float
+    irmaa_annual_cost: float
+    irmaa_tier: int
+
+
+class IrmaaProjection(BaseModel):
+    """Summary of projected IRMAA surcharges across the timeline."""
+
+    yearly_detail: list[IrmaaYearDetail]
+    total_irmaa_cost: float
+    peak_irmaa_year: int
+    peak_irmaa_amount: float
+
+
 class ReasoningTrace(BaseModel):
     """Structured explanation of WHY the optimal amount is what it is.
     This feeds the AI explanation layer."""
@@ -193,6 +241,9 @@ class ReasoningTrace(BaseModel):
 
     # RMD impact analysis
     rmd_summary: dict | None = None
+
+    # IRMAA impact analysis
+    irmaa_summary: dict | None = None
 
 
 class RmdYearDetail(BaseModel):
@@ -286,6 +337,10 @@ class OptimizationResult(BaseModel):
     # RMD projection (always computed — RMDs are mandatory)
     rmd_projection: RmdProjection | None = None
     rmd_projection_no_conversion: RmdProjection | None = None
+
+    # IRMAA projection (populated when user will be on Medicare during the timeline)
+    irmaa_projection: IrmaaProjection | None = None
+    irmaa_projection_no_conversion: IrmaaProjection | None = None
 
     # Input echo
     input: ScenarioInput

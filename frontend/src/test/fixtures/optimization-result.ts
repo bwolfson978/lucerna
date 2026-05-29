@@ -133,15 +133,15 @@ export const sampleOptimizationResult: OptimizationResult = {
   input: {
     age: 38,
     filing_status: "single",
-    income_timeline: [
+    timeline: [
       { year: 2026, gross_income: 35000, notes: "Startup year 1" },
       { year: 2027, gross_income: 30000, notes: "Startup year 2" },
       { year: 2028, gross_income: 150000, notes: "Back to work" },
     ],
     traditional_ira_balance: 210000,
     roth_ira_balance: 5000,
-    retirement_age: 65,
-    years_in_retirement: 25,
+    drawdown_start_age: 65,
+    planning_horizon_age: 90,
     annual_growth_rate: 0.07,
     discount_rate: 0.05,
   },
@@ -155,7 +155,7 @@ export const sampleDemoResponse: DemoResponse = {
     previous_salary: "$88,000/year",
     situation:
       "Retired last year after a 35-year nursing career. Living off a taxable brokerage account and cash. Social Security deferred. Traditional 401(k) of $1.4M will trigger mandatory distributions at 73.",
-    income_timeline: [
+    milestones: [
       { year: 2026, income: "$20K", event: "Living off brokerage, no Social Security yet" },
       { year: 2030, income: "$46K", event: "Claims Social Security at full retirement age" },
       { year: 2036, income: "RMDs begin", event: "Mandatory distributions on $1.4M+ balance" },

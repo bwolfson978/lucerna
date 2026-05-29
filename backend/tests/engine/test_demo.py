@@ -9,7 +9,7 @@ class TestDemoScenario:
         assert isinstance(DEMO_SCENARIO, ScenarioInput)
 
     def test_demo_has_full_timeline(self):
-        assert len(DEMO_SCENARIO.income_timeline) == 10
+        assert len(DEMO_SCENARIO.timeline) == 21
 
     def test_demo_persona_has_name(self):
         assert DEMO_PERSONA["name"] == "Margaret"
@@ -28,4 +28,4 @@ class TestDemoScenario:
 
     def test_get_demo_result_has_matching_conversions(self):
         demo = get_demo()
-        assert len(demo["result"].yearly_conversions) == len(DEMO_SCENARIO.income_timeline)
+        assert len(demo["result"].yearly_conversions) == len(DEMO_SCENARIO.timeline)

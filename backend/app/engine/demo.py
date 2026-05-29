@@ -1,48 +1,60 @@
 from app.engine.optimizer import optimize
-from app.engine.types import FilingStatus, ScenarioInput, YearlyIncome
+from app.engine.types import FilingStatus, PlanYear, ScenarioInput
 
 DEMO_SCENARIO = ScenarioInput(
     age=63,
     filing_status=FilingStatus.MFJ,
-    income_timeline=[
+    timeline=[
         # Income valley: retired, living off brokerage, no Social Security yet
-        YearlyIncome(
+        PlanYear(
             year=2026, gross_income=20000, notes="Living off brokerage, no Social Security yet"
         ),
-        YearlyIncome(
+        PlanYear(
             year=2027, gross_income=20000, notes="Bridge year, drawing from brokerage and cash"
         ),
-        YearlyIncome(
+        PlanYear(
             year=2028, gross_income=20000, notes="Medicare starts, deferring Social Security"
         ),
-        YearlyIncome(
+        PlanYear(
             year=2029, gross_income=20000, notes="Waiting for full retirement age benefit"
         ),
         # Social Security claims
-        YearlyIncome(
+        PlanYear(
             year=2030, gross_income=46000, notes="Claims Social Security at full retirement age"
         ),
-        YearlyIncome(
+        PlanYear(
             year=2031,
             gross_income=58000,
             notes="Spouse claims Social Security, combined income rises",
         ),
-        YearlyIncome(
+        PlanYear(
             year=2032,
             gross_income=60000,
             notes="Full combined Social Security and brokerage income",
         ),
-        YearlyIncome(year=2033, gross_income=60000, notes="Stable income phase"),
-        YearlyIncome(year=2034, gross_income=62000, notes="Final years before RMD window closes"),
-        YearlyIncome(
+        PlanYear(year=2033, gross_income=60000, notes="Stable income phase"),
+        PlanYear(year=2034, gross_income=62000, notes="Final years before RMD window closes"),
+        PlanYear(
             year=2035, gross_income=62000, notes="Last year before required minimum distributions"
         ),
+        # RMD years: engine funds spending from accounts while optimizer can still convert
+        PlanYear(year=2036, gross_income=62000, drawdown=95000, notes="RMDs begin at age 73"),
+        PlanYear(year=2037, gross_income=62000, drawdown=95000, notes="RMD year 2"),
+        PlanYear(year=2038, gross_income=62000, drawdown=95000, notes="RMD year 3"),
+        PlanYear(year=2039, gross_income=62000, drawdown=95000, notes="RMD year 4"),
+        PlanYear(year=2040, gross_income=62000, drawdown=95000, notes="RMD year 5"),
+        PlanYear(year=2041, gross_income=62000, drawdown=95000, notes="RMD year 6"),
+        PlanYear(year=2042, gross_income=62000, drawdown=95000, notes="RMD year 7"),
+        PlanYear(year=2043, gross_income=62000, drawdown=95000, notes="RMD year 8"),
+        PlanYear(year=2044, gross_income=62000, drawdown=95000, notes="RMD year 9"),
+        PlanYear(year=2045, gross_income=62000, drawdown=95000, notes="RMD year 10"),
+        PlanYear(year=2046, gross_income=62000, drawdown=95000, notes="RMD year 11"),
     ],
     traditional_ira_balance=1_400_000,
     roth_ira_balance=52_000,
-    retirement_age=73,
-    years_in_retirement=20,
-    annual_retirement_spending=95_000,
+    drawdown_start_age=73,
+    default_drawdown=95_000,
+    planning_horizon_age=93,
     annual_growth_rate=0.07,
     discount_rate=0.05,
 )
@@ -53,13 +65,13 @@ DEMO_PERSONA = {
     "occupation": "Registered Nurse",
     "previous_salary": "$88,000/year",
     "situation": "Retired last year after a 35-year nursing career. Living off a taxable brokerage account and cash. Social Security deferred. Traditional 401(k) of $1.4M will trigger mandatory distributions at 73.",
-    "income_timeline": [
-        {"year": 2026, "income": "$20K", "notes": "Living off brokerage, no Social Security yet"},
-        {"year": 2030, "income": "$46K", "notes": "Claims Social Security at full retirement age"},
+    "milestones": [
+        {"year": 2026, "income": "$20K", "event": "Living off brokerage, no Social Security yet"},
+        {"year": 2030, "income": "$46K", "event": "Claims Social Security at full retirement age"},
         {
             "year": 2036,
             "income": "RMDs begin",
-            "notes": "Mandatory distributions on $1.4M+ balance",
+            "event": "Mandatory distributions on $1.4M+ balance",
         },
     ],
     "career_arc": "35 years as a registered nurse, saving consistently in her employer 401(k). Roth contributions started in her final decade once pre-tax balance grew large. No earned income planned; income rises sharply at 73 when mandatory distributions begin.",

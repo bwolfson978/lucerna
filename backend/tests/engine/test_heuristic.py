@@ -1,7 +1,7 @@
 """Tests for the greedy bracket-fill heuristic."""
 
 from app.engine.heuristic import greedy_bracket_fill
-from app.engine.types import FilingStatus, ScenarioInput, YearlyIncome
+from app.engine.types import FilingStatus, PlanYear, ScenarioInput
 
 
 class TestGreedyBracketFill:
@@ -10,10 +10,10 @@ class TestGreedyBracketFill:
         scenario = ScenarioInput(
             age=38,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[
-                YearlyIncome(year=2026, gross_income=35000),
-                YearlyIncome(year=2027, gross_income=30000),
-                YearlyIncome(year=2028, gross_income=150000),
+            timeline=[
+                PlanYear(year=2026, gross_income=35000),
+                PlanYear(year=2027, gross_income=30000),
+                PlanYear(year=2028, gross_income=150000),
             ],
             traditional_ira_balance=210000,
         )
@@ -25,9 +25,9 @@ class TestGreedyBracketFill:
         scenario = ScenarioInput(
             age=38,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[
-                YearlyIncome(year=2026, gross_income=35000),
-                YearlyIncome(year=2027, gross_income=150000),
+            timeline=[
+                PlanYear(year=2026, gross_income=35000),
+                PlanYear(year=2027, gross_income=150000),
             ],
             traditional_ira_balance=210000,
         )
@@ -39,8 +39,8 @@ class TestGreedyBracketFill:
         scenario = ScenarioInput(
             age=38,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[
-                YearlyIncome(year=2026, gross_income=35000),
+            timeline=[
+                PlanYear(year=2026, gross_income=35000),
             ],
             traditional_ira_balance=210000,
         )
@@ -53,10 +53,10 @@ class TestGreedyBracketFill:
         scenario = ScenarioInput(
             age=38,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[
-                YearlyIncome(year=2026, gross_income=35000),
-                YearlyIncome(year=2027, gross_income=30000),
-                YearlyIncome(year=2028, gross_income=150000),
+            timeline=[
+                PlanYear(year=2026, gross_income=35000),
+                PlanYear(year=2027, gross_income=30000),
+                PlanYear(year=2028, gross_income=150000),
             ],
             traditional_ira_balance=50000,
         )
@@ -68,8 +68,8 @@ class TestGreedyBracketFill:
         scenario = ScenarioInput(
             age=45,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[
-                YearlyIncome(year=2026, gross_income=25000),
+            timeline=[
+                PlanYear(year=2026, gross_income=25000),
             ],
             traditional_ira_balance=100000,
         )
@@ -82,8 +82,8 @@ class TestGreedyBracketFill:
         scenario = ScenarioInput(
             age=45,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[
-                YearlyIncome(year=2026, gross_income=500000),
+            timeline=[
+                PlanYear(year=2026, gross_income=500000),
             ],
             traditional_ira_balance=100000,
         )
@@ -91,17 +91,17 @@ class TestGreedyBracketFill:
         assert result[0] == 0
 
     def test_already_retired_produces_valid_output(self):
-        """Already-retired user (retirement_age < current age) should work."""
+        """Already-retired user (drawdown_start_age < current age) should work."""
         scenario = ScenarioInput(
             age=70,
             filing_status=FilingStatus.MFJ,
-            income_timeline=[
-                YearlyIncome(year=2026, gross_income=50000),
-                YearlyIncome(year=2027, gross_income=50000),
-                YearlyIncome(year=2028, gross_income=50000),
+            timeline=[
+                PlanYear(year=2026, gross_income=50000),
+                PlanYear(year=2027, gross_income=50000),
+                PlanYear(year=2028, gross_income=50000),
             ],
             traditional_ira_balance=500000,
-            retirement_age=65,
+            drawdown_start_age=65,
         )
         result = greedy_bracket_fill(scenario)
         assert len(result) == 3

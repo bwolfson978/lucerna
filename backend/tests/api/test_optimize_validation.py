@@ -24,7 +24,7 @@ class TestAgeValidation:
         payload = dict(
             age=-1,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 50000}],
+            timeline=[{"year": 2026, "gross_income": 50000}],
             traditional_ira_balance=100000,
         )
         resp = await async_client.post("/api/optimize", json=payload)
@@ -35,7 +35,7 @@ class TestAgeValidation:
         payload = dict(
             age=121,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 50000}],
+            timeline=[{"year": 2026, "gross_income": 50000}],
             traditional_ira_balance=100000,
         )
         resp = await async_client.post("/api/optimize", json=payload)
@@ -46,21 +46,21 @@ class TestAgeValidation:
         payload = dict(
             age=0,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 5000}],
+            timeline=[{"year": 2026, "gross_income": 5000}],
             traditional_ira_balance=10000,
-            retirement_age=65,
+            drawdown_start_age=65,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
 
     async def test_age_at_upper_bound(self, async_client):
-        """Age 119 with retirement_age 120 should be accepted."""
+        """Age 119 with drawdown_start_age 120 should be accepted."""
         payload = dict(
             age=119,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 50000}],
+            timeline=[{"year": 2026, "gross_income": 50000}],
             traditional_ira_balance=100000,
-            retirement_age=120,
+            drawdown_start_age=120,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
@@ -70,7 +70,7 @@ class TestAgeValidation:
         payload = dict(
             age="thirty",
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 50000}],
+            timeline=[{"year": 2026, "gross_income": 50000}],
             traditional_ira_balance=100000,
         )
         resp = await async_client.post("/api/optimize", json=payload)
@@ -88,7 +88,7 @@ class TestFilingStatusValidation:
         payload = dict(
             age=40,
             filing_status="head_of_household",
-            income_timeline=[{"year": 2026, "gross_income": 80000}],
+            timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
         )
         resp = await async_client.post("/api/optimize", json=payload)
@@ -99,9 +99,9 @@ class TestFilingStatusValidation:
         payload = dict(
             age=50,
             filing_status="married_filing_jointly",
-            income_timeline=[{"year": 2026, "gross_income": 150000}],
+            timeline=[{"year": 2026, "gross_income": 150000}],
             traditional_ira_balance=500000,
-            retirement_age=65,
+            drawdown_start_age=65,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
@@ -118,14 +118,14 @@ class TestIncomeTrajectoryValidation:
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[],
+            timeline=[],
             traditional_ira_balance=200000,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 422
 
     async def test_missing_timeline(self, async_client):
-        """Missing income_timeline field should return 422."""
+        """Missing timeline field should return 422."""
         payload = dict(
             age=40,
             filing_status="single",
@@ -139,7 +139,7 @@ class TestIncomeTrajectoryValidation:
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": -10000}],
+            timeline=[{"year": 2026, "gross_income": -10000}],
             traditional_ira_balance=200000,
         )
         resp = await async_client.post("/api/optimize", json=payload)
@@ -150,9 +150,9 @@ class TestIncomeTrajectoryValidation:
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 0, "notes": "Sabbatical"}],
+            timeline=[{"year": 2026, "gross_income": 0, "notes": "Sabbatical"}],
             traditional_ira_balance=200000,
-            retirement_age=65,
+            drawdown_start_age=65,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
@@ -163,9 +163,9 @@ class TestIncomeTrajectoryValidation:
         payload = dict(
             age=35,
             filing_status="single",
-            income_timeline=timeline,
+            timeline=timeline,
             traditional_ira_balance=300000,
-            retirement_age=65,
+            drawdown_start_age=65,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
@@ -184,7 +184,7 @@ class TestTraditionalBalanceValidation:
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 80000}],
+            timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=-50000,
         )
         resp = await async_client.post("/api/optimize", json=payload)
@@ -195,9 +195,9 @@ class TestTraditionalBalanceValidation:
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 80000}],
+            timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=0,
-            retirement_age=65,
+            drawdown_start_age=65,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
@@ -209,9 +209,9 @@ class TestTraditionalBalanceValidation:
         payload = dict(
             age=50,
             filing_status="married_filing_jointly",
-            income_timeline=[{"year": 2026, "gross_income": 200000}],
+            timeline=[{"year": 2026, "gross_income": 200000}],
             traditional_ira_balance=5000000,
-            retirement_age=65,
+            drawdown_start_age=65,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
@@ -230,7 +230,7 @@ class TestRothBalanceValidation:
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 80000}],
+            timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
             roth_ira_balance=-10000,
         )
@@ -242,9 +242,9 @@ class TestRothBalanceValidation:
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 80000}],
+            timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
-            retirement_age=65,
+            drawdown_start_age=65,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
@@ -256,26 +256,26 @@ class TestRothBalanceValidation:
 
 
 class TestRetirementAgeValidation:
-    async def test_retirement_age_below_minimum(self, async_client):
-        """Retirement age 0 should return 422 (ge=1)."""
+    async def test_drawdown_start_age_below_minimum(self, async_client):
+        """drawdown_start_age 0 should return 422 (ge=1)."""
         payload = dict(
             age=0,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 50000}],
+            timeline=[{"year": 2026, "gross_income": 50000}],
             traditional_ira_balance=100000,
-            retirement_age=0,
+            drawdown_start_age=0,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 422
 
-    async def test_retirement_age_above_maximum(self, async_client):
-        """Retirement age 121 should return 422 (le=120)."""
+    async def test_drawdown_start_age_above_maximum(self, async_client):
+        """drawdown_start_age 121 should return 422 (le=120)."""
         payload = dict(
             age=50,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 80000}],
+            timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
-            retirement_age=121,
+            drawdown_start_age=121,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 422
@@ -294,9 +294,9 @@ class TestRateValidation:
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 80000}],
+            timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
-            retirement_age=65,
+            drawdown_start_age=65,
             annual_growth_rate=5.0,
         )
         resp = await async_client.post("/api/optimize", json=payload)
@@ -307,9 +307,9 @@ class TestRateValidation:
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 80000}],
+            timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
-            retirement_age=65,
+            drawdown_start_age=65,
             annual_growth_rate=-0.50,
         )
         resp = await async_client.post("/api/optimize", json=payload)
@@ -320,9 +320,9 @@ class TestRateValidation:
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 80000}],
+            timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
-            retirement_age=65,
+            drawdown_start_age=65,
             discount_rate=2.0,
         )
         resp = await async_client.post("/api/optimize", json=payload)
@@ -333,9 +333,9 @@ class TestRateValidation:
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 80000}],
+            timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
-            retirement_age=65,
+            drawdown_start_age=65,
             annual_growth_rate=0.0,
             discount_rate=0.0,
         )
@@ -350,25 +350,25 @@ class TestRateValidation:
 
 class TestYearsInRetirementValidation:
     async def test_below_minimum(self, async_client):
-        """years_in_retirement < 1 should return 422 (ge=1)."""
+        """planning_horizon_age < 50 should return 422 (ge=50)."""
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 80000}],
+            timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
-            years_in_retirement=0,
+            planning_horizon_age=49,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 422
 
     async def test_defaults_to_25(self, async_client):
-        """Omitting years_in_retirement should default to 25 and work."""
+        """Omitting planning_horizon_age should default to 90 and work."""
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 80000}],
+            timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
-            retirement_age=65,
+            drawdown_start_age=65,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
@@ -385,9 +385,9 @@ class TestHealthcareValidation:
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 50000}],
+            timeline=[{"year": 2026, "gross_income": 50000}],
             traditional_ira_balance=200000,
-            retirement_age=65,
+            drawdown_start_age=65,
             healthcare={"household_size": 0, "monthly_slcsp_premium": 620},
         )
         resp = await async_client.post("/api/optimize", json=payload)
@@ -398,9 +398,9 @@ class TestHealthcareValidation:
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 50000}],
+            timeline=[{"year": 2026, "gross_income": 50000}],
             traditional_ira_balance=200000,
-            retirement_age=65,
+            drawdown_start_age=65,
             healthcare={"household_size": 20, "monthly_slcsp_premium": 620},
         )
         resp = await async_client.post("/api/optimize", json=payload)
@@ -411,9 +411,9 @@ class TestHealthcareValidation:
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 50000}],
+            timeline=[{"year": 2026, "gross_income": 50000}],
             traditional_ira_balance=200000,
-            retirement_age=65,
+            drawdown_start_age=65,
             healthcare={"household_size": 1, "monthly_slcsp_premium": -100},
         )
         resp = await async_client.post("/api/optimize", json=payload)
@@ -424,9 +424,9 @@ class TestHealthcareValidation:
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 45000}],
+            timeline=[{"year": 2026, "gross_income": 45000}],
             traditional_ira_balance=200000,
-            retirement_age=65,
+            drawdown_start_age=65,
             healthcare={"household_size": 2, "monthly_slcsp_premium": 800},
         )
         resp = await async_client.post("/api/optimize", json=payload)
@@ -439,13 +439,13 @@ class TestHealthcareValidation:
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[
+            timeline=[
                 {"year": 2026, "gross_income": 45000},
                 {"year": 2027, "gross_income": 50000},
                 {"year": 2028, "gross_income": 90000, "notes": "Back to work"},
             ],
             traditional_ira_balance=200000,
-            retirement_age=65,
+            drawdown_start_age=65,
             healthcare={
                 "household_size": 1,
                 "monthly_slcsp_premium": 620,
@@ -487,9 +487,9 @@ class TestConversionPreferencesValidation:
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 80000}],
+            timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
-            retirement_age=65,
+            drawdown_start_age=65,
             conversion_preferences={
                 "max_annual_tax_cost": 10000,
                 "max_conversion_per_year": 50000,
@@ -512,9 +512,9 @@ class TestFunctionalScenarios:
         payload = dict(
             age=25,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 30000}],
+            timeline=[{"year": 2026, "gross_income": 30000}],
             traditional_ira_balance=50000,
-            retirement_age=65,
+            drawdown_start_age=65,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
@@ -528,9 +528,9 @@ class TestFunctionalScenarios:
         payload = dict(
             age=45,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 400000}],
+            timeline=[{"year": 2026, "gross_income": 400000}],
             traditional_ira_balance=500000,
-            retirement_age=65,
+            drawdown_start_age=65,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
@@ -545,12 +545,12 @@ class TestFunctionalScenarios:
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[
+            timeline=[
                 {"year": 2026, "gross_income": 0, "notes": "Sabbatical"},
                 {"year": 2027, "gross_income": 120000, "notes": "Back to work"},
             ],
             traditional_ira_balance=200000,
-            retirement_age=65,
+            drawdown_start_age=65,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
@@ -563,14 +563,14 @@ class TestFunctionalScenarios:
         payload = dict(
             age=50,
             filing_status="married_filing_jointly",
-            income_timeline=[
+            timeline=[
                 {"year": 2026, "gross_income": 150000},
                 {"year": 2027, "gross_income": 155000},
             ],
             traditional_ira_balance=500000,
             roth_ira_balance=100000,
-            retirement_age=65,
-            years_in_retirement=30,
+            drawdown_start_age=65,
+            planning_horizon_age=95,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
@@ -585,9 +585,9 @@ class TestFunctionalScenarios:
         payload = dict(
             age=64,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 70000}],
+            timeline=[{"year": 2026, "gross_income": 70000}],
             traditional_ira_balance=300000,
-            retirement_age=65,
+            drawdown_start_age=65,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
@@ -602,9 +602,9 @@ class TestFunctionalScenarios:
         payload = dict(
             age=45,
             filing_status="single",
-            income_timeline=timeline,
+            timeline=timeline,
             traditional_ira_balance=400000,
-            retirement_age=50,
+            drawdown_start_age=50,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
@@ -619,9 +619,9 @@ class TestFunctionalScenarios:
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 80000}],
+            timeline=[{"year": 2026, "gross_income": 80000}],
             traditional_ira_balance=200000,
-            retirement_age=65,
+            drawdown_start_age=65,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
@@ -651,13 +651,13 @@ class TestFunctionalScenarios:
         payload = dict(
             age=30,
             filing_status="single",
-            income_timeline=[
+            timeline=[
                 {"year": 2026, "gross_income": 20000},
                 {"year": 2027, "gross_income": 15000, "notes": "Part-time"},
                 {"year": 2028, "gross_income": 10000, "notes": "Grad school"},
             ],
             traditional_ira_balance=80000,
-            retirement_age=65,
+            drawdown_start_age=65,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
@@ -669,11 +669,11 @@ class TestFunctionalScenarios:
         payload = dict(
             age=42,
             filing_status="single",
-            income_timeline=[
+            timeline=[
                 {"year": 2026, "gross_income": 35000, "notes": "Startup"},
             ],
             traditional_ira_balance=150000,
-            retirement_age=65,
+            drawdown_start_age=65,
             healthcare={
                 "household_size": 3,
                 "monthly_slcsp_premium": 900,
@@ -691,9 +691,9 @@ class TestFunctionalScenarios:
         payload = dict(
             age=40,
             filing_status="single",
-            income_timeline=[{"year": 2026, "gross_income": 60000}],
+            timeline=[{"year": 2026, "gross_income": 60000}],
             traditional_ira_balance=200000,
-            retirement_age=65,
+            drawdown_start_age=65,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
@@ -701,17 +701,17 @@ class TestFunctionalScenarios:
         assert data["npv_at_optimal"] >= data["npv_at_zero"] - 1  # float tolerance
 
     async def test_already_retired_returns_200(self, async_client):
-        """retirement_age < current age (already retired) should return 200."""
+        """drawdown_start_age < current age (already retired) should return 200."""
         payload = dict(
             age=70,
             filing_status="married_filing_jointly",
-            income_timeline=[
+            timeline=[
                 {"year": 2026, "gross_income": 50000},
                 {"year": 2027, "gross_income": 50000},
                 {"year": 2028, "gross_income": 50000},
             ],
             traditional_ira_balance=500000,
-            retirement_age=65,
+            drawdown_start_age=65,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
@@ -720,15 +720,15 @@ class TestFunctionalScenarios:
         assert len(data["yearly_conversions"]) == 3
 
     async def test_retirement_age_equals_current_age_returns_200(self, async_client):
-        """retirement_age == current age should return 200."""
+        """drawdown_start_age == current age should return 200."""
         payload = dict(
             age=65,
             filing_status="single",
-            income_timeline=[
+            timeline=[
                 {"year": 2026, "gross_income": 40000},
             ],
             traditional_ira_balance=300000,
-            retirement_age=65,
+            drawdown_start_age=65,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200

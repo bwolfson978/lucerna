@@ -26,8 +26,8 @@ export default function DemoPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const timeline = demo?.result?.input?.income_timeline;
-  const retirementAge = demo?.result?.input?.retirement_age ?? 65;
+  const timeline = demo?.result?.input?.timeline;
+  const drawdownStartAge = demo?.result?.input?.drawdown_start_age ?? 65;
 
   return (
     <MethodologyProvider>
@@ -56,7 +56,7 @@ export default function DemoPage() {
                   <div className="mt-tight">
                     <h3 className="mb-default text-h3 text-text-primary">Key income milestones</h3>
                     <p className="mb-2 text-caption text-text-tertiary">
-                      {timeline?.length ?? 0} years modeled through age {retirementAge}
+                      {timeline?.length ?? 0} years modeled through age {drawdownStartAge}
                     </p>
                     {timeline && timeline.length > 0 && (
                       <IncomeMilestonesTable timeline={timeline} />

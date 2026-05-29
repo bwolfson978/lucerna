@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import type { YearlyIncome } from "@/lib/types";
+import type { PlanYear } from "@/lib/types";
 import { FormField } from "@/components/common/FormField";
 import { CurrencyInput } from "@/components/common/CurrencyInput";
 import { FormSelect } from "@/components/common/FormSelect";
@@ -12,8 +12,8 @@ import { CURRENT_YEAR } from "@/lib/utils/constants";
 import { Card } from "@/components/ui/card";
 
 interface IncomeTimelineEditorProps {
-  timeline: YearlyIncome[];
-  onChange: (timeline: YearlyIncome[]) => void;
+  timeline: PlanYear[];
+  onChange: (timeline: PlanYear[]) => void;
   onReset?: () => void;
   description?: string;
   defaultState?: string;
@@ -75,7 +75,7 @@ export function IncomeTimelineEditor({
   defaultState,
 }: IncomeTimelineEditorProps) {
   const addYear = useCallback(() => {
-    if (timeline.length >= 15) return;
+    if (timeline.length >= 40) return;
     const lastYear = timeline.length > 0 ? timeline[timeline.length - 1].year : CURRENT_YEAR - 1;
     onChange([...timeline, { year: lastYear + 1, gross_income: 0 }]);
   }, [timeline, onChange]);
@@ -89,7 +89,7 @@ export function IncomeTimelineEditor({
   );
 
   const updateYear = useCallback(
-    (index: number, field: keyof YearlyIncome, value: unknown) => {
+    (index: number, field: keyof PlanYear, value: unknown) => {
       const updated = timeline.map((row, i) => {
         if (i !== index) return row;
         return { ...row, [field]: value };
@@ -137,7 +137,7 @@ export function IncomeTimelineEditor({
           <Button
             variant="outline"
             onClick={addYear}
-            disabled={timeline.length >= 15}
+            disabled={timeline.length >= 40}
             className="text-body-sm"
           >
             + Add year

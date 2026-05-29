@@ -11,7 +11,7 @@ from app.engine.curve_strategy import (
 from app.engine.dp import dp_optimize, extract_conversion_curve_3d
 from app.engine.heuristic import _global_bracket_fill_for_cap, bracket_fill_curve
 from app.engine.optimizer import calculate_npv
-from app.engine.types import FilingStatus, ScenarioInput, YearlyIncome
+from app.engine.types import FilingStatus, PlanYear, ScenarioInput
 
 # ── Fixtures ──────────────────────────────────────────────────────────
 
@@ -20,15 +20,15 @@ def _simple_scenario(**kwargs) -> ScenarioInput:
     defaults = dict(
         age=40,
         filing_status=FilingStatus.SINGLE,
-        income_timeline=[
-            YearlyIncome(year=2026, gross_income=35_000),
-            YearlyIncome(year=2027, gross_income=30_000),
-            YearlyIncome(year=2028, gross_income=150_000),
+        timeline=[
+            PlanYear(year=2026, gross_income=35_000),
+            PlanYear(year=2027, gross_income=30_000),
+            PlanYear(year=2028, gross_income=150_000),
         ],
         traditional_ira_balance=100_000,
         roth_ira_balance=0,
-        retirement_age=65,
-        years_in_retirement=25,
+        drawdown_start_age=65,
+        planning_horizon_age=90,
         annual_growth_rate=0.07,
         discount_rate=0.05,
     )
@@ -98,7 +98,7 @@ class TestCurveStrategyContract:
             strategy=strategy,
         )
         for pt in curve:
-            n = len(scenario.income_timeline)
+            n = len(scenario.timeline)
             assert len(pt.yearly_conversions) == n
             assert len(pt.yearly_bracket_fill) == n
             assert len(pt.yearly_detail) == n
@@ -123,7 +123,7 @@ class TestCurveStrategyContract:
 class TestBuildCurvePoint:
     def test_zero_conversion(self):
         scenario = _simple_scenario()
-        n = len(scenario.income_timeline)
+        n = len(scenario.timeline)
         pt = build_curve_point(scenario, 0, [0.0] * n)
         assert pt.total_cap == 0
         assert pt.total_tax == 0
@@ -210,7 +210,7 @@ class TestBracketFillStrategy:
         bf_alloc = _global_bracket_fill_for_cap(scenario, dp_result.total_conversion)
         npv_bf = calculate_npv(scenario, bf_alloc)
         npv_dp = calculate_npv(scenario, dp_result.yearly_conversions)
-        npv_zero = calculate_npv(scenario, [0.0] * len(scenario.income_timeline))
+        npv_zero = calculate_npv(scenario, [0.0] * len(scenario.timeline))
 
         max_savings = npv_dp - npv_zero
         gap_pct = abs(npv_dp - npv_bf) / max_savings * 100 if max_savings > 0 else 0

@@ -1,7 +1,7 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.engine.types import FilingStatus, ScenarioInput, YearlyIncome
+from app.engine.types import FilingStatus, PlanYear, ScenarioInput
 from app.main import app
 
 
@@ -20,11 +20,11 @@ def sample_single_input():
         defaults = dict(
             age=45,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[YearlyIncome(year=2026, gross_income=85000)],
+            timeline=[PlanYear(year=2026, gross_income=85000)],
             traditional_ira_balance=250000,
             roth_ira_balance=0,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
         )
@@ -42,14 +42,14 @@ def sample_mfj_input():
         defaults = dict(
             age=50,
             filing_status=FilingStatus.MFJ,
-            income_timeline=[
-                YearlyIncome(year=2026, gross_income=150000),
-                YearlyIncome(year=2027, gross_income=150000),
+            timeline=[
+                PlanYear(year=2026, gross_income=150000),
+                PlanYear(year=2027, gross_income=150000),
             ],
             traditional_ira_balance=500000,
             roth_ira_balance=50000,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
         )

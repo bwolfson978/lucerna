@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, FormEvent } from "react";
-import type { ScenarioInput, YearlyIncome, FilingStatus, HealthcareInput } from "@/lib/types";
+import type { ScenarioInput, PlanYear, FilingStatus, HealthcareInput } from "@/lib/types";
 import { NumericField } from "@/components/common/NumericField";
 import { CurrencyInput } from "@/components/common/CurrencyInput";
 import { FormSelect } from "@/components/common/FormSelect";
@@ -56,14 +56,14 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
   const [currentIncome, setCurrentIncome] = useState<number | null>(null);
   const [traditionalBalance, setTraditionalBalance] = useState<number | null>(null);
   const [rothBalance, setRothBalance] = useState<number | null>(null);
-  const [retirementAge, setRetirementAge] = useState<number | null>(null);
+  const [drawdownStartAge, setDrawdownStartAge] = useState<number | null>(null);
   // Assumption fields keep their sensible defaults — users don't know these
   // numbers and the engine has defensible industry standards.
   const [incomeGrowthRate, setIncomeGrowthRate] = useState<number | null>(3);
   const [retirementSpending, setRetirementSpending] = useState<number | null>(null);
 
   // Additional settings
-  const [yearsInRetirement, setYearsInRetirement] = useState<number | null>(25);
+  const [planningHorizonAge, setPlanningHorizonAge] = useState<number | null>(90);
   const [growthRate, setGrowthRate] = useState<number | null>(7);
   const [discountRate, setDiscountRate] = useState<number | null>(5);
 
@@ -80,26 +80,26 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
   const [employerCoverageYear, setEmployerCoverageYear] = useState<number | null>(null);
 
   // Income timeline state
-  const [timeline, setTimeline] = useState<YearlyIncome[]>([]);
+  const [timeline, setTimeline] = useState<PlanYear[]>([]);
 
   // Regenerate timeline when base inputs change, preserving pinned years.
   // All three personal-data inputs must be filled before the timeline is
   // meaningful — otherwise we'd generate wrong-length arrays from defaults.
   useEffect(() => {
-    if (age == null || retirementAge == null || currentIncome == null || currentIncome <= 0) {
+    if (age == null || drawdownStartAge == null || currentIncome == null || currentIncome <= 0) {
       setTimeline([]);
       return;
     }
     const incGrowthVal = incomeGrowthRate ?? 0;
-    const fresh = generateTimeline(age, retirementAge, currentIncome, incGrowthVal);
+    const fresh = generateTimeline(age, drawdownStartAge, currentIncome, incGrowthVal);
     setTimeline((prev) => (prev.length === 0 ? fresh : mergeTimeline(fresh, prev)));
-  }, [age, retirementAge, currentIncome, incomeGrowthRate]);
+  }, [age, drawdownStartAge, currentIncome, incomeGrowthRate]);
 
   const handleResetTimeline = useCallback(() => {
-    if (age == null || retirementAge == null || currentIncome == null) return;
+    if (age == null || drawdownStartAge == null || currentIncome == null) return;
     const incGrowthVal = incomeGrowthRate ?? 0;
-    setTimeline(generateTimeline(age, retirementAge, currentIncome, incGrowthVal));
-  }, [age, retirementAge, currentIncome, incomeGrowthRate]);
+    setTimeline(generateTimeline(age, drawdownStartAge, currentIncome, incGrowthVal));
+  }, [age, drawdownStartAge, currentIncome, incomeGrowthRate]);
 
   const showTimeline = timeline.length > 0;
   const hasCustomizations = timeline.some(
@@ -138,7 +138,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
     e.preventDefault();
     const errs: Record<string, string> = {};
 
-    const yrsRetVal = yearsInRetirement ?? 25;
+    const planningHorizonVal = planningHorizonAge ?? 90;
     const growthVal = growthRate ?? 7;
     const discountVal = discountRate ?? 5;
     const hhSize = householdSize ?? 1;
@@ -150,12 +150,12 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
       errs.currentIncome = "Enter your current income";
     if (traditionalBalance == null || traditionalBalance <= 0)
       errs.traditionalBalance = "Enter your traditional IRA/401(k) balance";
-    if (retirementAge == null) errs.retirementAge = "Enter your retirement age";
-    else if (retirementAge < 1 || retirementAge > 120)
+    if (drawdownStartAge == null) errs.retirementAge = "Enter your retirement age";
+    else if (drawdownStartAge < 1 || drawdownStartAge > 120)
       errs.retirementAge = "Retirement age must be between 1 and 120";
     if (rothBalance != null && rothBalance < 0)
       errs.rothBalance = "Roth balance cannot be negative";
-    if (yrsRetVal < 1) errs.yearsInRetirement = "Must be at least 1 year";
+    if (planningHorizonVal < 1) errs.yearsInRetirement = "Must be at least 1 year";
     if (retirementSpending !== null && retirementSpending < 0)
       errs.retirementSpending = "Spending cannot be negative";
     if (timeline.length === 0)
@@ -184,12 +184,12 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
     const input: ScenarioInput = {
       age: age!,
       filing_status: filingStatus!,
-      income_timeline: timeline,
+      timeline,
       traditional_ira_balance: traditionalBalance!,
       roth_ira_balance: rothBalance ?? 0,
-      retirement_age: retirementAge!,
-      years_in_retirement: yrsRetVal,
-      annual_retirement_spending: retirementSpending,
+      drawdown_start_age: drawdownStartAge!,
+      planning_horizon_age: planningHorizonVal,
+      default_drawdown: retirementSpending,
       annual_growth_rate: growthVal / 100,
       discount_rate: discountVal / 100,
       healthcare,
@@ -269,13 +269,13 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
             fieldRefs.current.retirementAge = el;
           }}
           label="Retirement age"
-          value={retirementAge ?? ""}
+          value={drawdownStartAge ?? ""}
           placeholder="e.g. 65"
           min={1}
           max={120}
           required
           error={errors.retirementAge}
-          onChange={setRetirementAge}
+          onChange={setDrawdownStartAge}
         />
         {state !== "none" && (
           <FormSelect
@@ -389,11 +389,11 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
               ref={(el) => {
                 fieldRefs.current.yearsInRetirement = el;
               }}
-              label="Years in retirement"
-              value={yearsInRetirement ?? ""}
+              label="Planning horizon age"
+              value={planningHorizonAge ?? ""}
               min={1}
               error={errors.yearsInRetirement}
-              onChange={setYearsInRetirement}
+              onChange={setPlanningHorizonAge}
             />
             <NumericField
               label="Investment return (%)"
