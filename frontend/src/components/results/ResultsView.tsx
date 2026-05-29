@@ -207,12 +207,13 @@ export function ResultsView({ result }: ResultsViewProps) {
           <p>
             This analysis uses 2026 federal
             {result.input.state && result.input.state !== "none" ? " and state" : ""} tax brackets,
-            and models required minimum distributions in the retirement phase.
+            models required minimum distributions (RMDs), and factors in IRMAA surcharges during
+            the Medicare phase.
             {result.aca_subsidy_impact
               ? " ACA marketplace subsidy impact is included based on your healthcare inputs."
               : ""}{" "}
-            Social Security benefits and IRMAA surcharges are not included. This is educational
-            scenario analysis, not financial advice.
+            Social Security income is not modeled. This is educational scenario analysis, not
+            financial advice.
           </p>
           <InfoTrigger
             label="Are these reasonable?"
