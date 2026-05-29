@@ -6,35 +6,19 @@ DEMO_SCENARIO = ScenarioInput(
     filing_status=FilingStatus.MFJ,
     timeline=[
         # Income valley: retired, living off brokerage, no Social Security yet
-        PlanYear(
-            year=2026, gross_income=20000, notes="Living off brokerage, no Social Security yet"
-        ),
-        PlanYear(
-            year=2027, gross_income=20000, notes="Bridge year, drawing from brokerage and cash"
-        ),
-        PlanYear(year=2028, gross_income=20000, notes="Medicare starts, deferring Social Security"),
-        PlanYear(year=2029, gross_income=20000, notes="Waiting for full retirement age benefit"),
+        PlanYear(year=2026, gross_income=20000, notes="Brokerage only"),
+        PlanYear(year=2027, gross_income=20000, notes="Bridge year"),
+        PlanYear(year=2028, gross_income=20000, notes="Medicare starts"),
+        PlanYear(year=2029, gross_income=20000, notes="Waiting for FRA"),
         # Social Security claims
-        PlanYear(
-            year=2030, gross_income=46000, notes="Claims Social Security at full retirement age"
-        ),
-        PlanYear(
-            year=2031,
-            gross_income=58000,
-            notes="Spouse claims Social Security, combined income rises",
-        ),
-        PlanYear(
-            year=2032,
-            gross_income=60000,
-            notes="Full combined Social Security and brokerage income",
-        ),
-        PlanYear(year=2033, gross_income=60000, notes="Stable income phase"),
-        PlanYear(year=2034, gross_income=62000, notes="Final years before RMD window closes"),
-        PlanYear(
-            year=2035, gross_income=62000, notes="Last year before required minimum distributions"
-        ),
+        PlanYear(year=2030, gross_income=46000, notes="SS starts"),
+        PlanYear(year=2031, gross_income=58000, notes="Spouse SS starts"),
+        PlanYear(year=2032, gross_income=60000, notes="Full SS income"),
+        PlanYear(year=2033, gross_income=60000, notes="Stable income"),
+        PlanYear(year=2034, gross_income=62000, notes="Pre-RMD window"),
+        PlanYear(year=2035, gross_income=62000, notes="Last pre-RMD year"),
         # RMD years: engine funds spending from accounts while optimizer can still convert
-        PlanYear(year=2036, gross_income=62000, drawdown=95000, notes="RMDs begin at age 73"),
+        PlanYear(year=2036, gross_income=62000, drawdown=95000, notes="RMDs begin"),
         PlanYear(year=2037, gross_income=62000, drawdown=95000, notes="RMD year 2"),
         PlanYear(year=2038, gross_income=62000, drawdown=95000, notes="RMD year 3"),
         PlanYear(year=2039, gross_income=62000, drawdown=95000, notes="RMD year 4"),
