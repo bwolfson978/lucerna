@@ -68,6 +68,7 @@ export function ResultsView({ result }: ResultsViewProps) {
       bracketFill: yearlyBracketFills[i] || [],
       rmdAmount: rmdByYear.get(yi.year),
       conversion: yearlyConversions[i],
+      income: yi.gross_income,
     }));
   }, [result.input, yearlyBracketFills, rmdByYear, yearlyConversions]);
 
