@@ -28,12 +28,12 @@ export interface HealthcareInput {
 export interface ScenarioInput {
   age: number;
   filing_status: FilingStatus;
-  timeline: PlanYear[];            // was income_timeline
+  timeline: PlanYear[]; // was income_timeline
   traditional_ira_balance: number;
   roth_ira_balance?: number;
-  drawdown_start_age?: number;     // was retirement_age
+  drawdown_start_age?: number; // was retirement_age
   default_drawdown?: number | null; // was annual_retirement_spending
-  planning_horizon_age?: number;   // was years_in_retirement (now absolute age)
+  planning_horizon_age?: number; // was years_in_retirement (now absolute age)
   annual_growth_rate?: number;
   discount_rate?: number;
   conversion_preferences?: ConversionPreferences | null;
@@ -233,7 +233,8 @@ export interface DemoPersona {
   occupation: string;
   previous_salary: string;
   situation: string;
-  milestones: {  // was income_timeline
+  milestones: {
+    // was income_timeline
     year: number;
     income: string;
     event: string;

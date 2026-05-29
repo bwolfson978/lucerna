@@ -26,9 +26,7 @@ def _simple_scenario(
     return ScenarioInput(
         age=40,
         filing_status=FilingStatus.SINGLE,
-        timeline=[
-            PlanYear(year=2026 + i, gross_income=inc) for i, inc in enumerate(incomes)
-        ],
+        timeline=[PlanYear(year=2026 + i, gross_income=inc) for i, inc in enumerate(incomes)],
         traditional_ira_balance=balance,
         roth_ira_balance=0,
         drawdown_start_age=65,

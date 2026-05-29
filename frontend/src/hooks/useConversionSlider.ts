@@ -173,14 +173,7 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
           marginal_bracket: marginalRate,
         };
       }),
-    [
-      incomes,
-      yearlyConversions,
-      yearlyBracketFills,
-      filingStatus,
-      taxConfig,
-      result.input.timeline,
-    ]
+    [incomes, yearlyConversions, yearlyBracketFills, filingStatus, taxConfig, result.input.timeline]
   );
 
   const displayTotalConversion = yearlyConversions.reduce((a, b) => a + b, 0);

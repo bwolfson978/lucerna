@@ -473,9 +473,7 @@ class TestAlreadyRetired:
         return ScenarioInput(
             age=age,
             filing_status=FilingStatus.MFJ,
-            timeline=[
-                PlanYear(year=2026 + i, gross_income=50000) for i in range(n_years)
-            ],
+            timeline=[PlanYear(year=2026 + i, gross_income=50000) for i in range(n_years)],
             traditional_ira_balance=500000,
             roth_ira_balance=50000,
             drawdown_start_age=retirement_age,

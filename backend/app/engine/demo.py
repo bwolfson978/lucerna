@@ -12,12 +12,8 @@ DEMO_SCENARIO = ScenarioInput(
         PlanYear(
             year=2027, gross_income=20000, notes="Bridge year, drawing from brokerage and cash"
         ),
-        PlanYear(
-            year=2028, gross_income=20000, notes="Medicare starts, deferring Social Security"
-        ),
-        PlanYear(
-            year=2029, gross_income=20000, notes="Waiting for full retirement age benefit"
-        ),
+        PlanYear(year=2028, gross_income=20000, notes="Medicare starts, deferring Social Security"),
+        PlanYear(year=2029, gross_income=20000, notes="Waiting for full retirement age benefit"),
         # Social Security claims
         PlanYear(
             year=2030, gross_income=46000, notes="Claims Social Security at full retirement age"

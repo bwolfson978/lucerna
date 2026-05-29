@@ -98,9 +98,7 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
         discount_factor = (1 + d) ** (-t)
 
         # RMD: computed on start-of-year balance, deducted before conversion
-        rmd = (
-            calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
-        )
+        rmd = calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
         rmd = min(rmd, trad_balance)
 
         effective_income = income + rmd  # income base for conversion tax
@@ -111,13 +109,15 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
 
         # Tax cost of RMD (marginal on top of gross_income)
         if rmd > 0:
-            rmd_tax = calculate_federal_tax(
-                income + rmd, filing_status
-            ) - calculate_federal_tax(income, filing_status)
+            rmd_tax = calculate_federal_tax(income + rmd, filing_status) - calculate_federal_tax(
+                income, filing_status
+            )
             if year_state:
                 rmd_tax += calculate_state_tax(
                     income + rmd, year_state, filing_status, scenario.custom_state_rate
-                ) - calculate_state_tax(income, year_state, filing_status, scenario.custom_state_rate)
+                ) - calculate_state_tax(
+                    income, year_state, filing_status, scenario.custom_state_rate
+                )
             after_tax_rmd = rmd - rmd_tax
             npv += after_tax_rmd * discount_factor
 
@@ -200,9 +200,7 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
         trad_balance *= 1 + g
         roth_balance *= 1 + g
 
-        rmd = (
-            calculate_rmd(pre_growth_trad, owner_age) if owner_age >= owner_rmd_start else 0.0
-        )
+        rmd = calculate_rmd(pre_growth_trad, owner_age) if owner_age >= owner_rmd_start else 0.0
         distribution = max(rmd, min(spending, trad_balance))
         distribution = min(distribution, trad_balance)
         trad_balance -= distribution
@@ -243,7 +241,6 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
 def _objective(x: np.ndarray, scenario: ScenarioInput) -> float:
     """Negative NPV for minimization."""
     return -calculate_npv(scenario, x.tolist())
-
 
 
 def _run_scipy(
@@ -501,9 +498,7 @@ def _build_year_detail(
         irmaa_tier = 0
         if t in irmaa_exposed:
             irmaa_cost = irmaa_surcharge_loss(effective_income, conversion, scenario.filing_status)
-            irmaa_tier = irmaa_tier_index(
-                effective_income + conversion, scenario.filing_status
-            )
+            irmaa_tier = irmaa_tier_index(effective_income + conversion, scenario.filing_status)
 
         detail: dict = {
             "year": year,
@@ -711,9 +706,15 @@ def _build_rmd_projection(
 
         if rmd > 0:
             income = entry.gross_income
-            tax = calculate_federal_tax(income + rmd, filing_status) - calculate_federal_tax(income, filing_status)
+            tax = calculate_federal_tax(income + rmd, filing_status) - calculate_federal_tax(
+                income, filing_status
+            )
             if ret_state:
-                tax += calculate_state_tax(income + rmd, ret_state, filing_status, scenario.custom_state_rate) - calculate_state_tax(income, ret_state, filing_status, scenario.custom_state_rate)
+                tax += calculate_state_tax(
+                    income + rmd, ret_state, filing_status, scenario.custom_state_rate
+                ) - calculate_state_tax(
+                    income, ret_state, filing_status, scenario.custom_state_rate
+                )
             eff_rate = tax / rmd
 
             yearly_detail.append(
@@ -764,9 +765,7 @@ def _build_rmd_projection(
         trad_balance *= 1 + g
         roth_balance *= 1 + g
 
-        rmd = (
-            calculate_rmd(pre_growth_trad, owner_age) if owner_age >= owner_rmd_start else 0.0
-        )
+        rmd = calculate_rmd(pre_growth_trad, owner_age) if owner_age >= owner_rmd_start else 0.0
 
         if rmd <= 0:
             distribution = min(spending, trad_balance)

@@ -1,6 +1,5 @@
 """Tests for IRMAA (Medicare surcharge) calculations."""
 
-
 from app.engine.irmaa import (
     IRMAA_LOOKBACK_YEARS,
     IRMAA_TIERS,

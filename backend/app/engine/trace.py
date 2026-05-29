@@ -361,9 +361,7 @@ def _build_summary_points(
         what = "Convert " + ", ".join(year_parts) if year_parts else "No conversion recommended"
 
     # Why this amount
-    low_income_years = [
-        scenario.timeline[t].year for t in range(n_years) if conversions[t] > 0
-    ]
+    low_income_years = [scenario.timeline[t].year for t in range(n_years) if conversions[t] > 0]
     if low_income_years:
         why = f"Fills lower tax brackets during {'low-income years' if n_years > 1 else 'current income level'} without pushing into expensive higher brackets"
     else:

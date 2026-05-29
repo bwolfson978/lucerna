@@ -399,18 +399,26 @@ def _dp_backward(
                     eff_income + conv_options, scenario.filing_status
                 ) - calculate_federal_tax(eff_income, scenario.filing_status)
                 if yr_state:
-                    cost_opts = cost_opts + vectorized_state_tax(
-                        eff_income + conv_options,
-                        yr_state,
-                        scenario.filing_status,
-                        scenario.custom_state_rate,
-                    ) - calculate_state_tax(
-                        eff_income, yr_state, scenario.filing_status, scenario.custom_state_rate
+                    cost_opts = (
+                        cost_opts
+                        + vectorized_state_tax(
+                            eff_income + conv_options,
+                            yr_state,
+                            scenario.filing_status,
+                            scenario.custom_state_rate,
+                        )
+                        - calculate_state_tax(
+                            eff_income, yr_state, scenario.filing_status, scenario.custom_state_rate
+                        )
                     )
                 if irmaa_exposed_t:
-                    cost_opts = cost_opts + vectorized_irmaa_surcharge_loss(
-                        eff_income, conv_options, scenario.filing_status
-                    ) * irmaa_discount_ratio
+                    cost_opts = (
+                        cost_opts
+                        + vectorized_irmaa_surcharge_loss(
+                            eff_income, conv_options, scenario.filing_status
+                        )
+                        * irmaa_discount_ratio
+                    )
                 cost_opts = cost_opts * discount_factor
             else:
                 cost_opts = cost_row[:n_opts]
@@ -651,7 +659,9 @@ def _dp_backward_3d(
     trad_at_drawdown_start = extended_grid * growth_factor
     roth_at_drawdown_start = np.maximum(0.0, total_at_drawdown_start - trad_at_drawdown_start)
 
-    terminal_values = _compute_retirement_values(trad_at_drawdown_start, roth_at_drawdown_start, scenario, n_years)
+    terminal_values = _compute_retirement_values(
+        trad_at_drawdown_start, roth_at_drawdown_start, scenario, n_years
+    )
     # Broadcast: same terminal value for all budget levels
     value_table[n_years] = terminal_values[:, np.newaxis]  # (G, 1) → (G, B)
 
@@ -801,18 +811,26 @@ def _dp_backward_3d(
                     eff_income + conv_options, scenario.filing_status
                 ) - calculate_federal_tax(eff_income, scenario.filing_status)
                 if yr_state:
-                    cost_opts = cost_opts + vectorized_state_tax(
-                        eff_income + conv_options,
-                        yr_state,
-                        scenario.filing_status,
-                        scenario.custom_state_rate,
-                    ) - calculate_state_tax(
-                        eff_income, yr_state, scenario.filing_status, scenario.custom_state_rate
+                    cost_opts = (
+                        cost_opts
+                        + vectorized_state_tax(
+                            eff_income + conv_options,
+                            yr_state,
+                            scenario.filing_status,
+                            scenario.custom_state_rate,
+                        )
+                        - calculate_state_tax(
+                            eff_income, yr_state, scenario.filing_status, scenario.custom_state_rate
+                        )
                     )
                 if irmaa_exposed_t:
-                    cost_opts = cost_opts + vectorized_irmaa_surcharge_loss(
-                        eff_income, conv_options, scenario.filing_status
-                    ) * irmaa_discount_ratio
+                    cost_opts = (
+                        cost_opts
+                        + vectorized_irmaa_surcharge_loss(
+                            eff_income, conv_options, scenario.filing_status
+                        )
+                        * irmaa_discount_ratio
+                    )
                 cost_opts = cost_opts * discount_factor
             else:
                 cost_opts = cost_row[:n_opts]
