@@ -10,14 +10,12 @@ interface ScenarioCardsProps {
 }
 
 /**
- * Reorder scenarios: No conversion → Full conversion → Highest savings (last).
- * The "best" scenario (difference_from_optimal === 0) always goes last so the
- * multi-year schedule card anchors the bottom of the stack on mobile.
+ * Reorder scenarios: Highest savings → Full conversion → No conversion (best to worst).
  */
 function reorderScenarios(scenarios: ScenarioComparison[]): ScenarioComparison[] {
-  const best = scenarios.find((s) => s.difference_from_optimal === 0);
-  const rest = scenarios.filter((s) => s.difference_from_optimal !== 0);
-  return best ? [...rest, best] : scenarios;
+  return [...scenarios].sort(
+    (a, b) => (b.estimated_savings ?? 0) - (a.estimated_savings ?? 0),
+  );
 }
 
 export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
