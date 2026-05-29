@@ -17,6 +17,7 @@ interface ChartTooltip {
   age: number;
   bracketFill: BracketFillResult[];
   rmdAmount?: number;
+  conversion?: number;
 }
 
 interface YearData {
@@ -24,6 +25,7 @@ interface YearData {
   age: number;
   bracketFill: BracketFillResult[];
   rmdAmount?: number;
+  conversion?: number;
 }
 
 interface BracketChartProps {
@@ -209,6 +211,7 @@ export function BracketChart({
         age: yearData.age,
         bracketFill: yearData.bracketFill,
         rmdAmount: yearData.rmdAmount,
+        conversion: yearData.conversion,
       });
     },
     [isEngaged]
@@ -539,10 +542,13 @@ export function BracketChart({
                   (s, bf) => s + bf.filled_by_income,
                   0
                 );
-                const totalConversion = tooltip.bracketFill.reduce(
-                  (s, bf) => s + bf.filled_by_conversion,
-                  0
-                );
+                // Use gross conversion amount when available (bracket fills only show
+                // the taxable portion after the standard deduction, which understates
+                // the actual conversion when income is low or zero).
+                const totalConversion =
+                  tooltip.conversion != null && tooltip.conversion > 0
+                    ? tooltip.conversion
+                    : tooltip.bracketFill.reduce((s, bf) => s + bf.filled_by_conversion, 0);
                 const rmd = tooltip.rmdAmount ?? 0;
                 const baseIncome = totalIncome - rmd;
                 return (
