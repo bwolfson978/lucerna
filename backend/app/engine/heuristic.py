@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 from app.engine.constants import RETIREMENT_SPENDING_RATE, round_to_resolution
+from app.engine.rmd import calculate_rmd, rmd_start_age
 from app.engine.state_tax import get_state_marginal_rate
 from app.engine.tax import BRACKETS, STANDARD_DEDUCTION, get_marginal_rate
 from app.engine.types import ConversionCurvePoint, ScenarioInput
@@ -16,11 +17,11 @@ def _estimate_retirement_rate(scenario: ScenarioInput) -> float:
     balances where the 4% rule produces very low spending, uses at minimum
     the 22% bracket as a reasonable threshold.
     """
-    spending = scenario.annual_retirement_spending
+    spending = scenario.default_drawdown
     if spending is None:
         total_balance = scenario.traditional_ira_balance + scenario.roth_ira_balance
         # Estimate retirement spending: balance grows to retirement, then 4% rule
-        years_to_retire = max(0, scenario.retirement_age - scenario.age)
+        years_to_retire = max(0, scenario.drawdown_start_age - scenario.age)
         future_balance = total_balance * (1 + scenario.annual_growth_rate) ** max(
             1, years_to_retire
         )
@@ -54,14 +55,20 @@ def greedy_bracket_fill(scenario: ScenarioInput) -> list[float]:
 
     remaining_balance = scenario.traditional_ira_balance
     conversions: list[float] = []
+    owner_rmd_start = rmd_start_age(scenario.age)
 
-    for year_info in scenario.income_timeline:
+    for t, year_info in enumerate(scenario.timeline):
         if remaining_balance <= 0:
             conversions.append(0.0)
             continue
 
         gross_income = year_info.gross_income
-        taxable_income = max(0, gross_income - deduction)
+        owner_age = scenario.age + t  # where t is loop index
+        if owner_age >= owner_rmd_start:
+            expected_rmd = calculate_rmd(remaining_balance, owner_age)
+            taxable_income = max(0, gross_income + expected_rmd - deduction)
+        else:
+            taxable_income = max(0, gross_income - deduction)
 
         # Find how much room there is in brackets up to and including the retirement rate
         fill_target = 0.0
@@ -102,7 +109,7 @@ def _global_bracket_fill_for_cap(
 
     Returns yearly conversion amounts (``list[float]``).
     """
-    n_years = len(scenario.income_timeline)
+    n_years = len(scenario.timeline)
     if total_cap <= 0 or n_years == 0:
         return [0.0] * n_years
 
@@ -119,10 +126,16 @@ def _global_bracket_fill_for_cap(
         bal *= 1 + g
 
     # Build (rate, year, room) slots
+    owner_rmd_start = rmd_start_age(scenario.age)
     slots: list[tuple[float, int, float]] = []
     for t in range(n_years):
-        income = scenario.income_timeline[t].gross_income
-        taxable = max(0, income - deduction)
+        income = scenario.timeline[t].gross_income
+        owner_age = scenario.age + t
+        if owner_age >= owner_rmd_start:
+            expected_rmd = calculate_rmd(scenario.traditional_ira_balance, owner_age)
+            taxable = max(0, income + expected_rmd - deduction)
+        else:
+            taxable = max(0, income - deduction)
 
         for bracket in brackets:
             rate = bracket["rate"]
@@ -179,7 +192,7 @@ def bracket_fill_curve(
     from app.engine.curve_strategy import build_curve_point  # lazy — avoid circular
 
     balance = scenario.traditional_ira_balance
-    n_years = len(scenario.income_timeline)
+    n_years = len(scenario.timeline)
 
     if balance <= 0 or n_years == 0:
         return []

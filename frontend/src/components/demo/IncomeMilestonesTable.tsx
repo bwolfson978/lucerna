@@ -1,11 +1,11 @@
 "use client";
 
-import type { YearlyIncome } from "@/lib/types";
+import type { PlanYear } from "@/lib/types";
 import { formatCompactCurrency } from "@/lib/utils/formatting";
 import { dataFontStyle } from "@/lib/utils/constants";
 
 interface IncomeMilestonesTableProps {
-  timeline: YearlyIncome[];
+  timeline: PlanYear[];
 }
 
 export function IncomeMilestonesTable({ timeline }: IncomeMilestonesTableProps) {

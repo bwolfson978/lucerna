@@ -22,8 +22,8 @@ from app.engine.types import (
     FilingStatus,
     HealthcareInput,
     OptimizationResult,
+    PlanYear,
     ScenarioInput,
-    YearlyIncome,
 )
 
 
@@ -202,15 +202,15 @@ class TestOptimizerWithACA:
         return ScenarioInput(
             age=55,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[
-                YearlyIncome(year=2026, gross_income=25000),
-                YearlyIncome(year=2027, gross_income=25000),
-                YearlyIncome(year=2028, gross_income=25000),
+            timeline=[
+                PlanYear(year=2026, gross_income=25000),
+                PlanYear(year=2027, gross_income=25000),
+                PlanYear(year=2028, gross_income=25000),
             ],
             traditional_ira_balance=300000,
             roth_ira_balance=50000,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
             healthcare=healthcare,
@@ -334,14 +334,14 @@ class TestOptimizerWithACA:
         scenario = ScenarioInput(
             age=55,
             filing_status=FilingStatus.MFJ,
-            income_timeline=[
-                YearlyIncome(year=2026, gross_income=50000),
-                YearlyIncome(year=2027, gross_income=50000),
+            timeline=[
+                PlanYear(year=2026, gross_income=50000),
+                PlanYear(year=2027, gross_income=50000),
             ],
             traditional_ira_balance=400000,
             roth_ira_balance=50000,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
             healthcare=HealthcareInput(

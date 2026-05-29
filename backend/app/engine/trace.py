@@ -42,9 +42,9 @@ def generate_reasoning_trace(
     # Marginal rates at optimal (combined federal + state)
     marginal_rates = []
     for t in range(n_years):
-        income = scenario.income_timeline[t].gross_income
+        income = scenario.timeline[t].gross_income
         conversion = optimal_conversions[t]
-        yr_state = resolve_state_for_year(scenario.income_timeline[t].state, scenario.state)
+        yr_state = resolve_state_for_year(scenario.timeline[t].state, scenario.state)
         rate = combined_marginal_rate(
             income,
             conversion,
@@ -126,9 +126,9 @@ def _cost_of_next_bracket(
     extra = 1000
     total_extra_cost = 0.0
     for t in range(len(conversions)):
-        income = scenario.income_timeline[t].gross_income
+        income = scenario.timeline[t].gross_income
         conversion = conversions[t]
-        yr_state = resolve_state_for_year(scenario.income_timeline[t].state, scenario.state)
+        yr_state = resolve_state_for_year(scenario.timeline[t].state, scenario.state)
         # Cost of next $extra on top of existing income + conversion
         total_extra_cost += total_conversion_cost(
             income + conversion,
@@ -139,10 +139,10 @@ def _cost_of_next_bracket(
         )
 
     rate = combined_marginal_rate(
-        scenario.income_timeline[0].gross_income,
+        scenario.timeline[0].gross_income,
         conversions[0] + extra,
         scenario.filing_status,
-        state=resolve_state_for_year(scenario.income_timeline[0].state, scenario.state),
+        state=resolve_state_for_year(scenario.timeline[0].state, scenario.state),
         custom_state_rate=scenario.custom_state_rate,
     )
 
@@ -160,8 +160,8 @@ def _benefit_of_current_bracket(
     """What benefit does the current conversion provide (federal + state)?"""
     total_tax_paid = 0.0
     for t in range(len(conversions)):
-        income = scenario.income_timeline[t].gross_income
-        yr_state = resolve_state_for_year(scenario.income_timeline[t].state, scenario.state)
+        income = scenario.timeline[t].gross_income
+        yr_state = resolve_state_for_year(scenario.timeline[t].state, scenario.state)
         total_tax_paid += total_conversion_cost(
             income,
             conversions[t],
@@ -174,10 +174,10 @@ def _benefit_of_current_bracket(
     avg_rate = total_tax_paid / total_conversion if total_conversion > 0 else 0.0
 
     # Estimate future tax avoided (rough: retirement rate * conversion * growth)
-    years_to_retire = max(0, scenario.retirement_age - scenario.age)
+    years_to_retire = max(0, scenario.drawdown_start_age - scenario.age)
     future_value = total_conversion * (1 + scenario.annual_growth_rate) ** years_to_retire
     retirement_rate = get_marginal_rate(
-        scenario.annual_retirement_spending or future_value * RETIREMENT_SPENDING_RATE,
+        scenario.default_drawdown or future_value * RETIREMENT_SPENDING_RATE,
         scenario.filing_status,
     )
     future_tax_avoided = future_value * retirement_rate
@@ -211,14 +211,15 @@ def _build_sensitivity_notes(
 
     n_years = len(conversions)
     if n_years > 1:
-        incomes = [y.gross_income for y in scenario.income_timeline]
+        incomes = [y.gross_income for y in scenario.timeline]
         income_range = max(incomes) - min(incomes)
         if income_range > LARGE_INCOME_VARIATION:
             notes.append(
                 "Large income variation across years creates significant conversion opportunities in low-income years"
             )
 
-    if scenario.years_in_retirement >= LONG_RETIREMENT_YEARS:
+    years_in_plan = scenario.planning_horizon_age - scenario.age
+    if years_in_plan >= LONG_RETIREMENT_YEARS:
         notes.append(
             "Long retirement horizon amplifies the tax-free growth benefit of Roth conversions"
         )
@@ -234,7 +235,12 @@ def _build_sensitivity_notes(
 
     owner_rmd_start = rmd_start_age(scenario.age)
     years_to_rmd = owner_rmd_start - scenario.age
-    if years_to_rmd <= 15:
+    if years_to_rmd <= 0:
+        notes.append(
+            f"RMDs have already begun (age {owner_rmd_start}) — "
+            f"converting now reduces the remaining balance subject to forced taxable withdrawals"
+        )
+    elif years_to_rmd <= 15:
         notes.append(
             f"RMDs begin at age {owner_rmd_start} ({years_to_rmd} years from now) — "
             f"converting before then reduces forced taxable withdrawals in retirement"
@@ -250,9 +256,9 @@ def _build_sensitivity_notes(
         state_rates = []
         for t in range(len(conversions)):
             if conversions[t] > 0:
-                yr_state = resolve_state_for_year(scenario.income_timeline[t].state, scenario.state)
+                yr_state = resolve_state_for_year(scenario.timeline[t].state, scenario.state)
                 if yr_state:
-                    income = scenario.income_timeline[t].gross_income
+                    income = scenario.timeline[t].gross_income
                     # State-only marginal = combined - federal
                     total_rate = combined_marginal_rate(
                         income,
@@ -350,14 +356,12 @@ def _build_summary_points(
         year_parts = []
         for t in range(n_years):
             if conversions[t] > 0:
-                year = scenario.income_timeline[t].year
+                year = scenario.timeline[t].year
                 year_parts.append(f"${conversions[t]:,.0f} in {year}")
         what = "Convert " + ", ".join(year_parts) if year_parts else "No conversion recommended"
 
     # Why this amount
-    low_income_years = [
-        scenario.income_timeline[t].year for t in range(n_years) if conversions[t] > 0
-    ]
+    low_income_years = [scenario.timeline[t].year for t in range(n_years) if conversions[t] > 0]
     if low_income_years:
         why = f"Fills lower tax brackets during {'low-income years' if n_years > 1 else 'current income level'} without pushing into expensive higher brackets"
     else:

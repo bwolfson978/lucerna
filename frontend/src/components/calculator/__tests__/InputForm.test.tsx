@@ -215,9 +215,9 @@ describe("InputForm", () => {
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
     const input = onSubmit.mock.calls[0][0];
-    expect(input.income_timeline).toBeDefined();
-    expect(input.income_timeline.length).toBe(30);
-    expect(input.income_timeline[0].gross_income).toBe(100000);
+    expect(input.timeline).toBeDefined();
+    expect(input.timeline.length).toBe(30);
+    expect(input.timeline[0].gross_income).toBe(100000);
   });
 
   it("submits with custom notes in timeline", () => {
@@ -233,8 +233,8 @@ describe("InputForm", () => {
     expect(onSubmit).toHaveBeenCalled();
     // Get the last call (after editing)
     const lastCall = onSubmit.mock.calls[onSubmit.mock.calls.length - 1][0];
-    expect(lastCall.income_timeline[1].notes).toBe("Sabbatical");
-    expect(lastCall.income_timeline[1].gross_income).toBe(40000);
+    expect(lastCall.timeline[1].notes).toBe("Sabbatical");
+    expect(lastCall.timeline[1].gross_income).toBe(40000);
   });
 
   it("preserves notes when income changes", () => {
@@ -410,9 +410,9 @@ describe("InputForm", () => {
     expect(onSubmit).toHaveBeenCalledTimes(1);
 
     const input = onSubmit.mock.calls[0][0];
-    expect(input.retirement_age).toBe(65);
+    expect(input.drawdown_start_age).toBe(65);
     expect(input.age).toBe(70);
     expect(input.filing_status).toBe("single");
-    expect(input.income_timeline.length).toBe(3);
+    expect(input.timeline.length).toBe(3);
   });
 });

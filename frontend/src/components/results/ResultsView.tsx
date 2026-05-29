@@ -54,14 +54,14 @@ export function ResultsView({ result }: ResultsViewProps) {
 
   // Build chart data from client-side bracket fills
   const chartYears = useMemo(() => {
-    return result.input.income_timeline.map((yi, i) => ({
+    return result.input.timeline.map((yi, i) => ({
       year: yi.year,
       age: result.input.age + i,
       bracketFill: yearlyBracketFills[i] || [],
     }));
   }, [result.input, yearlyBracketFills]);
 
-  const yearInfos = result.input.income_timeline.map((yi, i) => ({
+  const yearInfos = result.input.timeline.map((yi, i) => ({
     year: yi.year,
     age: result.input.age + i,
   }));

@@ -1,11 +1,15 @@
 export type FilingStatus = "single" | "married_filing_jointly";
 
-export interface YearlyIncome {
+export interface PlanYear {
   year: number;
   gross_income: number;
+  drawdown?: number | null;
   notes?: string;
   state?: string | null;
 }
+
+// Backward-compat alias
+export type YearlyIncome = PlanYear;
 
 export interface ConversionPreferences {
   max_annual_tax_cost?: number | null;
@@ -24,12 +28,12 @@ export interface HealthcareInput {
 export interface ScenarioInput {
   age: number;
   filing_status: FilingStatus;
-  income_timeline: YearlyIncome[];
+  timeline: PlanYear[]; // was income_timeline
   traditional_ira_balance: number;
   roth_ira_balance?: number;
-  retirement_age?: number;
-  years_in_retirement?: number;
-  annual_retirement_spending?: number | null;
+  drawdown_start_age?: number; // was retirement_age
+  default_drawdown?: number | null; // was annual_retirement_spending
+  planning_horizon_age?: number; // was years_in_retirement (now absolute age)
   annual_growth_rate?: number;
   discount_rate?: number;
   conversion_preferences?: ConversionPreferences | null;
@@ -94,6 +98,22 @@ export interface RmdProjection {
   peak_rmd_year: number;
 }
 
+export interface IrmaaYearDetail {
+  conversion_year: number;
+  surcharge_year: number;
+  surcharge_age: number;
+  magi: number;
+  irmaa_annual_cost: number;
+  irmaa_tier: number;
+}
+
+export interface IrmaaProjection {
+  yearly_detail: IrmaaYearDetail[];
+  total_irmaa_cost: number;
+  peak_irmaa_year: number;
+  peak_irmaa_amount: number;
+}
+
 export interface ReasoningTrace {
   binding_constraint: string;
   marginal_tax_rate_at_optimal: number;
@@ -135,6 +155,14 @@ export interface ReasoningTrace {
     peak_rmd_with_conversion: number;
     rmd_tax_savings: number;
     peak_rmd_reduction: number;
+    explanation: string;
+  } | null;
+  irmaa_summary?: {
+    total_irmaa_no_conversion?: number;
+    peak_irmaa_no_conversion?: number;
+    total_irmaa_with_conversion?: number;
+    peak_irmaa_with_conversion?: number;
+    irmaa_additional_cost?: number;
     explanation: string;
   } | null;
 }
@@ -194,6 +222,8 @@ export interface OptimizationResult {
   npv_without_aca?: number | null;
   rmd_projection?: RmdProjection | null;
   rmd_projection_no_conversion?: RmdProjection | null;
+  irmaa_projection?: IrmaaProjection | null;
+  irmaa_projection_no_conversion?: IrmaaProjection | null;
   input: ScenarioInput;
 }
 
@@ -203,7 +233,8 @@ export interface DemoPersona {
   occupation: string;
   previous_salary: string;
   situation: string;
-  income_timeline: {
+  milestones: {
+    // was income_timeline
     year: number;
     income: string;
     event: string;

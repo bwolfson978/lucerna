@@ -7,8 +7,8 @@ from app.engine.types import (
     ConversionPreferences,
     FilingStatus,
     OptimizationResult,
+    PlanYear,
     ScenarioInput,
-    YearlyIncome,
 )
 
 
@@ -16,7 +16,7 @@ class TestCalculateNPV:
     def test_zero_conversion_returns_baseline(self, sample_single_input):
         """Converting $0 in all years should return the baseline NPV."""
         scenario = sample_single_input()
-        n_years = len(scenario.income_timeline)
+        n_years = len(scenario.timeline)
         baseline = calculate_npv(scenario, [0.0] * n_years)
         assert baseline is not None
         assert isinstance(baseline, float)
@@ -24,7 +24,7 @@ class TestCalculateNPV:
     def test_different_conversions_different_npv(self, sample_single_input):
         """Different conversion schedules should produce different NPVs."""
         scenario = sample_single_input()
-        n_years = len(scenario.income_timeline)
+        n_years = len(scenario.timeline)
         npv_zero = calculate_npv(scenario, [0.0] * n_years)
         npv_some = calculate_npv(scenario, [50000.0] * n_years)
         assert npv_zero != npv_some
@@ -41,7 +41,7 @@ class TestOptimize:
         """Should return one conversion amount per year in timeline."""
         scenario = sample_single_input()
         result = optimize(scenario)
-        assert len(result.yearly_conversions) == len(scenario.income_timeline)
+        assert len(result.yearly_conversions) == len(scenario.timeline)
 
     def test_conversions_within_balance(self, sample_single_input):
         """Total conversions should not exceed traditional IRA balance."""
@@ -61,10 +61,10 @@ class TestOptimize:
         scenario = ScenarioInput(
             age=45,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[YearlyIncome(year=2026, gross_income=25000)],
+            timeline=[PlanYear(year=2026, gross_income=25000)],
             traditional_ira_balance=100000,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
         )
@@ -76,14 +76,14 @@ class TestOptimize:
         scenario = ScenarioInput(
             age=38,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[
-                YearlyIncome(year=2026, gross_income=35000),
-                YearlyIncome(year=2027, gross_income=30000),
-                YearlyIncome(year=2028, gross_income=150000),
+            timeline=[
+                PlanYear(year=2026, gross_income=35000),
+                PlanYear(year=2027, gross_income=30000),
+                PlanYear(year=2028, gross_income=150000),
             ],
             traditional_ira_balance=210000,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
         )
@@ -98,10 +98,10 @@ class TestOptimize:
         scenario = ScenarioInput(
             age=45,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[YearlyIncome(year=2026, gross_income=25000)],
+            timeline=[PlanYear(year=2026, gross_income=25000)],
             traditional_ira_balance=100000,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
         )
@@ -124,14 +124,14 @@ class TestOptimize:
         scenario = ScenarioInput(
             age=38,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[
-                YearlyIncome(year=2026, gross_income=35000),
-                YearlyIncome(year=2027, gross_income=30000),
-                YearlyIncome(year=2028, gross_income=150000),
+            timeline=[
+                PlanYear(year=2026, gross_income=35000),
+                PlanYear(year=2027, gross_income=30000),
+                PlanYear(year=2028, gross_income=150000),
             ],
             traditional_ira_balance=210000,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
         )
@@ -152,14 +152,14 @@ class TestConversionPreferences:
         return ScenarioInput(
             age=38,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[
-                YearlyIncome(year=2026, gross_income=35000),
-                YearlyIncome(year=2027, gross_income=30000),
-                YearlyIncome(year=2028, gross_income=150000),
+            timeline=[
+                PlanYear(year=2026, gross_income=35000),
+                PlanYear(year=2027, gross_income=30000),
+                PlanYear(year=2028, gross_income=150000),
             ],
             traditional_ira_balance=210000,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
             conversion_preferences=prefs,
@@ -170,14 +170,14 @@ class TestConversionPreferences:
         unconstrained = ScenarioInput(
             age=38,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[
-                YearlyIncome(year=2026, gross_income=35000),
-                YearlyIncome(year=2027, gross_income=30000),
-                YearlyIncome(year=2028, gross_income=150000),
+            timeline=[
+                PlanYear(year=2026, gross_income=35000),
+                PlanYear(year=2027, gross_income=30000),
+                PlanYear(year=2028, gross_income=150000),
             ],
             traditional_ira_balance=210000,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
         )
@@ -247,14 +247,14 @@ class TestScenarioComparisonFields:
         scenario = ScenarioInput(
             age=38,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[
-                YearlyIncome(year=2026, gross_income=35000),
-                YearlyIncome(year=2027, gross_income=30000),
-                YearlyIncome(year=2028, gross_income=150000),
+            timeline=[
+                PlanYear(year=2026, gross_income=35000),
+                PlanYear(year=2027, gross_income=30000),
+                PlanYear(year=2028, gross_income=150000),
             ],
             traditional_ira_balance=210000,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
         )
@@ -268,10 +268,10 @@ class TestScenarioComparisonFields:
         scenario = ScenarioInput(
             age=45,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[YearlyIncome(year=2026, gross_income=25000)],
+            timeline=[PlanYear(year=2026, gross_income=25000)],
             traditional_ira_balance=100000,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
         )
@@ -289,10 +289,10 @@ class TestScenarioComparisonFields:
         scenario = ScenarioInput(
             age=45,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[YearlyIncome(year=2026, gross_income=25000)],
+            timeline=[PlanYear(year=2026, gross_income=25000)],
             traditional_ira_balance=100000,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
         )
@@ -304,13 +304,13 @@ class TestScenarioComparisonFields:
         scenario = ScenarioInput(
             age=38,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[
-                YearlyIncome(year=2026, gross_income=35000),
-                YearlyIncome(year=2027, gross_income=30000),
+            timeline=[
+                PlanYear(year=2026, gross_income=35000),
+                PlanYear(year=2027, gross_income=30000),
             ],
             traditional_ira_balance=100000,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
         )
@@ -327,17 +327,17 @@ class TestStateTaxIntegration:
         self, state=None, retirement_state=None, custom_state_rate=None, timeline_states=None
     ):
         traj = [
-            YearlyIncome(
+            PlanYear(
                 year=2026,
                 gross_income=150000,
                 state=timeline_states[0] if timeline_states else None,
             ),
-            YearlyIncome(
+            PlanYear(
                 year=2027,
                 gross_income=150000,
                 state=timeline_states[1] if timeline_states else None,
             ),
-            YearlyIncome(
+            PlanYear(
                 year=2028,
                 gross_income=150000,
                 state=timeline_states[2] if timeline_states else None,
@@ -346,10 +346,10 @@ class TestStateTaxIntegration:
         return ScenarioInput(
             age=45,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=traj,
+            timeline=traj,
             traditional_ira_balance=300000,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
             state=state,
@@ -362,20 +362,20 @@ class TestStateTaxIntegration:
         scenario_no_state = ScenarioInput(
             age=45,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[YearlyIncome(year=2026, gross_income=100000)],
+            timeline=[PlanYear(year=2026, gross_income=100000)],
             traditional_ira_balance=200000,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
         )
         scenario_explicit_none = ScenarioInput(
             age=45,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[YearlyIncome(year=2026, gross_income=100000)],
+            timeline=[PlanYear(year=2026, gross_income=100000)],
             traditional_ira_balance=200000,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
             state=None,
@@ -473,13 +473,11 @@ class TestAlreadyRetired:
         return ScenarioInput(
             age=age,
             filing_status=FilingStatus.MFJ,
-            income_timeline=[
-                YearlyIncome(year=2026 + i, gross_income=50000) for i in range(n_years)
-            ],
+            timeline=[PlanYear(year=2026 + i, gross_income=50000) for i in range(n_years)],
             traditional_ira_balance=500000,
             roth_ira_balance=50000,
-            retirement_age=retirement_age,
-            years_in_retirement=25,
+            drawdown_start_age=retirement_age,
+            planning_horizon_age=retirement_age + 25,
             annual_growth_rate=0.07,
             discount_rate=0.05,
         )
@@ -502,7 +500,7 @@ class TestAlreadyRetired:
     def test_npv_positive_for_low_income_retiree(self):
         """Already-retired user with low income should benefit from conversion."""
         scenario = self._retired_scenario()
-        n_years = len(scenario.income_timeline)
+        n_years = len(scenario.timeline)
         npv_zero = calculate_npv(scenario, [0.0] * n_years)
         npv_some = calculate_npv(scenario, [50000.0] * n_years)
         # Converting at low income should produce higher NPV than not converting
@@ -522,11 +520,11 @@ class TestRmdUsesPreGrowthBalance:
         return ScenarioInput(
             age=age,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[YearlyIncome(year=2026, gross_income=60_000)],
+            timeline=[PlanYear(year=2026, gross_income=60_000)],
             traditional_ira_balance=balance,
             roth_ira_balance=0,
-            retirement_age=retirement_age,
-            years_in_retirement=10,
+            drawdown_start_age=retirement_age,
+            planning_horizon_age=retirement_age + 10,
             annual_growth_rate=growth_rate,
             discount_rate=0.04,
         )

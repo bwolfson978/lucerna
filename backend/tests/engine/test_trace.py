@@ -5,9 +5,9 @@ from app.engine.trace import generate_reasoning_trace
 from app.engine.types import (
     FilingStatus,
     NPVCurvePoint,
+    PlanYear,
     ReasoningTrace,
     ScenarioInput,
-    YearlyIncome,
 )
 
 
@@ -16,10 +16,10 @@ class TestGenerateReasoningTrace:
         return ScenarioInput(
             age=45,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[YearlyIncome(year=2026, gross_income=50000)],
+            timeline=[PlanYear(year=2026, gross_income=50000)],
             traditional_ira_balance=250000,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
         )

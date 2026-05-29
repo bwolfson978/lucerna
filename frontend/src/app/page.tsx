@@ -89,9 +89,10 @@ export default function Home() {
                   DEMO SCENARIO
                 </span>
                 <p className="text-body leading-relaxed text-text-primary">
-                  <strong>Alex, 38.</strong> Senior SWE who left to co-found a startup. $210K
-                  traditional IRA/401(k), 3-year income timeline: $35K → $30K → $150K. Two
-                  low-income years create a window to convert at lower brackets.
+                  <strong>Margaret, 63.</strong> Registered nurse who retired last year. $1.4M
+                  traditional 401(k), no Social Security yet, and 10 years before required minimum
+                  distributions force six-figure taxable income. The conversion window is open right
+                  now.
                 </p>
                 <Link
                   href="/demo"

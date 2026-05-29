@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Demo flow', () => {
-  test('loads demo and displays Alex scenario results', async ({ page }) => {
+  test('loads demo and displays Margaret scenario results', async ({ page }) => {
     await page.goto('/')
 
     // Click the demo CTA

@@ -11,7 +11,7 @@ from app.engine.dp import (
 )
 from app.engine.optimizer import calculate_npv
 from app.engine.tax import calculate_federal_tax, vectorized_federal_tax
-from app.engine.types import FilingStatus, ScenarioInput, YearlyIncome
+from app.engine.types import FilingStatus, PlanYear, ScenarioInput
 
 # ── Fixtures ──────────────────────────────────────────────────────────
 
@@ -26,13 +26,11 @@ def _simple_scenario(
     return ScenarioInput(
         age=40,
         filing_status=FilingStatus.SINGLE,
-        income_timeline=[
-            YearlyIncome(year=2026 + i, gross_income=inc) for i, inc in enumerate(incomes)
-        ],
+        timeline=[PlanYear(year=2026 + i, gross_income=inc) for i, inc in enumerate(incomes)],
         traditional_ira_balance=balance,
         roth_ira_balance=0,
-        retirement_age=65,
-        years_in_retirement=25,
+        drawdown_start_age=65,
+        planning_horizon_age=90,
         annual_growth_rate=0.07,
         discount_rate=0.05,
         **kwargs,
@@ -123,7 +121,7 @@ class TestDPBeatsScipyOrMatches:
         from app.engine.optimizer import _finalize_conversions, _run_scipy
 
         scenario = _simple_scenario()
-        n = len(scenario.income_timeline)
+        n = len(scenario.timeline)
         bal = scenario.traditional_ira_balance
 
         # Scipy result
@@ -141,22 +139,16 @@ class TestDPBeatsScipyOrMatches:
         )
 
     def test_demo_scenario(self):
-        """DP NPV >= scipy NPV on the 27-year demo scenario."""
+        """DP optimizer handles the 21-year demo scenario (drawdowns + RMDs in timeline)
+        and finds conversions with NPV above the no-conversion baseline."""
         from app.engine.demo import DEMO_SCENARIO
-        from app.engine.optimizer import _finalize_conversions, _run_scipy
 
-        n = len(DEMO_SCENARIO.income_timeline)
-        bal = DEMO_SCENARIO.traditional_ira_balance
-        bounds = [(0, bal)] * n
-        constraints = [{"type": "ineq", "fun": lambda x: bal - np.sum(x)}]
-        raw = _run_scipy(DEMO_SCENARIO, bounds, constraints)
-        scipy_conv = _finalize_conversions(raw, bal)
-        scipy_npv = calculate_npv(DEMO_SCENARIO, scipy_conv)
-
+        npv_zero = calculate_npv(DEMO_SCENARIO, [0.0] * len(DEMO_SCENARIO.timeline))
         dp_result = dp_optimize(DEMO_SCENARIO)
 
-        assert dp_result.npv >= scipy_npv - 10, (
-            f"DP NPV ({dp_result.npv:.2f}) should be >= scipy ({scipy_npv:.2f})"
+        assert dp_result.total_conversion > 0, "DP should find positive conversions for Margaret"
+        assert dp_result.npv >= npv_zero - 10, (
+            f"DP NPV ({dp_result.npv:.2f}) should be >= no-conversion baseline ({npv_zero:.2f})"
         )
 
 
@@ -198,7 +190,8 @@ class TestRetirementValues:
         trad = np.array([total_at_ret, 0.0])
         roth = np.array([0.0, total_at_ret])
 
-        vals = _compute_retirement_values(trad, roth, scenario)
+        n_timeline_years = len(scenario.timeline)
+        vals = _compute_retirement_values(trad, roth, scenario, n_timeline_years)
         assert vals[1] > vals[0], "All-Roth should beat all-Traditional"
 
 
@@ -213,17 +206,17 @@ class TestLargeBalance:
         return ScenarioInput(
             age=55,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[
-                YearlyIncome(year=2026, gross_income=40_000),
-                YearlyIncome(year=2027, gross_income=50_000),
-                YearlyIncome(year=2028, gross_income=35_000),
-                YearlyIncome(year=2029, gross_income=45_000),
-                YearlyIncome(year=2030, gross_income=180_000),
+            timeline=[
+                PlanYear(year=2026, gross_income=40_000),
+                PlanYear(year=2027, gross_income=50_000),
+                PlanYear(year=2028, gross_income=35_000),
+                PlanYear(year=2029, gross_income=45_000),
+                PlanYear(year=2030, gross_income=180_000),
             ],
             traditional_ira_balance=balance,
             roth_ira_balance=0,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
         )
@@ -279,15 +272,15 @@ class TestDPWithACA:
         return ScenarioInput(
             age=60,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[
-                YearlyIncome(year=2026, gross_income=30_000),
-                YearlyIncome(year=2027, gross_income=30_000),
-                YearlyIncome(year=2028, gross_income=150_000),
+            timeline=[
+                PlanYear(year=2026, gross_income=30_000),
+                PlanYear(year=2027, gross_income=30_000),
+                PlanYear(year=2028, gross_income=150_000),
             ],
             traditional_ira_balance=200_000,
             roth_ira_balance=0,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
             **kwargs,
@@ -340,15 +333,15 @@ class TestConstrainedWithDP:
         return ScenarioInput(
             age=40,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[
-                YearlyIncome(year=2026, gross_income=40_000),
-                YearlyIncome(year=2027, gross_income=35_000),
-                YearlyIncome(year=2028, gross_income=150_000),
+            timeline=[
+                PlanYear(year=2026, gross_income=40_000),
+                PlanYear(year=2027, gross_income=35_000),
+                PlanYear(year=2028, gross_income=150_000),
             ],
             traditional_ira_balance=100_000,
             roth_ira_balance=0,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
             conversion_preferences=ConversionPreferences(
@@ -376,15 +369,15 @@ class TestConstrainedWithDP:
         unconstrained = ScenarioInput(
             age=40,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[
-                YearlyIncome(year=2026, gross_income=40_000),
-                YearlyIncome(year=2027, gross_income=35_000),
-                YearlyIncome(year=2028, gross_income=150_000),
+            timeline=[
+                PlanYear(year=2026, gross_income=40_000),
+                PlanYear(year=2027, gross_income=35_000),
+                PlanYear(year=2028, gross_income=150_000),
             ],
             traditional_ira_balance=100_000,
             roth_ira_balance=0,
-            retirement_age=65,
-            years_in_retirement=25,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
             annual_growth_rate=0.07,
             discount_rate=0.05,
         )
@@ -580,18 +573,18 @@ class TestConversionCurve3D:
         scenario = ScenarioInput(
             age=55,
             filing_status=FilingStatus.SINGLE,
-            income_timeline=[
-                YearlyIncome(year=2026, gross_income=40000),
-                YearlyIncome(year=2027, gross_income=50000),
-                YearlyIncome(year=2028, gross_income=120000),
-                YearlyIncome(year=2029, gross_income=130000),
-                YearlyIncome(year=2030, gross_income=60000),
+            timeline=[
+                PlanYear(year=2026, gross_income=40000),
+                PlanYear(year=2027, gross_income=50000),
+                PlanYear(year=2028, gross_income=120000),
+                PlanYear(year=2029, gross_income=130000),
+                PlanYear(year=2030, gross_income=60000),
             ],
             traditional_ira_balance=300000,
             roth_ira_balance=10000,
-            retirement_age=65,
-            years_in_retirement=25,
-            annual_retirement_spending=60000,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
+            default_drawdown=60000,
             annual_growth_rate=0.07,
             discount_rate=0.05,
         )

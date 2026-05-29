@@ -111,8 +111,8 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
   const taxConfig = useTaxConfig();
   const filingStatus = result.input.filing_status;
   const incomes = useMemo(
-    () => result.input.income_timeline.map((yi) => yi.gross_income),
-    [result.input.income_timeline]
+    () => result.input.timeline.map((yi) => yi.gross_income),
+    [result.input.timeline]
   );
 
   // Sort the conversion curve once — reused by both distributeConversion
@@ -166,21 +166,14 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
         const marginalRate = topFilled ? topFilled.bracket_rate : 0.1;
 
         return {
-          year: result.input.income_timeline[i].year,
+          year: result.input.timeline[i].year,
           income,
           conversion: Math.round(conversion),
           tax_cost: Math.round(taxCost * 100) / 100,
           marginal_bracket: marginalRate,
         };
       }),
-    [
-      incomes,
-      yearlyConversions,
-      yearlyBracketFills,
-      filingStatus,
-      taxConfig,
-      result.input.income_timeline,
-    ]
+    [incomes, yearlyConversions, yearlyBracketFills, filingStatus, taxConfig, result.input.timeline]
   );
 
   const displayTotalConversion = yearlyConversions.reduce((a, b) => a + b, 0);
