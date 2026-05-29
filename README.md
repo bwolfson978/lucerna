@@ -53,7 +53,6 @@ lucerna/
 | Frontend hosting | Vercel |
 | Backend hosting | Railway |
 | Analytics | PostHog |
-| Email | Resend |
 | Observability | Prometheus + Grafana Cloud |
 
 ## Demo Scenario
