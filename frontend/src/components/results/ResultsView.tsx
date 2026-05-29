@@ -13,6 +13,7 @@ import { ConversionSlider } from "./ConversionSlider";
 import { ScenarioCards } from "./ScenarioCards";
 import { BalanceProjections } from "./BalanceProjections";
 import { AcaSubsidyImpact } from "./AcaSubsidyImpact";
+import { RmdImpactChart } from "./RmdImpactChart";
 import { Card } from "@/components/ui/card";
 import { useConversionSlider } from "@/hooks/useConversionSlider";
 import { useScrollOnTransition } from "@/hooks/useScrollOnTransition";
@@ -192,6 +193,11 @@ export function ResultsView({ result }: ResultsViewProps) {
 
       {/* ACA subsidy impact (only when healthcare inputs provided) */}
       {result.aca_subsidy_impact && <AcaSubsidyImpact result={result} />}
+
+      {/* RMD impact (shown when RMD projection data is available) */}
+      {result.rmd_projection && result.rmd_projection.yearly_detail.length > 0 && (
+        <RmdImpactChart result={result} />
+      )}
 
       {/* Balance projections */}
       <BalanceProjections
