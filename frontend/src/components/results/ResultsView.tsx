@@ -191,7 +191,7 @@ export function ResultsView({ result }: ResultsViewProps) {
           <ChartLegend
             items={[
               { color: CHART_COLORS.income, label: "Other income" },
-              ...(rmdByYear.size > 0
+              ...(chartYears.some((y) => (y.rmdAmount ?? 0) > 0)
                 ? [{ color: CHART_COLORS.rmd, label: "Required withdrawal" }]
                 : []),
               { color: CHART_COLORS.conversion, label: "Roth Conversion" },
@@ -208,9 +208,9 @@ export function ResultsView({ result }: ResultsViewProps) {
       {result.aca_subsidy_impact && <AcaSubsidyImpact result={result} />}
 
       {/* RMD impact (shown when RMD projection data is available) */}
-      {result.rmd_projection && result.rmd_projection.yearly_detail.length > 0 && (
-        <RmdImpactChart result={result} />
-      )}
+      {result.rmd_projection &&
+        result.rmd_projection_no_conversion &&
+        result.rmd_projection.yearly_detail.length > 0 && <RmdImpactChart result={result} />}
 
       {/* Balance projections */}
       <BalanceProjections

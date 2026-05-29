@@ -16,6 +16,7 @@ interface ChartTooltip {
   year: number;
   age: number;
   bracketFill: BracketFillResult[];
+  rmdAmount?: number;
 }
 
 interface YearData {
@@ -207,6 +208,7 @@ export function BracketChart({
         year: yearData.year,
         age: yearData.age,
         bracketFill: yearData.bracketFill,
+        rmdAmount: yearData.rmdAmount,
       });
     },
     [isEngaged]
@@ -541,9 +543,11 @@ export function BracketChart({
                   (s, bf) => s + bf.filled_by_conversion,
                   0
                 );
+                const rmd = tooltip.rmdAmount ?? 0;
+                const baseIncome = totalIncome - rmd;
                 return (
                   <div className="flex flex-col gap-1.5">
-                    {totalIncome > 0 && (
+                    {baseIncome > 0 && (
                       <div className="flex items-center justify-between gap-4">
                         <span className="flex items-center gap-1.5">
                           <span
@@ -553,8 +557,20 @@ export function BracketChart({
                           <span className="text-text-secondary">Other income</span>
                         </span>
                         <span className="font-medium text-text-primary">
-                          {formatCurrency(totalIncome)}
+                          {formatCurrency(baseIncome)}
                         </span>
+                      </div>
+                    )}
+                    {rmd > 0 && (
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="flex items-center gap-1.5">
+                          <span
+                            className="h-2 w-2 rounded-sm"
+                            style={{ backgroundColor: CHART_COLORS.rmd }}
+                          />
+                          <span className="text-text-secondary">Required withdrawal</span>
+                        </span>
+                        <span className="font-medium text-text-primary">{formatCurrency(rmd)}</span>
                       </div>
                     )}
                     {totalConversion > 0 && (
@@ -656,7 +672,7 @@ function BracketBar({
         const incomeTop = incomeBottom - incomeHeight;
 
         // Split income into base (bottom) and RMD (top)
-        const rmdHeight = Math.round(incomeHeight * rmdFraction);
+        const rmdHeight = incomeHeight * rmdFraction;
         const baseHeight = incomeHeight - rmdHeight;
 
         // Conversion segment stacks on top of (possibly expanded) income
@@ -696,7 +712,7 @@ function BracketBar({
                 width={barWidth}
                 height={baseHeight}
                 fill={CHART_COLORS.income}
-                rx={2}
+                rx={rmdHeight > 0 ? 0 : 2}
               />
             )}
 
@@ -708,7 +724,7 @@ function BracketBar({
                 width={barWidth}
                 height={rmdHeight}
                 fill={CHART_COLORS.rmd}
-                rx={2}
+                rx={0}
               />
             )}
 

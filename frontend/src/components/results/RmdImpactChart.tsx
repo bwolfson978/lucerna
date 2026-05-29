@@ -54,29 +54,26 @@ export function RmdImpactChart({ result }: RmdImpactChartProps) {
 
   if (points.length === 0) return null;
 
-  const typedPoints = points as RmdPoint[];
-  const maxRmd = Math.max(...typedPoints.map((p: RmdPoint) => p.without), 1);
+  const maxRmd = Math.max(...points.map((p) => Math.max(p.without, p.with)), 1);
   const yMax = niceYMax(maxRmd);
   const Y_TICKS = 4;
   const yInterval = yMax / Y_TICKS;
 
   const plotWidth = (width ?? 400) - LEFT_PAD - RIGHT_PAD;
-  const n = typedPoints.length;
+  const n = points.length;
 
   const toY = (v: number) => TOP_PAD + PLOT_HEIGHT * (1 - Math.min(v, yMax) / yMax);
   const toX = (i: number) => LEFT_PAD + (n <= 1 ? plotWidth / 2 : (i / (n - 1)) * plotWidth);
 
-  const withoutPts = typedPoints
-    .map((p: RmdPoint, i: number) => `${toX(i)},${toY(p.without)}`)
-    .join(" ");
-  const withPts = typedPoints.map((p: RmdPoint, i: number) => `${toX(i)},${toY(p.with)}`).join(" ");
+  const withoutPts = points.map((p, i) => `${toX(i)},${toY(p.without)}`).join(" ");
+  const withPts = points.map((p, i) => `${toX(i)},${toY(p.with)}`).join(" ");
 
   // Closed polygon for the shaded area between lines
   const fillPath = [
-    `M ${typedPoints.map((p: RmdPoint, i: number) => `${toX(i)},${toY(p.without)}`).join(" L ")}`,
-    `L ${[...typedPoints]
+    `M ${points.map((p, i) => `${toX(i)},${toY(p.without)}`).join(" L ")}`,
+    `L ${[...points]
       .reverse()
-      .map((p: RmdPoint, i: number) => `${toX(n - 1 - i)},${toY(p.with)}`)
+      .map((p, i) => `${toX(n - 1 - i)},${toY(p.with)}`)
       .join(" L ")}`,
     "Z",
   ].join(" ");
@@ -90,7 +87,9 @@ export function RmdImpactChart({ result }: RmdImpactChartProps) {
   const peakWith = withProj?.peak_rmd_amount ?? 0;
   const peakReduction = peakWithout - peakWith;
   const peakPct = peakWithout > 0 ? Math.round((peakReduction / peakWithout) * 100) : 0;
-  const peakAgeWithout = withoutProj!.yearly_detail.find((d) => d.rmd_amount === peakWithout)?.age;
+  const peakAgeWithout = withoutProj!.yearly_detail.find(
+    (d) => d.year === withoutProj!.peak_rmd_year
+  )?.age;
 
   return (
     <div className="flex flex-col gap-default">
@@ -171,7 +170,7 @@ export function RmdImpactChart({ result }: RmdImpactChartProps) {
               <polyline points={withPts} fill="none" stroke={COLOR_WITH} strokeWidth={2.5} />
 
               {/* X-axis age labels */}
-              {typedPoints.map((p: RmdPoint, i: number) => {
+              {points.map((p, i) => {
                 if (!xLabelIndices.has(i)) return null;
                 return (
                   <text
@@ -186,7 +185,7 @@ export function RmdImpactChart({ result }: RmdImpactChartProps) {
                   </text>
                 );
               })}
-              {typedPoints.map((p: RmdPoint, i: number) => {
+              {points.map((p, i) => {
                 if (!xLabelIndices.has(i)) return null;
                 return (
                   <text
