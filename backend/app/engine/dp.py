@@ -23,7 +23,7 @@ from app.engine.irmaa import (
     MEDICARE_START_AGE,
     vectorized_irmaa_surcharge_loss,
 )
-from app.engine.rmd import rmd_start_age, vectorized_rmd
+from app.engine.rmd import calculate_rmd, rmd_start_age, vectorized_rmd
 from app.engine.state_tax import (
     calculate_state_tax,
     resolve_state_for_year,
@@ -159,6 +159,39 @@ def _compute_retirement_values(
     return npv
 
 
+def _simulate_no_conversion_trajectory(scenario: ScenarioInput) -> float:
+    """Simulate the zero-conversion trajectory through the timeline.
+
+    Returns total (trad + roth) wealth at the end of the timeline. This anchors the
+    DP invariant: roth = max(0, total - trad). Conversions shift trad→roth but leave
+    total unchanged (tax costs are tracked separately in NPV). Drawdowns reduce total
+    by fixed amounts that are independent of the trad/roth split (assuming sufficient
+    trad balance, which holds for typical scenarios).
+
+    Note: RMDs depend on trad balance and thus differ between conversion scenarios.
+    We use the no-conversion case (highest RMDs, lowest total) as a conservative
+    anchor: this slightly underestimates roth for the conversion case, making the DP
+    marginally conservative but never wildly wrong.
+    """
+    g = scenario.annual_growth_rate
+    owner_rmd_start = rmd_start_age(scenario.age)
+    trad = float(scenario.traditional_ira_balance)
+    roth = float(scenario.roth_ira_balance)
+    for t, entry in enumerate(scenario.timeline):
+        owner_age = scenario.age + t
+        if owner_age >= owner_rmd_start:
+            rmd = min(calculate_rmd(trad, owner_age), trad)
+            trad -= rmd
+        if entry.drawdown is not None and entry.drawdown > 0:
+            d_amt = float(entry.drawdown)
+            trad_draw = min(d_amt, trad)
+            trad -= trad_draw
+            roth -= min(d_amt - trad_draw, roth)
+        trad *= 1 + g
+        roth *= 1 + g
+    return trad + roth
+
+
 def _dp_backward(
     scenario: ScenarioInput,
     balance_grid: np.ndarray,
@@ -176,24 +209,20 @@ def _dp_backward(
     d = scenario.discount_rate
     years_until_drawdown = max(0, scenario.drawdown_start_age - scenario.age)
     remaining_growth_years = max(0, years_until_drawdown) - n_years
-
     growth_factor = (1 + g) ** remaining_growth_years if remaining_growth_years > 0 else 1.0
 
     initial_balance = scenario.traditional_ira_balance
-    initial_roth = scenario.roth_ira_balance
+    owner_rmd_start = rmd_start_age(scenario.age)
 
-    # The balance grid must cover the GROWN balance range.  If nothing is
-    # converted, the balance after n_years of growth could be as large as
-    # initial_balance * (1+g)^n_years.  Use a non-uniform grid that
-    # concentrates resolution in the [0, initial_balance] range where
-    # conversion decisions actually happen, and uses sparser points in
-    # the [initial_balance, max_grown] range (only reached if little
-    # is converted).  This prevents long trajectories with high growth
-    # from diluting grid resolution to $700+ steps.
-    max_grown_balance = initial_balance * (1 + g) ** n_years
+    # Grid upper bound: the balance peaks at the drawdown-start year (before
+    # withdrawals reduce it). Capping at min(n_years, years_until_drawdown)
+    # gives the true max whether or not the timeline extends past drawdown start.
+    max_grown_balance = initial_balance * (1 + g) ** min(n_years, years_until_drawdown)
+    if max_grown_balance <= 0:
+        max_grown_balance = initial_balance
+
     G = len(balance_grid)
     if max_grown_balance > initial_balance * 1.5 and G > 20:
-        # Split: 80% of grid points in [0, balance], 20% in [balance, max_grown]
         n_fine = int(G * 0.8)
         n_coarse = G - n_fine
         fine_part = np.linspace(0, initial_balance, n_fine, endpoint=False)
@@ -204,65 +233,58 @@ def _dp_backward(
 
     value_table = np.zeros((n_years + 1, G))
 
-    # Terminal values: for each possible remaining trad balance at end of
-    # timeline, compute retirement NPV.
-    #
-    # Key insight: conversions shift dollars from traditional to Roth, and
-    # both accounts grow at the same rate g.  So total pre-tax wealth at
-    # retirement is the same regardless of conversions:
-    #   total = (initial_trad + initial_roth) * (1+g)^years_to_drawdown
-    # The retirement value depends only on the trad/roth SPLIT.
-    # Conversion TAX COSTS are already captured as negative terms in the
-    # DP's backward induction, so they don't double-count here.
-    total_growth = (1 + g) ** years_until_drawdown
-    total_at_retirement = (initial_balance + initial_roth) * total_growth
+    # Terminal values: reconstruct roth from the total-wealth invariant.
+    # total_at_timeline_end is computed by simulating the no-conversion trajectory
+    # (zero conversion, all drawdowns/RMDs at their highest). growth_factor covers
+    # any gap between timeline end and drawdown start.
+    total_at_timeline_end = _simulate_no_conversion_trajectory(scenario)
+    total_at_drawdown_start = total_at_timeline_end * growth_factor
+    trad_at_drawdown_start = extended_grid * growth_factor
+    roth_at_drawdown_start = np.maximum(0.0, total_at_drawdown_start - trad_at_drawdown_start)
 
-    trad_at_ret = extended_grid * growth_factor
-    roth_at_ret = np.maximum(0.0, total_at_retirement - trad_at_ret)
+    value_table[n_years] = _compute_retirement_values(
+        trad_at_drawdown_start, roth_at_drawdown_start, scenario, n_years
+    )
 
-    value_table[n_years] = _compute_retirement_values(trad_at_ret, roth_at_ret, scenario, n_years)
-
-    # Policy table: which conversion index is optimal at each (year, balance)
     policy_table = np.zeros((n_years, G), dtype=np.int64)
 
-    # Determine ACA coverage years
     hc = scenario.healthcare
     aca_years = _aca_coverage_years(scenario)
 
-    # RMD start age for the owner
-    owner_rmd_start = rmd_start_age(scenario.age)
-
-    # Pre-compute tax without conversion for each year (scalar per year)
     tax_without_cache = [
         calculate_federal_tax(scenario.timeline[t].gross_income, scenario.filing_status)
         for t in range(n_years)
     ]
 
-    # Pre-compute conversion tax cost for each year at every grid point.
-    # tax_cost_by_year[t] = array of size G: tax cost of converting
-    # extended_grid[j] dollars in year t.
-    # For RMD years the cost is state-dependent (RMD varies by balance).
-    tax_cost_by_year: list[np.ndarray] = []
+    # Pre-compute per-grid-state RMD arrays for each year. None for non-RMD years.
+    # For RMD years, tax cost and state transition are computed per-state in the loop
+    # (the income base rmd(grid[i]) must reflect the current balance state, not the
+    # conversion amount). For non-RMD years, cost is balance-independent and can be
+    # pre-computed once and reused across all states.
+    rmd_arrays_per_year: list[np.ndarray | None] = []
     for t in range(n_years):
         owner_age = scenario.age + t
-        income_t = scenario.timeline[t].gross_income
-
         if owner_age >= owner_rmd_start:
-            # RMD depends on balance state — compute per grid point
-            rmd_by_state = vectorized_rmd(extended_grid, owner_age)  # shape (G,)
-            effective_income = income_t + rmd_by_state  # shape (G,)
-            # Tax cost[j] = tax(effective_income[j] + extended_grid[j]) - tax(effective_income[j])
-            # This is O(G) per year (not O(G^2)) because RMD and conversion are on the SAME grid
-            tax_with = vectorized_federal_tax(effective_income + extended_grid, scenario.filing_status)
-            tax_without = vectorized_federal_tax(effective_income, scenario.filing_status)
-            tax_cost_by_year.append(tax_with - tax_without)
+            rmd_arrays_per_year.append(
+                np.minimum(vectorized_rmd(extended_grid, owner_age), extended_grid)
+            )
         else:
+            rmd_arrays_per_year.append(None)
+
+    # Pre-compute conversion cost for non-RMD years (income-base is independent of state)
+    tax_cost_by_year: list[np.ndarray | None] = []
+    for t in range(n_years):
+        if rmd_arrays_per_year[t] is not None:
+            tax_cost_by_year.append(None)  # computed per-state in backward loop
+        else:
+            income_t = scenario.timeline[t].gross_income
             tax_with = vectorized_federal_tax(income_t + extended_grid, scenario.filing_status)
             tax_cost_by_year.append(tax_with - tax_without_cache[t])
 
-    # Pre-compute state tax costs per year
     state_cost_by_year: list[np.ndarray | None] = [None] * n_years
     for t in range(n_years):
+        if rmd_arrays_per_year[t] is not None:
+            continue  # per-state in loop
         yr_state = resolve_state_for_year(scenario.timeline[t].state, scenario.state)
         if yr_state:
             income_t = scenario.timeline[t].gross_income
@@ -277,10 +299,12 @@ def _dp_backward(
             )
             state_cost_by_year[t] = st_with - st_without
 
-    # Pre-compute ACA costs if applicable
+    # ACA: only applies before Medicare (age < 65); RMDs start at 73+, so no overlap
     aca_cost_by_year: list[np.ndarray | None] = [None] * n_years
     if hc:
         for t in range(n_years):
+            if rmd_arrays_per_year[t] is not None:
+                continue
             year_t = scenario.timeline[t].year
             if year_t in aca_years:
                 income_t = scenario.timeline[t].gross_income
@@ -291,44 +315,55 @@ def _dp_backward(
                     hc.monthly_slcsp_premium,
                 )
 
-    # Pre-compute IRMAA costs for years near or in Medicare eligibility
+    # IRMAA: pre-compute for non-RMD years; per-state in loop for RMD years
     irmaa_cost_by_year: list[np.ndarray | None] = [None] * n_years
     irmaa_discount_ratio = (1 + d) ** (-IRMAA_LOOKBACK_YEARS)
     for t in range(n_years):
+        if rmd_arrays_per_year[t] is not None:
+            continue  # handled per-state in loop
         if scenario.age + t >= MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS:
-            owner_age = scenario.age + t
             income_t = scenario.timeline[t].gross_income
-            # RMD base for this year
-            if owner_age >= owner_rmd_start:
-                rmd_by_state = vectorized_rmd(extended_grid, owner_age)
-                base_magi_arr = income_t + rmd_by_state
-            else:
-                base_magi_arr = np.full(len(extended_grid), income_t)
-            # Vectorized IRMAA surcharge for each grid point conversion
-            # Note: base_magi varies by state for RMD years, so iterate
-            irmaa_arr = np.array([
-                vectorized_irmaa_surcharge_loss(float(base_magi_arr[i]), np.array([extended_grid[i]]), scenario.filing_status)[0]
-                for i in range(len(extended_grid))
-            ], dtype=float)
+            irmaa_arr = np.array(
+                [
+                    vectorized_irmaa_surcharge_loss(
+                        income_t, np.array([extended_grid[i]]), scenario.filing_status
+                    )[0]
+                    for i in range(G)
+                ],
+                dtype=float,
+            )
             irmaa_cost_by_year[t] = irmaa_arr * irmaa_discount_ratio
 
-    # Backward induction — vectorized per balance state (row-by-row).
-    # Each row i considers conversions j=0..i (triangular), which is
-    # efficient because np.interp on small arrays is fast and we avoid
-    # allocating a G×G matrix (which can be >10M entries for long trajectories).
+    # Backward induction.
+    # Non-RMD years: cost is pre-computed per conversion amount (not per state).
+    # RMD years: cost is computed per-state because the income base (income + rmd(grid[i]))
+    #   depends on the balance state, not the conversion amount.
+    # All years with drawdowns or RMDs: state transition deducts the withdrawal.
     for t in range(n_years - 1, -1, -1):
         discount_factor = (1 + d) ** (-t)
-        future_ref = value_table[t + 1]  # shape (G,)
+        future_ref = value_table[t + 1]
 
-        # Discounted cost for each conversion amount (column j)
-        cost_row = tax_cost_by_year[t].copy()
-        if state_cost_by_year[t] is not None:
-            cost_row += state_cost_by_year[t]
-        if aca_cost_by_year[t] is not None:
-            cost_row += aca_cost_by_year[t]
-        if irmaa_cost_by_year[t] is not None:
-            cost_row += irmaa_cost_by_year[t]
-        cost_row *= discount_factor
+        entry_t = scenario.timeline[t]
+        owner_age_t = scenario.age + t
+        income_t = entry_t.gross_income
+        drawdown_t = float(entry_t.drawdown) if entry_t.drawdown is not None else 0.0
+        yr_state = resolve_state_for_year(entry_t.state, scenario.state)
+        rmd_arr_t = rmd_arrays_per_year[t]
+        has_rmd = rmd_arr_t is not None
+        irmaa_exposed_t = owner_age_t >= MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS
+
+        # Pre-built discounted cost_row for non-RMD years
+        if not has_rmd:
+            cost_row = tax_cost_by_year[t].copy()
+            if state_cost_by_year[t] is not None:
+                cost_row += state_cost_by_year[t]
+            if aca_cost_by_year[t] is not None:
+                cost_row += aca_cost_by_year[t]
+            if irmaa_cost_by_year[t] is not None:
+                cost_row += irmaa_cost_by_year[t]
+            cost_row *= discount_factor
+        else:
+            cost_row = None  # computed per-state below
 
         for i in range(G):
             available = extended_grid[i]
@@ -337,20 +372,51 @@ def _dp_backward(
                 policy_table[t, i] = 0
                 continue
 
-            # Conversion options: grid points 0..i (all <= available)
-            n_opts = i + 1
-            conversion_options = extended_grid[:n_opts]
+            # Mandatory RMD reduces the balance available for conversion
+            rmd_i = float(rmd_arr_t[i]) if has_rmd else 0.0
+            rmd_i = min(rmd_i, available)
+            available_for_conv = available - rmd_i
 
-            # Remaining balance after each conversion, grown one year
-            remaining = (available - conversion_options) * (1 + g)
+            # Conversion options: grid points that don't exceed available_for_conv
+            n_opts = int(np.searchsorted(extended_grid, available_for_conv + 1e-9, side="right"))
+            n_opts = max(1, min(n_opts, i + 1))
+            conv_options = extended_grid[:n_opts]
 
-            # Look up future value via interpolation
-            future = np.interp(remaining, extended_grid, future_ref)
+            # State transition: after RMD + conversion + drawdown, then grow
+            avail_after_conv = available_for_conv - conv_options  # shape (n_opts,)
+            if drawdown_t > 0:
+                draw_from_trad = np.minimum(drawdown_t, avail_after_conv)
+                next_trad = (avail_after_conv - draw_from_trad) * (1 + g)
+            else:
+                next_trad = avail_after_conv * (1 + g)
 
-            # Value = -cost + future
-            values = -cost_row[:n_opts] + future
+            future = np.interp(next_trad, extended_grid, future_ref)
 
-            best_idx = np.argmax(values)
+            # Conversion cost (marginal tax on top of effective income)
+            if has_rmd:
+                eff_income = income_t + rmd_i
+                cost_opts = vectorized_federal_tax(
+                    eff_income + conv_options, scenario.filing_status
+                ) - calculate_federal_tax(eff_income, scenario.filing_status)
+                if yr_state:
+                    cost_opts = cost_opts + vectorized_state_tax(
+                        eff_income + conv_options,
+                        yr_state,
+                        scenario.filing_status,
+                        scenario.custom_state_rate,
+                    ) - calculate_state_tax(
+                        eff_income, yr_state, scenario.filing_status, scenario.custom_state_rate
+                    )
+                if irmaa_exposed_t:
+                    cost_opts = cost_opts + vectorized_irmaa_surcharge_loss(
+                        eff_income, conv_options, scenario.filing_status
+                    ) * irmaa_discount_ratio
+                cost_opts = cost_opts * discount_factor
+            else:
+                cost_opts = cost_row[:n_opts]
+
+            values = -cost_opts + future
+            best_idx = int(np.argmax(values))
             value_table[t, i] = values[best_idx]
             policy_table[t, i] = best_idx
 
@@ -365,24 +431,38 @@ def _forward_pass(
     """Read optimal conversion schedule by following the policy forward."""
     n_years = len(scenario.timeline)
     g = scenario.annual_growth_rate
+    owner_rmd_start = rmd_start_age(scenario.age)
     conversions = []
 
     current_balance = scenario.traditional_ira_balance
 
     for t in range(n_years):
+        entry = scenario.timeline[t]
+        owner_age = scenario.age + t
+
         # Find closest grid index to current balance
         idx = np.searchsorted(extended_grid, current_balance, side="right") - 1
         idx = max(0, min(idx, len(extended_grid) - 1))
 
-        # Get optimal conversion index from policy
+        # Deduct mandatory RMD before conversion
+        rmd_t = 0.0
+        if owner_age >= owner_rmd_start:
+            rmd_t = min(calculate_rmd(current_balance, owner_age), current_balance)
+        available_for_conv = max(0.0, current_balance - rmd_t)
+
+        # Get optimal conversion index from policy and clamp to available
         conv_idx = policy_table[t, idx]
         conversion = extended_grid[conv_idx] if conv_idx < len(extended_grid) else 0.0
-
-        # Clamp to available balance
-        conversion = min(conversion, current_balance)
+        conversion = min(conversion, available_for_conv)
         conversions.append(round_to_resolution(conversion))
 
-        current_balance = (current_balance - conversion) * (1 + g)
+        # State transition: after conversion + drawdown, then grow
+        balance_after_conv = available_for_conv - conversion
+        drawdown_t = float(entry.drawdown) if entry.drawdown is not None else 0.0
+        if drawdown_t > 0:
+            balance_after_conv -= min(drawdown_t, balance_after_conv)
+
+        current_balance = balance_after_conv * (1 + g)
 
     return conversions
 
@@ -420,27 +500,6 @@ def dp_optimize(
         return DPResult(
             yearly_conversions=[0.0] * n_years,
             total_conversion=0.0,
-            npv=npv,
-        )
-
-    # DP relies on the invariant that total wealth = trad + roth is constant
-    # (aside from conversion tax costs). This breaks when the timeline includes
-    # explicit drawdowns or when timeline years have RMDs (mandatory balance-
-    # dependent withdrawals). Fall back to scipy for these cases.
-    years_until_drawdown = max(0, scenario.drawdown_start_age - scenario.age)
-    owner_rmd_start = rmd_start_age(scenario.age)
-    dp_suitable = (
-        n_years <= years_until_drawdown
-        and not any(y.drawdown is not None for y in scenario.timeline)
-        and all(scenario.age + t < owner_rmd_start for t in range(n_years))
-    )
-    if not dp_suitable:
-        from app.engine.optimizer import scipy_fallback_optimize
-
-        conversions, npv = scipy_fallback_optimize(scenario)
-        return DPResult(
-            yearly_conversions=conversions,
-            total_conversion=sum(conversions),
             npv=npv,
         )
 
@@ -562,10 +621,13 @@ def _dp_backward_3d(
     growth_factor = (1 + g) ** remaining_growth_years if remaining_growth_years > 0 else 1.0
 
     initial_balance = scenario.traditional_ira_balance
-    initial_roth = scenario.roth_ira_balance
 
-    # Extend balance grid for growth (same non-uniform logic as 2D DP)
-    max_grown_balance = initial_balance * (1 + g) ** n_years
+    # Extend balance grid for growth (same non-uniform logic as 2D DP).
+    # Cap at min(n_years, years_until_drawdown): after drawdown start the balance
+    # shrinks, so the grid needs to cover the peak, not the timeline end.
+    max_grown_balance = initial_balance * (1 + g) ** min(n_years, years_until_drawdown)
+    if max_grown_balance <= 0:
+        max_grown_balance = initial_balance
     G_input = len(balance_grid)
     if max_grown_balance > initial_balance * 1.5 and G_input > 20:
         n_fine = int(G_input * 0.8)
@@ -581,15 +643,15 @@ def _dp_backward_3d(
     value_table = np.zeros((n_years + 1, G, B))
     policy_table = np.zeros((n_years, G, B), dtype=np.int64)
 
-    # Terminal values: budget doesn't affect retirement phase.
-    # Same terminal value for every budget level — broadcast across B.
-    total_growth = (1 + g) ** years_until_drawdown
-    total_at_retirement = (initial_balance + initial_roth) * total_growth
+    # Terminal values: budget doesn't affect the retirement phase.
+    # Use _simulate_no_conversion_trajectory (same invariant as 2D DP) to get
+    # an accurate total that accounts for any drawdowns/RMDs in the timeline.
+    total_at_timeline_end = _simulate_no_conversion_trajectory(scenario)
+    total_at_drawdown_start = total_at_timeline_end * growth_factor
+    trad_at_drawdown_start = extended_grid * growth_factor
+    roth_at_drawdown_start = np.maximum(0.0, total_at_drawdown_start - trad_at_drawdown_start)
 
-    trad_at_ret = extended_grid * growth_factor
-    roth_at_ret = np.maximum(0.0, total_at_retirement - trad_at_ret)
-
-    terminal_values = _compute_retirement_values(trad_at_ret, roth_at_ret, scenario, n_years)
+    terminal_values = _compute_retirement_values(trad_at_drawdown_start, roth_at_drawdown_start, scenario, n_years)
     # Broadcast: same terminal value for all budget levels
     value_table[n_years] = terminal_values[:, np.newaxis]  # (G, 1) → (G, B)
 
@@ -769,6 +831,7 @@ def _forward_pass_3d(
     """
     n_years = len(scenario.timeline)
     g = scenario.annual_growth_rate
+    owner_rmd_start = rmd_start_age(scenario.age)
     B = len(budget_grid)
     conversions = []
 
@@ -776,10 +839,26 @@ def _forward_pass_3d(
     current_budget = budget_cap
 
     for t in range(n_years):
+        entry = scenario.timeline[t]
+        owner_age = scenario.age + t
+
         if current_budget <= 0 or current_balance <= 0:
             conversions.append(0.0)
-            current_balance *= 1 + g
+            # Still need to apply RMD/drawdown before growth for balance tracking
+            rmd_t = 0.0
+            if owner_age >= owner_rmd_start:
+                rmd_t = min(calculate_rmd(current_balance, owner_age), current_balance)
+            after_rmd = max(0.0, current_balance - rmd_t)
+            drawdown_t = float(entry.drawdown) if entry.drawdown is not None else 0.0
+            after_draw = max(0.0, after_rmd - min(drawdown_t, after_rmd))
+            current_balance = after_draw * (1 + g)
             continue
+
+        # Deduct mandatory RMD before conversion
+        rmd_t = 0.0
+        if owner_age >= owner_rmd_start:
+            rmd_t = min(calculate_rmd(current_balance, owner_age), current_balance)
+        available_for_conv = max(0.0, current_balance - rmd_t)
 
         # Find bracketing balance index
         bal_idx = np.searchsorted(extended_grid, current_balance, side="right") - 1
@@ -801,12 +880,17 @@ def _forward_pass_3d(
         conv_idx = policy_table[t, bal_idx, b_snap]
         conversion = extended_grid[conv_idx] if conv_idx < len(extended_grid) else 0.0
 
-        # Clamp to available balance and budget
-        conversion = min(conversion, current_balance, current_budget)
+        # Clamp to available balance (after RMD) and budget
+        conversion = min(conversion, available_for_conv, current_budget)
         conversion = max(0.0, conversion)
         conversions.append(round_to_resolution(conversion))
 
-        current_balance = (current_balance - conversion) * (1 + g)
+        # State transition: after conversion + drawdown, then grow
+        balance_after_conv = available_for_conv - conversion
+        drawdown_t = float(entry.drawdown) if entry.drawdown is not None else 0.0
+        if drawdown_t > 0:
+            balance_after_conv -= min(drawdown_t, balance_after_conv)
+        current_balance = balance_after_conv * (1 + g)
         current_budget -= conversion
 
     return conversions

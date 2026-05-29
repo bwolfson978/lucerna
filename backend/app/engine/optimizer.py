@@ -245,20 +245,6 @@ def _objective(x: np.ndarray, scenario: ScenarioInput) -> float:
     return -calculate_npv(scenario, x.tolist())
 
 
-def scipy_fallback_optimize(scenario: ScenarioInput) -> tuple[list[float], float]:
-    """Run unconstrained scipy optimization. Used by the DP as a fallback for complex
-    scenarios (drawdowns or RMDs within the timeline) where the DP's invariants break.
-    """
-    n_years = len(scenario.timeline)
-    max_balance = scenario.traditional_ira_balance
-    g = scenario.annual_growth_rate
-    bounds = [(0.0, max_balance)] * n_years
-    constraints = [{"type": "ineq", "fun": lambda x: max_balance - np.sum(x)}]
-    raw = _run_scipy(scenario, bounds, constraints)
-    conversions = _finalize_conversions(raw, max_balance, g)
-    npv = calculate_npv(scenario, conversions)
-    return conversions, npv
-
 
 def _run_scipy(
     scenario: ScenarioInput,
