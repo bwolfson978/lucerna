@@ -137,6 +137,21 @@ def _global_bracket_fill_for_cap(
         else:
             taxable = max(0, income - deduction)
 
+        # When income is below the standard deduction, the first slice of
+        # conversion is tax-free (fills the deduction gap). Add it as a
+        # 0%-rate slot so the greedy fill includes those dollars; without
+        # this, the function treats room in taxable-income space as equal
+        # to conversion dollars, understating required conversion by exactly
+        # (deduction - income) and leaving the top of each bracket unfilled.
+        effective_income = income + (
+            calculate_rmd(scenario.traditional_ira_balance, owner_age)
+            if owner_age >= owner_rmd_start
+            else 0.0
+        )
+        deduction_gap = max(0.0, deduction - effective_income)
+        if deduction_gap > 0:
+            slots.append((0.0, t, deduction_gap))
+
         for bracket in brackets:
             rate = bracket["rate"]
             b_min = bracket["min"]
