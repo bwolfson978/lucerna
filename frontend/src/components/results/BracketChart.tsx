@@ -47,6 +47,13 @@ interface BracketChartProps {
   leftBottomContent?: React.ReactNode;
   /** Hide the built-in series legend (when rendered externally) */
   hideLegend?: boolean;
+  /**
+   * Stable max gross amount (income + rmd + conversion) pre-computed from the
+   * full conversion curve. When provided, the chart Y-scale is fixed to this
+   * value and does not rescale as the slider moves, preventing the jarring
+   * "jump" that occurs when per-year gross crosses a bracket boundary.
+   */
+  stableMaxGrossAmount?: number;
 }
 
 // Build gross-scale bracket boundaries from tax config.
@@ -105,6 +112,7 @@ export function BracketChart({
   children,
   leftBottomContent,
   hideLegend,
+  stableMaxGrossAmount,
 }: BracketChartProps) {
   const internalScrollRef = useRef<HTMLDivElement>(null);
   const scrollRef = externalScrollRef || internalScrollRef;
@@ -243,16 +251,24 @@ export function BracketChart({
 
   const hasRmd = useMemo(() => years.some((y) => (y.rmdAmount ?? 0) > 0), [years]);
 
-  // Max gross amount (income + rmd + conversion) across all years — drives chart scale
+  // Max gross amount (income + rmd + conversion) across all years — drives chart scale.
+  // When stableMaxGrossAmount is provided (pre-computed from the full conversion curve),
+  // use it directly so the Y-axis does not rescale as the slider moves.
   const maxGrossAmount = useMemo(() => {
-    let max = 0;
-    for (const y of years) {
-      const gross = (y.income ?? 0) + (y.rmdAmount ?? 0) + (y.conversion ?? 0);
-      if (gross > max) max = gross;
-    }
+    const base =
+      stableMaxGrossAmount !== undefined
+        ? stableMaxGrossAmount
+        : (() => {
+            let max = 0;
+            for (const y of years) {
+              const gross = (y.income ?? 0) + (y.rmdAmount ?? 0) + (y.conversion ?? 0);
+              if (gross > max) max = gross;
+            }
+            return max;
+          })();
     // Minimum scale: show at least through the 12% bracket on the gross scale
-    return Math.max(max, grossBrackets[2]?.max ?? 0);
-  }, [years, grossBrackets]);
+    return Math.max(base, grossBrackets[2]?.max ?? 0);
+  }, [stableMaxGrossAmount, years, grossBrackets]);
 
   // Find the gross bracket one level above the highest filled year — gives headroom
   const maxBracket = useMemo(() => {

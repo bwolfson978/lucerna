@@ -12,6 +12,8 @@ interface ConversionSliderProps {
   max: number;
   optimalValue: number;
   onChange: (value: number) => void;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
 }
 
 export function ConversionSlider({
@@ -20,6 +22,8 @@ export function ConversionSlider({
   max,
   optimalValue,
   onChange,
+  onDragStart,
+  onDragEnd,
 }: ConversionSliderProps) {
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -54,6 +58,11 @@ export function ConversionSlider({
           step={100}
           value={value}
           onChange={handleChange}
+          onMouseDown={onDragStart}
+          onTouchStart={onDragStart}
+          onMouseUp={onDragEnd}
+          onTouchEnd={onDragEnd}
+          onBlur={onDragEnd}
           className="accent-slider h-1.5 w-full cursor-pointer appearance-none rounded-full"
           style={{
             background: `linear-gradient(to right, ${CHART_COLORS.conversion} 0%, ${CHART_COLORS.conversion} ${

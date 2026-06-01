@@ -7,28 +7,33 @@ import { useRef, useEffect, type RefObject } from "react";
  * On activation: scrolls the newly-active bar into view.
  * On deactivation: scrolls to the nearest still-active bar.
  * No scroll when bars merely resize (no transition).
+ *
+ * Pass enabled=false while the slider is being dragged to suppress
+ * auto-scroll during continuous slider movement (which would otherwise
+ * fire on every bar that crosses the LERP_ZERO_THRESHOLD).
  */
 export function useScrollOnTransition(
   yearlyConversions: number[],
   scrollRef: RefObject<HTMLDivElement | null>,
-  colWidth: number
+  colWidth: number,
+  enabled = true
 ) {
   const prevActiveRef = useRef<Set<number> | null>(null);
 
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el || colWidth <= 0) return;
-
     const currentActive = new Set<number>();
     yearlyConversions.forEach((c, i) => {
       if (c > 0) currentActive.add(i);
     });
 
-    // Skip first render — record initial state without scrolling
-    if (prevActiveRef.current === null) {
+    // Always track state so comparisons stay fresh, but skip scrolling when disabled.
+    if (prevActiveRef.current === null || !enabled) {
       prevActiveRef.current = currentActive;
       return;
     }
+
+    const el = scrollRef.current;
+    if (!el || colWidth <= 0) return;
 
     const prevActive = prevActiveRef.current;
 
@@ -83,5 +88,5 @@ export function useScrollOnTransition(
       left: Math.max(0, targetScroll),
       behavior: "smooth",
     });
-  }, [yearlyConversions, scrollRef, colWidth]);
+  }, [yearlyConversions, scrollRef, colWidth, enabled]);
 }
