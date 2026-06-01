@@ -3,9 +3,13 @@ import { cn } from "@/lib/utils";
 
 const Card = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & { recommended?: boolean }
->(({ className, recommended, children, ...props }, ref) => (
-  <div ref={ref} className={cn(recommended ? "card-recommended" : "card", className)} {...props}>
+  React.HTMLAttributes<HTMLDivElement> & { recommended?: boolean; current?: boolean }
+>(({ className, recommended, current, children, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(recommended ? "card-recommended" : current ? "card-current" : "card", className)}
+    {...props}
+  >
     {children}
   </div>
 ));

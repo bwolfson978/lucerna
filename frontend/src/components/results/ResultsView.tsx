@@ -51,6 +51,31 @@ export function ResultsView({ result }: ResultsViewProps) {
     estimatedSavings,
   } = useConversionSlider({ result });
 
+  // Live "Your selection" card — mirrors whatever the slider is currently set to
+  const currentScenario = useMemo(() => {
+    const calendarYears = result.input.timeline.map((yi) => yi.year);
+    return {
+      label: "Your selection",
+      conversion_amount: displayTotalConversion,
+      npv: estimatedSavings,
+      tax_on_conversion: totalTaxCost,
+      difference_from_optimal: Math.max(
+        0,
+        result.estimated_lifetime_tax_savings - estimatedSavings,
+      ),
+      estimated_savings: estimatedSavings,
+      yearly_conversions: yearlyConversions,
+      years: calendarYears,
+    };
+  }, [
+    displayTotalConversion,
+    estimatedSavings,
+    totalTaxCost,
+    yearlyConversions,
+    result.input.timeline,
+    result.estimated_lifetime_tax_savings,
+  ]);
+
   // Auto-scroll bracket chart when a bar activates or deactivates.
   // Disabled during slider drag to prevent chart jumping while scrubbing.
   useScrollOnTransition(yearlyConversions, chartScrollRef, tableColWidth, !isSliderDragging);
@@ -228,7 +253,7 @@ export function ResultsView({ result }: ResultsViewProps) {
       </div>
 
       {/* Scenario comparison */}
-      <ScenarioCards scenarios={result.scenarios} />
+      <ScenarioCards scenarios={result.scenarios} currentScenario={currentScenario} />
 
       {/* ACA subsidy impact (only when healthcare inputs provided) */}
       {result.aca_subsidy_impact && <AcaSubsidyImpact result={result} />}
