@@ -284,6 +284,7 @@ class ConversionCurvePoint(BaseModel):
     yearly_detail: list[dict]
     total_tax: float
     npv: float
+    yearly_rmd_amounts: list[float] = Field(default_factory=list)
 
 
 class OptimizationResult(BaseModel):

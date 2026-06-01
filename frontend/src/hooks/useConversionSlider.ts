@@ -176,6 +176,35 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
     [incomes, yearlyConversions, yearlyBracketFills, filingStatus, taxConfig, result.input.timeline]
   );
 
+  // Interpolate per-year RMD amounts from curve points.
+  // RMDs shrink as conversions grow (smaller trad balance = smaller RMD),
+  // so each curve point carries its own pre-computed yearly_rmd_amounts.
+  const yearlyRmds = useMemo(() => {
+    const snapThreshold = computeSnapThreshold(0, result.input.traditional_ira_balance);
+    const buildOptRmds = () => {
+      const map = new Map<number, number>();
+      for (const d of result.rmd_projection?.yearly_detail ?? []) {
+        map.set(d.year, d.rmd_amount);
+      }
+      return result.input.timeline.map((yi) => map.get(yi.year) ?? 0);
+    };
+
+    if (Math.abs(totalConversion - result.total_conversion) <= snapThreshold) {
+      return buildOptRmds();
+    }
+
+    if (!sortedCurve || sortedCurve.length < 2) {
+      return buildOptRmds();
+    }
+
+    const { lower, upper, t } = findBoundingPoints(totalConversion, sortedCurve);
+    return result.input.timeline.map((_, i) => {
+      const lv = (lower.yearly_rmd_amounts ?? [])[i] ?? 0;
+      const uv = (upper.yearly_rmd_amounts ?? [])[i] ?? 0;
+      return lv + t * (uv - lv);
+    });
+  }, [totalConversion, result, sortedCurve]);
+
   const displayTotalConversion = yearlyConversions.reduce((a, b) => a + b, 0);
   const totalTaxCost = yearlyDetail.reduce((s, d) => s + d.tax_cost, 0);
   const conversionYears = yearlyConversions.filter((c) => c > 0).length;
@@ -235,6 +264,7 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
     yearlyConversions,
     yearlyBracketFills,
     yearlyDetail,
+    yearlyRmds,
     displayTotalConversion,
     totalTaxCost,
     conversionYears,

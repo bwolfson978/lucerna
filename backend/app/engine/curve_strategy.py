@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from typing import Literal, Protocol
 
+from app.engine.rmd import calculate_rmd, rmd_start_age
 from app.engine.state_tax import resolve_state_for_year
 from app.engine.tax import (
     analyze_bracket_fill,
@@ -110,6 +111,25 @@ def build_curve_point(
         )
         yearly_bracket_fill.append(analyze_bracket_fill(income, c, scenario.filing_status))
 
+    # Simulate IRA balance forward to get the RMD for each timeline year.
+    # RMDs depend on trad balance, which changes with each year's conversion,
+    # so this must be done per curve point rather than reused from the optimal.
+    owner_rmd_start = rmd_start_age(scenario.age)
+    trad_balance = scenario.traditional_ira_balance
+    yearly_rmd_amounts: list[float] = []
+    for i, entry in enumerate(scenario.timeline):
+        owner_age = scenario.age + i
+        rmd = calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
+        rmd = min(rmd, trad_balance)
+        yearly_rmd_amounts.append(round(rmd, 2))
+        available_for_conv = max(0.0, trad_balance - rmd)
+        actual_conv = min(max(0.0, yearly_conv[i] if i < len(yearly_conv) else 0.0), available_for_conv)
+        trad_balance -= rmd
+        trad_balance -= actual_conv
+        if entry.drawdown is not None and entry.drawdown > 0:
+            trad_balance -= min(float(entry.drawdown), trad_balance)
+        trad_balance *= 1 + scenario.annual_growth_rate
+
     return ConversionCurvePoint(
         total_cap=cap_rounded,
         yearly_conversions=yearly_conv,
@@ -117,6 +137,7 @@ def build_curve_point(
         yearly_detail=yearly_detail,
         total_tax=round(total_tax, 2),
         npv=round(npv_val, 2),
+        yearly_rmd_amounts=yearly_rmd_amounts,
     )
 
 
