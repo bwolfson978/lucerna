@@ -611,7 +611,7 @@ def _dp_backward_2d(
 
     # Terminal values: exact for every (trad, roth) state pair
     trad_terminal = (extended_trad * growth_factor)[:, np.newaxis]  # (G_T, 1)
-    roth_terminal = (roth_grid * growth_factor)[np.newaxis, :]      # (1, G_R)
+    roth_terminal = (roth_grid * growth_factor)[np.newaxis, :]  # (1, G_R)
     value_table = np.zeros((n_years + 1, G_T, G_R))
     value_table[n_years] = _compute_retirement_values_2d(
         np.broadcast_to(trad_terminal, (G_T, G_R)).copy(),
@@ -646,9 +646,7 @@ def _dp_backward_2d(
             tax_cost_by_year.append(None)
         else:
             income_t = scenario.timeline[t].gross_income
-            tax_with = vectorized_federal_tax(
-                income_t + extended_trad, scenario.filing_status
-            )
+            tax_with = vectorized_federal_tax(income_t + extended_trad, scenario.filing_status)
             tax_cost_by_year.append(tax_with - tax_without_cache[t])
 
     state_cost_by_year: list[np.ndarray | None] = [None] * n_years
@@ -692,9 +690,7 @@ def _dp_backward_2d(
         if scenario.age + t >= MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS:
             income_t = scenario.timeline[t].gross_income
             irmaa_cost_by_year[t] = (
-                vectorized_irmaa_surcharge_loss(
-                    income_t, extended_trad, scenario.filing_status
-                )
+                vectorized_irmaa_surcharge_loss(income_t, extended_trad, scenario.filing_status)
                 * irmaa_discount_ratio
             )
 
@@ -738,13 +734,9 @@ def _dp_backward_2d(
         # → same for all trad states i; just slice [:n_opts] per state.
         if drawdown_t == 0:
             roth_frac_pre = (
-                extended_trad[:, np.newaxis] * (1 + g)
-                + scaled_roth[np.newaxis, :]
-                - roth_grid[0]
+                extended_trad[:, np.newaxis] * (1 + g) + scaled_roth[np.newaxis, :] - roth_grid[0]
             ) / d_roth  # (G_T, G_R)
-            roth_lo_pre = np.clip(
-                np.floor(roth_frac_pre).astype(np.int64), 0, G_R - 2
-            )
+            roth_lo_pre = np.clip(np.floor(roth_frac_pre).astype(np.int64), 0, G_R - 2)
             frac_r_pre = np.clip(roth_frac_pre - roth_lo_pre, 0.0, 1.0)
             roth_hi_pre = roth_lo_pre + 1  # safe: roth_lo_pre <= G_R-2
         else:
@@ -761,9 +753,7 @@ def _dp_backward_2d(
             rmd_i = min(rmd_i, available)
             available_for_conv = available - rmd_i
 
-            n_opts = int(
-                np.searchsorted(extended_trad, available_for_conv + 1e-9, side="right")
-            )
+            n_opts = int(np.searchsorted(extended_trad, available_for_conv + 1e-9, side="right"))
             n_opts = max(1, min(n_opts, i + 1))
             conv_options = extended_trad[:n_opts]  # (n_opts,)
 
@@ -832,9 +822,9 @@ def _dp_backward_2d(
             # Roth axis: use precomputed slices when drawdown_t == 0,
             # otherwise compute per-state from roth_draw
             if drawdown_t == 0:
-                roth_lo = roth_lo_pre[:n_opts]   # (n_opts, G_R) — zero-copy slice
-                frac_r = frac_r_pre[:n_opts]     # (n_opts, G_R)
-                roth_hi = roth_hi_pre[:n_opts]   # (n_opts, G_R)
+                roth_lo = roth_lo_pre[:n_opts]  # (n_opts, G_R) — zero-copy slice
+                frac_r = frac_r_pre[:n_opts]  # (n_opts, G_R)
+                roth_hi = roth_hi_pre[:n_opts]  # (n_opts, G_R)
             else:
                 delta_k = (conv_options - roth_draw) * (1 + g)  # (n_opts,)
                 next_roth = np.clip(
@@ -843,9 +833,7 @@ def _dp_backward_2d(
                     roth_grid[-1],
                 )  # (n_opts, G_R)
                 roth_frac_idx = (next_roth - roth_grid[0]) / d_roth
-                roth_lo = np.clip(
-                    np.floor(roth_frac_idx).astype(np.int64), 0, G_R - 2
-                )
+                roth_lo = np.clip(np.floor(roth_frac_idx).astype(np.int64), 0, G_R - 2)
                 frac_r = np.clip(roth_frac_idx - roth_lo, 0.0, 1.0)
                 roth_hi = roth_lo + 1
 
@@ -959,9 +947,7 @@ def dp_optimize(
     max_roth = max(max_roth, scenario.roth_ira_balance * 1.1, 1.0)
     roth_grid = np.linspace(0, max_roth, roth_grid_size)
 
-    _, policy_table, extended_trad, roth_grid = _dp_backward_2d(
-        scenario, trad_grid, roth_grid
-    )
+    _, policy_table, extended_trad, roth_grid = _dp_backward_2d(scenario, trad_grid, roth_grid)
     conversions = _forward_pass_2d(scenario, extended_trad, roth_grid, policy_table)
     total = sum(conversions)
 
