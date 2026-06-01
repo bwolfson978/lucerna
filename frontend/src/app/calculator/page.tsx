@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { MethodologyProvider } from "@/components/methodology/MethodologyContext";
 import { MethodologyLayout } from "@/components/methodology/MethodologyLayout";
+import { SaveResultsBanner } from "@/components/common/SaveResultsBanner";
 
 export default function CalculatorPage() {
   const [result, setResult] = useState<OptimizationResult | null>(null);
@@ -108,7 +109,12 @@ export default function CalculatorPage() {
                 </Card>
               )}
 
-              {result && <ResultsView result={result} onReRun={handleSubmit} loading={loading} />}
+              {result && (
+                <div className="flex flex-col gap-default">
+                  <SaveResultsBanner show={true} />
+                  <ResultsView result={result} onReRun={handleSubmit} loading={loading} />
+                </div>
+              )}
             </div>
           </div>
         </main>
