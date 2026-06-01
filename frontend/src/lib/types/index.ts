@@ -196,6 +196,7 @@ export interface ConversionCurvePoint {
   yearly_detail: YearlyDetail[];
   total_tax: number;
   npv: number;
+  yearly_rmd_amounts: number[];
 }
 
 export interface OptimizationResult {

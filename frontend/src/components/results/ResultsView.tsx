@@ -45,6 +45,7 @@ export function ResultsView({ result }: ResultsViewProps) {
     yearlyConversions,
     yearlyBracketFills,
     yearlyDetail,
+    yearlyRmds,
     displayTotalConversion,
     totalTaxCost,
     conversionYears,
@@ -80,33 +81,32 @@ export function ResultsView({ result }: ResultsViewProps) {
   // Disabled during slider drag to prevent chart jumping while scrubbing.
   useScrollOnTransition(yearlyConversions, chartScrollRef, tableColWidth, !isSliderDragging);
 
-  // RMD amounts keyed by year, for income bar segmentation
-  const rmdByYear = useMemo(() => {
-    const map = new Map<number, number>();
-    for (const d of result.rmd_projection?.yearly_detail ?? []) {
-      map.set(d.year, d.rmd_amount);
-    }
-    return map;
-  }, [result.rmd_projection]);
-
   // Pre-compute the max gross amount (income + rmd + conversion) across ALL
   // curve points so BracketChart can use a stable Y-scale that does not jump
   // as the slider moves and individual year grosses cross bracket boundaries.
+  // Each curve point carries its own yearly_rmd_amounts so the scale accounts
+  // for the fact that higher conversions produce lower future RMDs.
   const stableMaxGrossAmount = useMemo(() => {
     const curve = result.conversion_curve ?? [];
+    const optRmdMap = new Map<number, number>();
+    for (const d of result.rmd_projection?.yearly_detail ?? []) {
+      optRmdMap.set(d.year, d.rmd_amount);
+    }
     let maxGross = 0;
     for (let i = 0; i < result.input.timeline.length; i++) {
       const yi = result.input.timeline[i];
-      const rmd = rmdByYear.get(yi.year) ?? 0;
-      // Include the optimal allocation
-      maxGross = Math.max(maxGross, yi.gross_income + rmd + (result.yearly_conversions[i] ?? 0));
-      // Include every curve point
+      const optRmd = optRmdMap.get(yi.year) ?? 0;
+      maxGross = Math.max(maxGross, yi.gross_income + optRmd + (result.yearly_conversions[i] ?? 0));
       for (const point of curve) {
-        maxGross = Math.max(maxGross, yi.gross_income + rmd + (point.yearly_conversions[i] ?? 0));
+        const curveRmd = (point.yearly_rmd_amounts ?? [])[i] ?? 0;
+        maxGross = Math.max(
+          maxGross,
+          yi.gross_income + curveRmd + (point.yearly_conversions[i] ?? 0)
+        );
       }
     }
     return maxGross;
-  }, [result, rmdByYear]);
+  }, [result]);
 
   // Build chart data from client-side bracket fills
   const chartYears = useMemo(() => {
@@ -114,11 +114,11 @@ export function ResultsView({ result }: ResultsViewProps) {
       year: yi.year,
       age: result.input.age + i,
       bracketFill: yearlyBracketFills[i] || [],
-      rmdAmount: rmdByYear.get(yi.year),
+      rmdAmount: yearlyRmds[i] ?? 0,
       conversion: yearlyConversions[i],
       income: yi.gross_income,
     }));
-  }, [result.input, yearlyBracketFills, rmdByYear, yearlyConversions]);
+  }, [result.input, yearlyBracketFills, yearlyRmds, yearlyConversions]);
 
   const yearInfos = result.input.timeline.map((yi, i) => ({
     year: yi.year,

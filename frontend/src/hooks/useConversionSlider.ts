@@ -143,20 +143,61 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
     ]
   );
 
+  // Interpolate per-year RMD amounts from curve points.
+  // Must be computed before yearlyBracketFills and yearlyDetail because
+  // the conversion's marginal tax position is layered on top of income + RMD,
+  // not just income (mirroring optimizer._build_year_detail).
+  const yearlyRmds = useMemo(() => {
+    const snapThreshold = computeSnapThreshold(0, result.input.traditional_ira_balance);
+    const buildOptRmds = () => {
+      const map = new Map<number, number>();
+      for (const d of result.rmd_projection?.yearly_detail ?? []) {
+        map.set(d.year, d.rmd_amount);
+      }
+      return result.input.timeline.map((yi) => map.get(yi.year) ?? 0);
+    };
+
+    if (Math.abs(totalConversion - result.total_conversion) <= snapThreshold) {
+      return buildOptRmds();
+    }
+
+    if (!sortedCurve || sortedCurve.length < 2) {
+      return buildOptRmds();
+    }
+
+    const { lower, upper, t } = findBoundingPoints(totalConversion, sortedCurve);
+    return result.input.timeline.map((_, i) => {
+      const lv = (lower.yearly_rmd_amounts ?? [])[i] ?? 0;
+      const uv = (upper.yearly_rmd_amounts ?? [])[i] ?? 0;
+      return lv + t * (uv - lv);
+    });
+  }, [totalConversion, result, sortedCurve]);
+
+  // Bracket fill uses income + RMD as the base so the conversion is layered
+  // onto the correct starting income position in the bracket chart.
   const yearlyBracketFills: BracketFillResult[][] = useMemo(
     () =>
       incomes.map((income, i) =>
-        analyzeBracketFill(income, yearlyConversions[i] ?? 0, filingStatus, taxConfig)
+        analyzeBracketFill(
+          income + (yearlyRmds[i] ?? 0),
+          yearlyConversions[i] ?? 0,
+          filingStatus,
+          taxConfig
+        )
       ),
-    [incomes, yearlyConversions, filingStatus, taxConfig]
+    [incomes, yearlyRmds, yearlyConversions, filingStatus, taxConfig]
   );
 
+  // Tax cost uses income + RMD as the base for the same reason: the conversion
+  // sits on top of RMD in the bracket stack.
   const yearlyDetail: YearlyDetail[] = useMemo(
     () =>
       incomes.map((income, i) => {
+        const rmd = yearlyRmds[i] ?? 0;
         const conversion = yearlyConversions[i] ?? 0;
-        const taxWith = calculateFederalTax(income + conversion, filingStatus, taxConfig);
-        const taxWithout = calculateFederalTax(income, filingStatus, taxConfig);
+        const base = income + rmd;
+        const taxWith = calculateFederalTax(base + conversion, filingStatus, taxConfig);
+        const taxWithout = calculateFederalTax(base, filingStatus, taxConfig);
         const taxCost = taxWith - taxWithout;
         // Find marginal bracket rate from the bracket fill data
         const fills = yearlyBracketFills[i];
@@ -173,7 +214,15 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
           marginal_bracket: marginalRate,
         };
       }),
-    [incomes, yearlyConversions, yearlyBracketFills, filingStatus, taxConfig, result.input.timeline]
+    [
+      incomes,
+      yearlyRmds,
+      yearlyConversions,
+      yearlyBracketFills,
+      filingStatus,
+      taxConfig,
+      result.input.timeline,
+    ]
   );
 
   const displayTotalConversion = yearlyConversions.reduce((a, b) => a + b, 0);
@@ -235,6 +284,7 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
     yearlyConversions,
     yearlyBracketFills,
     yearlyDetail,
+    yearlyRmds,
     displayTotalConversion,
     totalTaxCost,
     conversionYears,

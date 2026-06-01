@@ -10,7 +10,7 @@ from app.engine.curve_strategy import (
 )
 from app.engine.dp import dp_optimize, extract_conversion_curve_3d
 from app.engine.heuristic import _global_bracket_fill_for_cap, bracket_fill_curve
-from app.engine.optimizer import calculate_npv
+from app.engine.optimizer import _build_year_detail, calculate_npv
 from app.engine.types import FilingStatus, PlanYear, ScenarioInput
 
 # ── Fixtures ──────────────────────────────────────────────────────────
@@ -102,6 +102,7 @@ class TestCurveStrategyContract:
             assert len(pt.yearly_conversions) == n
             assert len(pt.yearly_bracket_fill) == n
             assert len(pt.yearly_detail) == n
+            assert len(pt.yearly_rmd_amounts) == n
             assert isinstance(pt.npv, float)
             assert isinstance(pt.total_tax, float)
 
@@ -144,10 +145,78 @@ class TestBuildCurvePoint:
         d = pt.yearly_detail[0]
         assert "year" in d
         assert "income" in d
+        assert "rmd" in d
         assert "conversion" in d
         assert "tax_cost" in d
         assert "effective_rate" in d
         assert "marginal_bracket" in d
+
+    def test_rmd_amounts_match_optimizer_detail(self):
+        """build_curve_point must agree with _build_year_detail on tax cost and
+        bracket fill when the person is past RMD start age.  This is the parity
+        regression test for the 'RMD not in effective_income' bug."""
+        scenario = ScenarioInput(
+            age=74,
+            filing_status=FilingStatus.SINGLE,
+            timeline=[
+                PlanYear(year=2025, gross_income=40_000),
+                PlanYear(year=2026, gross_income=40_000),
+                PlanYear(year=2027, gross_income=40_000),
+            ],
+            traditional_ira_balance=500_000,
+            roth_ira_balance=0,
+            drawdown_start_age=80,
+            planning_horizon_age=95,
+            annual_growth_rate=0.05,
+            discount_rate=0.05,
+        )
+        conversions = [80_000, 80_000, 40_000]
+
+        pt = build_curve_point(scenario, sum(conversions), conversions)
+        detail, bracket_fill, _, _ = _build_year_detail(scenario, conversions)
+
+        for i in range(len(scenario.timeline)):
+            assert abs(pt.yearly_detail[i]["tax_cost"] - detail[i]["tax_cost"]) < 1, (
+                f"Year {i} tax_cost mismatch: curve={pt.yearly_detail[i]['tax_cost']} "
+                f"vs optimizer={detail[i]['tax_cost']}"
+            )
+            assert pt.yearly_bracket_fill[i] == bracket_fill[i], f"Year {i} bracket fill mismatch"
+
+    def test_rmd_increases_effective_tax_bracket(self):
+        """A conversion layered on top of RMD should land in a higher bracket
+        than the same conversion without RMD income."""
+        scenario_with_rmd = ScenarioInput(
+            age=74,
+            filing_status=FilingStatus.SINGLE,
+            timeline=[PlanYear(year=2025, gross_income=40_000)],
+            traditional_ira_balance=500_000,
+            roth_ira_balance=0,
+            drawdown_start_age=80,
+            planning_horizon_age=95,
+            annual_growth_rate=0.05,
+            discount_rate=0.05,
+        )
+        scenario_no_rmd = ScenarioInput(
+            age=40,  # below RMD age — no RMD
+            filing_status=FilingStatus.SINGLE,
+            timeline=[PlanYear(year=2025, gross_income=40_000)],
+            traditional_ira_balance=500_000,
+            roth_ira_balance=0,
+            drawdown_start_age=65,
+            planning_horizon_age=90,
+            annual_growth_rate=0.05,
+            discount_rate=0.05,
+        )
+        conversion = [50_000]
+        pt_rmd = build_curve_point(scenario_with_rmd, 50_000, conversion)
+        pt_no = build_curve_point(scenario_no_rmd, 50_000, conversion)
+
+        # With RMD: income + RMD (~$19.6k) + $50k conversion lands higher in brackets
+        assert pt_rmd.yearly_detail[0]["tax_cost"] > pt_no.yearly_detail[0]["tax_cost"], (
+            "Expected higher tax cost when RMD pushes income into higher bracket"
+        )
+        assert pt_rmd.yearly_rmd_amounts[0] > 0
+        assert pt_no.yearly_rmd_amounts[0] == 0
 
 
 # ── Dispatch tests ───────────────────────────────────────────────────
