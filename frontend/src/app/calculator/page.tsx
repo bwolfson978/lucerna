@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import posthog from "posthog-js";
+import { useUser, SignInButton } from "@clerk/nextjs";
 import { Header } from "@/components/common/Header";
 import { PageFooter } from "@/components/common/PageFooter";
 import { InputForm } from "@/components/calculator/InputForm";
@@ -14,12 +15,16 @@ import { cn } from "@/lib/utils";
 import { MethodologyProvider } from "@/components/methodology/MethodologyContext";
 import { MethodologyLayout } from "@/components/methodology/MethodologyLayout";
 import { SaveResultsBanner } from "@/components/common/SaveResultsBanner";
+import { GlowButton } from "@/components/common/GlowButton";
 
 export default function CalculatorPage() {
   const [result, setResult] = useState<OptimizationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const { isLoaded, isSignedIn } = useUser();
   const resultsRef = useRef<HTMLDivElement>(null);
+  const showBanner = !!result && isLoaded && !isSignedIn && !bannerDismissed;
 
   // Scroll to results when loading starts
   useEffect(() => {
@@ -111,7 +116,15 @@ export default function CalculatorPage() {
 
               {result && (
                 <div className="flex flex-col gap-default">
-                  <SaveResultsBanner show={true} />
+                  <SaveResultsBanner
+                    show={showBanner}
+                    onDismiss={() => setBannerDismissed(true)}
+                    signInButton={
+                      <SignInButton mode="modal">
+                        <GlowButton size="sm">Sign in to save</GlowButton>
+                      </SignInButton>
+                    }
+                  />
                   <ResultsView result={result} onReRun={handleSubmit} loading={loading} />
                 </div>
               )}

@@ -1,11 +1,16 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { SaveResultsBanner } from "./SaveResultsBanner";
+import { GlowButton } from "./GlowButton";
 
 const meta: Meta<typeof SaveResultsBanner> = {
   title: "Common/SaveResultsBanner",
   component: SaveResultsBanner,
   parameters: {
     layout: "padded",
+  },
+  args: {
+    signInButton: <GlowButton size="sm">Sign in to save</GlowButton>,
+    onDismiss: () => {},
   },
 };
 

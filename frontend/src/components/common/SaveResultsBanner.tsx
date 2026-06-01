@@ -1,18 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { useUser, SignInButton } from "@clerk/nextjs";
-import { GlowButton } from "./GlowButton";
-
 interface SaveResultsBannerProps {
   show: boolean;
+  signInButton: React.ReactNode;
+  onDismiss: () => void;
 }
 
-export function SaveResultsBanner({ show }: SaveResultsBannerProps) {
-  const { isLoaded, isSignedIn } = useUser();
-  const [dismissed, setDismissed] = useState(false);
-
-  if (!isLoaded || isSignedIn || dismissed || !show) return null;
+export function SaveResultsBanner({ show, signInButton, onDismiss }: SaveResultsBannerProps) {
+  if (!show) return null;
 
   return (
     <div className="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -23,12 +18,10 @@ export function SaveResultsBanner({ show }: SaveResultsBannerProps) {
         </span>
       </div>
       <div className="flex shrink-0 items-center gap-3">
-        <SignInButton mode="modal">
-          <GlowButton size="sm">Sign in to save</GlowButton>
-        </SignInButton>
+        {signInButton}
         <button
           type="button"
-          onClick={() => setDismissed(true)}
+          onClick={onDismiss}
           className="text-body-sm text-text-tertiary transition-colors duration-300 hover:text-text-secondary"
           aria-label="Dismiss"
         >
