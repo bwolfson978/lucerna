@@ -61,7 +61,7 @@ export function ResultsView({ result }: ResultsViewProps) {
       tax_on_conversion: totalTaxCost,
       difference_from_optimal: Math.max(
         0,
-        result.estimated_lifetime_tax_savings - estimatedSavings,
+        result.estimated_lifetime_tax_savings - estimatedSavings
       ),
       estimated_savings: estimatedSavings,
       yearly_conversions: yearlyConversions,

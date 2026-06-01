@@ -136,12 +136,10 @@ export function ScenarioCards({ scenarios, currentScenario }: ScenarioCardsProps
       <div
         className={cn(
           "grid grid-cols-1 gap-default",
-          currentScenario ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3",
+          currentScenario ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"
         )}
       >
-        {currentScenario && (
-          <ScenarioCardContent scenario={currentScenario} isCurrent={true} />
-        )}
+        {currentScenario && <ScenarioCardContent scenario={currentScenario} isCurrent={true} />}
         {ordered.map((scenario) => (
           <ScenarioCardContent key={scenario.label} scenario={scenario} />
         ))}
