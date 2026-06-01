@@ -565,6 +565,8 @@ def _build_year_detail(
         actual_conv = min(conversion, available_for_conv)
         trad_balance -= rmd
         trad_balance -= actual_conv
+        if entry.drawdown is not None and entry.drawdown > 0:
+            trad_balance -= min(float(entry.drawdown), trad_balance)
         trad_balance *= 1 + scenario.annual_growth_rate
 
     return yearly_detail, yearly_bracket_fill, total_tax, aca_details

@@ -4,9 +4,11 @@ Provides a Protocol for curve strategies and a dispatch function that
 reads the active strategy from a module-level constant.  Each strategy
 produces list[ConversionCurvePoint] for a given scenario and budget range.
 
-The shared ``build_curve_point`` helper eliminates duplicated detail-building
-code that previously existed in both ``extract_conversion_curve`` and
-``extract_conversion_curve_3d``.
+The shared ``build_curve_point`` helper delegates per-year tax, bracket fill,
+and RMD computation to ``optimizer._build_year_detail`` — the same path used
+for the authoritative OptimizationResult — so curve points are always
+consistent with the main result and any future changes to the income model
+propagate to the slider automatically.
 
 Engine dependency order: types → tax → state_tax → heuristic → curve_strategy → optimizer
 """
@@ -15,18 +17,7 @@ from __future__ import annotations
 
 from typing import Literal, Protocol
 
-from app.engine.rmd import calculate_rmd, rmd_start_age
-from app.engine.state_tax import resolve_state_for_year
-from app.engine.tax import (
-    analyze_bracket_fill,
-    get_marginal_rate,
-)
-from app.engine.tax_cost import (
-    federal_tax_on_conversion,
-    state_tax_on_conversion,
-)
 from app.engine.types import (
-    BracketFillResult,
     ConversionCurvePoint,
     ScenarioInput,
 )
@@ -68,72 +59,15 @@ def build_curve_point(
 ) -> ConversionCurvePoint:
     """Build a full ConversionCurvePoint from a yearly allocation.
 
-    Computes NPV, bracket fill, yearly detail, and total tax.  Shared by
-    all curve strategies so that output format is identical regardless of
-    which strategy generated the allocation.
-
-    Mirrors the logic in optimizer._build_year_detail: RMDs are included
-    in the effective income base so that tax cost, bracket fill, and marginal
-    rate reflect the true marginal position of the conversion (i.e. conversion
-    is layered on top of income + RMD, not just income).
+    Delegates to optimizer._build_year_detail for all per-year computation
+    (RMD, effective income, tax cost, bracket fill, balance advance) so
+    curve points always agree with the authoritative OptimizationResult.
     """
-    from app.engine.optimizer import calculate_npv  # lazy — avoid circular
+    from app.engine.optimizer import _build_year_detail, calculate_npv  # lazy — avoid circular
 
     npv_val = calculate_npv(scenario, yearly_conv)
-
-    owner_rmd_start = rmd_start_age(scenario.age)
-    trad_balance = scenario.traditional_ira_balance
-
-    yearly_bracket_fill: list[list[BracketFillResult]] = []
-    yearly_detail: list[dict] = []
-    yearly_rmd_amounts: list[float] = []
-    total_tax = 0.0
-
-    for i, entry in enumerate(scenario.timeline):
-        income = entry.gross_income
-        c = yearly_conv[i]
-        yr_state = resolve_state_for_year(entry.state, scenario.state)
-        owner_age = scenario.age + i
-
-        rmd = calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
-        rmd = min(rmd, trad_balance)
-        yearly_rmd_amounts.append(round(rmd, 2))
-        effective_income = income + rmd
-
-        tax_cost = federal_tax_on_conversion(effective_income, c, scenario.filing_status)
-        tax_cost += state_tax_on_conversion(
-            effective_income,
-            c,
-            yr_state,
-            scenario.filing_status,
-            scenario.custom_state_rate,
-        )
-        total_tax += tax_cost
-
-        eff_rate = tax_cost / c if c > 0 else 0.0
-        marginal = get_marginal_rate(effective_income + c, scenario.filing_status)
-
-        yearly_detail.append(
-            {
-                "year": entry.year,
-                "income": income,
-                "rmd": round(rmd, 2),
-                "conversion": c,
-                "tax_cost": round(tax_cost, 2),
-                "effective_rate": round(eff_rate, 4),
-                "marginal_bracket": f"{marginal:.0%}",
-            }
-        )
-        yearly_bracket_fill.append(analyze_bracket_fill(effective_income, c, scenario.filing_status))
-
-        # Advance balance for next iteration
-        available_for_conv = max(0.0, trad_balance - rmd)
-        actual_conv = min(max(0.0, c), available_for_conv)
-        trad_balance -= rmd
-        trad_balance -= actual_conv
-        if entry.drawdown is not None and entry.drawdown > 0:
-            trad_balance -= min(float(entry.drawdown), trad_balance)
-        trad_balance *= 1 + scenario.annual_growth_rate
+    yearly_detail, yearly_bracket_fill, total_tax, _ = _build_year_detail(scenario, yearly_conv)
+    yearly_rmd_amounts = [d["rmd"] for d in yearly_detail]
 
     return ConversionCurvePoint(
         total_cap=cap_rounded,
