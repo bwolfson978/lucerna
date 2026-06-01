@@ -178,7 +178,12 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
   const yearlyBracketFills: BracketFillResult[][] = useMemo(
     () =>
       incomes.map((income, i) =>
-        analyzeBracketFill(income + (yearlyRmds[i] ?? 0), yearlyConversions[i] ?? 0, filingStatus, taxConfig)
+        analyzeBracketFill(
+          income + (yearlyRmds[i] ?? 0),
+          yearlyConversions[i] ?? 0,
+          filingStatus,
+          taxConfig
+        )
       ),
     [incomes, yearlyRmds, yearlyConversions, filingStatus, taxConfig]
   );
@@ -209,7 +214,15 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
           marginal_bracket: marginalRate,
         };
       }),
-    [incomes, yearlyRmds, yearlyConversions, yearlyBracketFills, filingStatus, taxConfig, result.input.timeline]
+    [
+      incomes,
+      yearlyRmds,
+      yearlyConversions,
+      yearlyBracketFills,
+      filingStatus,
+      taxConfig,
+      result.input.timeline,
+    ]
   );
 
   const displayTotalConversion = yearlyConversions.reduce((a, b) => a + b, 0);

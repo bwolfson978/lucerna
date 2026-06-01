@@ -180,9 +180,7 @@ class TestBuildCurvePoint:
                 f"Year {i} tax_cost mismatch: curve={pt.yearly_detail[i]['tax_cost']} "
                 f"vs optimizer={detail[i]['tax_cost']}"
             )
-            assert pt.yearly_bracket_fill[i] == bracket_fill[i], (
-                f"Year {i} bracket fill mismatch"
-            )
+            assert pt.yearly_bracket_fill[i] == bracket_fill[i], f"Year {i} bracket fill mismatch"
 
     def test_rmd_increases_effective_tax_bracket(self):
         """A conversion layered on top of RMD should land in a higher bracket

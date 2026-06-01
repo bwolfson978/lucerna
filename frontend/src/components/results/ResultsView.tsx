@@ -74,7 +74,10 @@ export function ResultsView({ result }: ResultsViewProps) {
       maxGross = Math.max(maxGross, yi.gross_income + optRmd + (result.yearly_conversions[i] ?? 0));
       for (const point of curve) {
         const curveRmd = (point.yearly_rmd_amounts ?? [])[i] ?? 0;
-        maxGross = Math.max(maxGross, yi.gross_income + curveRmd + (point.yearly_conversions[i] ?? 0));
+        maxGross = Math.max(
+          maxGross,
+          yi.gross_income + curveRmd + (point.yearly_conversions[i] ?? 0)
+        );
       }
     }
     return maxGross;
