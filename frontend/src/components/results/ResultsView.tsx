@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { OptimizationResult, ScenarioInput } from "@/lib/types";
 import { MetricCard } from "@/components/common/MetricCard";
 import { Tooltip } from "@/components/common/Tooltip";
@@ -34,6 +34,9 @@ export function ResultsView({ result }: ResultsViewProps) {
     verticalLabelWidth: 0,
     axisLabelStart: 0,
   });
+  const [isSliderDragging, setIsSliderDragging] = useState(false);
+  const handleSliderDragStart = useCallback(() => setIsSliderDragging(true), []);
+  const handleSliderDragEnd = useCallback(() => setIsSliderDragging(false), []);
 
   // Client-side slider: continuous bracket fill computation
   const {
@@ -48,8 +51,9 @@ export function ResultsView({ result }: ResultsViewProps) {
     estimatedSavings,
   } = useConversionSlider({ result });
 
-  // Auto-scroll bracket chart when a bar activates or deactivates
-  useScrollOnTransition(yearlyConversions, chartScrollRef, tableColWidth);
+  // Auto-scroll bracket chart when a bar activates or deactivates.
+  // Disabled during slider drag to prevent chart jumping while scrubbing.
+  useScrollOnTransition(yearlyConversions, chartScrollRef, tableColWidth, !isSliderDragging);
 
   // RMD amounts keyed by year, for income bar segmentation
   const rmdByYear = useMemo(() => {
@@ -59,6 +63,25 @@ export function ResultsView({ result }: ResultsViewProps) {
     }
     return map;
   }, [result.rmd_projection]);
+
+  // Pre-compute the max gross amount (income + rmd + conversion) across ALL
+  // curve points so BracketChart can use a stable Y-scale that does not jump
+  // as the slider moves and individual year grosses cross bracket boundaries.
+  const stableMaxGrossAmount = useMemo(() => {
+    const curve = result.conversion_curve ?? [];
+    let maxGross = 0;
+    for (let i = 0; i < result.input.timeline.length; i++) {
+      const yi = result.input.timeline[i];
+      const rmd = rmdByYear.get(yi.year) ?? 0;
+      // Include the optimal allocation
+      maxGross = Math.max(maxGross, yi.gross_income + rmd + (result.yearly_conversions[i] ?? 0));
+      // Include every curve point
+      for (const point of curve) {
+        maxGross = Math.max(maxGross, yi.gross_income + rmd + (point.yearly_conversions[i] ?? 0));
+      }
+    }
+    return maxGross;
+  }, [result, rmdByYear]);
 
   // Build chart data from client-side bracket fills
   const chartYears = useMemo(() => {
@@ -146,6 +169,8 @@ export function ResultsView({ result }: ResultsViewProps) {
                 max={Math.max(result.input.traditional_ira_balance, result.total_conversion)}
                 optimalValue={result.total_conversion}
                 onChange={setSliderValue}
+                onDragStart={handleSliderDragStart}
+                onDragEnd={handleSliderDragEnd}
               />
             </div>
           </div>
@@ -156,6 +181,7 @@ export function ResultsView({ result }: ResultsViewProps) {
             onBarWidthChange={setTableColWidth}
             onLayoutChange={setChartLayout}
             hideLegend
+            stableMaxGrossAmount={stableMaxGrossAmount}
             leftBottomContent={
               <div className="flex flex-col border-r border-border">
                 <div className="flex h-8 items-center justify-end px-1 text-right text-data-xs font-medium leading-tight text-text-tertiary">

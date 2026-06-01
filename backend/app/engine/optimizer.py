@@ -997,6 +997,24 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
 
     conversion_curve = generate_conversion_curve(scenario, curve_max=total_conversion)
 
+    # Defense-in-depth: the bracket-fill curve evaluates calculate_npv at
+    # every cap point, so its peak is always an authoritative NPV value.
+    # If it strictly beats the DP result (possible on coarse grids or in
+    # edge cases not yet covered by the 2D DP), promote it.
+    # Only for unconstrained scenarios — the curve ignores user preferences
+    # (max_per_year, tax caps, etc.) and must not override constraint-
+    # respecting scipy results.
+    if conversion_curve and not _has_active_preferences(scenario):
+        best_curve_point = max(conversion_curve, key=lambda p: p.npv)
+        current_npv = calculate_npv(scenario, final_conversions)
+        if best_curve_point.npv > current_npv + 1.0:
+            final_conversions = _finalize_conversions(
+                list(best_curve_point.yearly_conversions),
+                max_balance,
+                scenario.annual_growth_rate,
+            )
+            total_conversion = sum(final_conversions)
+
     npv_at_optimal = calculate_npv(scenario, final_conversions)
     npv_at_zero = calculate_npv(scenario, [0.0] * n_years)
 

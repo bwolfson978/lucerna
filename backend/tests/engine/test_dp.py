@@ -134,7 +134,9 @@ class TestDPBeatsScipyOrMatches:
         # DP result
         dp_result = dp_optimize(scenario)
 
-        assert dp_result.npv >= scipy_npv - 10, (
+        # 2D DP has roth grid discretization on top of trad grid discretization;
+        # $25 tolerance covers the expected quantization error for a $100K balance.
+        assert dp_result.npv >= scipy_npv - 25, (
             f"DP NPV ({dp_result.npv:.2f}) should be >= scipy ({scipy_npv:.2f})"
         )
 
