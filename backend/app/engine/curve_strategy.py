@@ -71,24 +71,38 @@ def build_curve_point(
     Computes NPV, bracket fill, yearly detail, and total tax.  Shared by
     all curve strategies so that output format is identical regardless of
     which strategy generated the allocation.
+
+    Mirrors the logic in optimizer._build_year_detail: RMDs are included
+    in the effective income base so that tax cost, bracket fill, and marginal
+    rate reflect the true marginal position of the conversion (i.e. conversion
+    is layered on top of income + RMD, not just income).
     """
     from app.engine.optimizer import calculate_npv  # lazy — avoid circular
 
-    n_years = len(scenario.timeline)
     npv_val = calculate_npv(scenario, yearly_conv)
+
+    owner_rmd_start = rmd_start_age(scenario.age)
+    trad_balance = scenario.traditional_ira_balance
 
     yearly_bracket_fill: list[list[BracketFillResult]] = []
     yearly_detail: list[dict] = []
+    yearly_rmd_amounts: list[float] = []
     total_tax = 0.0
 
-    for i in range(n_years):
-        income = scenario.timeline[i].gross_income
+    for i, entry in enumerate(scenario.timeline):
+        income = entry.gross_income
         c = yearly_conv[i]
-        yr_state = resolve_state_for_year(scenario.timeline[i].state, scenario.state)
+        yr_state = resolve_state_for_year(entry.state, scenario.state)
+        owner_age = scenario.age + i
 
-        tax_cost = federal_tax_on_conversion(income, c, scenario.filing_status)
+        rmd = calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
+        rmd = min(rmd, trad_balance)
+        yearly_rmd_amounts.append(round(rmd, 2))
+        effective_income = income + rmd
+
+        tax_cost = federal_tax_on_conversion(effective_income, c, scenario.filing_status)
         tax_cost += state_tax_on_conversion(
-            income,
+            effective_income,
             c,
             yr_state,
             scenario.filing_status,
@@ -97,33 +111,24 @@ def build_curve_point(
         total_tax += tax_cost
 
         eff_rate = tax_cost / c if c > 0 else 0.0
-        marginal = get_marginal_rate(income + c, scenario.filing_status)
+        marginal = get_marginal_rate(effective_income + c, scenario.filing_status)
 
         yearly_detail.append(
             {
-                "year": scenario.timeline[i].year,
+                "year": entry.year,
                 "income": income,
+                "rmd": round(rmd, 2),
                 "conversion": c,
                 "tax_cost": round(tax_cost, 2),
                 "effective_rate": round(eff_rate, 4),
                 "marginal_bracket": f"{marginal:.0%}",
             }
         )
-        yearly_bracket_fill.append(analyze_bracket_fill(income, c, scenario.filing_status))
+        yearly_bracket_fill.append(analyze_bracket_fill(effective_income, c, scenario.filing_status))
 
-    # Simulate IRA balance forward to get the RMD for each timeline year.
-    # RMDs depend on trad balance, which changes with each year's conversion,
-    # so this must be done per curve point rather than reused from the optimal.
-    owner_rmd_start = rmd_start_age(scenario.age)
-    trad_balance = scenario.traditional_ira_balance
-    yearly_rmd_amounts: list[float] = []
-    for i, entry in enumerate(scenario.timeline):
-        owner_age = scenario.age + i
-        rmd = calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
-        rmd = min(rmd, trad_balance)
-        yearly_rmd_amounts.append(round(rmd, 2))
+        # Advance balance for next iteration
         available_for_conv = max(0.0, trad_balance - rmd)
-        actual_conv = min(max(0.0, yearly_conv[i] if i < len(yearly_conv) else 0.0), available_for_conv)
+        actual_conv = min(max(0.0, c), available_for_conv)
         trad_balance -= rmd
         trad_balance -= actual_conv
         if entry.drawdown is not None and entry.drawdown > 0:

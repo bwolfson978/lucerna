@@ -143,42 +143,10 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
     ]
   );
 
-  const yearlyBracketFills: BracketFillResult[][] = useMemo(
-    () =>
-      incomes.map((income, i) =>
-        analyzeBracketFill(income, yearlyConversions[i] ?? 0, filingStatus, taxConfig)
-      ),
-    [incomes, yearlyConversions, filingStatus, taxConfig]
-  );
-
-  const yearlyDetail: YearlyDetail[] = useMemo(
-    () =>
-      incomes.map((income, i) => {
-        const conversion = yearlyConversions[i] ?? 0;
-        const taxWith = calculateFederalTax(income + conversion, filingStatus, taxConfig);
-        const taxWithout = calculateFederalTax(income, filingStatus, taxConfig);
-        const taxCost = taxWith - taxWithout;
-        // Find marginal bracket rate from the bracket fill data
-        const fills = yearlyBracketFills[i];
-        const topFilled = fills
-          ? [...fills].reverse().find((f) => f.filled_by_income + f.filled_by_conversion > 0)
-          : null;
-        const marginalRate = topFilled ? topFilled.bracket_rate : 0.1;
-
-        return {
-          year: result.input.timeline[i].year,
-          income,
-          conversion: Math.round(conversion),
-          tax_cost: Math.round(taxCost * 100) / 100,
-          marginal_bracket: marginalRate,
-        };
-      }),
-    [incomes, yearlyConversions, yearlyBracketFills, filingStatus, taxConfig, result.input.timeline]
-  );
-
   // Interpolate per-year RMD amounts from curve points.
-  // RMDs shrink as conversions grow (smaller trad balance = smaller RMD),
-  // so each curve point carries its own pre-computed yearly_rmd_amounts.
+  // Must be computed before yearlyBracketFills and yearlyDetail because
+  // the conversion's marginal tax position is layered on top of income + RMD,
+  // not just income (mirroring optimizer._build_year_detail).
   const yearlyRmds = useMemo(() => {
     const snapThreshold = computeSnapThreshold(0, result.input.traditional_ira_balance);
     const buildOptRmds = () => {
@@ -204,6 +172,45 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
       return lv + t * (uv - lv);
     });
   }, [totalConversion, result, sortedCurve]);
+
+  // Bracket fill uses income + RMD as the base so the conversion is layered
+  // onto the correct starting income position in the bracket chart.
+  const yearlyBracketFills: BracketFillResult[][] = useMemo(
+    () =>
+      incomes.map((income, i) =>
+        analyzeBracketFill(income + (yearlyRmds[i] ?? 0), yearlyConversions[i] ?? 0, filingStatus, taxConfig)
+      ),
+    [incomes, yearlyRmds, yearlyConversions, filingStatus, taxConfig]
+  );
+
+  // Tax cost uses income + RMD as the base for the same reason: the conversion
+  // sits on top of RMD in the bracket stack.
+  const yearlyDetail: YearlyDetail[] = useMemo(
+    () =>
+      incomes.map((income, i) => {
+        const rmd = yearlyRmds[i] ?? 0;
+        const conversion = yearlyConversions[i] ?? 0;
+        const base = income + rmd;
+        const taxWith = calculateFederalTax(base + conversion, filingStatus, taxConfig);
+        const taxWithout = calculateFederalTax(base, filingStatus, taxConfig);
+        const taxCost = taxWith - taxWithout;
+        // Find marginal bracket rate from the bracket fill data
+        const fills = yearlyBracketFills[i];
+        const topFilled = fills
+          ? [...fills].reverse().find((f) => f.filled_by_income + f.filled_by_conversion > 0)
+          : null;
+        const marginalRate = topFilled ? topFilled.bracket_rate : 0.1;
+
+        return {
+          year: result.input.timeline[i].year,
+          income,
+          conversion: Math.round(conversion),
+          tax_cost: Math.round(taxCost * 100) / 100,
+          marginal_bracket: marginalRate,
+        };
+      }),
+    [incomes, yearlyRmds, yearlyConversions, yearlyBracketFills, filingStatus, taxConfig, result.input.timeline]
+  );
 
   const displayTotalConversion = yearlyConversions.reduce((a, b) => a + b, 0);
   const totalTaxCost = yearlyDetail.reduce((s, d) => s + d.tax_cost, 0);
