@@ -70,7 +70,6 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
   // State tax inputs
   const [state, setState] = useState<string>("none");
   const [retirementState, setRetirementState] = useState<string>("none");
-  const [retirementStateSameAsCurrent, setRetirementStateSameAsCurrent] = useState(true);
   const [customStateRate, setCustomStateRate] = useState<number | null>(null);
 
   // ACA healthcare inputs
@@ -195,11 +194,8 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
       discount_rate: discountVal / 100,
       healthcare,
       state: state !== "none" ? state : null,
-      retirement_state: retirementStateSameAsCurrent
-        ? null
-        : retirementState !== "none"
-          ? retirementState
-          : null,
+      retirement_state:
+        retirementState !== "none" && retirementState !== state ? retirementState : null,
       custom_state_rate: state === "custom" && customStateRate ? customStateRate / 100 : null,
     };
     onSubmit(input);
@@ -237,7 +233,11 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
           label="State"
           value={state}
           options={STATE_OPTIONS}
-          onChange={(e) => setState(e.target.value)}
+          onChange={(e) => {
+            const newState = e.target.value;
+            setState(newState);
+            setRetirementState(newState);
+          }}
         />
         <CurrencyInput
           ref={(el) => {
@@ -278,28 +278,12 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
           error={errors.retirementAge}
           onChange={setDrawdownStartAge}
         />
-        {state !== "none" && (
-          <FormSelect
-            label="Retirement state"
-            value={retirementStateSameAsCurrent ? "same" : retirementState}
-            options={[
-              {
-                value: "same",
-                label: `Same as current${state !== "custom" ? ` (${STATE_OPTIONS.find((s) => s.value === state)?.label.split(" (")[0] || state})` : ""}`,
-              },
-              ...STATE_OPTIONS.filter((s) => s.value !== "none"),
-            ]}
-            onChange={(e) => {
-              if (e.target.value === "same") {
-                setRetirementStateSameAsCurrent(true);
-                setRetirementState("none");
-              } else {
-                setRetirementStateSameAsCurrent(false);
-                setRetirementState(e.target.value);
-              }
-            }}
-          />
-        )}
+        <FormSelect
+          label="Retirement state"
+          value={retirementState}
+          options={STATE_OPTIONS}
+          onChange={(e) => setRetirementState(e.target.value)}
+        />
         <CurrencyInput
           ref={(el) => {
             fieldRefs.current.rothBalance = el;

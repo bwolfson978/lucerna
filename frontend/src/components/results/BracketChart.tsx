@@ -509,24 +509,37 @@ export function BracketChart({
 
         {/* Fixed right axis: bracket rates at gross-scale positions */}
         <svg width={rightAxisWidth} height={chartHeight} className="flex-shrink-0 self-start">
-          {visibleGrossBrackets.map((b) => {
-            const y = yScale(b.max);
-            const color = BRACKET_COLORS[b.rate.toFixed(2)] || "#6B7280";
-            return (
-              <text
-                key={`${b.rate}-${b.min}`}
-                x={6}
-                y={y + 4}
-                className={`${isMobile ? "text-[11px]" : "text-caption"} font-medium`}
-                fontFamily={DATA_FONT_FAMILY}
-                fill={color}
-              >
-                {isMobile
-                  ? formatPercent(b.rate)
-                  : `${formatPercent(b.rate)} (${formatAxisCurrency(b.max)})`}
-              </text>
-            );
-          })}
+          {(() => {
+            const MIN_LABEL_GAP = 14;
+            // Pass 1: compute nudged y positions top-to-bottom so crowded labels shift
+            // down rather than being hidden. Iterate highest→lowest bracket (top→bottom
+            // on screen) so each label can only push the one below it.
+            const nudgedY: number[] = new Array(visibleGrossBrackets.length);
+            let lastLabelY = -Infinity;
+            for (let i = visibleGrossBrackets.length - 1; i >= 0; i--) {
+              const natural = yScale(visibleGrossBrackets[i].max) + 4;
+              const y = Math.max(natural, lastLabelY + MIN_LABEL_GAP);
+              nudgedY[i] = y;
+              lastLabelY = y;
+            }
+            return visibleGrossBrackets.map((b, i) => {
+              const color = BRACKET_COLORS[b.rate.toFixed(2)] || "#6B7280";
+              return (
+                <text
+                  key={`${b.rate}-${b.min}`}
+                  x={6}
+                  y={nudgedY[i]}
+                  className={`${isMobile ? "text-[11px]" : "text-caption"} font-medium`}
+                  fontFamily={DATA_FONT_FAMILY}
+                  fill={color}
+                >
+                  {isMobile
+                    ? formatPercent(b.rate)
+                    : `${formatPercent(b.rate)} (${formatAxisCurrency(b.max)})`}
+                </text>
+              );
+            });
+          })()}
         </svg>
 
         {/* Right axis label (desktop only) */}
