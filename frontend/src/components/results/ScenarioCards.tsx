@@ -87,9 +87,9 @@ function ScenarioCardContent({
           </div>
         )}
 
-        <div className="flex justify-between text-body-sm">
+        <div className="flex flex-wrap justify-between gap-x-2 text-body-sm">
           <span className="text-text-secondary">Tax on Roth conversions</span>
-          <span className="font-mono text-text-primary">
+          <span className="ml-auto font-mono text-text-primary">
             {formatCurrency(scenario.tax_on_conversion)}
           </span>
         </div>

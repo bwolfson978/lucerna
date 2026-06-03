@@ -511,18 +511,24 @@ export function BracketChart({
         <svg width={rightAxisWidth} height={chartHeight} className="flex-shrink-0 self-start">
           {(() => {
             const MIN_LABEL_GAP = 14;
-            let lastLabelY = Infinity;
-            return visibleGrossBrackets.map((b) => {
-              const y = yScale(b.max);
-              const labelY = y + 4;
-              if (lastLabelY - labelY < MIN_LABEL_GAP) return null;
-              lastLabelY = labelY;
+            // Pass 1: compute nudged y positions top-to-bottom so crowded labels shift
+            // down rather than being hidden. Iterate highest→lowest bracket (top→bottom
+            // on screen) so each label can only push the one below it.
+            const nudgedY: number[] = new Array(visibleGrossBrackets.length);
+            let lastLabelY = -Infinity;
+            for (let i = visibleGrossBrackets.length - 1; i >= 0; i--) {
+              const natural = yScale(visibleGrossBrackets[i].max) + 4;
+              const y = Math.max(natural, lastLabelY + MIN_LABEL_GAP);
+              nudgedY[i] = y;
+              lastLabelY = y;
+            }
+            return visibleGrossBrackets.map((b, i) => {
               const color = BRACKET_COLORS[b.rate.toFixed(2)] || "#6B7280";
               return (
                 <text
                   key={`${b.rate}-${b.min}`}
                   x={6}
-                  y={labelY}
+                  y={nudgedY[i]}
                   className={`${isMobile ? "text-[11px]" : "text-caption"} font-medium`}
                   fontFamily={DATA_FONT_FAMILY}
                   fill={color}
