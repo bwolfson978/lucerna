@@ -194,7 +194,8 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
       discount_rate: discountVal / 100,
       healthcare,
       state: state !== "none" ? state : null,
-      retirement_state: retirementState !== "none" && retirementState !== state ? retirementState : null,
+      retirement_state:
+        retirementState !== "none" && retirementState !== state ? retirementState : null,
       custom_state_rate: state === "custom" && customStateRate ? customStateRate / 100 : null,
     };
     onSubmit(input);
