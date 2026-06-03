@@ -31,7 +31,6 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
     },
     ref
   ) => {
-    const selectedLabel = options.find((o) => o.value === value)?.label ?? "";
     // Radix reserves "" as "clear selection". Convert our null/empty state
     // to `undefined` so the placeholder renders instead.
     const radixValue = value ? value : undefined;
@@ -60,9 +59,7 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
             className
           )}
         >
-          <SelectPrimitive.Value placeholder={placeholder}>
-            {selectedLabel || undefined}
-          </SelectPrimitive.Value>
+          <SelectPrimitive.Value placeholder={placeholder} />
           <SelectPrimitive.Icon>
             <svg
               width="12"
