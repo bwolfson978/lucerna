@@ -237,7 +237,14 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
           label="State"
           value={state}
           options={STATE_OPTIONS}
-          onChange={(e) => setState(e.target.value)}
+          onChange={(e) => {
+            const newState = e.target.value;
+            setState(newState);
+            if (newState !== "none") {
+              setRetirementStateSameAsCurrent(true);
+              setRetirementState("none");
+            }
+          }}
         />
         <CurrencyInput
           ref={(el) => {
@@ -278,28 +285,36 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
           error={errors.retirementAge}
           onChange={setDrawdownStartAge}
         />
-        {state !== "none" && (
-          <FormSelect
-            label="Retirement state"
-            value={retirementStateSameAsCurrent ? "same" : retirementState}
-            options={[
-              {
-                value: "same",
-                label: `Same as current${state !== "custom" ? ` (${STATE_OPTIONS.find((s) => s.value === state)?.label.split(" (")[0] || state})` : ""}`,
-              },
-              ...STATE_OPTIONS.filter((s) => s.value !== "none"),
-            ]}
-            onChange={(e) => {
-              if (e.target.value === "same") {
-                setRetirementStateSameAsCurrent(true);
-                setRetirementState("none");
-              } else {
-                setRetirementStateSameAsCurrent(false);
-                setRetirementState(e.target.value);
-              }
-            }}
-          />
-        )}
+        <FormSelect
+          label="Retirement state"
+          value={
+            state === "none"
+              ? retirementState
+              : retirementStateSameAsCurrent
+                ? "same"
+                : retirementState
+          }
+          options={
+            state === "none"
+              ? STATE_OPTIONS
+              : [
+                  {
+                    value: "same",
+                    label: `Same as current${state !== "custom" ? ` (${STATE_OPTIONS.find((s) => s.value === state)?.label.split(" (")[0] || state})` : ""}`,
+                  },
+                  ...STATE_OPTIONS.filter((s) => s.value !== "none"),
+                ]
+          }
+          onChange={(e) => {
+            if (e.target.value === "same") {
+              setRetirementStateSameAsCurrent(true);
+              setRetirementState("none");
+            } else {
+              setRetirementStateSameAsCurrent(false);
+              setRetirementState(e.target.value);
+            }
+          }}
+        />
         <CurrencyInput
           ref={(el) => {
             fieldRefs.current.rothBalance = el;
