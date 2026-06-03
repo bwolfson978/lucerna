@@ -509,24 +509,31 @@ export function BracketChart({
 
         {/* Fixed right axis: bracket rates at gross-scale positions */}
         <svg width={rightAxisWidth} height={chartHeight} className="flex-shrink-0 self-start">
-          {visibleGrossBrackets.map((b) => {
-            const y = yScale(b.max);
-            const color = BRACKET_COLORS[b.rate.toFixed(2)] || "#6B7280";
-            return (
-              <text
-                key={`${b.rate}-${b.min}`}
-                x={6}
-                y={y + 4}
-                className={`${isMobile ? "text-[11px]" : "text-caption"} font-medium`}
-                fontFamily={DATA_FONT_FAMILY}
-                fill={color}
-              >
-                {isMobile
-                  ? formatPercent(b.rate)
-                  : `${formatPercent(b.rate)} (${formatAxisCurrency(b.max)})`}
-              </text>
-            );
-          })}
+          {(() => {
+            const MIN_LABEL_GAP = 14;
+            let lastLabelY = Infinity;
+            return visibleGrossBrackets.map((b) => {
+              const y = yScale(b.max);
+              const labelY = y + 4;
+              if (lastLabelY - labelY < MIN_LABEL_GAP) return null;
+              lastLabelY = labelY;
+              const color = BRACKET_COLORS[b.rate.toFixed(2)] || "#6B7280";
+              return (
+                <text
+                  key={`${b.rate}-${b.min}`}
+                  x={6}
+                  y={labelY}
+                  className={`${isMobile ? "text-[11px]" : "text-caption"} font-medium`}
+                  fontFamily={DATA_FONT_FAMILY}
+                  fill={color}
+                >
+                  {isMobile
+                    ? formatPercent(b.rate)
+                    : `${formatPercent(b.rate)} (${formatAxisCurrency(b.max)})`}
+                </text>
+              );
+            });
+          })()}
         </svg>
 
         {/* Right axis label (desktop only) */}
