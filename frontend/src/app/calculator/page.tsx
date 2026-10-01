@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import posthog from "posthog-js";
-import { useUser, SignInButton } from "@clerk/nextjs";
+import { useUser, useAuth, SignInButton } from "@clerk/nextjs";
 import { Header } from "@/components/common/Header";
 import { PageFooter } from "@/components/common/PageFooter";
 import { InputForm } from "@/components/calculator/InputForm";
 import { ResultsView } from "@/components/results/ResultsView";
 import { MetricCardSkeleton, ChartSkeleton, TableSkeleton } from "@/components/common/Skeleton";
 import { apiClient } from "@/lib/api/client";
+import { createScenariosApi } from "@/lib/api/scenarios";
 import type { ScenarioInput, OptimizationResult } from "@/lib/types";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -16,15 +18,25 @@ import { MethodologyProvider } from "@/components/methodology/MethodologyContext
 import { MethodologyLayout } from "@/components/methodology/MethodologyLayout";
 import { SaveResultsBanner } from "@/components/common/SaveResultsBanner";
 import { GlowButton } from "@/components/common/GlowButton";
+import type { SaveBannerState } from "@/components/common/SaveResultsBanner";
 
 export default function CalculatorPage() {
   const [result, setResult] = useState<OptimizationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [bannerState, setBannerState] = useState<SaveBannerState>("prompt");
   const { isLoaded, isSignedIn } = useUser();
+  const { getToken } = useAuth();
+  const searchParams = useSearchParams();
   const resultsRef = useRef<HTMLDivElement>(null);
-  const showBanner = !!result && isLoaded && !isSignedIn && !bannerDismissed;
+  const lastInputRef = useRef<ScenarioInput | null>(null);
+
+  const showBanner =
+    !!result &&
+    isLoaded &&
+    !bannerDismissed &&
+    (!isSignedIn || bannerState === "saving" || bannerState === "saved");
 
   // Scroll to results when loading starts
   useEffect(() => {
@@ -33,27 +45,56 @@ export default function CalculatorPage() {
     }
   }, [loading]);
 
-  async function handleSubmit(input: ScenarioInput) {
-    setLoading(true);
-    setError(null);
-    setResult(null);
+  // Load saved scenario from URL param on mount
+  useEffect(() => {
+    const scenarioId = searchParams.get("scenario");
+    if (!scenarioId || !isLoaded || !isSignedIn) return;
 
-    posthog.capture("scenario_submitted", {
-      filing_status: input.filing_status,
-      num_years: input.timeline?.length ?? 1,
-      has_life_events: input.timeline?.some((y) => y.notes && y.notes.trim() !== "") ?? false,
+    const scenariosApi = createScenariosApi(getToken);
+    scenariosApi.get(scenarioId).then((detail) => {
+      handleSubmit(detail.inputs);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoaded, isSignedIn]);
 
-    try {
-      const data = await apiClient.optimize(input as unknown as Record<string, unknown>);
-      setResult(data as OptimizationResult);
-      posthog.capture("scenario_completed");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Optimization failed");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const handleSubmit = useCallback(
+    async (input: ScenarioInput) => {
+      setLoading(true);
+      setError(null);
+      setResult(null);
+      setBannerState("prompt");
+      lastInputRef.current = input;
+
+      posthog.capture("scenario_submitted", {
+        filing_status: input.filing_status,
+        num_years: input.timeline?.length ?? 1,
+        has_life_events: input.timeline?.some((y) => y.notes && y.notes.trim() !== "") ?? false,
+      });
+
+      try {
+        const data = await apiClient.optimize(input as unknown as Record<string, unknown>);
+        const optimized = data as OptimizationResult;
+        setResult(optimized);
+        posthog.capture("scenario_completed");
+
+        // Auto-save when signed in
+        if (isSignedIn) {
+          setBannerDismissed(false);
+          setBannerState("saving");
+          const scenariosApi = createScenariosApi(getToken);
+          scenariosApi
+            .save(input, optimized)
+            .then(() => setBannerState("saved"))
+            .catch(() => setBannerState("prompt"));
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Optimization failed");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [isSignedIn, getToken]
+  );
 
   return (
     <MethodologyProvider>
@@ -118,6 +159,7 @@ export default function CalculatorPage() {
                 <div className="flex flex-col gap-default">
                   <SaveResultsBanner
                     show={showBanner}
+                    state={bannerState}
                     onDismiss={() => setBannerDismissed(true)}
                     signInButton={
                       <SignInButton mode="modal">

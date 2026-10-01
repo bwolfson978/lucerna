@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { HowItWorksButton } from "@/components/methodology/HowItWorksButton";
 import { Wordmark } from "@/components/common/Wordmark";
@@ -15,6 +16,7 @@ const NAV_LINKS = [
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { isSignedIn } = useUser();
 
   // Only close the menu explicitly when tapping the current page's link —
   // cross-page navigation unmounts this component, so the menu resets naturally.
@@ -45,6 +47,18 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
+            {isSignedIn && (
+              <Link
+                href="/my-scenarios"
+                aria-current={pathname === "/my-scenarios" ? "page" : undefined}
+                className={cn(
+                  "text-[15px] font-medium transition-colors duration-200 hover:text-text-primary",
+                  pathname === "/my-scenarios" ? "text-pine" : "text-text-secondary"
+                )}
+              >
+                My scenarios
+              </Link>
+            )}
             <HowItWorksButton />
             <Link href="/calculator" className="btn-dark min-h-[40px] px-6 py-2.5 text-[14.5px]">
               Run your scenario
@@ -106,6 +120,15 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
+            {isSignedIn && (
+              <Link
+                href="/my-scenarios"
+                onClick={() => handleNavClick("/my-scenarios")}
+                className="rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-200 hover:bg-paper-warm hover:text-pine"
+              >
+                My scenarios
+              </Link>
+            )}
             <Link
               href="/calculator"
               onClick={() => handleNavClick("/calculator")}

@@ -228,6 +228,30 @@ export interface OptimizationResult {
   input: ScenarioInput;
 }
 
+// ── Saved scenario types ───────────────────────────────────────────────────
+
+export interface SavedScenario {
+  id: string;
+  name: string;
+  created_at: string;
+  filing_status: FilingStatus;
+  num_years: number;
+  estimated_savings: number;
+  ira_balance: number;
+}
+
+export interface SavedScenarioDetail {
+  id: string;
+  name: string;
+  created_at: string;
+  inputs: ScenarioInput;
+  /** OptimizationResult without conversion_curve or reasoning_trace. */
+  result: Omit<OptimizationResult, "conversion_curve" | "reasoning_trace"> & {
+    conversion_curve: [];
+    reasoning_trace: null;
+  };
+}
+
 export interface DemoPersona {
   name: string;
   age: number;

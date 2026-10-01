@@ -19,7 +19,12 @@ async def lifespan(app: FastAPI):
         get_demo()
 
     threading.Thread(target=_warm, daemon=True).start()
+
+    from app.db.session import close_db, init_db
+
+    await init_db()
     yield
+    await close_db()
 
 
 app = FastAPI(title="Lucerna API", lifespan=lifespan)
@@ -65,6 +70,7 @@ from app.api.demo import router as demo_router
 from app.api.email import router as email_router
 from app.api.feedback import router as feedback_router
 from app.api.optimize import router as optimize_router
+from app.api.scenarios import router as scenarios_router
 from app.api.tax_config import router as tax_config_router
 
 app.include_router(optimize_router, prefix="/api")
@@ -72,6 +78,7 @@ app.include_router(demo_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 app.include_router(email_router, prefix="/api")
 app.include_router(feedback_router, prefix="/api")
+app.include_router(scenarios_router, prefix="/api")
 app.include_router(tax_config_router, prefix="/api")
 
 

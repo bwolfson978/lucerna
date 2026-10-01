@@ -17,8 +17,16 @@ const meta: Meta<typeof SaveResultsBanner> = {
 export default meta;
 type Story = StoryObj<typeof SaveResultsBanner>;
 
-export const Visible: Story = {
-  args: { show: true },
+export const Prompt: Story = {
+  args: { show: true, state: "prompt" },
+};
+
+export const Saving: Story = {
+  args: { show: true, state: "saving" },
+};
+
+export const Saved: Story = {
+  args: { show: true, state: "saved" },
 };
 
 export const Hidden: Story = {
