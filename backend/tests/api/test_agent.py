@@ -26,7 +26,9 @@ def reset_limits():
 
 async def test_streams_events_from_the_loop(async_client):
     set_model_client(
-        ScriptedModelClient([[tool_use("t1", "update_scenario", {"age": 40})], [text("Thanks!")]])
+        ScriptedModelClient(
+            [[tool_use("t1", "record_scenario", {"scenario": {"age": 40}})], [text("Thanks!")]]
+        )
     )
     response = await async_client.post("/api/agent", json={"message": "I'm 40"})
     assert response.status_code == 200

@@ -145,9 +145,7 @@ async def test_offline_client_drives_a_full_conversation():
         "What if I retire at 58?",
         "How do RMDs work?",
     ):
-        async for event in run_turn(
-            client=client, history=history, text=message, draft=draft, start_year=2026
-        ):
+        async for event in run_turn(client=client, history=history, text=message, draft=draft):
             if event["type"] == "draft":
                 draft = ScenarioDraft.model_validate(event["draft"])
             elif event["type"] == "part":

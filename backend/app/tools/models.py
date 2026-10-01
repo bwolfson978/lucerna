@@ -21,14 +21,18 @@ class IncomeChange(BaseModel):
         max_length=60,
         description="Short reason shown in the timeline, e.g. 'Sabbatical' or 'Social Security starts'",
     )
+    state: str | None = Field(
+        default=None, description="Two-letter state code if they live somewhere else that year"
+    )
 
 
 class ScenarioUpdate(BaseModel):
-    """Values to record. Every field is optional; send only what the user stated."""
+    """A Roth conversion scenario. Every field is optional; include only what the user stated
+    (or what a previous tool result returned as `scenario`)."""
 
     model_config = ConfigDict(extra="forbid")
 
-    age: int | None = Field(default=None, ge=18, le=100, description="Current age")
+    age: int | None = Field(default=None, ge=0, le=120, description="Current age")
     filing_status: FilingStatus | None = None
     current_income: float | None = Field(
         default=None,
@@ -46,7 +50,7 @@ class ScenarioUpdate(BaseModel):
     retirement_age: int | None = Field(
         default=None,
         ge=1,
-        le=100,
+        le=120,
         description=(
             "Age when withdrawals from retirement accounts begin (when they stop working). "
             "If already retired and living on other savings, the age they will start drawing "
@@ -80,14 +84,14 @@ class ScenarioUpdate(BaseModel):
     )
     investment_return_pct: float | None = Field(
         default=None,
-        ge=0,
-        le=15,
+        ge=-10,
+        le=30,
         description="Expected annual investment return, percent. Default 7.",
     )
     discount_rate_pct: float | None = Field(
         default=None,
         ge=0,
-        le=15,
+        le=30,
         description="Discount rate for today's dollars, percent. Default 5.",
     )
     include_aca: bool | None = Field(
@@ -106,42 +110,10 @@ class ScenarioUpdate(BaseModel):
         default=None,
         description=(
             "Per-year income that differs from the projection: job changes, sabbaticals, "
-            "Social Security starting, part-time work. Years must fall inside the timeline."
+            "Social Security starting, part-time work. Years must fall inside the timeline "
+            "(this year until retirement_age) or directly extend it."
         ),
     )
-
-
-class UpdateScenarioArgs(ScenarioUpdate):
-    """update_scenario input."""
-
-
-class OptimizeArgs(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    user_confirmed: bool = Field(
-        description=(
-            "True only when the user has confirmed the scenario summary or explicitly asked "
-            "to run the numbers"
-        )
-    )
-
-
-class CompareArgs(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    label: str = Field(
-        min_length=1,
-        max_length=60,
-        description="Short plain-English name for the what-if, e.g. 'Retire at 60'",
-    )
-    changes: ScenarioUpdate = Field(description="Values that differ from the current scenario")
-
-
-class TaxBracketsArgs(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    filing_status: FilingStatus
-    state: str | None = Field(default=None, description="Optional two-letter state code")
 
 
 class MethodologyTopic(StrEnum):
@@ -159,12 +131,6 @@ class MethodologyTopic(StrEnum):
     USING_THIS_TOOL = "using-this-tool"
 
 
-class MethodologyArgs(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    topic: MethodologyTopic
-
-
 class DisplayKind(StrEnum):
     SCENARIO_SUMMARY = "scenario_summary"
     BRACKET_FILL = "bracket_fill"
@@ -173,6 +139,8 @@ class DisplayKind(StrEnum):
 
 
 class ShowArgs(BaseModel):
+    """Input for the web-only `show` tool (display only, not part of the MCP server)."""
+
     model_config = ConfigDict(extra="forbid")
 
     kind: DisplayKind = Field(

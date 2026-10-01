@@ -41,8 +41,8 @@ def test_estimate_cost():
     assert estimate_cost("unknown-model", {"output_tokens": 0}) == 0
 
 
-def test_scripted_demo_is_valid_history_with_engine_numbers():
-    conversation = demo.generate_scripted()
+async def test_scripted_demo_is_valid_history_with_engine_numbers():
+    conversation = await demo.generate_scripted()
     assert conversation["source"] == "scripted"
     assert [e["user"] for e in conversation["exchanges"]] == list(demo.DEMO_MESSAGES)
     assert_well_formed(conversation["messages"])
@@ -55,6 +55,15 @@ def test_scripted_demo_is_valid_history_with_engine_numbers():
     assert conversation["draft"]["age"] == 63
 
 
+SCENARIO = {
+    "age": 63,
+    "filing_status": "married_filing_jointly",
+    "current_income": 20000,
+    "traditional_balance": 1400000,
+    "retirement_age": 73,
+}
+
+
 async def test_agent_generated_demo(monkeypatch):
     """The real loop drives the demo when a model is available."""
 
@@ -63,18 +72,18 @@ async def test_agent_generated_demo(monkeypatch):
         if any(b.get("type") == "tool_result" for b in last):
             return [text("Done.")]
         if "Run the numbers" in last[-1]["text"]:
-            return [tool_use("t2", "optimize_scenario", {"user_confirmed": True})]
+            return [
+                tool_use(
+                    "t2",
+                    "analyze_roth_conversions",
+                    {"scenario": SCENARIO, "user_confirmed": True},
+                )
+            ]
         return [
             tool_use(
                 "t1",
-                "update_scenario",
-                {
-                    "age": 63,
-                    "filing_status": "married_filing_jointly",
-                    "current_income": 20000,
-                    "traditional_balance": 1400000,
-                    "retirement_age": 73,
-                },
+                "record_scenario",
+                {"scenario": SCENARIO},
             )
         ]
 
@@ -100,10 +109,12 @@ async def test_demo_falls_back_when_agent_fails(monkeypatch, tmp_path):
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
     monkeypatch.setattr(demo, "_CACHE_DIR", tmp_path)
 
-    async def broken(client):
-        raise RuntimeError("boom")
+    class Broken:
+        async def stream(self, **kwargs):
+            raise RuntimeError("boom")
+            yield  # pragma: no cover
 
-    monkeypatch.setattr(demo, "generate_with_agent", broken)
+    monkeypatch.setattr(demo, "AnthropicModelClient", Broken)
     demo.clear_cache()
     conversation = await demo.get_demo_conversation()
     assert conversation["source"] == "scripted"

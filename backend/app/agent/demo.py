@@ -5,33 +5,42 @@ prompt, tool definitions, engine source, model and script. It is replayed to
 every visitor; any follow-up question they ask runs live. A change to any part of
 the key regenerates it.
 
-Without model access (local development, an outage) the exchange is built
-directly from the tools with fixed wording, so the demo always shows real engine
-output and its history is valid for live follow-ups.
+Without model access (local development, an outage) the same loop and MCP tools
+run with a fixed-wording stand-in for the model, so the demo always shows real
+engine output and its history is valid for live follow-ups.
 """
 
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import json
 import logging
 import os
 import threading
+from collections.abc import AsyncIterator
 from pathlib import Path
 
 from app.agent.loop import run_turn
-from app.agent.model import MODEL, AnthropicModelClient, ModelClient, ModelUnavailable
+from app.agent.model import (
+    MODEL,
+    AnthropicModelClient,
+    Final,
+    ModelClient,
+    ModelTurn,
+    ModelUnavailable,
+    StreamEvent,
+    TextDelta,
+    ToolStart,
+)
 from app.agent.prompts import PROMPT_VERSION
 from app.engine.demo import DEMO_PERSONA
 from app.tools import core
-from app.tools.draft import ScenarioDraft
+from app.tools.draft import ScenarioDraft, current_year
 from app.tools.models import ScenarioUpdate
-from app.tools.registry import anthropic_tools
+
+_APP_DIR = Path(__file__).resolve().parents[1]
 
 logger = logging.getLogger(__name__)
-
-DEMO_START_YEAR = 2026
 
 DEMO_MESSAGES: tuple[str, ...] = (
     "Hi, I'm Margaret. I'm 63 and my husband and I file jointly. I retired last year after "
@@ -46,7 +55,7 @@ DEMO_MESSAGES: tuple[str, ...] = (
 
 # What the scripted fallback records from Margaret's message. Matches the facts in
 # DEMO_MESSAGES[0]; the real agent extracts the same values itself.
-_SCRIPTED_UPDATE = ScenarioUpdate(
+_SCRIPTED_SCENARIO = ScenarioUpdate(
     age=63,
     filing_status="married_filing_jointly",
     current_income=20_000,
@@ -75,15 +84,29 @@ def cache_key() -> str:
     material = json.dumps(
         {
             "prompt": PROMPT_VERSION,
-            "tools": anthropic_tools(),
+            "tools": _tools_version(),
             "engine": core.engine_version(),
             "model": MODEL,
             "messages": DEMO_MESSAGES,
-            "start_year": DEMO_START_YEAR,
+            "year": current_year(),
         },
         sort_keys=True,
     )
     return hashlib.sha256(material.encode()).hexdigest()[:16]
+
+
+def _tools_version() -> str:
+    """Hash of the MCP server and tool code, standing in for the tool definitions."""
+    digest = hashlib.sha256()
+    for path in sorted(
+        [
+            _APP_DIR / "mcp" / "server.py",
+            _APP_DIR / "agent" / "toolbox.py",
+            *(_APP_DIR / "tools").glob("*.py"),
+        ]
+    ):
+        digest.update(path.read_bytes())
+    return digest.hexdigest()[:12]
 
 
 def persona() -> dict:
@@ -95,16 +118,14 @@ def persona() -> dict:
     }
 
 
-async def generate_with_agent(client: ModelClient) -> dict:
-    """Run the scripted user messages through the real agent loop."""
+async def generate_with_agent(client: ModelClient, source: str = "agent") -> dict:
+    """Run the scripted user messages through the real agent loop and MCP tools."""
     history: list[dict] = []
     draft = ScenarioDraft()
     exchanges = []
     for text in DEMO_MESSAGES:
         events = []
-        async for event in run_turn(
-            client=client, history=history, text=text, draft=draft, start_year=DEMO_START_YEAR
-        ):
+        async for event in run_turn(client=client, history=history, text=text, draft=draft):
             if event["type"] == "error":
                 raise ModelUnavailable(event["code"])
             if event["type"] == "draft":
@@ -114,25 +135,94 @@ async def generate_with_agent(client: ModelClient) -> dict:
             else:
                 events.append(event)
         exchanges.append({"user": text, "events": events})
-    return _package(exchanges, history, draft, source="agent")
+    return _package(exchanges, history, draft, source=source)
 
 
-def generate_scripted() -> dict:
-    """Engine-backed fallback with fixed wording (no model call)."""
-    draft = core.apply_update(ScenarioDraft(), _SCRIPTED_UPDATE, DEMO_START_YEAR)
-    described = core.describe_draft(draft)
-    scenario, result = core.run_draft(draft)
-    result_id = core.result_id_for(scenario)
-    summary = core.summarize_result(result, result_id)
+async def generate_scripted() -> dict:
+    """Fallback without model access: the real loop and tools with fixed wording."""
+    return await generate_with_agent(ScriptedDemoClient(), source="scripted")
+
+
+class ScriptedDemoClient:
+    """Plays the model's part in the demo with fixed wording. Tool calls and every number
+    in the replies come from the real tools."""
+
+    async def stream(
+        self, *, system: str, tools: list[dict], messages: list[dict]
+    ) -> AsyncIterator[StreamEvent]:
+        content = self._respond(messages)
+        for block in content:
+            if block["type"] == "text":
+                yield TextDelta(block["text"])
+            else:
+                yield ToolStart(block["name"])
+        stop = "tool_use" if any(b["type"] == "tool_use" for b in content) else "end_turn"
+        yield Final(ModelTurn(content=content, stop_reason=stop, model="scripted"))
+
+    def _respond(self, messages: list[dict]) -> list[dict]:
+        last = messages[-1]["content"]
+        results = {b["tool_use_id"]: b for b in last if b.get("type") == "tool_result"}
+        if not results:
+            if DEMO_MESSAGES[0] in json.dumps(last):
+                scenario = _SCRIPTED_SCENARIO.model_dump(mode="json", exclude_none=True)
+                return [_tool_use("toolu_demo_1", "record_scenario", {"scenario": scenario})]
+            scenario = _last_scenario(messages)
+            return [
+                _tool_use(
+                    "toolu_demo_3",
+                    "analyze_roth_conversions",
+                    {"scenario": scenario, "user_confirmed": True},
+                )
+            ]
+        first = next(iter(results.values()))
+        data = json.loads(first["content"])
+        if "toolu_demo_1" in results:
+            return [
+                _text(
+                    "Thanks, Margaret. Your situation has a long, low-income window before "
+                    "required distributions begin, which is exactly where conversions can help. "
+                    "Here's what I recorded. Check it over, and if it looks right I'll run the "
+                    "numbers."
+                ),
+                _tool_use("toolu_demo_2", "show", {"kind": "scenario_summary"}),
+            ]
+        if "toolu_demo_2" in results:
+            return [_text("Ready when you are.")]
+        if "toolu_demo_3" in results:
+            return [
+                _text(_explanation(data)),
+                _tool_use(
+                    "toolu_demo_4", "show", {"kind": "bracket_fill", "result_id": data["result_id"]}
+                ),
+                _tool_use(
+                    "toolu_demo_5",
+                    "show",
+                    {
+                        "kind": "suggestions",
+                        "suggestions": [
+                            "What if we spend $70,000 a year instead?",
+                            "How do RMDs change with these conversions?",
+                            "Why not convert everything this year?",
+                        ],
+                    },
+                ),
+            ]
+        return [_text("Ask me anything about these results.")]
+
+
+def _last_scenario(messages: list[dict]) -> dict:
+    for message in reversed(messages):
+        for block in message["content"] if isinstance(message["content"], list) else []:
+            if block.get("type") == "tool_result":
+                data = json.loads(block["content"])
+                if isinstance(data.get("scenario"), dict):
+                    return data["scenario"]
+    return _SCRIPTED_SCENARIO.model_dump(mode="json", exclude_none=True)
+
+
+def _explanation(summary: dict) -> str:
     points = summary["reasoning"]["summary_points"]
-    draft_json = draft.model_dump(mode="json")
-
-    intro = (
-        "Thanks, Margaret. Your situation has a long, low-income window before required "
-        "distributions begin, which is exactly where conversions can help. Here's what I "
-        "recorded. Check it over, and if it looks right I'll run the numbers."
-    )
-    explanation = (
+    return (
         f"The analysis shows estimated lifetime tax savings of "
         f"${summary['estimated_lifetime_tax_savings_todays_dollars']:,} in today's dollars "
         f"compared with not converting.\n\n"
@@ -140,99 +230,6 @@ def generate_scripted() -> dict:
         f"{_sentence(points['key_tradeoff'])} The chart below shows how each year's "
         "conversion fills the lower brackets."
     )
-    suggestions = [
-        "What if we spend $70,000 a year instead?",
-        "How do RMDs change with these conversions?",
-        "Why not convert everything this year?",
-    ]
-
-    update_input = _SCRIPTED_UPDATE.model_dump(mode="json", exclude_none=True)
-    history = [
-        {"role": "user", "content": [{"type": "text", "text": DEMO_MESSAGES[0]}]},
-        {
-            "role": "assistant",
-            "content": [_tool_use("toolu_demo_1", "update_scenario", update_input)],
-        },
-        {"role": "user", "content": [_tool_result("toolu_demo_1", described)]},
-        {
-            "role": "assistant",
-            "content": [
-                {"type": "text", "text": intro},
-                _tool_use("toolu_demo_2", "show", {"kind": "scenario_summary"}),
-            ],
-        },
-        {
-            "role": "user",
-            "content": [
-                _tool_result(
-                    "toolu_demo_2",
-                    {"shown": "scenario_summary", "draft_hash": described["draft_hash"]},
-                )
-            ],
-        },
-        {"role": "assistant", "content": [{"type": "text", "text": "Ready when you are."}]},
-        {"role": "user", "content": [{"type": "text", "text": DEMO_MESSAGES[1]}]},
-        {
-            "role": "assistant",
-            "content": [_tool_use("toolu_demo_3", "optimize_scenario", {"user_confirmed": True})],
-        },
-        {"role": "user", "content": [_tool_result("toolu_demo_3", summary)]},
-        {
-            "role": "assistant",
-            "content": [
-                {"type": "text", "text": explanation},
-                _tool_use("toolu_demo_4", "show", {"kind": "bracket_fill", "result_id": result_id}),
-                _tool_use(
-                    "toolu_demo_5", "show", {"kind": "suggestions", "suggestions": suggestions}
-                ),
-            ],
-        },
-        {
-            "role": "user",
-            "content": [
-                _tool_result("toolu_demo_4", {"shown": "bracket_fill", "result_id": result_id}),
-                _tool_result("toolu_demo_5", {"shown": "suggestions"}),
-            ],
-        },
-        {
-            "role": "assistant",
-            "content": [{"type": "text", "text": "Ask me anything about these results."}],
-        },
-    ]
-    exchanges = [
-        {
-            "user": DEMO_MESSAGES[0],
-            "events": [
-                {"type": "draft", "draft": draft_json, "missing": []},
-                {"type": "text_delta", "text": intro},
-                {
-                    "type": "part",
-                    "part": {
-                        "kind": "scenario_summary",
-                        "draft": draft_json,
-                        "draft_hash": described["draft_hash"],
-                    },
-                },
-                {"type": "text_delta", "text": "Ready when you are."},
-            ],
-        },
-        {
-            "user": DEMO_MESSAGES[1],
-            "events": [
-                {
-                    "type": "result",
-                    "result_id": result_id,
-                    "label": "Your scenario",
-                    "result": result.model_dump(mode="json"),
-                },
-                {"type": "part", "part": {"kind": "result_headline", "result_id": result_id}},
-                {"type": "text_delta", "text": explanation},
-                {"type": "part", "part": {"kind": "bracket_fill", "result_id": result_id}},
-                {"type": "part", "part": {"kind": "suggestions", "suggestions": suggestions}},
-            ],
-        },
-    ]
-    return _package(exchanges, history, draft, source="scripted")
 
 
 def _package(exchanges: list[dict], history: list[dict], draft: ScenarioDraft, source: str) -> dict:
@@ -263,7 +260,7 @@ async def get_demo_conversation() -> dict:
         except Exception:  # noqa: BLE001 - any failure falls back to the scripted version
             logger.exception("Demo generation with the agent failed; using the scripted version")
     if demo is None:
-        demo = await asyncio.to_thread(generate_scripted)
+        demo = await generate_scripted()
 
     with _lock:
         _memory[key] = demo
@@ -315,9 +312,5 @@ def _tool_use(tool_id: str, name: str, payload: dict) -> dict:
     return {"type": "tool_use", "id": tool_id, "name": name, "input": payload}
 
 
-def _tool_result(tool_id: str, content: dict) -> dict:
-    return {
-        "type": "tool_result",
-        "tool_use_id": tool_id,
-        "content": json.dumps(content, separators=(",", ":")),
-    }
+def _text(text: str) -> dict:
+    return {"type": "text", "text": text}

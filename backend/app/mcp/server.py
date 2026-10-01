@@ -1,39 +1,50 @@
-"""Remote MCP server at /mcp (streamable HTTP).
+"""Remote MCP server at /mcp (streamable HTTP), and the single tool surface.
 
-Exposes the same transport-neutral tools as the web agent so any MCP client
-(a Claude connector, a ChatGPT app, an IDE agent) can answer Roth conversion
-questions with this engine. MCP tools are stateless: each call carries the full
-scenario, built with the same draft rules as the calculator form.
+These are the Roth conversion tools for every client: Claude connectors, ChatGPT
+apps, IDE agents, and this product's own web assistant, which connects to this
+server as an MCP client (see ``app.agent.toolbox``). Tools are stateless: each
+call carries the full scenario, built with the same draft rules as the
+calculator form, and returns the normalized ``scenario`` to pass to the next call.
+
+A client that renders results itself (the web app) can ask for the full engine
+output by sending ``{"lucerna/ui": true}`` in the request ``_meta``. It comes back
+in the result ``_meta`` under ``lucerna/results``, outside what a model sees.
 """
 
 from __future__ import annotations
 
+import json
 import os
 from typing import Annotated, Any
 
-from mcp.server.fastmcp import FastMCP
+import anyio
+from mcp.server.fastmcp import Context, FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
-from mcp.types import ToolAnnotations
+from mcp.types import CallToolResult, TextContent, ToolAnnotations
 from pydantic import Field
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
 from app.agent.limits import UsageLimiter
-from app.engine.types import FilingStatus
+from app.engine.types import FilingStatus, OptimizationResult, ScenarioInput
 from app.tools import core
 from app.tools.draft import ScenarioDraft, current_year
 from app.tools.models import MethodologyTopic, ScenarioUpdate
 
-INSTRUCTIONS = """\
-Roth Conversions Optimizer runs a deterministic multi-year optimizer that finds the Roth \
+INSTRUCTIONS = """Roth Conversions Optimizer runs a deterministic multi-year optimizer that finds the Roth \
 conversion schedule with the highest after-tax wealth for a scenario, using 2026 federal and \
 state brackets, RMDs, IRMAA and ACA subsidies. Results are educational scenario analysis, not \
 financial advice: present them as "the analysis shows" and as trade-offs, never as \
 instructions. Quote numbers only from tool results. Required inputs: age, filing status, \
 current gross income, traditional IRA/401(k) balance and the age withdrawals begin \
-(retirement_age). Ask the user for any that are missing instead of guessing. The full \
-interactive analysis is available at https://rothconversionsoptimizer.com/calculator."""
+(retirement_age). Ask the user for any that are missing instead of guessing. Tools are \
+stateless: pass the `scenario` returned by the previous call, with any new values merged in. \
+Confirm the values with the user before analyze_roth_conversions. The full interactive \
+analysis is available at https://rothconversionsoptimizer.com/calculator."""
+
+UI_META_KEY = "lucerna/ui"
+RESULTS_META_KEY = "lucerna/results"
 
 _READ_ONLY = ToolAnnotations(readOnlyHint=True, openWorldHint=False, idempotentHint=True)
 
@@ -43,75 +54,166 @@ mcp = FastMCP(
     website_url="https://rothconversionsoptimizer.com",
     stateless_http=True,
     json_response=True,
+    log_level="WARNING",
     # Public remote server: requests arrive with the deployment's host name.
     transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),
 )
 
+ScenarioArg = Annotated[
+    ScenarioUpdate,
+    Field(description="The scenario: the user's values, or the `scenario` from the last result"),
+]
 
-def _draft_from(scenario: ScenarioUpdate) -> ScenarioDraft:
-    return core.apply_update(ScenarioDraft(), scenario, current_year())
+
+def _wants_ui(ctx: Context | None) -> bool:
+    if ctx is None:
+        return False
+    try:
+        meta = ctx.request_context.meta
+    except (AttributeError, LookupError, ValueError):
+        return False
+    extra = (getattr(meta, "model_extra", None) or {}) if meta is not None else {}
+    return bool(extra.get(UI_META_KEY))
 
 
-def _missing_response(draft: ScenarioDraft) -> dict[str, Any] | None:
-    described = core.describe_draft(draft)
+def _result(
+    data: dict[str, Any], *, error: bool = False, meta: dict | None = None
+) -> CallToolResult:
+    return CallToolResult(
+        content=[TextContent(type="text", text=json.dumps(data, separators=(",", ":")))],
+        structuredContent=data,
+        isError=error,
+        _meta=meta,
+    )
+
+
+def _error(message: str, **extra: Any) -> CallToolResult:
+    return _result({"error": message, **extra}, error=True)
+
+
+def _ui_results(entries: list[tuple[str, str, ScenarioInput, OptimizationResult]]) -> dict:
+    return {
+        RESULTS_META_KEY: [
+            {"result_id": rid, "label": label, "result": result.model_dump(mode="json")}
+            for rid, label, _scenario, result in entries
+        ]
+    }
+
+
+def _ready_or_error(draft: ScenarioDraft) -> CallToolResult | None:
+    described = core.describe_draft(draft, current_year())
     if described["ready_to_run"]:
         return None
-    return {
-        "error": "The scenario is incomplete. Ask the user for the missing values.",
-        "missing_required": described["missing_required"],
-        "problems": described["problems"],
-    }
+    return _error(
+        "The scenario is incomplete. Ask the user for the missing values.",
+        missing_required=described["missing_required"],
+        problems=described["problems"],
+        scenario=described["scenario"],
+    )
+
+
+@mcp.tool(
+    title="Record a scenario",
+    annotations=_READ_ONLY,
+    description=(
+        "Check and normalize a scenario as the user describes it (age, filing status, income, "
+        "balances, retirement age, state, assumptions, per-year income changes). Include only "
+        "values the user stated; never guess. Returns the normalized `scenario` to pass to later "
+        "calls, the projected income timeline, and which required values are still missing."
+    ),
+)
+async def record_scenario(scenario: ScenarioArg) -> CallToolResult:
+    try:
+        draft = core.draft_from_scenario(scenario, current_year())
+    except core.ToolError as err:
+        return _error(str(err))
+    return _result(core.describe_draft(draft, current_year()))
 
 
 @mcp.tool(
     title="Analyze Roth conversions",
     annotations=_READ_ONLY,
     description=(
-        "Find the Roth conversion schedule with the highest estimated lifetime tax savings for "
-        "a scenario. Returns savings in today's dollars, the conversion amount and tax for each "
-        "year, alternatives (no conversion, full conversion) and the engine's reasoning. "
-        "income_changes sets specific years' income (sabbaticals, Social Security starting)."
+        "Run the optimizer: find the Roth conversion schedule with the highest estimated lifetime "
+        "tax savings for a complete scenario. Only call after the user confirmed the scenario's "
+        "values or asked to run the numbers. Returns savings in today's dollars, the conversion "
+        "and tax for each year, alternatives (no conversion, full conversion), the engine's "
+        "reasoning, and a result_id."
     ),
 )
-def analyze_roth_conversions(scenario: ScenarioUpdate) -> dict[str, Any]:
+async def analyze_roth_conversions(
+    scenario: ScenarioArg,
+    user_confirmed: Annotated[
+        bool,
+        Field(description="True only when the user confirmed the scenario or asked to run it"),
+    ],
+    ctx: Context | None = None,
+) -> CallToolResult:
+    if not user_confirmed:
+        return _error("Confirm the scenario's values with the user before running the analysis.")
     try:
-        draft = _draft_from(scenario)
-        if missing := _missing_response(draft):
-            return missing
-        scenario_input, result = core.run_draft(draft)
+        draft = core.draft_from_scenario(scenario, current_year())
+        if incomplete := _ready_or_error(draft):
+            return incomplete
+        scenario_input, result = await anyio.to_thread.run_sync(core.run_draft, draft)
     except core.ToolError as err:
-        return {"error": str(err)}
-    summary = core.summarize_result(result, core.result_id_for(scenario_input))
-    summary["inputs_used"] = core.describe_draft(draft)["values"]
-    return summary
+        return _error(str(err))
+    result_id = core.result_id_for(scenario_input)
+    summary = core.summarize_result(result, result_id)
+    summary["scenario"] = core.scenario_from_draft(draft, current_year())
+    meta = (
+        _ui_results([(result_id, "Your scenario", scenario_input, result)])
+        if _wants_ui(ctx)
+        else None
+    )
+    return _result(summary, meta=meta)
 
 
 @mcp.tool(
     title="Compare Roth conversion scenarios",
     annotations=_READ_ONLY,
     description=(
-        "Answer a what-if: run a base scenario and a changed copy (for example a different "
-        "retirement age, income or spending) and return how the optimal schedule and estimated "
-        "lifetime tax savings change."
+        "Answer a what-if: run the scenario and a changed copy (a different retirement age, "
+        "income, spending or return) and return how the conversion schedule and estimated "
+        "lifetime tax savings change. Does not change the scenario; `what_if_scenario` holds the "
+        "changed version if the user wants to adopt it."
     ),
 )
-def compare_roth_scenarios(
-    scenario: ScenarioUpdate,
-    changes: ScenarioUpdate,
-    label: Annotated[str, Field(min_length=1, max_length=60)] = "What-if",
-) -> dict[str, Any]:
+async def compare_roth_scenarios(
+    scenario: ScenarioArg,
+    changes: Annotated[
+        ScenarioUpdate, Field(description="Only the values that differ in the what-if")
+    ],
+    label: Annotated[
+        str,
+        Field(min_length=1, max_length=60, description="Short name, e.g. 'Retire at 60'"),
+    ] = "What-if",
+    ctx: Context | None = None,
+) -> CallToolResult:
+    year = current_year()
     try:
-        base_draft = _draft_from(scenario)
-        if missing := _missing_response(base_draft):
-            return missing
-        variant_draft = core.apply_update(base_draft, changes, current_year())
-        base_input, base = core.run_draft(base_draft)
-        variant_input, variant = core.run_draft(variant_draft)
+        base_draft = core.draft_from_scenario(scenario, year)
+        if incomplete := _ready_or_error(base_draft):
+            return incomplete
+        variant_draft = core.apply_update(base_draft, changes, year)
+        base_input, base = await anyio.to_thread.run_sync(core.run_draft, base_draft)
+        variant_input, variant = await anyio.to_thread.run_sync(core.run_draft, variant_draft)
     except core.ToolError as err:
-        return {"error": str(err)}
-    return core.compare_results(
-        base, variant, core.result_id_for(base_input), core.result_id_for(variant_input), label
+        return _error(str(err))
+    base_id, variant_id = core.result_id_for(base_input), core.result_id_for(variant_input)
+    comparison = core.compare_results(base, variant, base_id, variant_id, label)
+    comparison["what_if_scenario"] = core.scenario_from_draft(variant_draft, year)
+    meta = (
+        _ui_results(
+            [
+                (base_id, "Your scenario", base_input, base),
+                (variant_id, label, variant_input, variant),
+            ]
+        )
+        if _wants_ui(ctx)
+        else None
     )
+    return _result(comparison, meta=meta)
 
 
 @mcp.tool(
@@ -119,11 +221,14 @@ def compare_roth_scenarios(
     annotations=_READ_ONLY,
     description="2026 federal (and optionally state) income tax brackets and standard deductions.",
 )
-def get_tax_brackets(filing_status: FilingStatus, state: str | None = None) -> dict[str, Any]:
+async def get_tax_brackets(
+    filing_status: FilingStatus,
+    state: Annotated[str | None, Field(description="Optional two-letter state code")] = None,
+) -> CallToolResult:
     try:
-        return core.tax_brackets(filing_status, state)
+        return _result(core.tax_brackets(filing_status, state))
     except core.ToolError as err:
-        return {"error": str(err)}
+        return _error(str(err))
 
 
 @mcp.tool(
@@ -132,11 +237,12 @@ def get_tax_brackets(filing_status: FilingStatus, state: str | None = None) -> d
     description=(
         "How the optimizer works and the concepts behind it: the savings number, bracket "
         "filling, the conversion trade-off, multi-year allocation, assumptions and limits, "
-        "Roth conversions, RMDs, ACA subsidies, IRMAA, state taxes and using the tool."
+        "Roth conversions, RMDs, ACA subsidies, IRMAA, state taxes and using the tool. Read it "
+        "before answering questions about methodology or the product."
     ),
 )
-def explain_methodology(topic: MethodologyTopic) -> str:
-    return core.methodology_text(topic.value)
+async def explain_methodology(topic: MethodologyTopic) -> CallToolResult:
+    return _result({"topic": topic.value, "text": core.methodology_text(topic.value)})
 
 
 def _register_resources() -> None:

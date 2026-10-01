@@ -38,7 +38,7 @@ async def test_offline_case_runs_end_to_end():
         "turns": [
             "I'm 52, married, income $90,000 a year, $600k in my 401k, I want to retire at 60"
         ],
-        "expect": {"tools_called": ["update_scenario"], "parts_shown": ["scenario_summary"]},
+        "expect": {"tools_called": ["record_scenario"], "parts_shown": ["scenario_summary"]},
     }
     result = await run_case(case, OfflineModelClient())
     assert result.passed, result.failures

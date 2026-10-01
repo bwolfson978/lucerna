@@ -23,6 +23,7 @@ from app.tools.draft import (
     ScenarioDraft,
     build_scenario_input,
     draft_hash,
+    generate_timeline,
     missing_fields,
     sync_timeline,
     validation_errors,
@@ -49,62 +50,119 @@ def apply_update(draft: ScenarioDraft, update: ScenarioUpdate, start_year: int) 
 
     for key in ("state", "retirement_state"):
         if key in fields:
-            code = str(fields[key]).strip()
-            if code.lower() in ("none", "federal", ""):
-                fields[key] = None
-            else:
-                code = "custom" if code.lower() == "custom" else code.upper()
-                if code not in VALID_STATES:
-                    raise ToolError(
-                        f"Unknown state '{fields[key]}'. Use a two-letter code, 'custom' with "
-                        "custom_state_rate_pct, or 'none' for federal only."
-                    )
-                fields[key] = code
+            try:
+                fields[key] = _normalize_state(str(fields[key]))
+            except ToolError as err:
+                raise ToolError(
+                    f"{err} Use 'custom' with custom_state_rate_pct, or 'none' for federal only."
+                ) from err
     if "state" in fields and "retirement_state" not in fields:
         # Matches the form: choosing a state also sets the retirement state.
         fields["retirement_state"] = fields["state"]
-    if "retirement_spending" in fields and fields["retirement_spending"] == 0:
+    if fields.get("retirement_spending") == 0:
         fields["retirement_spending"] = None
 
     for key, value in fields.items():
         setattr(new, key, value)
-    if "retirement_spending" in update.model_fields_set and update.retirement_spending in (0, None):
-        new.retirement_spending = None
 
     new = ScenarioDraft.model_validate(new.model_dump())
     sync_timeline(new, draft, start_year)
 
-    for change in update.income_changes or []:
-        years = [row.year for row in new.timeline]
-        if not years:
-            raise ToolError(
-                "The timeline is empty. Record age, current_income and retirement_age before "
-                "per-year income changes."
-            )
-        if change.year not in years:
-            raise ToolError(
-                f"Year {change.year} is outside the timeline ({years[0]} to {years[-1]}). "
-                "The timeline runs from this year until retirement_age; adjust retirement_age "
-                "if the user's plan extends further."
-            )
-        new.timeline = [
-            PlanYear(
-                year=row.year,
-                gross_income=change.gross_income,
-                notes=change.note,
-                state=row.state,
-                drawdown=row.drawdown,
-            )
-            if row.year == change.year
-            else row
-            for row in new.timeline
-        ]
+    for change in sorted(update.income_changes or [], key=lambda c: c.year):
+        new.timeline = _apply_income_change(new.timeline, change)
     return new
 
 
-def describe_draft(draft: ScenarioDraft) -> dict:
-    """Compact view of the draft for a model: provided values, gaps and the timeline."""
-    values = draft.model_dump(mode="json", exclude={"timeline"}, exclude_none=True)
+def _normalize_state(code: str | None) -> str | None:
+    if code is None:
+        return None
+    code = code.strip()
+    if code.lower() in ("none", "federal", ""):
+        return None
+    code = "custom" if code.lower() == "custom" else code.upper()
+    if code not in VALID_STATES:
+        raise ToolError(f"Unknown state '{code}'. Use a two-letter code.")
+    return code
+
+
+def _apply_income_change(timeline: list[PlanYear], change) -> list[PlanYear]:
+    if not timeline:
+        raise ToolError(
+            "The timeline is empty. Record age, current_income and retirement_age before "
+            "per-year income changes."
+        )
+    first, last = timeline[0].year, timeline[-1].year
+    state = _normalize_state(change.state)
+    if change.year == last + 1:
+        # Directly after the projection: extend it (the form's "add year").
+        return [
+            *timeline,
+            PlanYear(
+                year=change.year, gross_income=change.gross_income, notes=change.note, state=state
+            ),
+        ]
+    if not first <= change.year <= last:
+        raise ToolError(
+            f"Year {change.year} is outside the timeline ({first} to {last}). The timeline runs "
+            "from this year until retirement_age; adjust retirement_age if the plan extends further."
+        )
+    return [
+        PlanYear(
+            year=row.year,
+            gross_income=change.gross_income,
+            notes=change.note,
+            state=state if change.state is not None else row.state,
+            drawdown=row.drawdown,
+        )
+        if row.year == change.year
+        else row
+        for row in timeline
+    ]
+
+
+# Note given to timeline rows the user edited in the form without writing a reason.
+EDITED_NOTE = "Edited in the form"
+
+
+def scenario_from_draft(draft: ScenarioDraft, start_year: int) -> dict:
+    """The stateless scenario for a draft: its values plus any year that differs from the
+    projection. ``draft_from_scenario`` turns it back into the same timeline."""
+    scenario = draft.model_dump(mode="json", exclude={"timeline"}, exclude_none=True)
+    projected: dict[int, float] = {}
+    if draft.age is not None and draft.retirement_age is not None and draft.current_income:
+        projected = {
+            row.year: row.gross_income
+            for row in generate_timeline(
+                draft.age,
+                draft.retirement_age,
+                draft.current_income,
+                draft.income_growth_rate_pct or 0,
+                start_year,
+            )
+        }
+    changes = []
+    for row in draft.timeline:
+        if row.notes or row.state is not None or projected.get(row.year) != row.gross_income:
+            changes.append(
+                {
+                    "year": row.year,
+                    "gross_income": row.gross_income,
+                    "note": row.notes or EDITED_NOTE,
+                    **({"state": row.state} if row.state is not None else {}),
+                }
+            )
+    if changes:
+        scenario["income_changes"] = changes
+    return scenario
+
+
+def draft_from_scenario(scenario: ScenarioUpdate, start_year: int) -> ScenarioDraft:
+    return apply_update(ScenarioDraft(), scenario, start_year)
+
+
+def describe_draft(draft: ScenarioDraft, start_year: int) -> dict:
+    """What a model needs about a scenario: the values to pass to the next tool call, the
+    projected timeline, and what is still missing."""
     timeline = [
         {
             "year": row.year,
@@ -116,7 +174,7 @@ def describe_draft(draft: ScenarioDraft) -> dict:
     missing = missing_fields(draft)
     errors = validation_errors(draft)
     return {
-        "values": values,
+        "scenario": scenario_from_draft(draft, start_year),
         "timeline": timeline,
         "missing_required": missing,
         "problems": errors,

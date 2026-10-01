@@ -5,26 +5,28 @@ How the assistant on `/calculator` and `/demo` works, how to run it, and how to 
 ## Architecture
 
 ```
-frontend (Next.js)                        backend (FastAPI)
-  ScenarioWorkspace                         POST /api/agent  ─┐
-    conversation ⇄ form (shared draft)      GET  /api/agent/demo
-    full results view (?view=results)                         │
-                                            app/agent  loop, prompt, limits, demo
-                                                 │
-                                            app/tools  update_scenario, optimize_scenario,
-                                                 │     compare_scenarios, get_tax_brackets,
-                                                 │     explain_methodology, show
-                                                 │
-  Claude / ChatGPT / any MCP client ──────▶ /mcp      analyze_roth_conversions,
-                                                      compare_roth_scenarios, get_tax_brackets,
-                                                      explain_methodology (+ methodology:// resources)
-                                                 │
-                                            app/engine  optimizer, trace (unchanged)
+frontend (Next.js)                         backend (FastAPI)
+  ScenarioWorkspace                          POST /api/agent ── app/agent (loop, prompt, limits, demo)
+    conversation ⇄ form (shared draft)                             │  MCP client (in process, or
+    full results view (?view=results)                              │  HTTP when AGENT_MCP_URL is set)
+                                                                   ▼
+  Claude / ChatGPT / any MCP client ───────────────────────▶ /mcp  app/mcp/server.py
+                                                               record_scenario
+                                                               analyze_roth_conversions
+                                                               compare_roth_scenarios
+                                                               get_tax_brackets
+                                                               explain_methodology
+                                                               (+ methodology:// resources)
+                                                                   │
+                                                             app/tools (core logic, scenario draft)
+                                                                   │
+                                                             app/engine (optimizer, trace)
 ```
 
-- The engine does all the math. Tools return engine output; the model explains it. Cards and charts in the conversation render engine results directly, never numbers the model wrote.
-- Tools live once in `backend/app/tools/`. The web agent and the MCP server are thin adapters.
-- The scenario draft (`app/tools/draft.py`, `frontend/src/lib/scenario/draft.ts`) mirrors the form. Parity cases: `shared/fixtures/scenario-draft-cases.json`.
+- **One tool surface.** The MCP server is the only place tools are defined. The web assistant is an MCP client of it, so every web conversation exercises exactly what a Claude connector or ChatGPT app gets: the same tool list, descriptions, schemas, errors and results.
+- **Stateless tools.** Each call carries the whole scenario and returns the normalized `scenario` to pass next time. Per-year differences from the projection travel as `income_changes`. The browser's draft converts to and from this format (`core.scenario_from_draft` / `core.draft_from_scenario`).
+- **Web-only extras stay outside MCP:** the `show` tool (cards, charts, follow-up chips) runs in the web loop, and full engine results for the UI are requested per call with `_meta: {"lucerna/ui": true}` and returned in the result's `_meta` under `lucerna/results`, never in what a model sees.
+- The engine does all the math. Cards and charts render engine results directly, never numbers the model wrote.
 
 ## Configuration (backend)
 
@@ -38,6 +40,7 @@ frontend (Next.js)                        backend (FastAPI)
 | `AGENT_DAILY_SPEND_USD` | `50` | Estimated model spend per day before the assistant pauses. |
 | `AGENT_CACHE_DIR` | `backend/.cache` | Where the generated demo conversation is cached. |
 | `MCP_REQUESTS_PER_IP_PER_DAY` | `300` | MCP requests per client IP per day. |
+| `AGENT_MCP_URL` | unset | When set (e.g. `http://localhost:8000/mcp`), the web assistant reaches its tools over streamable HTTP instead of in process. The E2E suite uses it. In production, leave it unset or exempt the backend's own address from the MCP rate limit. |
 | `AGENT_OFFLINE` | unset | `1` replaces the model with a rule-based stand-in (development and E2E only). |
 
 Limits are kept in process memory, which fits the single Railway instance. Move them to Redis or Postgres before scaling out.
@@ -91,6 +94,6 @@ The server speaks MCP over streamable HTTP at `https://<backend-host>/mcp`, with
 - **ChatGPT:** with developer mode enabled, create a connector pointing at the same URL.
 - **Any MCP client:** configure a remote (streamable HTTP) server with the URL. Inspect it with `npx @modelcontextprotocol/inspector`.
 
-Tools are read-only and stateless: each call carries the full scenario. Missing required inputs come back as a `missing_required` list so the client's model asks the user instead of guessing.
+Tools are read-only and stateless: each call carries the full scenario, and each result returns the normalized `scenario` for the next call. A typical flow is `record_scenario` until nothing is missing, confirm with the user, then `analyze_roth_conversions`, then `compare_roth_scenarios` for what-ifs. Missing required inputs come back as a tool error with a `missing_required` list so the client's model asks the user instead of guessing.
 
 Next steps: OAuth once Clerk auth lands (PR #126), per-user limits, and submission to the Claude connector directory and the ChatGPT app directory.

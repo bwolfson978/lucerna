@@ -43,7 +43,7 @@ The AI conversation layer must use educational framing (legal requirement):
 
 - All API inputs and outputs use Pydantic models
 - Engine code lives in `app/engine/`, API routes in `app/api/`, tools in `app/tools/`, the agent harness in `app/agent/`, the MCP server in `app/mcp/`
-- **Tools are transport-neutral** (`app/tools/`): Pydantic inputs with generated schemas, shared by the web agent (`POST /api/agent`) and the remote MCP server (`/mcp`). Add a capability there once; both surfaces get it.
+- **The MCP server is the single tool surface** (`app/mcp/server.py`, logic in `app/tools/`). The web agent (`POST /api/agent`) is an MCP client of it (`app/agent/toolbox.py`), so Claude, ChatGPT and the web app all use the same tools. Add a capability as an MCP tool; the web app gets it automatically. Only display concerns (the `show` tool, UI payloads via `_meta`) live in the web toolbox.
 - The scenario draft (`app/tools/draft.py`) mirrors the calculator form; `frontend/src/lib/scenario/draft.ts` must stay in parity (shared fixtures in `shared/fixtures/`, regenerate with `python -m scripts.generate_draft_fixtures`)
 - Methodology copy lives in `backend/app/content/methodology.json` with an identical copy at `frontend/src/content/methodology.json`
 - The reasoning trace (`app/engine/trace.py`) is the contract between engine and AI — keep it structured and complete

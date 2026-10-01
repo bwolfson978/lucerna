@@ -80,21 +80,25 @@ class OfflineModelClient:
         results = [b for b in blocks if b.get("type") == "tool_result"]
         if results:
             return self._after_tools(messages[-2], results)
+        scenario = latest_scenario(messages)
         text = " ".join(b.get("text", "") for b in blocks if b.get("type") == "text")
         user_text = text.split("</scenario_state>")[-1].strip().lower()
 
         if "what if" in user_text and (m := re.search(r"retire (?:at|by) (\d{2})", user_text)):
             return [
                 _tool(
-                    "compare_scenarios",
+                    "compare_roth_scenarios",
                     {
+                        "scenario": scenario,
                         "label": f"Retire at {m.group(1)}",
                         "changes": {"retirement_age": int(m.group(1))},
                     },
                 )
             ]
         if re.search(r"\b(run|looks right|go ahead|calculate)\b", user_text):
-            return [_tool("optimize_scenario", {"user_confirmed": True})]
+            return [
+                _tool("analyze_roth_conversions", {"scenario": scenario, "user_confirmed": True})
+            ]
         for keyword, topic in (
             ("rmd", "rmds"),
             ("required minimum", "rmds"),
@@ -107,7 +111,7 @@ class OfflineModelClient:
                 return [_tool("explain_methodology", {"topic": topic})]
         update = extract_update(user_text)
         if update:
-            return [_tool("update_scenario", update)]
+            return [_tool("record_scenario", {"scenario": {**scenario, **update}})]
         return [
             _text(
                 "Tell me about your situation: your age, filing status, income this year, "
@@ -123,14 +127,14 @@ class OfflineModelClient:
             name = call.get("name")
             if result.get("is_error"):
                 return [_text(f"Something didn't work: {data.get('error', result['content'])}")]
-            if name == "update_scenario":
+            if name == "record_scenario":
                 if data.get("ready_to_run"):
                     return [_tool("show", {"kind": "scenario_summary"})]
                 missing = ", ".join(m.replace("_", " ") for m in data.get("missing_required", []))
                 return [_text(f"Thanks, I've noted that. I still need: {missing}.")]
             if name == "show" and data.get("shown") == "scenario_summary":
                 return [_text("Here's your scenario. Check the values and tap Run the numbers.")]
-            if name == "optimize_scenario":
+            if name == "analyze_roth_conversions":
                 rid = data["result_id"]
                 points = data["reasoning"]["summary_points"]
                 return [
@@ -144,7 +148,7 @@ class OfflineModelClient:
                         },
                     ),
                 ]
-            if name == "compare_scenarios":
+            if name == "compare_roth_scenarios":
                 diff = data["estimated_lifetime_tax_savings"]["difference"]
                 direction = "raises" if diff >= 0 else "lowers"
                 return [
@@ -157,6 +161,26 @@ class OfflineModelClient:
                 paragraphs = [p for p in data["text"].split("\n\n") if not p.startswith("#")]
                 return [_text(paragraphs[0])]
         return [_text("Anything else you'd like to explore?")]
+
+
+def latest_scenario(messages: list[dict]) -> dict:
+    """The most recent scenario in the conversation: from a tool result or <scenario_state>."""
+    for message in reversed(messages):
+        content = message.get("content")
+        if not isinstance(content, list):
+            continue
+        for block in reversed(content):
+            text = block.get("content") if block.get("type") == "tool_result" else block.get("text")
+            if not isinstance(text, str):
+                continue
+            text = text.removeprefix("<scenario_state>").removesuffix("</scenario_state>").strip()
+            try:
+                data = json.loads(text)
+            except ValueError:
+                continue
+            if isinstance(data, dict) and isinstance(data.get("scenario"), dict):
+                return data["scenario"]
+    return {}
 
 
 def _tool(name: str, payload: dict) -> dict:

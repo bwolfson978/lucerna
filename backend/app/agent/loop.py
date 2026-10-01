@@ -22,14 +22,20 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import re
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
+from contextlib import AbstractAsyncContextManager
 
 from app.agent.model import Final, ModelClient, ModelUnavailable, TextDelta, ToolStart
 from app.agent.prompts import SYSTEM_PROMPT
+from app.agent.toolbox import STATUS, McpToolbox, ToolContext, open_toolbox
 from app.tools import core
-from app.tools.draft import ScenarioDraft
-from app.tools.registry import TOOLS_BY_NAME, ToolContext, anthropic_tools, run_tool
+from app.tools.draft import ScenarioDraft, current_year
+
+logger = logging.getLogger(__name__)
+
+ToolboxFactory = Callable[[], AbstractAsyncContextManager[McpToolbox]]
 
 MAX_MODEL_CALLS_PER_TURN = 8
 MAX_TOOL_CALLS_PER_TURN = 12
@@ -79,11 +85,13 @@ def last_seen_draft_hash(history: list[dict]) -> str | None:
     return matches[-1] if matches else None
 
 
-def build_user_turn(text: str, draft: ScenarioDraft, history: list[dict]) -> dict:
+def build_user_turn(
+    text: str, draft: ScenarioDraft, history: list[dict], start_year: int | None = None
+) -> dict:
     """The user's message, prefixed with the scenario if it changed outside the conversation."""
     blocks: list[dict] = []
-    described = core.describe_draft(draft)
-    has_values = bool(described["values"].keys() - _DEFAULT_ONLY_KEYS) or described["timeline"]
+    described = core.describe_draft(draft, start_year or current_year())
+    has_values = bool(described["scenario"].keys() - _DEFAULT_ONLY_KEYS) or described["timeline"]
     if has_values and last_seen_draft_hash(history) != described["draft_hash"]:
         blocks.append(
             {
@@ -115,16 +123,62 @@ async def run_turn(
     history: list[dict],
     text: str,
     draft: ScenarioDraft,
+    start_year: int | None = None,
+    on_usage=None,
+    toolbox_factory: ToolboxFactory = open_toolbox,
+) -> AsyncIterator[dict]:
+    """Run one user message through the agent. Yields UI events (see module docstring).
+
+    The turn runs in a worker task that owns the MCP client session for its whole life;
+    this generator only relays its events, so a disconnecting browser cancels cleanly.
+    """
+    queue: asyncio.Queue[dict | None] = asyncio.Queue()
+
+    async def worker() -> None:
+        try:
+            async with toolbox_factory() as toolbox:
+                async for event in _run_turn(
+                    client=client,
+                    toolbox=toolbox,
+                    history=history,
+                    text=text,
+                    draft=draft,
+                    start_year=start_year or current_year(),
+                    on_usage=on_usage,
+                ):
+                    await queue.put(event)
+        except Exception:
+            logger.exception("Agent turn failed")
+            await queue.put(_error("unavailable"))
+            await queue.put({"type": "done", "messages": []})
+        finally:
+            await queue.put(None)
+
+    task = asyncio.create_task(worker())
+    try:
+        while (event := await queue.get()) is not None:
+            yield event
+    finally:
+        if not task.done():
+            task.cancel()
+
+
+async def _run_turn(
+    *,
+    client: ModelClient,
+    toolbox: McpToolbox,
+    history: list[dict],
+    text: str,
+    draft: ScenarioDraft,
     start_year: int,
     on_usage=None,
 ) -> AsyncIterator[dict]:
-    """Run one user message through the agent. Yields UI events (see module docstring)."""
     ctx = ToolContext(
         draft=draft, start_year=start_year, known_result_ids=known_result_ids(history)
     )
-    user_turn = build_user_turn(text, draft, history)
+    user_turn = build_user_turn(text, draft, history, start_year)
     new_messages: list[dict] = [user_turn]
-    tools = anthropic_tools()
+    tools = toolbox.definitions
     tool_calls = 0
 
     for _ in range(MAX_MODEL_CALLS_PER_TURN):
@@ -136,11 +190,10 @@ async def run_turn(
                 if isinstance(event, TextDelta):
                     yield {"type": "text_delta", "text": event.text}
                 elif isinstance(event, ToolStart):
-                    tool = TOOLS_BY_NAME.get(event.name)
                     yield {
                         "type": "tool_start",
                         "name": event.name,
-                        "status": tool.status if tool else "Working",
+                        "status": STATUS.get(event.name, "Working"),
                     }
                 elif isinstance(event, Final):
                     turn = event.turn
@@ -195,11 +248,9 @@ async def run_turn(
                 content, is_error = {"error": "Tool call limit reached for this message."}, True
             else:
                 before = len(ctx.events)
-                content, is_error = await asyncio.to_thread(
-                    run_tool, block["name"], block.get("input"), ctx
-                )
+                content, is_error = await toolbox.call(block["name"], block.get("input"), ctx)
                 for event in ctx.events[before:]:
-                    yield _serialize_event(event)
+                    yield event
             results.append(
                 {
                     "type": "tool_result",
@@ -218,13 +269,6 @@ async def run_turn(
             yield {"type": "text_delta", "text": note}
 
     yield {"type": "done", "messages": new_messages}
-
-
-def _serialize_event(event: dict) -> dict:
-    out = dict(event)
-    if "result" in out and hasattr(out["result"], "model_dump"):
-        out["result"] = out["result"].model_dump(mode="json")
-    return out
 
 
 def _error(code: str) -> dict:

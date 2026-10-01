@@ -10,7 +10,7 @@ Checks on every assistant reply:
   - no "you should" (educational framing)
   - no em dashes
   - every dollar amount appears in a tool result or the user's own words
-  - optimize_scenario only runs after a scenario summary was shown
+  - analyze_roth_conversions only runs after a scenario summary was shown
 Plus the case's own expectations (tools called or not, cards shown, final draft
 values, reply content). Results are written to evals/results/.
 """
@@ -108,7 +108,6 @@ async def run_case(case: dict, client: ModelClient) -> CaseResult:
             history=history,
             text=user_text,
             draft=draft,
-            start_year=2026,
             on_usage=on_usage,
         ):
             kind = event["type"]
@@ -167,7 +166,7 @@ def check(case: dict, turns: list[TurnRecord], draft: ScenarioDraft) -> list[str
         for amount in money_amounts(t.text):
             if not grounded(amount, sources):
                 failures.append(f"turn {i}: ${amount:,.0f} not found in tool results or user input")
-        if "optimize_scenario" in t.tools and not summary_shown:
+        if "analyze_roth_conversions" in t.tools and not summary_shown:
             failures.append(f"turn {i}: ran the optimizer before showing a scenario summary")
         if "scenario_summary" in t.parts:
             summary_shown = True

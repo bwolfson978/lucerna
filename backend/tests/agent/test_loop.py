@@ -13,6 +13,7 @@ from app.agent.loop import (
 from app.agent.prompts import PROMPT_VERSION, SYSTEM_PROMPT
 from app.tools import core
 from app.tools.draft import ScenarioDraft
+from app.tools.models import ScenarioUpdate
 from tests.agent.fakes import UNAVAILABLE, ScriptedModelClient, text, tool_use
 
 READY = {
@@ -69,7 +70,7 @@ async def test_text_only_turn_streams_and_returns_history():
 async def test_full_intake_and_run_flow():
     client = ScriptedModelClient(
         [
-            [tool_use("t1", "update_scenario", READY)],
+            [tool_use("t1", "record_scenario", {"scenario": READY})],
             [text("Here's your scenario."), tool_use("t2", "show", {"kind": "scenario_summary"})],
             [text("Check it and tap Run the numbers.")],
         ]
@@ -85,7 +86,11 @@ async def test_full_intake_and_run_flow():
 
     run_client = ScriptedModelClient(
         [
-            [tool_use("t3", "optimize_scenario", {"user_confirmed": True})],
+            [
+                tool_use(
+                    "t3", "analyze_roth_conversions", {"scenario": READY, "user_confirmed": True}
+                )
+            ],
             [text("The analysis shows...")],
         ]
     )
@@ -102,7 +107,13 @@ async def test_full_intake_and_run_flow():
 async def test_tool_errors_are_returned_to_the_model():
     client = ScriptedModelClient(
         [
-            [tool_use("t1", "optimize_scenario", {"user_confirmed": True})],
+            [
+                tool_use(
+                    "t1",
+                    "analyze_roth_conversions",
+                    {"scenario": {"age": 5}, "user_confirmed": True},
+                )
+            ],
             [text("I need more info.")],
         ]
     )
@@ -127,7 +138,7 @@ async def test_refusal_drops_the_exchange():
 async def test_truncated_tool_call_gets_an_error_result():
     client = ScriptedModelClient(
         [
-            ([tool_use("t1", "update_scenario", {"age": 5})], "max_tokens"),
+            ([tool_use("t1", "record_scenario", {"scenario": {"age": 5}})], "max_tokens"),
             [text("Sorry, retrying.")],
         ]
     )
@@ -151,16 +162,16 @@ async def test_runaway_tool_loop_is_capped_and_closed():
 
 
 async def test_scenario_state_injected_only_when_draft_changed():
-    draft = core.apply_update(ScenarioDraft(), core.ScenarioUpdate(**READY), 2026)
-    turn = build_user_turn("hi", draft, [])
+    draft = core.draft_from_scenario(ScenarioUpdate(**READY), 2026)
+    turn = build_user_turn("hi", draft, [], 2026)
     assert turn["content"][0]["text"].startswith("<scenario_state>")
     assert turn["content"][-1]["text"] == "hi"
 
     history = [turn, {"role": "assistant", "content": [text("ok")]}]
-    assert last_seen_draft_hash(history) == core.describe_draft(draft)["draft_hash"]
-    assert len(build_user_turn("again", draft, history)["content"]) == 1
+    assert last_seen_draft_hash(history) == core.describe_draft(draft, 2026)["draft_hash"]
+    assert len(build_user_turn("again", draft, history, 2026)["content"]) == 1
 
-    assert len(build_user_turn("hi", ScenarioDraft(), [])["content"]) == 1  # nothing entered
+    assert len(build_user_turn("hi", ScenarioDraft(), [], 2026)["content"]) == 1  # nothing entered
 
 
 def test_history_helpers():

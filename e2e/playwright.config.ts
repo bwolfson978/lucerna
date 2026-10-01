@@ -32,7 +32,10 @@ export default defineConfig({
   webServer: [
     {
       // AGENT_OFFLINE=1 swaps the model for a rule-based stand-in (no API key needed).
-      command: 'cd ../backend && AGENT_OFFLINE=1 uvicorn app.main:app --port 8000',
+      // AGENT_MCP_URL makes the web assistant reach its tools over HTTP through /mcp,
+      // the same way Claude and ChatGPT do.
+      command:
+        'cd ../backend && AGENT_OFFLINE=1 AGENT_MCP_URL=http://localhost:8000/mcp uvicorn app.main:app --port 8000',
       port: 8000,
       reuseExistingServer: !process.env.CI,
       timeout: 30000,
