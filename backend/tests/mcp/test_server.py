@@ -11,6 +11,7 @@ from mcp.shared.memory import create_connected_server_and_client_session
 from app.main import app
 from app.mcp import server
 from app.mcp.server import RESULTS_META_KEY, UI_META_KEY, mcp
+from app.tools.views import VIEW_META_KEY
 
 SCENARIO = {
     "age": 52,
@@ -57,8 +58,12 @@ async def test_record_then_analyze_with_the_returned_scenario():
         data = analyzed.structuredContent
         assert data["estimated_lifetime_tax_savings_todays_dollars"] > 0
         assert data["scenario"]["age"] == 52
-        # Full engine output only when the client asks for UI payloads.
-        assert not analyzed.meta
+        # Chart series for the View ride in _meta; the full engine output only when the
+        # client asks for UI payloads.
+        assert set(analyzed.meta) == {VIEW_META_KEY}
+        view = analyzed.meta[VIEW_META_KEY]
+        assert len(view["bracket_fill"]["years"]) == len(data["schedule_by_year"])
+        assert view["balances"]["points"]
         # The text content mirrors the structured content for clients that read text.
         assert json.loads(analyzed.content[0].text) == data
 
@@ -141,15 +146,20 @@ async def test_http_endpoint_client_and_rate_limit(monkeypatch):
             assert response.status_code == 429
 
 
-async def test_analyze_declares_its_view():
+async def test_tools_declare_their_views():
+    expected = {
+        "record_scenario": server.SCENARIO_SUMMARY_URI,
+        "analyze_roth_conversions": server.RESULT_CARD_URI,
+        "compare_roth_scenarios": server.SCENARIO_COMPARE_URI,
+    }
     async with create_connected_server_and_client_session(mcp) as session:
-        tool = next(
-            t for t in (await session.list_tools()).tools if t.name == "analyze_roth_conversions"
-        )
-        assert tool.meta["ui"]["resourceUri"] == server.RESULT_CARD_URI
-        assert tool.meta["ui"]["visibility"] == ["model", "app"]
-        read = await session.read_resource(server.RESULT_CARD_URI)
-        content = read.contents[0]
-        assert content.mimeType == server.APP_MIME_TYPE
-        assert '<div id="root">' in content.text
-        assert content.meta["ui"]["csp"] == server.VIEW_CSP
+        tools = {t.name: t for t in (await session.list_tools()).tools}
+        for name, uri in expected.items():
+            assert tools[name].meta["ui"]["resourceUri"] == uri
+            assert tools[name].meta["ui"]["visibility"] == ["model", "app"]
+        for uri, *_ in server.VIEWS:
+            read = await session.read_resource(uri)
+            content = read.contents[0]
+            assert content.mimeType == server.APP_MIME_TYPE
+            assert '<div id="root">' in content.text
+            assert content.meta["ui"]["csp"] == server.VIEW_CSP

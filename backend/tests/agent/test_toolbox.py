@@ -58,7 +58,9 @@ async def test_mcp_results_become_browser_events():
             e for e in context.events if e.get("result_id") == content["variant_result_id"]
         )
         assert variant["draft"]["retirement_age"] == 58
-        assert context.events[-1]["part"]["kind"] == "scenario_compare"
+        compare_part = context.events[-1]["part"]
+        assert compare_part["kind"] == "mcp_app"
+        assert compare_part["resource_uri"] == "ui://roth-conversions/scenario-compare.html"
         assert context.draft.retirement_age == 60  # a what-if never changes the scenario
 
 
@@ -82,8 +84,13 @@ async def test_ui_tool_results_become_mcp_app_parts():
     context = ctx()
     async with open_toolbox() as toolbox:
         assert toolbox.ui_tools == {
-            "analyze_roth_conversions": "ui://roth-conversions/result-card.html"
+            "record_scenario": "ui://roth-conversions/scenario-summary.html",
+            "analyze_roth_conversions": "ui://roth-conversions/result-card.html",
+            "compare_roth_scenarios": "ui://roth-conversions/scenario-compare.html",
         }
+        # This host renders the scenario summary natively, so no View part for it.
+        await toolbox.call("record_scenario", {"scenario": SCENARIO}, context)
+        assert not [e for e in context.events if e["type"] == "part"]
         content, is_error = await toolbox.call(
             "analyze_roth_conversions", {"scenario": SCENARIO, "user_confirmed": True}, context
         )
@@ -94,7 +101,8 @@ async def test_ui_tool_results_become_mcp_app_parts():
     assert part["tool_input"]["user_confirmed"] is True
     view_data = part["tool_result"]
     assert view_data["structuredContent"]["result_id"] == content["result_id"]
-    assert "_meta" not in view_data  # full results stay with the host, not the View
+    # Full results stay with the host; the View gets only its chart series.
+    assert set(view_data["_meta"]) == {"lucerna/view"}
     # The model gets the text content, which carries the same summary.
     assert content["estimated_lifetime_tax_savings_todays_dollars"] > 0
 

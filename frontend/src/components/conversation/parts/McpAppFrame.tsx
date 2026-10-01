@@ -9,12 +9,11 @@
  * calling app-visible tools). The View's code comes from the server, not from here.
  *
  * Until the View is ready (or if it fails), the same shared component the View
- * renders is shown natively from the tool's structuredContent, so the swap is seamless.
+ * renders is shown natively from the tool result (ViewFallback), so the swap is seamless.
  */
 
 import { useEffect, useRef, useState } from "react";
 import posthog from "posthog-js";
-import { ResultCard, isResultCardData } from "@lucerna/ui";
 import type { McpToolResult } from "@/lib/agent/types";
 import {
   callAppTool,
@@ -24,6 +23,7 @@ import {
   sandboxUrl,
 } from "@/lib/mcp-apps/host";
 import { useConversationContext } from "../ConversationContext";
+import { ViewFallback, hasViewFallback } from "./ViewFallback";
 
 const HOST_INFO = { name: "Roth Conversions Optimizer", version: "1.0.0" };
 const MAX_HEIGHT = 2000;
@@ -36,16 +36,16 @@ interface McpAppFrameProps {
 }
 
 export function McpAppFrame({ resourceUri, toolName, toolInput, toolResult }: McpAppFrameProps) {
-  const { results, openResults } = useConversationContext();
+  const { results, openResults, send, streaming } = useConversationContext();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState(320);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 
   // Handlers read the latest results without re-mounting the View.
-  const latest = useRef({ results, openResults });
+  const latest = useRef({ results, openResults, send, streaming });
   useEffect(() => {
-    latest.current = { results, openResults };
-  }, [results, openResults]);
+    latest.current = { results, openResults, send, streaming };
+  }, [results, openResults, send, streaming]);
 
   useEffect(() => {
     const iframe = iframeRef.current;
@@ -84,7 +84,7 @@ export function McpAppFrame({ resourceUri, toolName, toolInput, toolResult }: Mc
         const appBridge = new AppBridge(
           null,
           HOST_INFO,
-          { openLinks: {}, serverTools: {} },
+          { openLinks: {}, serverTools: {}, message: { text: {} } },
           {
             hostContext: {
               theme: "light",
@@ -109,6 +109,17 @@ export function McpAppFrame({ resourceUri, toolName, toolInput, toolResult }: Mc
           } else {
             window.open(action.url, "_blank", "noopener,noreferrer");
           }
+          return {};
+        };
+        // ui/message: a View's button speaks for the user ("Run the numbers").
+        appBridge.onmessage = async ({ content }) => {
+          const text = content
+            .map((block) => (block.type === "text" ? block.text : ""))
+            .join("\n")
+            .trim();
+          if (!text || latest.current.streaming) return { isError: true };
+          posthog.capture("mcp_app_message");
+          latest.current.send(text);
           return {};
         };
         appBridge.oncalltool = async (params) =>
@@ -146,26 +157,21 @@ export function McpAppFrame({ resourceUri, toolName, toolInput, toolResult }: Mc
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resourceUri]);
 
-  const fallback = isResultCardData(toolResult.structuredContent)
-    ? toolResult.structuredContent
-    : null;
   const ready = status === "ready";
+  const openResult = (id: string) =>
+    results[id]
+      ? () => {
+          posthog.capture("full_results_opened", { from: "mcp_app_fallback" });
+          openResults(id);
+        }
+      : undefined;
+  const hasFallback = !ready && hasViewFallback(toolResult);
 
   return (
     <div className="relative" data-testid="mcp-app" data-status={status}>
-      {!ready && fallback && (
+      {hasFallback && (
         <div data-testid="mcp-app-fallback">
-          <ResultCard
-            data={fallback}
-            onOpenFullResults={
-              results[fallback.result_id]
-                ? () => {
-                    posthog.capture("full_results_opened", { from: "mcp_app_fallback" });
-                    openResults(fallback.result_id);
-                  }
-                : undefined
-            }
-          />
+          <ViewFallback toolResult={toolResult} openResult={openResult} sendMessage={send} />
         </div>
       )}
       <iframe
@@ -180,7 +186,7 @@ export function McpAppFrame({ resourceUri, toolName, toolInput, toolResult }: Mc
         }
         style={{ height }}
       />
-      {!ready && !fallback && (
+      {!ready && !hasFallback && (
         <div
           role="status"
           className="flex min-h-[120px] items-center justify-center rounded-[20px] border border-border bg-white text-body-sm text-text-tertiary"

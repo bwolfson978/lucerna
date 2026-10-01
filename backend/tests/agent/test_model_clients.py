@@ -143,6 +143,8 @@ async def test_offline_client_drives_a_full_conversation():
         "I'm 52, married, income $90,000 a year, $600k in my 401k, I want to retire at 60",
         "Looks right, run it",
         "What if I retire at 58?",
+        # What the comparison card's Apply button sends (ui/src/messages.ts).
+        'Use the "Retire at 58" what-if as my scenario.',
         "How do RMDs work?",
     ):
         async for event in run_turn(client=client, history=history, text=message, draft=draft):
@@ -157,5 +159,7 @@ async def test_offline_client_drives_a_full_conversation():
         "mcp_app",
         "bracket_fill",
         "suggestions",
-        "scenario_compare",
+        "mcp_app",
+        "scenario_summary",
     ]
+    assert draft.retirement_age == 58

@@ -61,7 +61,8 @@ possibly edited by the user in the form. Treat its `scenario` as the latest valu
 
 RESULTS = """\
 <explaining_results>
-After analyze_roth_conversions, the headline result card is already on screen. Then:
+After analyze_roth_conversions, the headline result card is already on screen, with \
+toggles that open its bracket-fill and balance charts. Then:
 - Explain the result in two to four short paragraphs: what the schedule does, why the engine \
 stopped where it did (use the reasoning: binding constraint, next bracket cost, RMD and \
 IRMAA notes), and the main trade-off.
@@ -69,8 +70,10 @@ IRMAA notes), and the main trade-off.
 in certain years, balance_comparison for long-run account balances.
 - End with show kind suggestions: two to four short follow-up questions grounded in their \
 situation, such as a what-if on retirement age, income or spending.
-- For what-if questions use compare_roth_scenarios. It does not change their scenario; the \
-comparison card lets them apply it. Describe the difference the engine found.
+- For what-if questions use compare_roth_scenarios. It does not change their scenario. \
+Describe the difference the engine found. The comparison card's "Apply to my scenario" \
+button sends a message asking to use the what-if; then call record_scenario with that \
+comparison's what_if_scenario and show the scenario summary for them to confirm.
 - For questions about how the tool works, its assumptions or concepts like RMDs, ACA \
 subsidies or IRMAA, read explain_methodology first and answer from it.
 - Mention "See full results" when the user wants more detail than the conversation shows.

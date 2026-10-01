@@ -52,7 +52,7 @@ The same View renders in Claude, ChatGPT or any MCP Apps host with no changes. I
 
 Cards that appear both in MCP App Views and natively in the web app are defined once, in `ui/`:
 
-- `ui/src/`: display-only React components (`ResultCard`, `ConversionStrip`, `MetricCard`). Plain data and callbacks in; no app context, data fetching, analytics or Next imports.
+- `ui/src/`: display-only React components (`ResultCard`, `ConversionStrip`, `BracketFillChart`, `BalanceComparison`, `ScenarioCompareCard`, `ScenarioSummary`, `MetricCard`), plus chart colors, form options and formatters the web app re-exports. Plain data and callbacks in; no app context, data fetching, analytics or Next imports.
 - `ui/tailwind/preset.js` and `ui/styles/tokens.css`: the Paper & Pine theme, CSS variables and component classes (`card-recommended`, `eyebrow`, `metric-*`, `btn-*`). The web app's `tailwind.config.ts` and `globals.css` pull them in.
 
 `ui/` is source-only with no `node_modules`; each consumer resolves its `react` import:
@@ -62,13 +62,21 @@ Cards that appear both in MCP App Views and natively in the web app are defined 
 | Web app (`frontend/`) | Imports `@lucerna/ui` (path alias in `tsconfig.json`, `next.config.js`, `vitest.config.ts`) and renders it with React. `common/MetricCard` wraps the shared one with the app's tooltip. |
 | MCP App Views (`mcp-views/`) | esbuild aliases React to `preact/compat` (~15 KB) and Tailwind compiles the same preset and tokens into the View's inline CSS. |
 
-**Data contract.** The View renders the tool's `structuredContent`; the native card renders the same shape (`ResultCardData`), built from the full engine result by `frontend/src/lib/results/cardData.ts`. `shared/fixtures/result-card-data.json` holds one real tool call (both payloads; regenerate with `python -m scripts.generate_result_card_fixture` from `backend/`). Backend and frontend tests check both sides against it.
+**Data contract.** Views render the tool's `structuredContent` and View `_meta`; native cards render the same shapes, built from full engine results by `frontend/src/lib/results/viewData.ts`. `shared/fixtures/view-data.json` holds one real call of each tool with a View (regenerate with `python -m scripts.generate_view_fixtures` from `backend/`). Backend and frontend tests check both sides against it.
 
-**Drift check.** `e2e/tests/ui-drift.spec.ts` renders the demo result as the View (inside the sandbox iframes) and natively (the host's fallback, shown while a View loads or if it fails), then compares computed styles and sizes of each part. Any visual difference between the two renderers fails CI.
+**Drift check.** `e2e/tests/ui-drift.spec.ts` runs a conversation to a result and a what-if, renders both cards (with the bracket chart open) as Views inside the sandbox iframes and natively (the host's fallback, shown while a View loads or if it fails), then compares computed styles and sizes of each part. Any visual difference fails CI. `e2e/tests/scenario-view.spec.ts` mounts the `record_scenario` View, which the web app doesn't show on its own.
 
 **Deploying.** The frontend imports files outside its directory, so the Vercel project must keep "Include files outside the root directory in the Build Step" enabled (the default).
 
-**Migration status:** only the result card is a View so far. The scenario summary, bracket-fill and balance charts, what-if comparison and suggestion chips are still native cards selected by the web-only `show` tool; the full results page is first-party and fed by full results the web host requests through `_meta`. Each can move to a View the same way: move the component into `ui/`, add a View entry in `mcp-views/src/`, and extend the drift check. The full results page already uses the shared `MetricCard`.
+**Views and where they render:**
+
+| Tool | View | Shared component (ui/) | Web app |
+|---|---|---|---|
+| `record_scenario` | `scenario-summary.html` | `ScenarioSummary` | Not mounted: the host shows its own editable card (same component, wired to the live draft and form) via `show` |
+| `analyze_roth_conversions` | `result-card.html` | `ResultCard` with `BracketFillChart` and `BalanceComparison` panels | Mounted |
+| `compare_roth_scenarios` | `scenario-compare.html` | `ScenarioCompareCard` | Mounted |
+
+Chart series the model doesn't need (bracket fill, balances) travel in the tool result's `_meta["lucerna/view"]` (`backend/app/tools/views.py`), which hosts pass to Views but not to the model. Buttons that act for the user ("Run the numbers", "Apply to my scenario") send a chat message with `ui/message` (`ui/src/messages.ts`); the prompts and MCP server instructions tell the model how to handle them, so every host behaves the same. The `show` tool still renders the bracket and balance charts natively when the model wants one on its own, with the same components. `get_tax_brackets` and `explain_methodology` return reference text and have no View; suggestion chips are web-only.
 
 ## Configuration (backend)
 

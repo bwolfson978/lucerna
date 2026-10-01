@@ -99,5 +99,5 @@ jobs:
         working-directory: frontend
       - run: npm ci && npx playwright install --with-deps chromium
         working-directory: e2e
-      - run: npx playwright test ui-drift.spec.ts --reporter=list
+      - run: npx playwright test ui-drift.spec.ts scenario-view.spec.ts --reporter=list
         working-directory: e2e

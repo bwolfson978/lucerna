@@ -1,4 +1,9 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
+
+// A tool result rendered by the MCP server's own View (MCP Apps), mounted by the host
+// in a sandbox proxy (outer iframe) that loads the View (inner iframe).
+const view = (page: Page, index: number) =>
+  page.locator('[data-testid=mcp-app]').nth(index).frameLocator('iframe').frameLocator('iframe')
 
 // Runs against the backend's offline stand-in model (AGENT_OFFLINE=1, see
 // playwright.config.ts), so the real loop, tools and engine are exercised
@@ -13,32 +18,38 @@ test.describe('Conversation flow', () => {
     await page.getByRole('button', { name: 'Send' }).click()
 
     const summary = page.getByTestId('scenario-summary')
-    await expect(summary).toBeVisible({ timeout: 15000 })
-    await expect(summary.getByText('$600,000')).toBeVisible()
+    await expect(summary.first()).toBeVisible({ timeout: 15000 })
+    await expect(summary.first().getByText('$600,000')).toBeVisible()
 
-    await summary.getByRole('button', { name: 'Run the numbers' }).click()
-    // The result card is the MCP server's own View (MCP Apps), mounted by the host in a
-    // sandbox proxy (outer iframe) that loads the View (inner iframe).
-    const headline = page
-      .frameLocator('[data-testid=mcp-app] iframe')
-      .frameLocator('iframe')
-      .locator('[data-ui=result-card]')
+    await summary.first().getByRole('button', { name: 'Run the numbers' }).click()
+    const headline = view(page, 0).locator('[data-ui=result-card]')
     await expect(headline).toBeVisible({ timeout: 30000 })
     await expect(headline.getByText(/\$\d/).first()).toBeVisible()
+    // The card's chart panels open in place.
+    await headline.getByRole('button', { name: 'Tax brackets by year' }).click()
+    await expect(headline.getByRole('img', { name: /colored by tax bracket/ })).toBeVisible()
 
     await page.getByLabel('Message').fill('What if I retire at 58?')
     await page.getByRole('button', { name: 'Send' }).click()
-    await expect(page.getByTestId('scenario-compare')).toBeVisible({ timeout: 20000 })
+    const compare = view(page, 1).locator('[data-ui=scenario-compare]')
+    await expect(compare).toBeVisible({ timeout: 30000 })
 
     await headline.getByRole('button', { name: 'See full results' }).click()
     await expect(page).toHaveURL(/view=results/)
     await expect(page.getByRole('button', { name: /Back to conversation/ })).toBeVisible()
     await page.goBack()
-    await expect(page.getByTestId('scenario-compare')).toBeVisible()
+    await expect(compare).toBeVisible({ timeout: 30000 })
+
+    // Apply sends a chat message from the View (ui/message); the assistant records the
+    // what-if and shows the scenario to confirm.
+    await compare.getByRole('button', { name: 'Apply to my scenario' }).click()
+    await expect(page.getByText('Use the "Retire at 58" what-if as my scenario.')).toBeVisible()
+    await expect(summary.last()).toBeVisible({ timeout: 20000 })
 
     // The form holds what the conversation captured.
     await page.getByRole('radio', { name: 'Fill in a form' }).click()
     await expect(page.getByLabel('Age', { exact: true })).toHaveValue('52')
+    await expect(page.getByLabel('Retirement age', { exact: true })).toHaveValue('58')
 
     // No horizontal scroll at phone widths.
     const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth)

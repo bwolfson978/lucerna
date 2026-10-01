@@ -32,6 +32,7 @@ from app.engine.types import FilingStatus, OptimizationResult, ScenarioInput
 from app.tools import core
 from app.tools.draft import ScenarioDraft, current_year
 from app.tools.models import MethodologyTopic, ScenarioUpdate
+from app.tools.views import VIEW_META_KEY, result_view
 
 INSTRUCTIONS = """Roth Conversions Optimizer runs a deterministic multi-year optimizer that finds the Roth \
 conversion schedule with the highest after-tax wealth for a scenario, using 2026 federal and \
@@ -41,8 +42,12 @@ instructions. Quote numbers only from tool results. Required inputs: age, filing
 current gross income, traditional IRA/401(k) balance and the age withdrawals begin \
 (retirement_age). Ask the user for any that are missing instead of guessing. Tools are \
 stateless: pass the `scenario` returned by the previous call, with any new values merged in. \
-Confirm the values with the user before analyze_roth_conversions. The full interactive \
-analysis is available at https://rothconversionsoptimizer.com/calculator."""
+Confirm the values with the user before analyze_roth_conversions. In hosts that show this \
+server's UI, scenario, result and what-if cards appear on their own: don't repeat their \
+numbers as a table. A card button may send "Looks right. Run the numbers." (run the \
+analysis) or ask to use a what-if as the scenario (call record_scenario with that \
+comparison's what_if_scenario). The full interactive analysis is available at \
+https://rothconversionsoptimizer.com/calculator."""
 
 UI_META_KEY = "lucerna/ui"
 RESULTS_META_KEY = "lucerna/results"
@@ -60,6 +65,34 @@ _READ_ONLY = ToolAnnotations(readOnlyHint=True, openWorldHint=False, idempotentH
 APP_MIME_TYPE = "text/html;profile=mcp-app"
 VIEWS_DIR = Path(__file__).resolve().parent / "views"
 RESULT_CARD_URI = "ui://roth-conversions/result-card.html"
+SCENARIO_SUMMARY_URI = "ui://roth-conversions/scenario-summary.html"
+SCENARIO_COMPARE_URI = "ui://roth-conversions/scenario-compare.html"
+
+# Views served as ui:// resources: (uri, file, name, title, description).
+VIEWS = [
+    (
+        RESULT_CARD_URI,
+        "result-card.html",
+        "result_card",
+        "Roth conversion result",
+        "Estimated lifetime tax savings, the conversion schedule, and charts of bracket "
+        "filling and balances for an analysis.",
+    ),
+    (
+        SCENARIO_SUMMARY_URI,
+        "scenario-summary.html",
+        "scenario_summary",
+        "Your scenario",
+        "The scenario as recorded, for the user to check before running the analysis.",
+    ),
+    (
+        SCENARIO_COMPARE_URI,
+        "scenario-compare.html",
+        "scenario_compare",
+        "What-if comparison",
+        "Estimated lifetime tax savings and conversions by year, current scenario vs. a what-if.",
+    ),
+]
 
 # External origins the Views load from (fonts only). Everything else stays blocked.
 VIEW_CSP = {
@@ -142,6 +175,7 @@ def _ready_or_error(draft: ScenarioDraft) -> CallToolResult | None:
 @mcp.tool(
     title="Record a scenario",
     annotations=_READ_ONLY,
+    meta=_tool_ui(SCENARIO_SUMMARY_URI),
     description=(
         "Check and normalize a scenario as the user describes it (age, filing status, income, "
         "balances, retirement age, state, assumptions, per-year income changes). Include only "
@@ -189,17 +223,17 @@ async def analyze_roth_conversions(
     result_id = core.result_id_for(scenario_input)
     summary = core.summarize_result(result, result_id)
     summary["scenario"] = core.scenario_from_draft(draft, current_year())
-    meta = (
-        _ui_results([(result_id, "Your scenario", scenario_input, result)])
-        if _wants_ui(ctx)
-        else None
-    )
+    # Chart series for the View travel in _meta, which hosts don't show the model.
+    meta = {VIEW_META_KEY: result_view(result)}
+    if _wants_ui(ctx):
+        meta |= _ui_results([(result_id, "Your scenario", scenario_input, result)])
     return _result(summary, meta=meta)
 
 
 @mcp.tool(
     title="Compare Roth conversion scenarios",
     annotations=_READ_ONLY,
+    meta=_tool_ui(SCENARIO_COMPARE_URI),
     description=(
         "Answer a what-if: run the scenario and a changed copy (a different retirement age, "
         "income, spending or return) and return how the conversion schedule and estimated "
@@ -295,16 +329,26 @@ def _reader(topic_id: str):
 _register_resources()
 
 
-@mcp.resource(
-    RESULT_CARD_URI,
-    name="result_card",
-    title="Roth conversion result",
-    description="Estimated lifetime tax savings and the conversion schedule for an analysis.",
-    mime_type=APP_MIME_TYPE,
-    meta=_view_meta(),
-)
-def result_card_view() -> str:
-    return (VIEWS_DIR / "result-card.html").read_text()
+def _view_reader(filename: str):
+    def read() -> str:
+        return (VIEWS_DIR / filename).read_text()
+
+    return read
+
+
+def _register_views() -> None:
+    for uri, filename, name, title, description in VIEWS:
+        mcp.resource(
+            uri,
+            name=name,
+            title=title,
+            description=description,
+            mime_type=APP_MIME_TYPE,
+            meta=_view_meta(),
+        )(_view_reader(filename))
+
+
+_register_views()
 
 
 # --------------------------------------------------------------------------

@@ -84,6 +84,8 @@ class OfflineModelClient:
         text = " ".join(b.get("text", "") for b in blocks if b.get("type") == "text")
         user_text = text.split("</scenario_state>")[-1].strip().lower()
 
+        if "what-if as my scenario" in user_text and (what_if := latest_what_if(messages)):
+            return [_tool("record_scenario", {"scenario": what_if})]
         if "what if" in user_text and (m := re.search(r"retire (?:at|by) (\d{2})", user_text)):
             return [
                 _tool(
@@ -181,6 +183,25 @@ def latest_scenario(messages: list[dict]) -> dict:
             if isinstance(data, dict) and isinstance(data.get("scenario"), dict):
                 return data["scenario"]
     return {}
+
+
+def latest_what_if(messages: list[dict]) -> dict | None:
+    """The `what_if_scenario` of the most recent comparison, if any."""
+    for message in reversed(messages):
+        content = message.get("content")
+        if not isinstance(content, list):
+            continue
+        for block in reversed(content):
+            text = block.get("content") if block.get("type") == "tool_result" else None
+            if not isinstance(text, str):
+                continue
+            try:
+                data = json.loads(text)
+            except ValueError:
+                continue
+            if isinstance(data, dict) and isinstance(data.get("what_if_scenario"), dict):
+                return data["what_if_scenario"]
+    return None
 
 
 def _tool(name: str, payload: dict) -> dict:

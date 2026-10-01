@@ -103,11 +103,11 @@ lucerna/
 │       └── mcp/           # MCP server tests
 ├── mcp-views/             # MCP App Views (TS → single-file HTML served by the MCP server)
 ├── ui/                    # Shared display components + Paper & Pine tokens/preset
-│   ├── src/               # ResultCard, ConversionStrip, MetricCard (no app context)
+│   ├── src/               # ResultCard, charts, ScenarioCompareCard, ScenarioSummary, MetricCard (no app context)
 │   ├── tailwind/preset.js # Theme (used by frontend and mcp-views)
 │   └── styles/tokens.css  # CSS variables + component classes
 ├── mcp-views/             # MCP App Views: entries around ui/ components, built into backend/app/mcp/views/
-├── shared/fixtures/       # Cross-language fixtures (scenario draft, result card data)
+├── shared/fixtures/       # Cross-language fixtures (scenario draft, View data)
 ├── e2e/                   # Playwright E2E tests (spans both services)
 │   ├── playwright.config.ts
 │   ├── fixtures/

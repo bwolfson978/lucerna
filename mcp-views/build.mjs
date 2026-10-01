@@ -16,7 +16,12 @@ import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const outDir = resolve(here, "../backend/app/mcp/views");
-const VIEWS = ["result-card"];
+// View entry -> page title. Each builds to backend/app/mcp/views/<name>.html.
+const VIEWS = {
+  "result-card": "Roth conversion result",
+  "scenario-summary": "Your scenario",
+  "scenario-compare": "What-if comparison",
+};
 
 // Zod ships ~40 translated error locales; Views only need English.
 const englishOnlyZod = {
@@ -64,7 +69,8 @@ async function compileCss() {
 
 await mkdir(outDir, { recursive: true });
 const css = await compileCss();
-for (const name of VIEWS) {
+const template = await readFile(resolve(here, "src/template.html"), "utf8");
+for (const [name, title] of Object.entries(VIEWS)) {
   const result = await build({
     entryPoints: [resolve(here, `src/${name}.tsx`)],
     absWorkingDir: here,
@@ -79,8 +85,10 @@ for (const name of VIEWS) {
     plugins: [englishOnlyZod],
   });
   const js = result.outputFiles[0].text.replace(/<\/script/gi, "<\\/script");
-  const template = await readFile(resolve(here, `src/${name}.html`), "utf8");
-  const html = template.replace("/*__CSS__*/", () => css).replace("/*__BUNDLE__*/", () => js);
+  const html = template
+    .replace("__TITLE__", () => title)
+    .replace("/*__CSS__*/", () => css)
+    .replace("/*__BUNDLE__*/", () => js);
   await writeFile(resolve(outDir, `${name}.html`), html);
   console.log(`${name}.html  ${(html.length / 1024).toFixed(1)} KB`);
 }

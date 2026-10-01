@@ -46,6 +46,12 @@ STATUS = {
     "show": "Preparing a chart",
 }
 
+# Tools whose View this host doesn't mount because it has a richer first-party
+# equivalent: the scenario summary here edits the live draft and syncs with the form,
+# and is shown with `show` once the scenario is complete. Both use the same shared
+# component (ui/src/ScenarioSummary.tsx), so they look the same.
+RENDERED_NATIVELY = {"record_scenario"}
+
 SHOW_TOOL = {
     "name": "show",
     "description": (
@@ -129,7 +135,8 @@ class McpToolbox:
         result = await self._session.call_tool(name, arguments, meta={UI_META_KEY: True})
         if not result.isError:
             _emit_ui_events(name, _structured(result), result, ctx)
-            if resource_uri := self.ui_tools.get(name):
+            resource_uri = self.ui_tools.get(name)
+            if resource_uri and name not in RENDERED_NATIVELY:
                 ctx.emit(
                     "part",
                     part={
@@ -297,15 +304,7 @@ def _emit_ui_events(name: str, data: dict, result: CallToolResult, ctx: ToolCont
                 else {}
             )
             ctx.emit("result", **entry, **extra)
-        ctx.emit(
-            "part",
-            part={
-                "kind": "scenario_compare",
-                "base_result_id": data["base_result_id"],
-                "result_id": data["variant_result_id"],
-                "label": data["label"],
-            },
-        )
+        # The comparison card itself is the tool's MCP App View (see McpToolbox.call).
 
 
 # --------------------------------------------------------------------------

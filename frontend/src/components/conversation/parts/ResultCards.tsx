@@ -1,15 +1,29 @@
 "use client";
 
+/**
+ * Native renders of the shared cards (ui/) for conversation parts that point at stored
+ * results: the `show` tool's charts, and parts saved by earlier versions. Results
+ * from tools with MCP App Views render through McpAppFrame instead; both use the
+ * same components with the same data (lib/results/viewData.ts).
+ */
+
 import { useEffect, useState } from "react";
 import posthog from "posthog-js";
-import { ResultCard } from "@lucerna/ui";
+import {
+  BalanceComparison,
+  BracketFillChart,
+  ResultCard,
+  ScenarioCompareCard as SharedScenarioCompareCard,
+} from "@lucerna/ui";
 import type { StoredResult } from "@/lib/agent/types";
-import type { OptimizationResult } from "@/lib/types";
-import { formatCompactCurrency, formatCurrency, formatSavings } from "@/lib/utils/formatting";
-import { cn } from "@/lib/utils";
-import { resultCardData } from "@/lib/results/cardData";
+import {
+  balanceData,
+  bracketFillData,
+  compareData,
+  resultCardData,
+  resultDetails,
+} from "@/lib/results/viewData";
 import { useConversationContext } from "../ConversationContext";
-import { BalanceLines, BracketScheduleChart, CompareBars } from "./charts";
 
 /** Look up a result, recomputing it if it was dropped from session storage. */
 function useStoredResult(id: string): StoredResult | undefined {
@@ -26,15 +40,6 @@ function Pending({ label = "Loading this result" }: { label?: string }) {
   return (
     <div className="card animate-pulse text-body-sm text-text-tertiary" role="status">
       {label}…
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="metric-label">{label}</span>
-      <span className="font-data text-[17px] font-semibold text-text-primary">{value}</span>
     </div>
   );
 }
@@ -56,60 +61,30 @@ export function ResultHeadlineCard({ resultId }: { resultId: string }) {
     <div data-testid="result-headline">
       <ResultCard
         data={resultCardData(resultId, result)}
+        details={resultDetails(result)}
         onOpenFullResults={() => openFull(openResults, resultId, "headline")}
       />
     </div>
   );
 }
 
-// --------------------------------------------------------------------------
-
 export function BracketFillPart({ resultId }: { resultId: string }) {
   const stored = useStoredResult(resultId);
   if (!stored) return null;
   if (!stored.result) return <Pending />;
-  return <BracketScheduleChart result={stored.result} />;
-}
-
-// --------------------------------------------------------------------------
-
-function peakRmd(result: OptimizationResult, without: boolean): number | null {
-  const projection = without ? result.rmd_projection_no_conversion : result.rmd_projection;
-  return projection?.peak_rmd_amount ?? null;
+  return <BracketFillChart data={bracketFillData(stored.result)} />;
 }
 
 export function BalanceComparisonCard({ resultId }: { resultId: string }) {
   const stored = useStoredResult(resultId);
   if (!stored) return null;
-  const result = stored.result;
-  if (!result) return <Pending />;
-  const peakWith = peakRmd(result, false);
-  const peakWithout = peakRmd(result, true);
-  const wealthGain = result.npv_at_optimal - result.npv_at_zero;
-
+  if (!stored.result) return <Pending />;
   return (
-    <div className="card flex flex-col gap-comfortable" data-testid="balance-comparison">
-      <h3 className="text-h3 text-text-primary">Your traditional balance over time</h3>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <Stat label="Roth at retirement" value={formatCompactCurrency(result.roth_at_retirement)} />
-        {peakWith != null && peakWithout != null && (
-          <Stat
-            label="Largest RMD"
-            value={`${formatCompactCurrency(peakWith)} vs ${formatCompactCurrency(peakWithout)}`}
-          />
-        )}
-        <Stat label="After-tax wealth" value={formatSavings(wealthGain)} />
-      </div>
-      <BalanceLines result={result} />
-      <p className="text-caption text-text-tertiary">
-        Traditional balances are taxed when withdrawn, and required minimum distributions grow with
-        them. Roth balances are not taxed. Amounts are projected, not in today&apos;s dollars.
-      </p>
+    <div data-testid="balance-comparison">
+      <BalanceComparison data={balanceData(stored.result)} />
     </div>
   );
 }
-
-// --------------------------------------------------------------------------
 
 export function ScenarioCompareCard({
   resultId,
@@ -126,62 +101,22 @@ export function ScenarioCompareCard({
   const base = useStoredResult(baseResultId);
   if (!variant || !base) return null;
   if (!variant.result || !base.result) return <Pending />;
-  const diff =
-    variant.result.estimated_lifetime_tax_savings - base.result.estimated_lifetime_tax_savings;
-
   return (
-    <div className="card flex flex-col gap-comfortable" data-testid="scenario-compare">
-      <div className="flex flex-col gap-1">
-        <span className="eyebrow">What if</span>
-        <h3 className="font-serif text-[22px] font-semibold leading-tight text-text-primary">
-          {label}
-        </h3>
-      </div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <Stat
-          label="Savings now"
-          value={formatCurrency(base.result.estimated_lifetime_tax_savings)}
-        />
-        <Stat
-          label="With this change"
-          value={formatCurrency(variant.result.estimated_lifetime_tax_savings)}
-        />
-        <div className="col-span-2 flex flex-col gap-1 sm:col-span-1">
-          <span className="metric-label">Difference</span>
-          <span
-            className={cn(
-              "font-data text-[17px] font-semibold",
-              diff >= 0 ? "text-pine-mid" : "text-negative"
-            )}
-          >
-            {diff >= 0 ? "+" : "-"}
-            {formatCurrency(Math.abs(diff))}
-          </span>
-        </div>
-      </div>
-      <CompareBars base={base.result} variant={variant.result} variantLabel={label} />
-      <div className="flex flex-wrap gap-3 border-t border-border pt-default">
-        <button
-          type="button"
-          className="btn-dark"
-          onClick={() => openFull(openResults, resultId, "what_if")}
-        >
-          See full results
-        </button>
-        {applyWhatIf && variant.draft && (
-          <button
-            type="button"
-            className="btn-ghost"
-            disabled={streaming || applied}
-            onClick={() => {
-              applyWhatIf(resultId);
-              setApplied(true);
-            }}
-          >
-            {applied ? "Applied to your scenario" : "Apply to my scenario"}
-          </button>
-        )}
-      </div>
+    <div data-testid="scenario-compare">
+      <SharedScenarioCompareCard
+        data={compareData(baseResultId, base.result, resultId, variant.result, label)}
+        onOpenFullResults={() => openFull(openResults, resultId, "what_if")}
+        onApply={
+          applyWhatIf && variant.draft
+            ? () => {
+                applyWhatIf(resultId);
+                setApplied(true);
+              }
+            : undefined
+        }
+        applied={applied}
+        applyDisabled={streaming}
+      />
     </div>
   );
 }

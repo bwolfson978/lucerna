@@ -3,7 +3,12 @@ import { http, HttpResponse } from "msw";
 import { server } from "@/test/mocks/server";
 import { EMPTY_DRAFT } from "@/lib/scenario/draft";
 import { ConversationContext } from "../ConversationContext";
-import fixture from "../../../../../shared/fixtures/result-card-data.json";
+import fixtures from "../../../../../shared/fixtures/view-data.json";
+
+const fixture = {
+  result_id: fixtures.analyze_roth_conversions.result_id,
+  structured_content: fixtures.analyze_roth_conversions.structured_content,
+};
 import { McpAppFrame } from "../parts/McpAppFrame";
 
 vi.mock("posthog-js", () => ({ default: { capture: vi.fn() } }));

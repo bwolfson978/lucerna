@@ -29,3 +29,19 @@ export function formatSavings(amount: number): string {
   if (amount < 0) return `-${formatCurrency(Math.abs(amount))}`;
   return formatCurrency(amount);
 }
+
+/** Short axis labels: $40K, $1.2M. */
+export function formatAxisCurrency(amount: number): string {
+  const abs = Math.abs(amount);
+  const sign = amount < 0 ? "-" : "";
+  if (abs >= 1_000_000) {
+    const m = abs / 1_000_000;
+    const formatted = m % 1 === 0 ? `${m}` : m.toFixed(1);
+    return `${sign}$${formatted}M`;
+  }
+  if (abs >= 1_000) {
+    const k = Math.round(abs / 1000);
+    return `${sign}$${k}K`;
+  }
+  return currencyFormatter.format(amount);
+}
