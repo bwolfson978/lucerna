@@ -95,6 +95,7 @@ async def test_agent_generated_demo(monkeypatch):
 
 async def test_demo_is_cached_and_keyed(monkeypatch, tmp_path):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("LUCERNA_ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
     monkeypatch.setattr(demo, "_CACHE_DIR", tmp_path)
     demo.clear_cache()

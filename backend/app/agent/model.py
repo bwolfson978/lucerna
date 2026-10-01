@@ -48,6 +48,19 @@ class Final:
 StreamEvent = TextDelta | ToolStart | Final
 
 
+def api_key() -> str | None:
+    """The Anthropic API key.
+
+    ``LUCERNA_ANTHROPIC_API_KEY`` is a fallback for environments that reserve
+    ``ANTHROPIC_API_KEY``, such as Claude Code cloud sessions.
+    """
+    return os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("LUCERNA_ANTHROPIC_API_KEY")
+
+
+def has_credentials() -> bool:
+    return bool(api_key() or os.environ.get("ANTHROPIC_AUTH_TOKEN"))
+
+
 class ModelUnavailable(Exception):
     """The model can't be reached (no key, outage, rate limit). The UI falls back to the form."""
 
@@ -63,7 +76,7 @@ class AnthropicModelClient:
         import anthropic
 
         self._anthropic = anthropic
-        self._client = anthropic.AsyncAnthropic(timeout=120.0, max_retries=2)
+        self._client = anthropic.AsyncAnthropic(api_key=api_key(), timeout=120.0, max_retries=2)
 
     async def stream(
         self, *, system: str, tools: list[dict], messages: list[dict]
@@ -126,7 +139,7 @@ def get_model_client() -> ModelClient:
 
         _default_client = OfflineModelClient()
         return _default_client
-    if not (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN")):
+    if not has_credentials():
         raise ModelUnavailable("No Anthropic credentials configured")
     _default_client = AnthropicModelClient()
     return _default_client

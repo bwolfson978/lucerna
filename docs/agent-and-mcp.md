@@ -83,6 +83,7 @@ Chart series the model doesn't need (bracket fill, balances) travel in the tool 
 | Variable | Default | Purpose |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | none | Required for the live assistant. Without it the page falls back to the form and `/demo` uses its scripted version. |
+| `LUCERNA_ANTHROPIC_API_KEY` | none | Fallback for `ANTHROPIC_API_KEY`, for environments that reserve that name (Claude Code cloud sessions). |
 | `AGENT_MODEL` | `claude-sonnet-5-5` | Model for the agent loop and demo generation. |
 | `AGENT_EFFORT` | `medium` | `output_config.effort` for each model call. |
 | `AGENT_MESSAGES_PER_CONVERSATION` | `20` | User messages per conversation. |

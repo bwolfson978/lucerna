@@ -42,6 +42,7 @@ async def test_streams_events_from_the_loop(async_client):
 
 async def test_unavailable_without_credentials(async_client, monkeypatch):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("LUCERNA_ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
     monkeypatch.delenv("AGENT_OFFLINE", raising=False)
     set_model_client(None)
@@ -107,6 +108,7 @@ async def test_rejects_oversized_history_and_bad_input(async_client):
 
 async def test_demo_endpoint(async_client, monkeypatch, tmp_path):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("LUCERNA_ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
     monkeypatch.setattr(demo, "_CACHE_DIR", tmp_path)
     demo.clear_cache()

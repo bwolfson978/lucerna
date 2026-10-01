@@ -110,6 +110,7 @@ async def test_anthropic_client_maps_outages_to_unavailable():
 def test_get_model_client_requires_credentials(monkeypatch):
     set_model_client(None)
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("LUCERNA_ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
     monkeypatch.delenv("AGENT_OFFLINE", raising=False)
     with pytest.raises(ModelUnavailable):
@@ -163,3 +164,17 @@ async def test_offline_client_drives_a_full_conversation():
         "scenario_summary",
     ]
     assert draft.retirement_age == 58
+
+
+def test_api_key_falls_back_to_lucerna_name(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+    monkeypatch.delenv("LUCERNA_ANTHROPIC_API_KEY", raising=False)
+    assert model_module.api_key() is None
+    assert not model_module.has_credentials()
+    monkeypatch.setenv("LUCERNA_ANTHROPIC_API_KEY", "lucerna-key")
+    assert model_module.api_key() == "lucerna-key"
+    assert model_module.has_credentials()
+    assert model_module.AnthropicModelClient()._client.api_key == "lucerna-key"
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "standard-key")
+    assert model_module.api_key() == "standard-key"

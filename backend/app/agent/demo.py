@@ -31,6 +31,7 @@ from app.agent.model import (
     StreamEvent,
     TextDelta,
     ToolStart,
+    has_credentials,
 )
 from app.agent.prompts import PROMPT_VERSION
 from app.engine.demo import DEMO_PERSONA
@@ -254,7 +255,7 @@ async def get_demo_conversation() -> dict:
         return cached
 
     demo: dict | None = None
-    if os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AUTH_TOKEN"):
+    if has_credentials():
         try:
             demo = await generate_with_agent(AnthropicModelClient())
         except Exception:  # noqa: BLE001 - any failure falls back to the scripted version
