@@ -51,7 +51,10 @@ def test_quoting_the_question_is_not_advice():
 
     assert not says_you_should("I can't tell you what you should convert.")
     assert not says_you_should("I can't say whether you should do it.")
+    assert not says_you_should("This isn't advice about whether you should convert.")
     assert says_you_should("Based on this, you should convert now.")
+    assert says_you_should("Here is what you should do: convert $40,000 a year.")
+    assert says_you_should("If you're unsure, you should convert.")
 
 
 def test_bare_user_numbers_can_mean_thousands():

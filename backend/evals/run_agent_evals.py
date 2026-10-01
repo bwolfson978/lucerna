@@ -8,7 +8,7 @@ Usage (from backend/):
 Every case is a scripted conversation run through the real agent loop and tools.
 Checks on every assistant reply:
   - it has written text (cards alone don't count)
-  - no "you should" as advice (educational framing; quoting "what you should" is fine)
+  - no "you should" as advice (educational framing; declining to say what you should do is fine)
   - no em dashes
   - every dollar amount appears in a tool result, a scenario default or the user's words
     (a bare user number under 1,000 may mean thousands: "about 90" grounds $90,000)
@@ -39,9 +39,19 @@ RESULTS_DIR = HERE / "results"
 
 _MONEY = re.compile(r"\$\s?(\d[\d,]*(?:\.\d+)?)\s*(k|m|million|thousand|billion)?\b", re.I)
 _NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
-# "you should" as advice. Quoting the user's question ("I can't tell you what you should
-# convert") is not advice, so skip it after what / whether / if.
-_YOU_SHOULD = re.compile(r"(?<!\bwhat )(?<!\bwhether )(?<!\bif )\byou should\b", re.I)
+# "you should" as advice. Declining to advise ("I can't tell you what you should convert",
+# "I can't say whether you should") is not advice. Only that negated form is excused:
+# "Here's what you should do" still counts.
+_YOU_SHOULD = re.compile(r"\byou should\b", re.I)
+_DECLINING = re.compile(
+    r"\b(?:can't|cannot|can not|won't|don't|isn't|not)\b[^.!?\n]{0,40}"
+    r"\b(?:what|whether|if)\s+you should\b",
+    re.I,
+)
+
+
+def gives_advice(text: str) -> bool:
+    return bool(_YOU_SHOULD.search(_DECLINING.sub("", text)))
 
 
 def money_amounts(text: str) -> list[float]:
@@ -173,7 +183,7 @@ def check(case: dict, turns: list[TurnRecord], draft: ScenarioDraft) -> list[str
             failures.append(f"turn {i}: error events {t.errors}")
         if not t.text.strip():
             failures.append(f"turn {i}: no written reply")
-        if _YOU_SHOULD.search(t.text):
+        if gives_advice(t.text):
             failures.append(f"turn {i}: says 'you should'")
         if "—" in t.text:
             failures.append(f"turn {i}: uses an em dash")
