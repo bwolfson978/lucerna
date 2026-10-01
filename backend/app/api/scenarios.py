@@ -17,15 +17,14 @@ _STRIP_FIELDS = {"conversion_curve", "reasoning_trace"}
 
 
 def _auto_name(inputs: ScenarioInput) -> str:
-    status_label = (
-        "Married" if inputs.filing_status == "married_filing_jointly" else "Single"
-    )
+    status_label = "Married" if inputs.filing_status == "married_filing_jointly" else "Single"
     bal = f"${inputs.traditional_ira_balance / 1_000:.0f}K"
     yrs = len(inputs.timeline)
     return f"{status_label} · {bal} IRA · {yrs} yr"
 
 
 # ── Request / response models ──────────────────────────────────────────────────
+
 
 class SaveScenarioRequest(BaseModel):
     input: ScenarioInput
@@ -57,6 +56,7 @@ class SaveResponse(BaseModel):
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
+
 def _require_pool():
     pool = get_pool()
     if pool is None:
@@ -68,6 +68,7 @@ def _require_pool():
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────────────
+
 
 @router.post("/scenarios", response_model=SaveResponse, status_code=status.HTTP_201_CREATED)
 async def save_scenario(

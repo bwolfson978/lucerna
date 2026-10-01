@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth, useUser, SignInButton } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import { Header } from "@/components/common/Header";
 import { PageFooter } from "@/components/common/PageFooter";
 import { createScenariosApi } from "@/lib/api/scenarios";

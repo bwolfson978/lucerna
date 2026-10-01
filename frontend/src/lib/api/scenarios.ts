@@ -10,7 +10,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 async function authedRequest<T>(
   path: string,
   getToken: () => Promise<string | null>,
-  options?: RequestInit,
+  options?: RequestInit
 ): Promise<T> {
   const token = await getToken();
   const res = await fetch(`${API_BASE}${path}`, {
