@@ -76,3 +76,61 @@ async def test_errors_and_show_validation():
             "show", {"kind": "balance_comparison", "result_id": "r_0123456789"}, context
         )
         assert not is_error
+
+
+async def test_ui_tool_results_become_mcp_app_parts():
+    context = ctx()
+    async with open_toolbox() as toolbox:
+        assert toolbox.ui_tools == {
+            "analyze_roth_conversions": "ui://roth-conversions/result-card.html"
+        }
+        content, is_error = await toolbox.call(
+            "analyze_roth_conversions", {"scenario": SCENARIO, "user_confirmed": True}, context
+        )
+    assert not is_error
+    part = next(e["part"] for e in context.events if e["type"] == "part")
+    assert part["kind"] == "mcp_app"
+    assert part["resource_uri"] == "ui://roth-conversions/result-card.html"
+    assert part["tool_input"]["user_confirmed"] is True
+    view_data = part["tool_result"]
+    assert view_data["structuredContent"]["result_id"] == content["result_id"]
+    assert "_meta" not in view_data  # full results stay with the host, not the View
+    # The model gets the text content, which carries the same summary.
+    assert content["estimated_lifetime_tax_savings_todays_dollars"] > 0
+
+
+class _FakeSession:
+    def __init__(self, tools):
+        self._tools = tools
+
+    async def list_tools(self):
+        from types import SimpleNamespace
+
+        return SimpleNamespace(tools=self._tools)
+
+    async def call_tool(self, name, arguments, meta=None):  # pragma: no cover - not reached
+        raise AssertionError("should not be called")
+
+
+async def test_visibility_scopes_tools_to_model_or_app():
+    from mcp.types import Tool
+
+    from app.agent.toolbox import McpToolbox
+
+    schema = {"type": "object", "properties": {}}
+    tools = [
+        Tool(name="both", inputSchema=schema),
+        Tool(name="app_only", inputSchema=schema, _meta={"ui": {"visibility": ["app"]}}),
+        Tool(name="model_only", inputSchema=schema, _meta={"ui": {"visibility": ["model"]}}),
+    ]
+    toolbox = McpToolbox(_FakeSession(tools))
+    await toolbox.load()
+    names = [t["name"] for t in toolbox.definitions]
+    assert "app_only" not in names and {"both", "model_only"} <= set(names)
+    # The model can't reach an app-only tool, and a View can't reach a model-only one.
+    content, is_error = await toolbox.call("app_only", {}, ctx())
+    assert is_error and "Unknown tool" in content["error"]
+    import pytest
+
+    with pytest.raises(PermissionError):
+        await toolbox.call_from_app("model_only", {})

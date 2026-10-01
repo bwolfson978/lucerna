@@ -29,6 +29,28 @@ jobs:
         run: ruff format --check .
       - run: python -m pytest tests/ -v --cov=app
 
+  mcp-views:
+    # MCP App Views are built into backend/app/mcp/views/ and committed (the backend
+    # image has no Node). Fail if the committed bundle is out of date with its source.
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mcp-views
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: mcp-views/package-lock.json
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - name: Built Views match their source
+        run: git diff --exit-code -- ../backend/app/mcp/views
+
   frontend:
     runs-on: ubuntu-latest
     defaults:

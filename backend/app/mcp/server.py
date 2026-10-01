@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 from typing import Annotated, Any
 
 import anyio
@@ -47,6 +48,32 @@ UI_META_KEY = "lucerna/ui"
 RESULTS_META_KEY = "lucerna/results"
 
 _READ_ONLY = ToolAnnotations(readOnlyHint=True, openWorldHint=False, idempotentHint=True)
+
+# --------------------------------------------------------------------------
+# MCP Apps (io.modelcontextprotocol/ui): this server owns its UI. Views are
+# prebuilt single-file HTML bundles (source in mcp-views/, built into views/),
+# served as ui:// resources. A tool links to its View with _meta.ui.resourceUri;
+# hosts that support MCP Apps render the tool's structuredContent with it, and
+# everyone else gets the text content.
+# --------------------------------------------------------------------------
+
+APP_MIME_TYPE = "text/html;profile=mcp-app"
+VIEWS_DIR = Path(__file__).resolve().parent / "views"
+RESULT_CARD_URI = "ui://roth-conversions/result-card.html"
+
+# External origins the Views load from (fonts only). Everything else stays blocked.
+VIEW_CSP = {
+    "resourceDomains": ["https://fonts.googleapis.com", "https://fonts.gstatic.com"],
+}
+
+
+def _view_meta() -> dict:
+    return {"ui": {"csp": VIEW_CSP, "prefersBorder": False}}
+
+
+def _tool_ui(resource_uri: str) -> dict:
+    return {"ui": {"resourceUri": resource_uri, "visibility": ["model", "app"]}}
+
 
 mcp = FastMCP(
     name="Roth Conversions Optimizer",
@@ -133,6 +160,7 @@ async def record_scenario(scenario: ScenarioArg) -> CallToolResult:
 @mcp.tool(
     title="Analyze Roth conversions",
     annotations=_READ_ONLY,
+    meta=_tool_ui(RESULT_CARD_URI),
     description=(
         "Run the optimizer: find the Roth conversion schedule with the highest estimated lifetime "
         "tax savings for a complete scenario. Only call after the user confirmed the scenario's "
@@ -265,6 +293,18 @@ def _reader(topic_id: str):
 
 
 _register_resources()
+
+
+@mcp.resource(
+    RESULT_CARD_URI,
+    name="result_card",
+    title="Roth conversion result",
+    description="Estimated lifetime tax savings and the conversion schedule for an analysis.",
+    mime_type=APP_MIME_TYPE,
+    meta=_view_meta(),
+)
+def result_card_view() -> str:
+    return (VIEWS_DIR / "result-card.html").read_text()
 
 
 # --------------------------------------------------------------------------

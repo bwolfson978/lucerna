@@ -1,0 +1,17 @@
+{
+  "name": "lucerna-mcp-views",
+  "private": true,
+  "description": "MCP Apps Views served by the backend MCP server as ui:// resources. Each View compiles to one self-contained HTML file in backend/app/mcp/views/.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "^2.0.0",
+    "@modelcontextprotocol/ext-apps": "^2.0.3",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.6.0",
+    "zod": "^4.2.0"
+  }
+}

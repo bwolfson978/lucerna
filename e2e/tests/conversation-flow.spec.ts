@@ -17,8 +17,13 @@ test.describe('Conversation flow', () => {
     await expect(summary.getByText('$600,000')).toBeVisible()
 
     await summary.getByRole('button', { name: 'Run the numbers' }).click()
-    const headline = page.getByTestId('result-headline')
-    await expect(headline).toBeVisible({ timeout: 20000 })
+    // The result card is the MCP server's own View (MCP Apps), mounted by the host in a
+    // sandbox proxy (outer iframe) that loads the View (inner iframe).
+    const headline = page
+      .frameLocator('[data-testid=mcp-app] iframe')
+      .frameLocator('iframe')
+      .locator('[data-testid=result-card]')
+    await expect(headline).toBeVisible({ timeout: 30000 })
     await expect(headline.getByText(/\$\d/).first()).toBeVisible()
 
     await page.getByLabel('Message').fill('What if I retire at 58?')

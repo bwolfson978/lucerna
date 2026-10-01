@@ -4,6 +4,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import type { UiMessage, UiPart } from "@/lib/agent/types";
 import type { ConversationState } from "@/lib/agent/conversation";
 import { Markdown } from "./Markdown";
+import { McpAppFrame } from "./parts/McpAppFrame";
 import { ScenarioSummaryCard } from "./parts/ScenarioSummaryCard";
 import {
   BalanceComparisonCard,
@@ -19,7 +20,7 @@ function activeSummaryKey(messages: UiMessage[]): string | null {
     const parts = messages[i].parts;
     for (let j = parts.length - 1; j >= 0; j--) {
       const kind = parts[j].kind;
-      if (kind === "result_headline") return null;
+      if (kind === "result_headline" || kind === "mcp_app") return null;
       if (kind === "scenario_summary") return `${messages[i].id}:${j}`;
     }
   }
@@ -149,6 +150,15 @@ function PartView({
           resultId={part.result_id}
           baseResultId={part.base_result_id}
           label={part.label}
+        />
+      );
+    case "mcp_app":
+      return (
+        <McpAppFrame
+          resourceUri={part.resource_uri}
+          toolName={part.tool_name}
+          toolInput={part.tool_input}
+          toolResult={part.tool_result}
         />
       );
     case "suggestions":

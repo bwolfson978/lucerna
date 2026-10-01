@@ -237,6 +237,7 @@ Built on branch `claude/agent-execution-plan`.
 - **Limits:** `AGENT_MESSAGES_PER_CONVERSATION` (20), `AGENT_MESSAGES_PER_IP_PER_DAY` (60), `AGENT_DAILY_SPEND_USD` (50), in process memory. MCP: `MCP_REQUESTS_PER_IP_PER_DAY` (300).
 - **Offline development:** `AGENT_OFFLINE=1` swaps the model for a rule-based stand-in that drives the real loop and tools. The Playwright suite uses it.
 - **Evals:** `backend/evals/` holds 33 scripted conversations and a runner with deterministic checks (framing, em dashes, numbers grounded in tool results, confirm before running, expected tools and cards) that also reports cost per conversation. They have not been run against the live model yet.
+- **MCP Apps:** the result card is an MCP App View owned by the server (`ui://roth-conversions/result-card.html`) and rendered by the web app as a spec-compliant host (sandbox proxy on a separate origin, `AppBridge`). Remaining cards still render natively; see `docs/agent-and-mcp.md` for the migration status.
 - **Not done:** OAuth for MCP (waits on Clerk, PR #126), connector directory listings, and rich MCP UI rendering.
 
 See `docs/agent-and-mcp.md` for setup.

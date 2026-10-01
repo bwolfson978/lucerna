@@ -139,3 +139,17 @@ async def test_http_endpoint_client_and_rate_limit(monkeypatch):
             body = {"jsonrpc": "2.0", "id": 1, "method": "tools/list"}
             response = await client.post("/mcp", json=body, headers=HEADERS)
             assert response.status_code == 429
+
+
+async def test_analyze_declares_its_view():
+    async with create_connected_server_and_client_session(mcp) as session:
+        tool = next(
+            t for t in (await session.list_tools()).tools if t.name == "analyze_roth_conversions"
+        )
+        assert tool.meta["ui"]["resourceUri"] == server.RESULT_CARD_URI
+        assert tool.meta["ui"]["visibility"] == ["model", "app"]
+        read = await session.read_resource(server.RESULT_CARD_URI)
+        content = read.contents[0]
+        assert content.mimeType == server.APP_MIME_TYPE
+        assert '<div id="root">' in content.text
+        assert content.meta["ui"]["csp"] == server.VIEW_CSP

@@ -8,7 +8,23 @@ export type AgentPart =
   | { kind: "bracket_fill"; result_id: string }
   | { kind: "balance_comparison"; result_id: string }
   | { kind: "scenario_compare"; result_id: string; base_result_id: string; label: string }
-  | { kind: "suggestions"; suggestions: string[] };
+  | { kind: "suggestions"; suggestions: string[] }
+  | {
+      /** A tool result rendered by the MCP server's own View (MCP Apps). */
+      kind: "mcp_app";
+      resource_uri: string;
+      tool_name: string;
+      tool_input: Record<string, unknown>;
+      tool_result: McpToolResult;
+    };
+
+/** A tools/call result as an MCP App View receives it. */
+export interface McpToolResult {
+  content?: unknown[];
+  structuredContent?: Record<string, unknown>;
+  isError?: boolean;
+  _meta?: Record<string, unknown>;
+}
 
 export type AgentErrorCode =
   | "unavailable"

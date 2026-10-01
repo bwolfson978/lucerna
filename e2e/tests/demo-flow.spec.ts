@@ -7,7 +7,11 @@ test.describe('Demo conversation', () => {
     await expect(page).toHaveURL(/\/demo/)
 
     await expect(page.getByText(/Hi, I'm Margaret/)).toBeVisible({ timeout: 20000 })
-    await expect(page.getByTestId('result-headline')).toBeVisible({ timeout: 30000 })
+    const card = page
+      .frameLocator('[data-testid=mcp-app] iframe')
+      .frameLocator('iframe')
+      .getByText('Estimated lifetime tax savings')
+    await expect(card).toBeVisible({ timeout: 30000 })
     await expect(page.getByText('Ready to try yours?')).toBeVisible({ timeout: 30000 })
 
     await page.getByLabel('Message').fill('How do RMDs work?')

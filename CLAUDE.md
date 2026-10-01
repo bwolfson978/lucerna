@@ -44,6 +44,7 @@ The AI conversation layer must use educational framing (legal requirement):
 - All API inputs and outputs use Pydantic models
 - Engine code lives in `app/engine/`, API routes in `app/api/`, tools in `app/tools/`, the agent harness in `app/agent/`, the MCP server in `app/mcp/`
 - **The MCP server is the single tool surface** (`app/mcp/server.py`, logic in `app/tools/`). The web agent (`POST /api/agent`) is an MCP client of it (`app/agent/toolbox.py`), so Claude, ChatGPT and the web app all use the same tools. Add a capability as an MCP tool; the web app gets it automatically. Only display concerns (the `show` tool, UI payloads via `_meta`) live in the web toolbox.
+- **MCP Apps:** UI for tool results is owned by the MCP server as `ui://` Views (source in `mcp-views/`, built with `npm run build:views` into `backend/app/mcp/views/`, linked via `_meta.ui.resourceUri`). The web app is a host: it mounts Views through the sandbox proxy (`/mcp-apps/sandbox`) with the official `AppBridge` (`McpAppFrame.tsx`). The model never sees or writes UI. See `docs/agent-and-mcp.md`.
 - The scenario draft (`app/tools/draft.py`) mirrors the calculator form; `frontend/src/lib/scenario/draft.ts` must stay in parity (shared fixtures in `shared/fixtures/`, regenerate with `python -m scripts.generate_draft_fixtures`)
 - Methodology copy lives in `backend/app/content/methodology.json` with an identical copy at `frontend/src/content/methodology.json`
 - The reasoning trace (`app/engine/trace.py`) is the contract between engine and AI — keep it structured and complete
@@ -99,6 +100,7 @@ lucerna/
 │       ├── tools/         # Tool + draft tests
 │       ├── agent/         # Loop, limits, demo tests (scripted model clients)
 │       └── mcp/           # MCP server tests
+├── mcp-views/             # MCP App Views (TS → single-file HTML served by the MCP server)
 ├── e2e/                   # Playwright E2E tests (spans both services)
 │   ├── playwright.config.ts
 │   ├── fixtures/

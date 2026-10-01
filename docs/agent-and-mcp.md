@@ -28,6 +28,28 @@ frontend (Next.js)                         backend (FastAPI)
 - **Web-only extras stay outside MCP:** the `show` tool (cards, charts, follow-up chips) runs in the web loop, and full engine results for the UI are requested per call with `_meta: {"lucerna/ui": true}` and returned in the result's `_meta` under `lucerna/results`, never in what a model sees.
 - The engine does all the math. Cards and charts render engine results directly, never numbers the model wrote.
 
+## MCP Apps: who owns the UI
+
+Tool results can carry UI under the MCP Apps extension (`io.modelcontextprotocol/ui`, spec 2026-01-26). The result card for `analyze_roth_conversions` is the first View built this way; the other cards are still native React components in the web app (see "Migration status").
+
+| Responsibility | Owner | Where |
+|---|---|---|
+| Writing the View (HTML/JS bundle) | MCP server | `mcp-views/src/` → built into `backend/app/mcp/views/*.html` |
+| Serving it | MCP server | `ui://roth-conversions/result-card.html`, `text/html;profile=mcp-app`, with `_meta.ui.csp` (fonts only) and `prefersBorder: false` |
+| Linking tool → View | MCP server | `_meta.ui.resourceUri` on the tool, `visibility: ["model", "app"]` |
+| Data contract | MCP server | `structuredContent` for the View, text `content` for the model and text-only hosts |
+| Choosing to call the tool | Model | Intent only. It never sees, selects or writes the View. |
+| Fetching the View | Host | `resources/read` (`GET /api/mcp-apps/resource`) |
+| Isolation | Host | Sandbox proxy on the API's origin (`/mcp-apps/sandbox`), separate from the page's origin, CSP sent as an HTTP header built from the View's declared domains, inner iframe for the View |
+| Brokering | Host | `AppBridge` over postMessage (`McpAppFrame.tsx`): tool input/result in, size changes, link requests, and View `tools/call` proxied to `POST /api/mcp-apps/tools/call` (app-visible tools only) |
+| Visibility | Host | Tools without `"model"` never reach the model's tool list; tools without `"app"` can't be called by a View |
+
+The same View renders in Claude, ChatGPT or any MCP Apps host with no changes. In those hosts, "See full results" opens `rothconversionsoptimizer.com/calculator?view=results&result=…`; in our own host it opens the in-app results page for that result.
+
+**Building Views:** `npm run build:views` (repo root). CI fails if `backend/app/mcp/views/` is out of date with `mcp-views/src/`. The result card is ~340 KB uncompressed, most of it the SDK's MCP client and zod; hosts cache it.
+
+**Migration status:** only the result card is a View so far. The scenario summary, bracket-fill and balance charts, what-if comparison and suggestion chips are still native cards selected by the web-only `show` tool; the full results page is first-party and fed by full results the web host requests through `_meta`. Each can move to a View the same way.
+
 ## Configuration (backend)
 
 | Variable | Default | Purpose |

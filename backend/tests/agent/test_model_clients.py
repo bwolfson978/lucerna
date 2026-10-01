@@ -154,7 +154,7 @@ async def test_offline_client_drives_a_full_conversation():
                 history.extend(event["messages"])
     assert seen == [
         "scenario_summary",
-        "result_headline",
+        "mcp_app",
         "bracket_fill",
         "suggestions",
         "scenario_compare",

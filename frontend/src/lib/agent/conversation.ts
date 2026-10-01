@@ -148,6 +148,10 @@ export function latestResultId(state: ConversationState): string | null {
       const part = parts[j];
       if (part.kind === "result_headline" || part.kind === "scenario_compare")
         return part.result_id;
+      if (part.kind === "mcp_app") {
+        const id = part.tool_result.structuredContent?.result_id;
+        if (typeof id === "string") return id;
+      }
     }
   }
   return null;

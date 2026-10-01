@@ -12,6 +12,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.mcp.server import build_route as build_mcp_route
 from app.mcp.server import mcp as mcp_server
+from app.origins import ORIGIN_REGEX, allowed_origins
 
 
 @asynccontextmanager
@@ -57,16 +58,12 @@ def metrics() -> Response:
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
-_default_origins = ["http://localhost:3000"]
-_env_origins = os.environ.get("ALLOWED_ORIGINS", "")
-allow_origins = (
-    [o.strip() for o in _env_origins.split(",") if o.strip()] if _env_origins else _default_origins
-)
+allow_origins = allowed_origins()
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allow_origins,
-    allow_origin_regex=r"https://(lucerna-.*\.vercel\.app|(www\.)?rothconversionsoptimizer\.com)",
+    allow_origin_regex=ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -77,6 +74,8 @@ from app.api.agent import router as agent_router
 from app.api.demo import router as demo_router
 from app.api.email import router as email_router
 from app.api.feedback import router as feedback_router
+from app.api.mcp_apps import router as mcp_apps_router
+from app.api.mcp_apps import sandbox_router as mcp_apps_sandbox_router
 from app.api.optimize import router as optimize_router
 from app.api.tax_config import router as tax_config_router
 
@@ -86,6 +85,8 @@ app.include_router(agent_router, prefix="/api")
 app.include_router(email_router, prefix="/api")
 app.include_router(feedback_router, prefix="/api")
 app.include_router(tax_config_router, prefix="/api")
+app.include_router(mcp_apps_router, prefix="/api")
+app.include_router(mcp_apps_sandbox_router)
 
 # Remote MCP server (streamable HTTP) for Claude, ChatGPT and other MCP clients.
 app.router.routes.append(build_mcp_route())
