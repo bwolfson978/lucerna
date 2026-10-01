@@ -7,9 +7,10 @@ Usage (from backend/):
 
 Every case is a scripted conversation run through the real agent loop and tools.
 Checks on every assistant reply:
+  - it has written text (cards alone don't count)
   - no "you should" (educational framing)
   - no em dashes
-  - every dollar amount appears in a tool result or the user's own words
+  - every dollar amount appears in a tool result, a scenario default or the user's words
   - analyze_roth_conversions only runs after a scenario summary was shown
 Plus the case's own expectations (tools called or not, cards shown, final draft
 values, reply content). Results are written to evals/results/.
@@ -149,7 +150,8 @@ async def run_case(case: dict, client: ModelClient) -> CaseResult:
 def check(case: dict, turns: list[TurnRecord], draft: ScenarioDraft) -> list[str]:
     failures: list[str] = []
     expect = case.get("expect", {})
-    sources: list[float] = []
+    # The scenario's defaults (7% return, $620 ACA premium...) are fair to state too.
+    sources: list[float] = source_numbers(ScenarioDraft().model_dump_json())
     summary_shown = False
 
     for i, t in enumerate(turns, start=1):
@@ -158,6 +160,8 @@ def check(case: dict, turns: list[TurnRecord], draft: ScenarioDraft) -> list[str
             sources += source_numbers(result)
         if t.errors:
             failures.append(f"turn {i}: error events {t.errors}")
+        if not t.text.strip():
+            failures.append(f"turn {i}: no written reply")
         lowered = t.text.lower()
         if "you should" in lowered:
             failures.append(f"turn {i}: says 'you should'")

@@ -61,7 +61,9 @@ SHOW_TOOL = {
         "Display something in the conversation: the scenario summary for the user to confirm "
         "(after record_scenario reports nothing missing), a bracket-fill chart or balance "
         "comparison for a result, or tappable follow-up questions. Numbers in these displays "
-        "come from the engine."
+        "come from the engine. Displays appear in the order you produce them, so write your "
+        "answer to the user as text first, in the same response, then call show. A display "
+        "never replaces the written answer."
     ),
     "input_schema": None,  # filled from ShowArgs below
 }
@@ -79,6 +81,8 @@ class ToolContext:
     results: dict[str, dict] = field(default_factory=dict)
     # Events for the browser, in order.
     events: list[dict] = field(default_factory=list)
+    # Whether any reply text has reached the user this turn (set by the loop).
+    wrote_text: bool = False
 
     def emit(self, event_type: str, **payload: Any) -> None:
         self.events.append({"type": event_type, **payload})
@@ -366,7 +370,7 @@ def _show(arguments: dict, ctx: ToolContext) -> tuple[dict, bool]:
         if not 1 <= len(suggestions) <= 4:
             return {"error": "Provide 1 to 4 suggestions."}, True
         ctx.emit("part", part={"kind": "suggestions", "suggestions": suggestions})
-        return {"shown": "suggestions"}, False
+        return _shown(ctx, {"shown": "suggestions"}), False
 
     if not args.result_id or not ctx.has_result(args.result_id):
         return {
@@ -374,7 +378,21 @@ def _show(arguments: dict, ctx: ToolContext) -> tuple[dict, bool]:
             "analyze_roth_conversions or compare_roth_scenarios result."
         }, True
     ctx.emit("part", part={"kind": args.kind.value, "result_id": args.result_id})
-    return {"shown": args.kind.value, "result_id": args.result_id}, False
+    return _shown(ctx, {"shown": args.kind.value, "result_id": args.result_id}), False
+
+
+# The model sometimes drafts its answer while thinking, shows a chart or suggestions, and
+# ends the turn believing the user read the draft. Thinking is never shown, so say so.
+NO_TEXT_YET = (
+    "The user has not seen any text from you this turn. Anything you wrote while thinking is "
+    "never shown, even if it reads like a finished reply. Your next output must be a text "
+    "block with your full answer to their message (don't call show again for what is already "
+    "shown, and don't mention this note to them)."
+)
+
+
+def _shown(ctx: ToolContext, content: dict) -> dict:
+    return content if ctx.wrote_text else {**content, "note": NO_TEXT_YET}
 
 
 def clean_schema(schema: Any) -> Any:

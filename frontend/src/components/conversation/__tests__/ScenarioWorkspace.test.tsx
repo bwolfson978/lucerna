@@ -180,6 +180,26 @@ describe("ScenarioWorkspace (calculator)", () => {
     expect(await screen.findByTestId("scenario-summary")).toBeInTheDocument();
     expect(screen.getByText("I'm 52")).toBeInTheDocument();
   });
+
+  it("keeps follow-up chips below text that streamed after them", async () => {
+    server.use(
+      http.post(API, () =>
+        sse([
+          {
+            type: "part",
+            part: { kind: "suggestions", suggestions: ["What if I retire at 58?"] },
+          },
+          { type: "text_delta", text: "Here is the written answer." },
+          { type: "done", messages: [{ role: "user", content: "hi" }] },
+        ])
+      )
+    );
+    renderWorkspace("calculator");
+    await sendMessage("What assumptions does it make?");
+    const chip = await screen.findByRole("button", { name: "What if I retire at 58?" });
+    const answer = screen.getByText("Here is the written answer.");
+    expect(answer.compareDocumentPosition(chip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
 });
 
 describe("ScenarioWorkspace (full results links)", () => {

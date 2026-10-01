@@ -307,11 +307,18 @@ async def get_tax_brackets(
         "How the optimizer works and the concepts behind it: the savings number, bracket "
         "filling, the conversion trade-off, multi-year allocation, assumptions and limits, "
         "Roth conversions, RMDs, ACA subsidies, IRMAA, state taxes and using the tool. Read it "
-        "before answering questions about methodology or the product."
+        "before answering questions about methodology or the product. The text is reference "
+        "for you and is not shown to the user, so answer from it in your own words."
     ),
 )
 async def explain_methodology(topic: MethodologyTopic) -> CallToolResult:
-    return _result({"topic": topic.value, "text": core.methodology_text(topic.value)})
+    return _result(
+        {
+            "topic": topic.value,
+            "text": core.methodology_text(topic.value),
+            "shown_to_user": False,
+        }
+    )
 
 
 def _register_resources() -> None:

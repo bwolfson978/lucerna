@@ -101,7 +101,7 @@ function AssistantMessage({
   const showThinking = streaming && (message.parts.length === 0 || status);
   return (
     <div className="flex flex-col gap-default" data-testid="assistant-message">
-      {message.parts.map((part, i) => (
+      {suggestionsLast(message.parts).map(({ part, i }) => (
         <PartView
           key={i}
           part={part}
@@ -118,6 +118,15 @@ function AssistantMessage({
       )}
     </div>
   );
+}
+
+// Follow-up chips close a message even when the model wrote more text after them.
+function suggestionsLast(parts: UiPart[]): { part: UiPart; i: number }[] {
+  const indexed = parts.map((part, i) => ({ part, i }));
+  return [
+    ...indexed.filter(({ part }) => part.kind !== "suggestions"),
+    ...indexed.filter(({ part }) => part.kind === "suggestions"),
+  ];
 }
 
 function PartView({

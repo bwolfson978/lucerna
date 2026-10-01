@@ -193,3 +193,26 @@ def test_prompt_rules():
     assert "you should" in SYSTEM_PROMPT  # the rule itself names the phrase to avoid
     assert "—" not in SYSTEM_PROMPT
     assert len(PROMPT_VERSION) == 12
+
+
+async def test_show_before_any_text_gets_a_note():
+    tip = {"kind": "suggestions", "suggestions": ["What if I retire at 60?"]}
+    client = ScriptedModelClient(
+        [
+            [tool_use("t1", "show", tip)],
+            [text("Here is the answer.")],
+        ]
+    )
+    events = await collect(client)
+    assert [e["part"]["kind"] for e in events if e["type"] == "part"] == ["suggestions"]
+    messages = done_messages(events)
+    result = json.loads(messages[2]["content"][0]["content"])
+    assert "not seen any text" in result["note"]
+    assert_well_formed(messages)
+
+
+async def test_show_after_text_has_no_note():
+    tip = {"kind": "suggestions", "suggestions": ["What if I retire at 60?"]}
+    client = ScriptedModelClient([[text("Here is the answer."), tool_use("t1", "show", tip)], []])
+    messages = done_messages(await collect(client))
+    assert json.loads(messages[2]["content"][0]["content"]) == {"shown": "suggestions"}

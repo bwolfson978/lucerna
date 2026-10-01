@@ -188,6 +188,8 @@ async def _run_turn(
                 system=SYSTEM_PROMPT, tools=tools, messages=[*history, *new_messages]
             ):
                 if isinstance(event, TextDelta):
+                    if event.text.strip():
+                        ctx.wrote_text = True
                     yield {"type": "text_delta", "text": event.text}
                 elif isinstance(event, ToolStart):
                     yield {

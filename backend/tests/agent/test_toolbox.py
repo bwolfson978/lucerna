@@ -82,6 +82,23 @@ async def test_errors_and_show_validation():
         assert not is_error
 
 
+async def test_show_notes_when_nothing_was_written_yet():
+    context = ctx()
+    context.known_result_ids.add("r_0123456789")
+    suggestions = {"kind": "suggestions", "suggestions": ["What if I retire at 60?"]}
+    async with open_toolbox() as toolbox:
+        content, is_error = await toolbox.call("show", suggestions, context)
+        assert not is_error and "not seen any text" in content["note"]
+        chart = {"kind": "bracket_fill", "result_id": "r_0123456789"}
+        content, is_error = await toolbox.call("show", chart, context)
+        assert not is_error and "not seen any text" in content["note"]
+
+        context.wrote_text = True
+        assert await toolbox.call("show", suggestions, context) == ({"shown": "suggestions"}, False)
+        content, _ = await toolbox.call("show", chart, context)
+        assert "note" not in content
+
+
 async def test_ui_tool_results_become_mcp_app_parts():
     context = ctx()
     async with open_toolbox() as toolbox:
