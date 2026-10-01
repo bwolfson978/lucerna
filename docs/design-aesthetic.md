@@ -145,7 +145,7 @@ All: radius 999px, 44px min height, 15px/600 Inter, 180ms transitions.
 ```
 
 ### Header
-Sticky, 68px tall, `bg-paper/80` with 14px backdrop blur and a hairline bottom border. `lucerna.` wordmark (Playfair 700, pine period) on the left; Demo, Methodology, "How does it work?" and a `.btn-dark` "Run your scenario" on the right. On phones: wordmark, help button, hamburger.
+Sticky, 68px tall, `bg-paper/80` with 14px backdrop blur and a hairline bottom border. "Roth Conversion Optimizer." wordmark (Playfair 700, pine period; no product name appears in the UI) on the left; Demo, Methodology, "How does it work?" and a `.btn-dark` "Run your scenario" on the right. On phones: wordmark, help button, hamburger.
 
 ### Inputs
 White background, hairline border, 10px radius, 44px min height. Focus: pine border plus a 2px pine-mid/15 ring. Numbers use `.font-data`.

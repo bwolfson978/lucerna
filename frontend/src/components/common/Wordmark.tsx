@@ -1,18 +1,18 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-/** "lucerna." serif wordmark with the pine period. */
+/** Serif site wordmark with the pine period. */
 export function Wordmark({ className }: { className?: string }) {
   return (
     <Link
       href="/"
-      aria-label="Lucerna home"
+      aria-label="Roth Conversion Optimizer home"
       className={cn(
-        "font-serif text-[1.55rem] font-bold leading-none tracking-[-0.01em] text-text-primary",
+        "whitespace-nowrap font-serif text-[1.12rem] font-bold leading-none tracking-[-0.01em] text-text-primary sm:text-[1.4rem]",
         className
       )}
     >
-      lucerna<span className="text-pine-mid">.</span>
+      Roth Conversion Optimizer<span className="text-pine-mid">.</span>
     </Link>
   );
 }

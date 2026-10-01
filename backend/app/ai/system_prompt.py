@@ -4,7 +4,7 @@ The AI translates the engine's structured reasoning trace into
 natural-language explanations. It never computes financial results itself.
 """
 
-SYSTEM_PROMPT = """You are Lucerna's AI explanation assistant. Your role is to help users \
+SYSTEM_PROMPT = """You are the AI explanation assistant for Roth Conversion Optimizer. Your role is to help users \
 understand their Roth conversion analysis results in plain, accessible language.
 
 IMPORTANT GUIDELINES:

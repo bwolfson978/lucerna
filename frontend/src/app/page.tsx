@@ -37,9 +37,9 @@ export default function Home() {
                 delay={2}
                 className="max-w-[620px] text-[1.08rem] leading-[1.65] text-text-secondary sm:text-[1.25rem]"
               >
-                Lucerna maps your retirement income, finds the low-tax window before required
-                minimum distributions begin, and builds a year-by-year conversion schedule for the
-                accounts you already have.
+                Map your retirement income, find the low-tax window before required minimum
+                distributions begin, and build a year-by-year conversion schedule for the accounts
+                you already have.
               </Reveal>
               <Reveal delay={3} className="mt-8 flex flex-col gap-3.5 sm:flex-row sm:flex-wrap">
                 <Link href="/calculator" className="btn-dark">
@@ -95,7 +95,7 @@ export default function Home() {
                 className="flex max-w-[460px] flex-col gap-4 text-[1.06rem] text-text-secondary"
               >
                 <p>
-                  Tell Lucerna a few details: income, savings, and how the next decades look. It
+                  Share a few details: income, savings, and how the next decades look. The optimizer
                   charts every income source across your lifetime, from salary to Social Security to
                   pensions.
                 </p>
@@ -136,9 +136,9 @@ export default function Home() {
                 className="flex max-w-[460px] flex-col gap-4 text-[1.06rem] text-text-secondary"
               >
                 <p>
-                  Lucerna&apos;s optimizer weighs every year of your timeline together and surfaces
-                  the schedule that keeps conversions in the lowest brackets available, year after
-                  year, to maximize after-tax wealth over your lifetime.
+                  The optimizer weighs every year of your timeline together and surfaces the
+                  schedule that keeps conversions in the lowest brackets available, year after year,
+                  to maximize after-tax wealth over your lifetime.
                 </p>
                 <p>
                   No spreadsheets. No guessing at &ldquo;how much should I convert?&rdquo; The

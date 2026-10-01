@@ -233,7 +233,7 @@ function ConversionRegister({
         </span>
       </div>
       <p className="relative text-[13.5px] text-pine-mist">
-        Margaret&apos;s optimized schedule, computed live by the Lucerna engine.
+        Margaret&apos;s optimized schedule, computed live by the optimization engine.
       </p>
 
       <div className="relative -mx-1 mt-5">

@@ -10,7 +10,7 @@ test.describe('Smoke tests', () => {
 
   test('frontend loads successfully', async ({ page }) => {
     await page.goto('/')
-    await expect(page).toHaveTitle(/Lucerna/)
+    await expect(page).toHaveTitle(/Roth Conversion Optimizer/)
   })
 
   test('frontend can reach backend', async ({ page }) => {
