@@ -21,7 +21,7 @@ export function MethodologyLayout({ result, children }: MethodologyLayoutProps) 
   const { isOpen } = useMethodology();
 
   return (
-    <div className="flex min-h-[calc(100vh-3.5rem)]">
+    <div className="flex min-h-[calc(100vh-68px)] overflow-x-clip">
       {/* Main content area — shrinks when sidebar is open on desktop */}
       <div
         className={cn(

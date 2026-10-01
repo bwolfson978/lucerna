@@ -109,7 +109,7 @@ export function BracketFillChart({ data, year }: BracketFillChartProps) {
                   y={y}
                   width={remainingWidth}
                   height={34}
-                  fill="rgba(255,255,255,0.04)"
+                  fill="rgba(20, 20, 20, 0.04)"
                   rx={4}
                 />
               )}

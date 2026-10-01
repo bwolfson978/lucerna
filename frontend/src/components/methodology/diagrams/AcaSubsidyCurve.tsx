@@ -48,7 +48,7 @@ export function AcaSubsidyCurve() {
         y1={top}
         x2={left}
         y2={bottom}
-        stroke="rgba(255, 255, 255, 0.08)"
+        stroke="rgba(20, 20, 20, 0.08)"
         strokeWidth="1"
       />
       <line
@@ -56,7 +56,7 @@ export function AcaSubsidyCurve() {
         y1={bottom}
         x2={right}
         y2={bottom}
-        stroke="rgba(255, 255, 255, 0.08)"
+        stroke="rgba(20, 20, 20, 0.08)"
         strokeWidth="1"
       />
 
@@ -65,7 +65,7 @@ export function AcaSubsidyCurve() {
         x={18}
         y={top + height / 2}
         textAnchor="middle"
-        fill="#8B8A99"
+        fill="#737373"
         fontFamily={labelFont}
         fontSize="9"
         transform={`rotate(-90, 18, ${top + height / 2})`}
@@ -78,7 +78,7 @@ export function AcaSubsidyCurve() {
         x={left + width / 2}
         y={bottom + 28}
         textAnchor="middle"
-        fill="#8B8A99"
+        fill="#737373"
         fontFamily={labelFont}
         fontSize="9"
       >
@@ -93,20 +93,14 @@ export function AcaSubsidyCurve() {
           y1={top + frac * height}
           x2={right}
           y2={top + frac * height}
-          stroke="rgba(255, 255, 255, 0.04)"
+          stroke="rgba(20, 20, 20, 0.04)"
           strokeDasharray="4 4"
           strokeWidth="1"
         />
       ))}
 
       {/* Subsidy zone background */}
-      <rect
-        x={left}
-        y={top}
-        width={cliffX - left}
-        height={height}
-        fill="rgba(94, 189, 140, 0.04)"
-      />
+      <rect x={left} y={top} width={cliffX - left} height={height} fill="rgba(45, 106, 79, 0.04)" />
 
       {/* No-subsidy zone */}
       <rect
@@ -114,11 +108,11 @@ export function AcaSubsidyCurve() {
         y={top}
         width={right - cliffX}
         height={height}
-        fill="rgba(232, 112, 112, 0.03)"
+        fill="rgba(242, 101, 34, 0.03)"
       />
 
       {/* Cost curve before cliff */}
-      <path d={costPath} fill="none" stroke="#F0C674" strokeWidth="2" />
+      <path d={costPath} fill="none" stroke="#2d6a4f" strokeWidth="2" />
 
       {/* Cliff jump */}
       <line
@@ -126,24 +120,24 @@ export function AcaSubsidyCurve() {
         y1={cliffYBefore}
         x2={cliffX}
         y2={cliffYAfter}
-        stroke="#E87070"
+        stroke="#c2410c"
         strokeWidth="2"
         strokeDasharray="4 3"
       />
 
       {/* Cost curve after cliff */}
-      <path d={postCliffPath} fill="none" stroke="#E87070" strokeWidth="2" />
+      <path d={postCliffPath} fill="none" stroke="#c2410c" strokeWidth="2" />
 
       {/* Cliff marker */}
-      <circle cx={cliffX} cy={cliffYBefore} r="4" fill="#F0C674" />
-      <circle cx={cliffX} cy={cliffYAfter} r="4" fill="#E87070" />
+      <circle cx={cliffX} cy={cliffYBefore} r="4" fill="#2d6a4f" />
+      <circle cx={cliffX} cy={cliffYAfter} r="4" fill="#c2410c" />
 
       {/* Zone labels */}
       <text
         x={left + (cliffX - left) / 2}
         y={top + 16}
         textAnchor="middle"
-        fill="#5EBD8C"
+        fill="#2d6a4f"
         fontFamily={labelFont}
         fontSize="9"
         fontWeight="500"
@@ -154,7 +148,7 @@ export function AcaSubsidyCurve() {
         x={cliffX + (right - cliffX) / 2}
         y={top + 16}
         textAnchor="middle"
-        fill="#E87070"
+        fill="#c2410c"
         fontFamily={labelFont}
         fontSize="9"
         fontWeight="500"
@@ -166,7 +160,7 @@ export function AcaSubsidyCurve() {
       <text
         x={cliffX + 8}
         y={(cliffYBefore + cliffYAfter) / 2 + 4}
-        fill="#E87070"
+        fill="#c2410c"
         fontFamily={labelFont}
         fontSize="9"
         fontWeight="500"
@@ -176,13 +170,13 @@ export function AcaSubsidyCurve() {
 
       {/* Legend */}
       <g>
-        <line x1={left + 10} y1={200} x2={left + 30} y2={200} stroke="#F0C674" strokeWidth="2" />
-        <text x={left + 36} y={203} fill="#B8B0D2" fontFamily={labelFont} fontSize="9">
+        <line x1={left + 10} y1={200} x2={left + 30} y2={200} stroke="#2d6a4f" strokeWidth="2" />
+        <text x={left + 36} y={203} fill="#5c5c5c" fontFamily={labelFont} fontSize="9">
           Tax cost only
         </text>
 
-        <line x1={left + 140} y1={200} x2={left + 160} y2={200} stroke="#E87070" strokeWidth="2" />
-        <text x={left + 166} y={203} fill="#B8B0D2" fontFamily={labelFont} fontSize="9">
+        <line x1={left + 140} y1={200} x2={left + 160} y2={200} stroke="#c2410c" strokeWidth="2" />
+        <text x={left + 166} y={203} fill="#5c5c5c" fontFamily={labelFont} fontSize="9">
           Tax + subsidy loss
         </text>
       </g>

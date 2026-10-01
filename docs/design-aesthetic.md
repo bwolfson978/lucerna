@@ -1,385 +1,229 @@
 # Lucerna — Design Aesthetic Spec
 
-**Last updated:** April 2, 2026
+**Last updated:** October 1, 2026
 **Place in repo:** `docs/design-aesthetic.md`
+**Replaces:** "Warm Midnight" (dark mode, gold accents), retired October 2026.
 
 ---
 
-## Design Philosophy — "Warm Midnight"
+## Design Philosophy — "Paper & Pine"
 
-Lucerna's aesthetic is **warm, sophisticated, and premium**. A dark-mode foundation with golden accents creates a sense of illumination — the core Lucerna metaphor (Latin for light, lamp, lantern). The design sits between institutional confidence and personal warmth: serious enough for retirement savings, but never cold or clinical.
+Lucerna looks like a well-made financial publication with explanations you can play with: warm paper backgrounds, an editorial serif, and one deep pine green that signals growth and money that stays yours. Visual explanations (diagrams, bracket bars, timelines) carry the story. They animate gently as they come into view, and the important ones are interactive so people can test an idea before they reach the calculator.
 
-**One sentence:** Lucerna feels like a private wealth tool that was designed by someone who understands both finance and beauty.
+The visual reference is flowscope.com's "explain the mechanism with a live diagram" style, adapted for retirement tax planning.
+
+**One sentence:** Lucerna feels like a calm, trustworthy planning tool that shows you how the tax code works instead of asking you to trust a number.
 
 **Design principles (in priority order):**
-1. **Illuminate, Don't Overwhelm.** Every piece of information should feel like it was placed there to help you see more clearly. If it doesn't illuminate a decision, it doesn't belong on screen.
-2. **Warm Precision.** Be exact with numbers but human with language. Data should be pixel-perfect; copy should feel like a knowledgeable friend explaining your options.
-3. **Progressive Complexity.** Start simple. Let users peel back layers. The first view should be "here's what to do." The deep view should satisfy Bogleheads.
-4. **Respect the Stakes.** People's retirement savings are on the line. No dark patterns, no gamification of serious decisions. Confidence comes from clarity, not persuasion.
+1. **Show the mechanism.** Every big idea (the conversion window, bracket filling, RMDs) gets a diagram, ideally one the user can drag or toggle.
+2. **Warm precision.** Numbers are exact and tabular; copy is plain English.
+3. **Progressive complexity.** Headline first, then the detail on scroll or click.
+4. **Respect the stakes.** Motion explains, never decorates. No gamification, no confetti.
 
-**Vibes:** Illuminated, Trustworthy, Premium, Precise, Calm, Forward-Looking.
-
----
-
-## Reference Calibration
-
-| Product | What to take from it |
-|---------|---------------------|
-| **ProjectionLab** | Closest competitor / gold standard. Glassmorphic chart tooltips, dark mode as default. Match this polish while differentiating with warmer aesthetics. |
-| **Wealthfront** | Deep Mirage base + purple accents. Proves dark + purple creates institutional trust. |
-| **Betterment** | Sunglow yellow on deep navy — similar energy to our gold on midnight. |
-| **Linear** | Gold standard for keyboard-driven UIs and micro-interactions. Every transition feels intentional. |
-| **Vercel** | Masterclass in dark UI. Subtle borders, perfect contrast ratios, elegant gradient usage. |
-| **Stripe** | How to make complex financial information navigable. Progressive disclosure, excellent data formatting. |
+**Vibes:** Editorial, Grounded, Clear, Calm, Trustworthy, Alive.
 
 ---
 
 ## Typography
 
-**Four-font system:**
+**Three-font system:**
 
-| Role | Font | Usage |
-|------|------|-------|
-| **Display** | DM Serif Display | Page titles, hero text, brand moments. Warm, humanist serif with subtle contrast. |
-| **Body** | DM Sans | Descriptions, explanations, tooltips. Geometric but warm, low stroke contrast. Variable 300–700. |
-| **UI** | Inter | Buttons, labels, navigation, form inputs, captions. Designed for screens, razor-sharp at small sizes. |
-| **Data** | Manrope 700 | Dashboard metrics, chart labels, financial figures. Softer terminals than Inter, generous x-height. Makes numbers feel confident. |
+| Role | Font | Tailwind | Usage |
+|------|------|----------|-------|
+| **Display** | Playfair Display 600/700 (+ italic) | `font-serif` | Headlines, big metric values, wordmark |
+| **Body / UI** | Inter 400–700 | `font-sans` (default), `font-ui` | Body copy, buttons, labels, table numbers |
+| **Mono** | IBM Plex Mono 400/500 | `font-mono` | Small uppercase captions, section numbers (`01`), years, slider readouts |
+
+`.font-data` = Inter with `tabular-nums`. Use it for financial figures in tables and inputs. `DATA_FONT_FAMILY` / `dataFontStyle` in `lib/utils/constants.ts` are the SVG and inline-style equivalents.
+
+**Signature headline pattern:** a plain phrase plus an italic pine phrase, often on two lines.
+
+```tsx
+<h2 className="display-heading text-display">
+  Fill your brackets,<br /><em>not the IRS&rsquo;s.</em>
+</h2>
+```
+
+`.display-heading` sets Playfair 600, -0.015em tracking and 1.06 line height, and turns `<em>` italic pine.
 
 **Type scale:**
 ```
-Display XL:      48px / 800 weight / -0.02em / DM Serif Display
-Display:         36px / 700 weight / -0.02em / DM Serif Display
-Heading:         24px / 600 weight / -0.01em / DM Sans
-Subheading:      18px / 500 weight / DM Sans
-Body:            16px / 400 weight / DM Sans
-Body small:      14px / 400 weight / DM Sans
-Caption/label:   13px / 500 weight / 0.01em / Inter (uppercase sparingly)
-Data large:      28px / 700 weight / -0.02em / Manrope
-Data hero:       40px / 800 weight / -0.02em / Manrope
+display-xl:  clamp(3rem, 7vw, 5.4rem)    Playfair 600   hero h1
+display:     clamp(2.1rem, 4.4vw, 3.4rem) Playfair 600  section h2
+h1:          30px                         page titles inside app views
+h3:          16px / 600                   card titles
+body:        16px / 400 Inter
+body-sm:     14px
+caption:     13px / 500
+eyebrow:     11px Plex Mono, uppercase, 0.16em tracking   (.eyebrow)
+eyebrow-pine:12px Inter 700, uppercase, 0.22em, pine-mid  (.eyebrow-pine)
+metric-value / metric-value-hero: Playfair, tabular lining numerals
 ```
-
-**Key rules:**
-- Financial numbers and metrics use Manrope 700 — this makes numbers feel confident without being aggressive
-- Display/brand text uses DM Serif Display — warmth and sophistication
-- UI labels and captions use Inter — precise and sharp at small sizes
-- Body text is 16px (readable on dark backgrounds)
-- Headings use negative letter-spacing for a tight, compressed feel
-- Use `font-variant-numeric: tabular-nums` on data columns for alignment
 
 ---
 
-## Color System — "Warm Midnight"
+## Color System
 
-### Primary — Dark Foundation
+### Paper (backgrounds)
 ```
-Midnight:          #0F0E1A — main page background
-Deep Navy:         #1A1832 — card/surface backgrounds, input backgrounds
-Plum:              #2D2545 — elevated surfaces, tooltip backgrounds
-Charcoal:          #2C2B3A — hover states, subtle emphasis
-```
-
-### Accent — Warm Golds
-```
-Warm Gold:         #F0C674 — primary accent, CTAs, links, active states
-Amber Glow:        #E8A838 — hover/active accent, stronger emphasis
-Soft Purple:       #6C5CE7 — secondary accent, tags, secondary buttons
-Light Lavender:    #B8B0D2 — muted labels, secondary text
+paper        #fafafa  page background (bg-bg, bg-paper)
+paper-warm   #f0ede6  alternate bands, spotlight cards (bg-bg-alt, bg-paper-warm)
+paper-deep   #e9e5dc  hover, empty tracks (bg-paper-deep)
+stone        #cfc9ba  "other income" segments, axis lines (bg-paper-stone)
+white        #ffffff  cards, inputs, diagrams (bg-card)
+line         #e4e0d6  all hairline borders (border-border)
 ```
 
-### Text
+### Ink (text)
 ```
-Cream:             #FAF7F2 — primary text (headings, body)
-Warm White:        #F5F0EA — slightly warmer for specific highlights
-Lavender:          #B8B0D2 — secondary text
-Neutral:           #8B8A99 — tertiary text, placeholders
-```
-
-### Supporting — Natural Tones
-```
-Soft Sage:         #A8C5A0 — growth, positive trends
-Sea Glass:         #7EC8C8 — clarity, informational
-Rose:              #E8837C — attention, warnings
-Trust Blue:        #4A6FA5 — stability, trust signals
+ink          #141414  primary text
+ink-soft     #3d3d3d  secondary text, body copy
+muted        #6b6b6b–#737373  tertiary text, captions
 ```
 
-### Functional
+### Pine (brand)
 ```
-Positive:          #5EBD8C — gains, optimal markers, good outcomes
-Negative:          #E87070 — costs, losses, bad outcomes
-Neutral:           #8B8A99 — baseline, no-change
-Caution:           #FBBF24 — warnings, cliff alerts
-```
-
-### Glassmorphic Surface Tokens
-```
-Glass background:  rgba(255, 255, 255, 0.04)
-Glass border:      rgba(255, 255, 255, 0.08)
-Glass hover:       rgba(255, 255, 255, 0.07)
-Glass border hover: rgba(255, 255, 255, 0.15)
+pine-deep    #0b1d15  primary buttons, dark bands (register, CTA), tooltips
+pine         #1b4332  links, active nav, italic headline phrases (accent)
+pine-mid     #2d6a4f  conversion segments, positive values (optimal)
+sage         #66a183  secondary green, gradient end, step numbers
+pine-mist    #8fae9c  muted text on dark pine
+pine-haze    #b9c9bd  body text on dark pine
+pine-line    #1e3a2e  borders on dark pine
 ```
 
-### Data Visualization Colors
+### Ember (the only warm accent)
 ```
-Chart income/pre-tax:  #6C5CE7 (Soft Purple)
-Chart conversion/roth: #F0C674 (Warm Gold)
-Chart taxable:         #A8C5A0 (Soft Sage)
-Chart remaining:       rgba(255, 255, 255, 0.04)
+ember        #f26522  RMDs, cliffs, "danger" markers, 32%+ brackets
+ember-text   #c2410c  ember for text on light backgrounds (text-negative)
+```
+Ember means "this costs you." Do not use it for decoration or for neutral selection states.
 
-Bracket 10%:       #4ADE80 (bright green for dark bg)
-Bracket 12%:       #86EFAC
-Bracket 22%:       #FBBF24 (bright yellow)
-Bracket 24%:       #FB923C (orange)
-Bracket 32%:       #F87171 (red)
-Bracket 35%:       #EF4444
-Bracket 37%:       #DC2626 (dark red)
+### Data visualization (`CHART_COLORS`, `BRACKET_COLORS`)
 ```
+Other income / pre-tax:  #bdb6a4 stone
+Roth conversion:         #2d6a4f pine-mid (gradient to #66a183 sage in bars)
+Required withdrawal:     #f26522 ember
+Remaining bracket space: rgba(20,20,20,0.025) with #e4e0d6 stroke
 
-### Gradient Signatures
+Bracket 10%  #4f8f6f   12% #7fae8f   22% #c9a443
+Bracket 24%  #e58a3c   32% #f26522   35% #cf4a17   37% #a3360f
 ```
-Brand gradient:    linear-gradient(135deg, #0F0E1A 0%, #2D2545 30%, #6C5CE7 60%, #F0C674 100%)
-Trust gradient:    linear-gradient(135deg, #1A1832 0%, #4A6FA5 40%, #7EC8C8 70%, #A8C5A0 100%)
-Gold accent:       linear-gradient(135deg, #F0C674 0%, #E8A838 100%)
-```
-
-### Color Philosophy
-- The dark foundation creates focus and premium feel. Color appears to illuminate, not decorate.
-- Gold evokes warmth, optimism, and "illumination" — the core Lucerna metaphor.
-- Purple provides secondary emphasis without competing with gold.
-- Chart colors (purple/gold/sage) carry semantic meaning: pre-tax/roth/taxable.
-- The bracket color gradient (green→red) communicates "low brackets good, high brackets costly" intuitively.
+Low brackets read green, high brackets read ember. Keep `tailwind.config.ts`, `globals.css` and `constants.ts` in sync when changing any of these.
 
 ---
 
-## Spacing & Layout
+## Layout
 
-### Spacing Scale
-```
-4px   — micro (icon-to-label, related inline elements)
-8px   — tight (compact list items, internal mobile padding)
-16px  — default (between cards, between form fields)
-20px  — comfortable (card internal padding)
-32px  — section (between major content blocks)
-48px  — section-lg (between distinct page sections)
-64px  — page (top/bottom page padding)
-```
-
-### Layout Principles
-- **Max content width:** 1080px (keeps data readable)
-- **Page margins:** 24px mobile, 48px tablet, auto-centered desktop
-- **Grid:** Single column mobile, stacked on desktop for M1
-- **Cards:** Glassmorphic with backdrop blur (see Component Patterns)
-- **No hero images or illustrations.** The data IS the hero.
+- **Max width:** 1180px for marketing sections (`max-w-wide`), 1080px for app views (`max-w-content`).
+- **Gutters:** 16px on phones, 28px from `sm`.
+- **Section rhythm:** 72px vertical padding on mobile, 110px on desktop. Alternate paper and paper-warm bands with hairline borders.
+- **Two-column explainer:** copy on one side, white "visual" card on the other; flip sides on alternating sections. Stack on mobile with the copy first.
+- **Dark bands:** `bg-pine-deep`, 26px radius, a radial sage wash (`.dark-wash`) in a corner. Use for one data-heavy moment per page (the register) and the final CTA.
 
 ---
 
-## Component Patterns
+## Components
 
-### Cards (Glassmorphic)
+### Cards
 ```
-Background:      rgba(255, 255, 255, 0.04)
-Backdrop:        blur(20px)
-Border:          1px solid rgba(255, 255, 255, 0.08)
-Border radius:   20px
-Padding:         20px
-Shadow:          none by default
-Hover:           translateY(-2px), border rgba(255,255,255,0.12), 300ms ease
+White background, 1px #e4e0d6 border, 20px radius, 32px padding (16px on phones).
+Shadow: 0 24px 60px -34px rgba(27,67,50,0.22). Green-tinted, very soft.
+Hover (interactive cards only): translateY(-5px) + shadow-card-hover.
+.card-recommended  2px pine-mid border
+.card-current      2px sage border ("your selection")
 ```
 
-### The "Recommended" Card Accent
+### Buttons (pills)
 ```
-Border:          2px solid #F0C674 (Warm Gold)
-Glow:            box-shadow 0 0 20px rgba(240, 198, 116, 0.1)
-Badge:           "Recommended" — bg rgba(240,198,116,0.15), text #F0C674,
-                 11px/500, 8px radius, padding 2px 10px
-```
-
-### Buttons
-```
-Primary:     Gold gradient bg (F0C674 → E8A838), midnight text (#0F0E1A),
-             12px radius, height 48px, padding 14px 32px, font 15px/600 DM Sans.
-             Hover: translateY(-2px), box-shadow 0 8px 30px rgba(240,198,116,0.25).
-
-Secondary:   Purple glass bg rgba(108,92,231,0.15), soft-purple text,
-             1px border rgba(108,92,231,0.3), same sizing.
-             Hover: bg rgba(108,92,231,0.25), translateY(-2px).
-
-Ghost:       Transparent, cream text, 1px border rgba(255,255,255,0.12).
-             Hover: border rgba(255,255,255,0.25), translateY(-2px).
-
-ALL buttons: 12px radius. Min-height 44px (touch target).
-             Transition: 300ms ease. Letter-spacing: 0.3px.
+.btn-dark          pine-deep bg, cream text. Hover: pine bg, lift 2px, soft shadow.
+.btn-ghost         transparent, hairline border. Hover: ink border.
+.btn-paper         paper bg, pine-deep text. For dark bands.
+.btn-outline-paper translucent cream border. Secondary action on dark bands.
+All: radius 999px, 44px min height, 15px/600 Inter, 180ms transitions.
+<Button> (components/ui/button.tsx) uses the same language.
 ```
 
-### Input Fields
-```
-Height:          44px
-Background:      #1A1832 (Deep Navy)
-Border:          1px solid rgba(255, 255, 255, 0.08)
-Border radius:   12px
-Text:            #FAF7F2 (Cream)
-Placeholder:     #8B8A99 (Neutral)
-Focus:           border-color #F0C674, ring 0 0 0 2px rgba(240,198,116,0.15)
-Font:            16px DM Sans. Numbers in Manrope.
-Label:           13px, 500 weight, Inter, Light Lavender, above the field
-```
+### Header
+Sticky, 68px tall, `bg-paper/80` with 14px backdrop blur and a hairline bottom border. `lucerna.` wordmark (Playfair 700, pine period) on the left; Demo, Methodology, "How does it work?" and a `.btn-dark` "Run your scenario" on the right. On phones: wordmark, help button, hamburger.
 
-### Navigation / Header
-```
-Logo: "Lucerna" in DM Serif Display, 18px/600 — the only serif usage in nav.
-One or two nav items. CTA: gold glow-button "Run your scenario".
-Height: 56px. Border-bottom: 1px solid rgba(255,255,255,0.08).
-Background: rgba(15,14,26,0.8) + backdrop-filter blur(12px). Sticky.
-```
+### Inputs
+White background, hairline border, 10px radius, 44px min height. Focus: pine border plus a 2px pine-mid/15 ring. Numbers use `.font-data`.
 
 ### Tooltips
-```
-Background:      #2D2545 (Plum)
-Text:            #FAF7F2 (Cream), 13px, DM Sans
-Border radius:   12px
-Max-width:       280px
-Border:          1px solid rgba(255,255,255,0.08)
-```
+Pine-deep background, cream text, 12px radius, max 280px.
 
-### Metric Cards
-```
-Label:           13px, 500 weight, Inter, #8B8A99, uppercase tracking
-Value:           28px, 700 weight, Manrope, #FAF7F2
-Delta:           13px, 600 weight
-  Positive:      #5EBD8C with rgba(94,189,140,0.12) bg
-  Negative:      #E87070 with rgba(232,112,112,0.12) bg
-  Neutral:       #8B8A99 with rgba(255,255,255,0.04) bg
-```
+### Pills and chips
+Rounded-full, white background, hairline border, 14–15px Inter 500. Floating diagram chips get a soft shadow and a colored dot.
 
 ---
 
-## Chart & Visualization Style
+## Motion
 
-### Chart Bar Gradient Treatment
-All chart bars use bottom-to-top gradient fills that feel translucent and luminous on the dark background:
-```
-Income/Pre-Tax bars:  #6C5CE7 — opacity 0.7 at bottom, fading to 0.2 at top
-Conversion/Roth bars: #F0C674 — opacity 0.7 at bottom, fading to 0.3 at top
-Taxable bars:         #A8C5A0 — opacity 0.5 at bottom, fading to 0.2 at top
-```
-Bars have 8px rounded top corners. The gradient creates depth without competing with data labels.
+Motion is the main difference from the old spec. It should explain how something works.
 
-### ApexCharts Base Config
-```javascript
-const baseChartConfig = {
-  chart: {
-    fontFamily: "'Manrope', 'DM Sans', system-ui, sans-serif",
-    toolbar: { show: false },
-    zoom: { enabled: false },
-    background: 'transparent',
-    animations: { enabled: true, speed: 600 },
-  },
-  grid: {
-    borderColor: 'rgba(255, 255, 255, 0.06)',
-    strokeDashArray: 3,
-  },
-  tooltip: {
-    theme: 'dark',
-    style: { fontSize: '12px' },
-  },
-  legend: { show: false },  // always custom HTML legends
-  fill: {
-    type: 'gradient',
-    gradient: {
-      shade: 'dark',
-      type: 'vertical',
-      shadeIntensity: 0.3,
-      opacityFrom: 0.7,
-      opacityTo: 0.2,
-      stops: [0, 100],
-    },
-  },
-};
-```
+| Pattern | Where | Implementation |
+|---------|-------|----------------|
+| Scroll reveal (fade + 26px lift, staggered 100ms) | Section copy and cards | `<Reveal delay={n}>` + `.reveal` |
+| Flowing dashed path, travelling dots, pulse rings | Hero conversion diagram | `.flow-path`, SVG `animateMotion`, `.pulse-ring` |
+| Gentle bob | Floating chips | `.float-chip` |
+| Bars filling | Bracket bars, mini charts | CSS width/scale transitions on in-view |
+| Line drawing | Mini line charts | `pathLength=1` + `stroke-dashoffset` transition |
+| Count-up and row stagger | Conversion register | rAF count-up, 110ms row delays |
+| Blinking status dot | "Scheduled" | `.blink-dot` |
 
-### Bracket Fill Visualization (Custom SVG)
-- Horizontal stacked bars, green→red bracket color scale
-- Income segment in Soft Purple (#6C5CE7)
-- Conversion in Warm Gold (#F0C674)
-- Remaining capacity in rgba(255,255,255,0.04)
-- Bar height 34px with 8px gaps
-- Labels in 13px Manrope, dollar amounts in 11px Manrope
-- Bracket color indicator: 3px vertical bar using bracket colors
+**Timing:** UI hovers 180–300ms; reveals 800ms `cubic-bezier(0.2,0.7,0.2,1)`; data transitions 500–600ms; ambient loops 1.1–4.5s.
 
-### Axis & Label Styling
-```
-Axis labels:     #B8B0D2 (Lavender) or #8B8A99 (Neutral), 11-12px, Manrope
-Grid lines:      rgba(255, 255, 255, 0.06), dashed (strokeDashArray: 3)
-Annotations:     rgba(255, 255, 255, 0.08) borders, #8B8A99 label text
-```
+**Rules:**
+- Every animation must respect `prefers-reduced-motion`. Use `usePrefersReducedMotion()` and the CSS media query; show the final (or a representative static) state.
+- Animations start when the element is in view (`useInView`) and run once, except ambient loops in the hero.
+- No bounce, wobble, confetti or parallax.
+
+### Interactive explainers
+Landing explainers should let people move a slider or toggle and see the result immediately:
+- **IncomeWindowMap:** retirement age, Social Security age and RMD age (73/75) reshape the conversion window.
+- **BracketFiller:** a conversion amount and other income pour into the real 2026 brackets (from `useTaxConfig`), with tax, average rate and top bracket.
+- **LandingDemo:** the register and Margaret stats come from `/api/demo`, so the landing page never shows numbers the engine did not produce. Purely illustrative visuals must say "illustrative".
+
+Use `RangeControl` (`components/landing/RangeControl.tsx`) for sliders: pine filled track, white-ringed thumb, mono readout.
 
 ---
 
-## Interaction & Animation
+## Charts
 
-### Timing
-```
-UI transitions:    300ms ease (button hovers, card hover, input focus)
-Chart animations:  400-600ms (data appearing, bars filling)
-Page transitions:  200ms
-Glow rotation:     4s linear infinite (glow button border)
-```
-Interactions should feel graceful and unhurried — calm, like retirement planning should be.
-
-### Hover States
-- Buttons: translateY(-2px), shadow appears (300ms)
-- Cards: translateY(-2px), border brightens (300ms)
-- Links: color shifts to Warm Gold
-- Chart elements: tooltip appears, no other change
-
-### Scroll Behavior
-- Smooth scroll for section navigation
-- Sticky header with backdrop blur
-- No parallax or scroll-triggered animations
-- Charts animate on first appearance (intersection observer)
+- Light backgrounds: ApexCharts `theme: "light"`, `shade: "light"` gradients.
+- Grid and axis lines: `rgba(20,20,20,0.04–0.08)` or `#e4e0d6`. Axis labels `#5c5c5c`/`#737373`, 11–13px Inter.
+- Conversion bars use pine-mid with a vertical fade; income bars stone; RMDs ember.
+- Custom HTML legends only.
 
 ---
 
-## Mobile-Specific Rules
+## Mobile
 
-### Touch Targets
-- All interactive elements: minimum 44px height
-- Adequate spacing between tappable elements (minimum 8px gap)
-
-### Layout Adaptations
-- Single column layout
-- Cards stack vertically
-- Metric cards: 2-column grid on mobile
-- Charts: full width, minimum 200px height
-- Body stays 16px on mobile
+- Single column below `lg` for explainers; the hero diagram switches to a vertical flow below `sm`.
+- 44px minimum touch targets; 16px body text.
+- Tables drop secondary columns (status, age) on phones rather than scrolling horizontally.
+- No horizontal page scroll at 390px. Check with Playwright (`document.documentElement.scrollWidth`).
 
 ---
 
-## What Lucerna Should NEVER Look Like
+## Never
 
-- No pure white backgrounds (always warm/dark tones)
-- No cold blue accents (#2563EB or similar — use warm gold instead)
-- No generic fintech aesthetic (cold, corporate, clinical)
-- No flat/unstyled cards without glass treatment
-- No harsh borders (always subtle, translucent)
-- No low-contrast text on dark backgrounds
-- No more than TWO accent colors in the UI (gold primary, purple secondary)
-- No playful animations (bounce, wobble, confetti)
-- No stock photography or illustrations
-- No gamification elements
-- No light mode (dark is the only mode for now)
+- Dark-mode-only pages or glassmorphism (the old system).
+- Gold, purple or cold blue accents.
+- Ember used decoratively.
+- Numbers on the landing page that did not come from the engine, unless clearly labeled illustrative.
+- Em dashes in user-facing copy.
+- Motion that ignores reduced-motion preferences.
 
 ---
 
-## Quick Reference for Claude Code
+## Quick checklist
 
-When building any Lucerna component, follow this checklist:
-1. Is the background dark (#0F0E1A base, #1A1832 surfaces)?
-2. Is the card glassmorphic (rgba bg, backdrop blur, subtle border)?
-3. Are display/brand elements in DM Serif Display?
-4. Are data/numbers in Manrope 700?
-5. Are UI labels/captions in Inter?
-6. Is the primary accent Warm Gold (#F0C674), not blue?
-7. Is the border-radius 12-20px? (Not smaller)
-8. Are transitions 300ms ease for UI elements?
-9. Do chart bars use gradient fills (opaque at bottom, translucent at top)?
-10. Does it feel warm and premium, not cold and clinical?
+1. Paper background, white cards, hairline `#e4e0d6` borders?
+2. Headline in Playfair with an italic pine phrase?
+3. Captions in Plex Mono uppercase, body in Inter, numbers tabular?
+4. One pine primary action (pill), ember only for costs and danger?
+5. Is there a diagram that explains the idea, and can the user interact with it?
+6. Does the animation run on view and respect reduced motion?
+7. Works at 390px with no horizontal scroll?

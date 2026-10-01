@@ -1,21 +1,40 @@
+/** "Paper & Pine" palette. Keep in sync with tailwind.config.ts and docs/design-aesthetic.md. */
+export const PALETTE = {
+  ink: "#141414",
+  inkSoft: "#3d3d3d",
+  muted: "#737373",
+  paper: "#fafafa",
+  paperWarm: "#f0ede6",
+  paperDeep: "#e9e5dc",
+  stone: "#cfc9ba",
+  line: "#e4e0d6",
+  pine: "#1b4332",
+  pineDeep: "#0b1d15",
+  pineMid: "#2d6a4f",
+  sage: "#66a183",
+  mist: "#8fae9c",
+  ember: "#f26522",
+  emberText: "#c2410c",
+} as const;
+
 export const CHART_COLORS = {
-  income: "#6C5CE7",
-  rmd: "#7EC8C8",
-  conversion: "#F0C674",
-  taxable: "#A8C5A0",
-  remaining: "rgba(255, 255, 255, 0.04)",
-  remainingStroke: "rgba(255, 255, 255, 0.08)",
-  sliderTrack: "#2C2B3A",
+  income: "#bdb6a4",
+  rmd: "#f26522",
+  conversion: "#2d6a4f",
+  taxable: "#66a183",
+  remaining: "rgba(20, 20, 20, 0.025)",
+  remainingStroke: "#e4e0d6",
+  sliderTrack: "#e9e5dc",
 } as const;
 
 export const BRACKET_COLORS: Record<string, string> = {
-  "0.10": "#4ADE80",
-  "0.12": "#86EFAC",
-  "0.22": "#FBBF24",
-  "0.24": "#FB923C",
-  "0.32": "#F87171",
-  "0.35": "#EF4444",
-  "0.37": "#DC2626",
+  "0.10": "#4f8f6f",
+  "0.12": "#7fae8f",
+  "0.22": "#c9a443",
+  "0.24": "#e58a3c",
+  "0.32": "#f26522",
+  "0.35": "#cf4a17",
+  "0.37": "#a3360f",
 };
 
 export const CURRENT_YEAR = new Date().getFullYear();
@@ -47,7 +66,10 @@ export const PAGE_FOOTER_DISCLAIMER =
   "before making financial decisions.";
 
 /** Font family for numeric/data values throughout the app. */
-export const DATA_FONT_FAMILY = "'Manrope', system-ui";
+export const DATA_FONT_FAMILY = "'Inter', system-ui";
 
 /** Inline style object for data font — avoids repeating the string in JSX. */
-export const dataFontStyle = { fontFamily: DATA_FONT_FAMILY } as const;
+export const dataFontStyle = {
+  fontFamily: DATA_FONT_FAMILY,
+  fontVariantNumeric: "tabular-nums",
+} as const;

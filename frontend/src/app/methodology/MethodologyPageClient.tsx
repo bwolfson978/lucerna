@@ -361,7 +361,7 @@ export function MethodologyPageClient() {
                           <td className="py-3 pr-4 text-body-sm font-medium text-text-primary">
                             {row.assumption}
                           </td>
-                          <td className="py-3 pr-4 font-mono text-body-sm font-bold text-accent">
+                          <td className="font-data py-3 pr-4 text-body-sm font-bold text-accent">
                             {row.value}
                           </td>
                           <td className="py-3 text-body-sm text-text-secondary">{row.rationale}</td>

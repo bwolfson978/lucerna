@@ -56,7 +56,7 @@ function ScenarioCardContent({
           <div className="flex justify-between text-body-sm">
             <span className="text-text-secondary">Estimated savings</span>
             <span
-              className={`font-mono font-medium ${scenario.estimated_savings! > 0 ? "text-optimal" : "text-text-primary"}`}
+              className={`font-data font-medium ${scenario.estimated_savings! > 0 ? "text-optimal" : "text-text-primary"}`}
             >
               {formatSavings(Math.round(scenario.estimated_savings!))}
             </span>
@@ -71,7 +71,7 @@ function ScenarioCardContent({
             {scheduleRows.map((row) => (
               <div key={row.year} className="flex justify-between text-body-sm">
                 <span className="text-text-secondary">{row.year}</span>
-                <span className="font-mono text-text-primary">
+                <span className="font-data text-text-primary">
                   {formatCompactCurrency(row.amount)}
                 </span>
               </div>
@@ -79,7 +79,7 @@ function ScenarioCardContent({
             {scheduleRows.length > 1 && (
               <div className="flex justify-between border-t border-border pt-1 text-body-sm">
                 <span className="font-medium text-text-secondary">Total</span>
-                <span className="font-mono font-medium text-text-primary">
+                <span className="font-data font-medium text-text-primary">
                   {formatCompactCurrency(scenario.conversion_amount)}
                 </span>
               </div>
@@ -89,7 +89,7 @@ function ScenarioCardContent({
 
         <div className="flex items-start justify-between gap-x-2 text-body-sm">
           <span className="min-w-0 text-text-secondary">Tax on Roth conversions</span>
-          <span className="flex-shrink-0 whitespace-nowrap font-mono text-text-primary">
+          <span className="font-data flex-shrink-0 whitespace-nowrap text-text-primary">
             {formatCurrency(scenario.tax_on_conversion)}
           </span>
         </div>

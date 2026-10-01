@@ -5,22 +5,23 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-[12px] text-[15px] font-semibold tracking-[0.3px] transition-all duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]",
+  "inline-flex items-center justify-center gap-2 rounded-full text-[15px] font-semibold transition-all duration-200 ease-out disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]",
   {
     variants: {
       variant: {
         default:
-          "btn-gradient-primary text-bg active:scale-[0.98]  hover:shadow-[0_8px_30px_rgba(240,198,116,0.25)]",
-        secondary: "btn-gradient-secondary text-purple border border-purple/30 ",
+          "bg-pine-deep text-[#f5f2ea] hover:bg-pine hover:-translate-y-0.5 hover:shadow-[0_12px_28px_-10px_rgba(11,29,21,0.5)] active:translate-y-0",
+        secondary:
+          "bg-accent-light text-pine border border-pine-mid/25 hover:bg-pine-mid/20 hover:-translate-y-0.5",
         outline:
-          "bg-transparent border border-[rgba(255,255,255,0.15)] text-text-primary hover:border-[rgba(255,255,255,0.25)] ",
+          "bg-transparent border border-border text-text-primary hover:border-text-primary hover:-translate-y-0.5",
         ghost:
-          "bg-transparent text-text-primary border border-[rgba(255,255,255,0.12)] hover:border-[rgba(255,255,255,0.25)] ",
+          "bg-transparent text-text-primary border border-border hover:border-text-primary hover:-translate-y-0.5",
         destructive: "bg-negative text-white hover:bg-negative/90 active:scale-[0.98]",
         link: "text-accent underline-offset-4 hover:underline",
       },
       size: {
-        default: "py-3.5 px-8",
+        default: "py-3 px-7",
         sm: "py-2 px-4 text-body-sm",
         lg: "py-4 px-10",
         icon: "h-9 w-9 p-0",

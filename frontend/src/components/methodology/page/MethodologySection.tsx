@@ -13,7 +13,7 @@ interface MethodologySectionProps {
 /**
  * Wrapper for each section on the methodology page.
  * Provides consistent structure: section number badge, title, and
- * glassmorphic card wrapping the content.
+ * white card wrapping the content.
  */
 export function MethodologySection({
   id,
@@ -23,11 +23,11 @@ export function MethodologySection({
   className,
 }: MethodologySectionProps) {
   return (
-    <section id={id} className={cn("scroll-mt-20", className)}>
+    <section id={id} className={cn("scroll-mt-28", className)}>
       <div className="flex flex-col gap-comfortable">
         <div className="flex flex-col gap-tight">
-          <span className="font-ui text-caption font-semibold text-accent">{number}</span>
-          <h2 className="font-serif text-display text-text-primary md:text-display">{title}</h2>
+          <span className="font-mono text-[13px] tracking-[0.1em] text-pine-mid">{number}</span>
+          <h2 className="display-heading text-[clamp(1.9rem,3.4vw,2.6rem)]">{title}</h2>
         </div>
         <div className="card">
           <div className="flex flex-col gap-section">{children}</div>

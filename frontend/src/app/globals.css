@@ -3,115 +3,108 @@
 @tailwind utilities;
 
 @layer base {
+  /* "Paper & Pine" palette. See docs/design-aesthetic.md. */
   :root {
-    --background: 245 30% 8%;
-    --background-alt: 245 35% 15%;
-    --background-elevated: 255 30% 21%;
-    --background-hover: 244 15% 20%;
-    --foreground: 39 44% 96%;
-    --muted-foreground: 254 27% 76%;
-    --tertiary-foreground: 244 7% 57%;
-    --border: 0 0% 100% / 0.08;
-    --border-emphasis: 0 0% 100% / 0.15;
-    --accent: 40 80% 70%;
-    --accent-hover: 38 79% 56%;
-    --accent-light: 40 80% 70% / 0.15;
-    --accent-muted: 40 80% 70% / 0.08;
-    --optimal: 149 42% 55%;
-    --destructive: 0 72% 67%;
-    --neutral: 244 7% 57%;
-    --card: 245 30% 8%;
-    --card-foreground: 39 44% 96%;
-    --ring: 40 80% 70%;
-    --radius: 12px;
+    --background: 0 0% 98%;
+    --background-alt: 42 25% 92%;
+    --background-elevated: 0 0% 100%;
+    --background-hover: 42 23% 89%;
+    --foreground: 0 0% 8%;
+    --muted-foreground: 0 0% 24%;
+    --tertiary-foreground: 0 0% 42%;
+    --border: 43 21% 87%;
+    --border-emphasis: 43 18% 77%;
+    --accent: 154 43% 18%;
+    --accent-hover: 153 40% 30%;
+    --accent-light: 153 40% 30% / 0.12;
+    --accent-muted: 153 40% 30% / 0.06;
+    --optimal: 153 40% 30%;
+    --destructive: 17 88% 40%;
+    --neutral: 0 0% 45%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 8%;
+    --ring: 153 40% 30%;
+    --radius: 20px;
+  }
+
+  html {
+    scroll-behavior: smooth;
   }
 
   body {
     @apply bg-bg font-sans text-body text-text-primary antialiased;
+    text-rendering: optimizeLegibility;
   }
 
-  /* Prevent browser autofill from overriding dark-theme input styles */
+  ::selection {
+    background: #1b4332;
+    color: #fff;
+  }
+
+  /* Keep browser autofill from painting inputs yellow */
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,
   select:-webkit-autofill {
-    -webkit-box-shadow: 0 0 0 1000px hsl(245 35% 15%) inset;
-    -webkit-text-fill-color: hsl(39 44% 96%);
-    caret-color: hsl(39 44% 96%);
+    -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
+    -webkit-text-fill-color: #141414;
+    caret-color: #141414;
     transition: background-color 5000s ease-in-out 0s;
   }
 
   .font-data {
-    font-family: "Manrope", system-ui, sans-serif;
+    font-family: "Inter", system-ui, sans-serif;
     font-variant-numeric: tabular-nums;
   }
 
   .font-serif {
-    font-family: "DM Serif Display", Georgia, serif;
+    font-family: "Playfair Display", Georgia, serif;
   }
 
   .font-ui {
     font-family: "Inter", system-ui, sans-serif;
   }
+
+  h1,
+  h2 {
+    text-wrap: balance;
+  }
 }
 
 @layer components {
   .card {
-    @apply border border-glass-border;
+    @apply border border-border bg-card;
     border-radius: 20px;
     padding: 32px;
-    background: rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    transition: all 300ms ease;
-  }
-
-  .card:hover {
-    background: rgba(255, 255, 255, 0.07);
-    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 24px 60px -34px rgba(27, 67, 50, 0.22);
+    transition:
+      box-shadow 250ms ease,
+      border-color 250ms ease;
   }
 
   .card-recommended {
-    @apply relative;
+    @apply relative bg-card;
     border-radius: 20px;
     padding: 32px;
-    background: rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 2px solid #f0c674;
-    box-shadow: 0 0 20px rgba(240, 198, 116, 0.1);
-    transition: all 300ms ease;
-  }
-
-  .card-recommended:hover {
-    background: rgba(255, 255, 255, 0.07);
-    box-shadow: 0 0 30px rgba(240, 198, 116, 0.15);
+    border: 2px solid #2d6a4f;
+    box-shadow: 0 24px 60px -30px rgba(27, 67, 50, 0.35);
+    transition: box-shadow 250ms ease;
   }
 
   .card-current {
-    @apply relative;
+    @apply relative bg-card;
     border-radius: 20px;
     padding: 32px;
-    background: rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 2px solid #7ec8c8;
-    box-shadow: 0 0 20px rgba(126, 200, 200, 0.1);
-    transition: all 300ms ease;
-  }
-
-  .card-current:hover {
-    background: rgba(255, 255, 255, 0.07);
-    box-shadow: 0 0 30px rgba(126, 200, 200, 0.15);
+    border: 2px solid #66a183;
+    box-shadow: 0 24px 60px -30px rgba(102, 161, 131, 0.3);
+    transition: box-shadow 250ms ease;
   }
 
   .card-elevated {
+    @apply bg-card;
     border-radius: 20px;
     padding: 32px;
-    background: rgba(255, 255, 255, 0.06);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    box-shadow: 0 12px 40px rgba(15, 14, 26, 0.5);
+    box-shadow: 0 24px 60px -24px rgba(27, 67, 50, 0.3);
   }
 
   @media (max-width: 640px) {
@@ -124,37 +117,115 @@
     }
   }
 
+  /* Small uppercase mono caption, e.g. "LIFETIME INCOME MAP" */
+  .eyebrow {
+    @apply font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-text-tertiary;
+  }
+
+  .eyebrow-pine {
+    @apply font-ui text-[12px] font-bold uppercase tracking-[0.22em] text-pine-mid;
+  }
+
+  /* Display headline with an italic pine phrase: <h2>Fill your brackets, <em>not the IRS's.</em></h2> */
+  .display-heading {
+    @apply font-serif font-semibold text-text-primary;
+    letter-spacing: -0.015em;
+    line-height: 1.06;
+  }
+
+  .display-heading em {
+    @apply italic text-pine;
+  }
+
   /* Domain-specific data display tokens */
   .metric-label {
     @apply font-ui text-caption uppercase tracking-wide text-text-tertiary;
   }
 
   .metric-value {
-    @apply font-mono text-data-sm text-text-primary sm:text-data-lg;
+    @apply font-serif text-data-sm text-text-primary sm:text-data-lg;
+    font-variant-numeric: lining-nums tabular-nums;
   }
 
   .metric-value-hero {
-    @apply font-mono text-data-hero-sm font-extrabold text-text-primary sm:text-data-hero;
+    @apply font-serif text-data-hero-sm text-text-primary sm:text-data-hero;
+    font-variant-numeric: lining-nums tabular-nums;
   }
 
   /* Badge variants */
   .badge {
-    @apply inline-flex items-center rounded-lg px-2.5 py-0.5 text-[12px] font-medium uppercase tracking-wide;
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-medium uppercase tracking-wide;
   }
 
   .badge-positive {
     @apply badge border border-optimal/30 text-optimal;
-    background: rgba(94, 189, 140, 0.1);
+    background: rgba(45, 106, 79, 0.08);
   }
 
   .badge-negative {
     @apply badge border border-negative/30 text-negative;
-    background: rgba(232, 112, 112, 0.1);
+    background: rgba(242, 101, 34, 0.08);
   }
 
   .badge-neutral {
-    @apply badge border border-glass-border text-text-secondary;
-    background: rgba(255, 255, 255, 0.04);
+    @apply badge border border-border text-text-secondary;
+    background: #f0ede6;
+  }
+
+  /* Pill buttons */
+  .btn-pill {
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 whitespace-nowrap rounded-full border border-transparent px-7 py-3 text-[15px] font-semibold;
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease,
+      background-color 180ms ease,
+      border-color 180ms ease;
+  }
+
+  .btn-pill:hover {
+    transform: translateY(-2px);
+  }
+
+  .btn-pill:active {
+    transform: translateY(0);
+  }
+
+  .btn-dark {
+    @apply btn-pill bg-pine-deep text-[#f5f2ea];
+  }
+
+  .btn-dark:hover {
+    @apply bg-pine;
+    box-shadow: 0 12px 28px -10px rgba(11, 29, 21, 0.5);
+  }
+
+  .btn-ghost {
+    @apply btn-pill border-border bg-transparent text-text-primary;
+  }
+
+  .btn-ghost:hover {
+    @apply border-text-primary;
+  }
+
+  .btn-paper {
+    @apply btn-pill bg-paper text-pine-deep;
+  }
+
+  .btn-outline-paper {
+    @apply btn-pill border-[rgba(250,250,250,0.35)] bg-transparent text-[#f5f2ea];
+  }
+
+  .btn-outline-paper:hover {
+    @apply border-[#f5f2ea];
+  }
+
+  .link-arrow {
+    @apply inline-flex items-center gap-2 font-semibold text-pine;
+    transition: gap 200ms ease;
+  }
+
+  .link-arrow:hover {
+    gap: 12px;
   }
 }
 
@@ -162,10 +233,10 @@
 @keyframes marker-pulse {
   0%,
   100% {
-    filter: drop-shadow(0 0 4px rgba(240, 198, 116, 0.4));
+    filter: drop-shadow(0 0 2px rgba(45, 106, 79, 0.35));
   }
   50% {
-    filter: drop-shadow(0 0 8px rgba(240, 198, 116, 0.7));
+    filter: drop-shadow(0 0 6px rgba(45, 106, 79, 0.6));
   }
 }
 
@@ -173,136 +244,119 @@
   animation: marker-pulse 3s ease-in-out infinite;
 }
 
-/* Floating gradient orbs — ambient background glow */
-@keyframes float {
+/* Soft radial sage wash behind heroes and dark bands */
+.hero-wash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(720px 380px at 78% 30%, rgba(102, 161, 131, 0.14), transparent 65%);
+}
+
+.dark-wash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(600px 300px at 85% 0%, rgba(102, 161, 131, 0.16), transparent 60%);
+}
+
+/* ── Scroll reveal (see components/common/Reveal.tsx) ── */
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition:
+    opacity 0.8s ease,
+    transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.reveal[data-visible="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── Landing page illustration motion ── */
+@keyframes dashflow {
+  to {
+    stroke-dashoffset: -32;
+  }
+}
+
+.flow-path {
+  stroke-dasharray: 7 9;
+  animation: dashflow 1.1s linear infinite;
+}
+
+@keyframes ring {
+  0% {
+    transform: scale(0.55);
+    opacity: 0.9;
+  }
+  70%,
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+.pulse-ring {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: ring 2.6s ease-out infinite;
+}
+
+@keyframes bob {
   0%,
   100% {
-    transform: translate(0, 0);
+    transform: translateY(0);
   }
   50% {
-    transform: translate(30px, -30px);
+    transform: translateY(-6px);
   }
 }
 
-.gradient-orb {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 0;
+.float-chip {
+  animation: bob 4.5s ease-in-out infinite;
 }
 
-.gradient-orb-purple {
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(108, 92, 231, 0.25) 0%, transparent 70%);
-  animation: float 8s ease-in-out infinite;
-}
-
-.gradient-orb-gold {
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(240, 198, 116, 0.15) 0%, transparent 70%);
-  animation: float 10s ease-in-out infinite reverse;
-}
-
-/* Gradient brand text — cream→gold→amber */
-.brand-gradient {
-  background: linear-gradient(135deg, #faf7f2 0%, #f0c674 50%, #e8a838 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* Button gradient backgrounds — matching moodboard */
-.btn-gradient-primary {
-  background: linear-gradient(135deg, #f0c674 0%, #e8a838 100%);
-}
-.btn-gradient-primary:hover {
-  background: linear-gradient(135deg, #e8a838 0%, #d4941f 100%);
-}
-
-.btn-gradient-secondary {
-  background: rgba(108, 92, 231, 0.15);
-}
-.btn-gradient-secondary:hover {
-  background: rgba(108, 92, 231, 0.25);
-}
-
-/* Glow button — rotating conic-gradient border with gold base */
-@keyframes glow-rotate {
-  from {
-    transform: rotate(0deg);
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
   }
-  to {
-    transform: rotate(360deg);
+  50% {
+    opacity: 0.25;
   }
 }
 
-.glow-button {
-  position: relative;
-  z-index: 1;
-  overflow: hidden;
-  background: linear-gradient(135deg, #f0c674, #e8a838);
-  color: #0f0e1a;
-  border-radius: 12px;
-}
-
-.glow-button::before {
-  content: "";
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: conic-gradient(transparent, #f0c674, #6c5ce7, #e8a838, #b8b0d2, transparent 30%);
-  animation: none;
-  opacity: 0;
-  transition: opacity 180ms ease;
-  z-index: -2;
-}
-
-/* Rotating glow only runs while the user is actively interacting with the
-   button. At rest it reads as a static gold button so it doesn't look like
-   it's already loading before the form has been submitted. */
-.glow-button:hover::before,
-.glow-button:focus-visible::before,
-.glow-button:active::before {
-  animation: glow-rotate 4s linear infinite;
-  opacity: 1;
-}
-
-.glow-button::after {
-  content: "";
-  position: absolute;
-  inset: 2px;
-  background: linear-gradient(135deg, #f0c674, #e8a838);
-  border-radius: inherit;
-  z-index: -1;
-}
-
-.glow-button:hover::after {
-  background: linear-gradient(135deg, #e8a838, #d4941f);
-}
-
-.glow-button:disabled {
-  opacity: 0.5;
-}
-
-.glow-button:disabled::before {
-  animation: none;
-  opacity: 0;
+.blink-dot {
+  animation: blink 1.6s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .glow-button::before,
-  .glow-button:hover::before,
-  .glow-button:focus-visible::before,
-  .glow-button:active::before {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .flow-path,
+  .pulse-ring,
+  .float-chip,
+  .blink-dot,
+  .optimal-marker {
     animation: none;
+  }
+
+  .btn-pill,
+  .btn-pill:hover {
+    transform: none;
   }
 }
 
-/* Hide native number input spinners — they don't theme on dark backgrounds */
+/* Hide native number input spinners */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
@@ -313,7 +367,7 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-/* Range input styling for dark theme */
+/* Range input styling */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
@@ -323,7 +377,7 @@ input[type="range"] {
 input[type="range"]::-webkit-slider-track {
   height: 8px;
   border-radius: 4px;
-  background: #2c2b3a;
+  background: #e9e5dc;
 }
 
 input[type="range"]::-webkit-slider-thumb {
@@ -331,34 +385,34 @@ input[type="range"]::-webkit-slider-thumb {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #f0c674;
-  border: 2px solid #0f0e1a;
+  background: #1b4332;
+  border: 3px solid #ffffff;
   margin-top: -6px;
   cursor: pointer;
-  box-shadow: 0 0 8px rgba(240, 198, 116, 0.3);
+  box-shadow: 0 2px 8px rgba(11, 29, 21, 0.35);
 }
 
 input[type="range"]::-moz-range-track {
   height: 8px;
   border-radius: 4px;
-  background: #2c2b3a;
+  background: #e9e5dc;
 }
 
 input[type="range"]::-moz-range-thumb {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #f0c674;
-  border: 2px solid #0f0e1a;
+  background: #1b4332;
+  border: 3px solid #ffffff;
   cursor: pointer;
-  box-shadow: 0 0 8px rgba(240, 198, 116, 0.3);
+  box-shadow: 0 2px 8px rgba(11, 29, 21, 0.35);
 }
 
-/* Dark-themed scrollbars for chart containers and overflow areas */
+/* Themed scrollbars for chart containers and overflow areas */
 .bracket-chart-scroll,
 .overflow-x-auto {
   scrollbar-width: thin;
-  scrollbar-color: rgba(240, 198, 116, 0.3) rgba(255, 255, 255, 0.04);
+  scrollbar-color: rgba(27, 67, 50, 0.3) #f0ede6;
 }
 
 .bracket-chart-scroll::-webkit-scrollbar,
@@ -368,20 +422,20 @@ input[type="range"]::-moz-range-thumb {
 
 .bracket-chart-scroll::-webkit-scrollbar-track,
 .overflow-x-auto::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.04);
+  background: #f0ede6;
   border-radius: 4px;
 }
 
 .bracket-chart-scroll::-webkit-scrollbar-thumb,
 .overflow-x-auto::-webkit-scrollbar-thumb {
-  background: rgba(240, 198, 116, 0.3);
+  background: rgba(27, 67, 50, 0.3);
   border-radius: 4px;
   transition: background 0.3s ease;
 }
 
 .bracket-chart-scroll::-webkit-scrollbar-thumb:hover,
 .overflow-x-auto::-webkit-scrollbar-thumb:hover {
-  background: rgba(240, 198, 116, 0.5);
+  background: rgba(27, 67, 50, 0.5);
 }
 
 .bracket-chart-scroll::-webkit-scrollbar-button,
@@ -452,7 +506,7 @@ input[type="range"]::-moz-range-thumb {
   background: transparent;
 }
 .methodology-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: #e4e0d6;
   border-radius: 2px;
 }
 
@@ -482,4 +536,70 @@ input[type="range"]::-moz-range-thumb {
     height: 0;
     opacity: 0;
   }
+}
+
+/* ── Landing page range control (filled pine track) ── */
+input.landing-range {
+  width: 100%;
+  height: 28px;
+  cursor: pointer;
+  --pct: 50%;
+}
+
+input.landing-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2d6a4f var(--pct), #e9e5dc var(--pct));
+}
+
+input.landing-range::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2d6a4f var(--pct), #e9e5dc var(--pct));
+}
+
+input.landing-range::-webkit-slider-thumb {
+  margin-top: -8px;
+  width: 22px;
+  height: 22px;
+  border: 3px solid #ffffff;
+  background: #1b4332;
+  box-shadow: 0 2px 10px rgba(11, 29, 21, 0.35);
+  transition: transform 150ms ease;
+}
+
+input.landing-range::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 3px solid #ffffff;
+  background: #1b4332;
+  box-shadow: 0 2px 10px rgba(11, 29, 21, 0.35);
+}
+
+input.landing-range:active::-webkit-slider-thumb {
+  transform: scale(1.12);
+}
+
+input.landing-range:focus-visible {
+  outline: 2px solid #2d6a4f;
+  outline-offset: 4px;
+  border-radius: 999px;
+}
+
+input.landing-range-dark::-webkit-slider-runnable-track {
+  background: linear-gradient(90deg, #66a183 var(--pct), rgba(255, 255, 255, 0.12) var(--pct));
+}
+
+input.landing-range-dark::-moz-range-track {
+  background: linear-gradient(90deg, #66a183 var(--pct), rgba(255, 255, 255, 0.12) var(--pct));
+}
+
+input.landing-range-dark::-webkit-slider-thumb {
+  background: #f5f2ea;
+  border-color: #0b1d15;
+}
+
+input.landing-range-dark::-moz-range-thumb {
+  background: #f5f2ea;
+  border-color: #0b1d15;
 }

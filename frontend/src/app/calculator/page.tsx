@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import posthog from "posthog-js";
 import { Header } from "@/components/common/Header";
+import { PageFooter } from "@/components/common/PageFooter";
 import { InputForm } from "@/components/calculator/InputForm";
 import { ResultsView } from "@/components/results/ResultsView";
 import { MetricCardSkeleton, ChartSkeleton, TableSkeleton } from "@/components/common/Skeleton";
@@ -62,9 +63,12 @@ export default function CalculatorPage() {
               )}
             >
               <div className="mx-auto flex max-w-content flex-col gap-default">
-                <div className="flex flex-col gap-1">
-                  <h1 className="font-serif text-h1 text-text-primary">Run your scenario</h1>
-                  <p className="text-body-sm leading-relaxed text-text-secondary">
+                <div className="flex flex-col gap-3">
+                  <span className="eyebrow-pine block">Your scenario</span>
+                  <h1 className="display-heading text-display">
+                    Run <em>your numbers.</em>
+                  </h1>
+                  <p className="max-w-[620px] text-body leading-relaxed text-text-secondary">
                     Enter your details and the optimizer will find the Roth conversion schedule that
                     maximizes your after-tax wealth.
                   </p>
@@ -108,6 +112,7 @@ export default function CalculatorPage() {
             </div>
           </div>
         </main>
+        <PageFooter />
       </MethodologyLayout>
     </MethodologyProvider>
   );

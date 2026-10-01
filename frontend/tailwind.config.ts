@@ -5,23 +5,23 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["'DM Sans'", "system-ui", "-apple-system", "sans-serif"],
-        mono: ["'Manrope'", "system-ui", "sans-serif"],
-        serif: ["'DM Serif Display'", "Georgia", "serif"],
+        sans: ["'Inter'", "system-ui", "-apple-system", "sans-serif"],
+        mono: ["'IBM Plex Mono'", "ui-monospace", "monospace"],
+        serif: ["'Playfair Display'", "Georgia", "serif"],
         ui: ["'Inter'", "system-ui", "sans-serif"],
       },
       fontSize: {
         "display-xl": [
-          "48px",
-          { lineHeight: "1.1", letterSpacing: "-0.02em", fontWeight: "800" },
+          "clamp(3rem, 7vw, 5.4rem)",
+          { lineHeight: "1.04", letterSpacing: "-0.015em", fontWeight: "600" },
         ],
         display: [
-          "36px",
-          { lineHeight: "1.15", letterSpacing: "-0.02em", fontWeight: "700" },
+          "clamp(2.1rem, 4.4vw, 3.4rem)",
+          { lineHeight: "1.06", letterSpacing: "-0.015em", fontWeight: "600" },
         ],
         h1: [
-          "24px",
-          { lineHeight: "1.3", letterSpacing: "-0.01em", fontWeight: "600" },
+          "30px",
+          { lineHeight: "1.15", letterSpacing: "-0.01em", fontWeight: "600" },
         ],
         h2: ["18px", { lineHeight: "1.3", fontWeight: "500" }],
         h3: ["16px", { lineHeight: "1.3", fontWeight: "600" }],
@@ -74,33 +74,47 @@ const config: Config = {
           light: "hsl(var(--accent-light))",
           muted: "hsl(var(--accent-muted))",
         },
-        purple: {
-          DEFAULT: "#6C5CE7",
-          light: "rgba(108, 92, 231, 0.15)",
-          muted: "rgba(108, 92, 231, 0.08)",
+        // "Paper & Pine" brand palette
+        ink: {
+          DEFAULT: "#141414",
+          soft: "#3d3d3d",
+          muted: "#737373",
         },
+        paper: {
+          DEFAULT: "#fafafa",
+          warm: "#f0ede6",
+          deep: "#e9e5dc",
+          stone: "#cfc9ba",
+        },
+        pine: {
+          DEFAULT: "#1b4332",
+          deep: "#0b1d15",
+          mid: "#2d6a4f",
+          line: "#1e3a2e",
+          mist: "#8fae9c",
+          haze: "#b9c9bd",
+        },
+        ember: "#f26522",
         bracket: {
-          "10": "#4ADE80",
-          "12": "#86EFAC",
-          "22": "#FBBF24",
-          "24": "#FB923C",
-          "32": "#F87171",
-          "35": "#EF4444",
-          "37": "#DC2626",
+          "10": "#4f8f6f",
+          "12": "#7fae8f",
+          "22": "#c9a443",
+          "24": "#e58a3c",
+          "32": "#f26522",
+          "35": "#cf4a17",
+          "37": "#a3360f",
         },
         optimal: "hsl(var(--optimal))",
         negative: "hsl(var(--destructive))",
         neutral: "hsl(var(--neutral))",
-        caution: "#FBBF24",
-        sage: "#A8C5A0",
-        seaglass: "#7EC8C8",
-        rose: "#E8837C",
-        trust: "#4A6FA5",
+        caution: "#c9a443",
+        sage: "#66a183",
+        // Subtle surface tints (legacy name kept for existing components)
         glass: {
-          bg: "rgba(255, 255, 255, 0.04)",
-          "bg-hover": "rgba(255, 255, 255, 0.07)",
-          border: "rgba(255, 255, 255, 0.08)",
-          "border-hover": "rgba(255, 255, 255, 0.15)",
+          bg: "rgba(20, 20, 20, 0.03)",
+          "bg-hover": "rgba(20, 20, 20, 0.05)",
+          border: "#e4e0d6",
+          "border-hover": "#cfc9ba",
         },
         // shadcn semantic tokens
         card: {
@@ -111,6 +125,7 @@ const config: Config = {
       },
       maxWidth: {
         content: "1080px",
+        wide: "1180px",
       },
       borderRadius: {
         sm: "8px",
@@ -129,12 +144,9 @@ const config: Config = {
         page: "64px",
       },
       boxShadow: {
-        card: "0 2px 8px rgba(15, 14, 26, 0.3)",
-        "card-hover":
-          "0 8px 24px rgba(15, 14, 26, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.12)",
-        elevated: "0 12px 40px rgba(15, 14, 26, 0.5)",
-        "glow-gold": "0 0 20px rgba(240, 198, 116, 0.15)",
-        "glow-purple": "0 0 20px rgba(108, 92, 231, 0.15)",
+        card: "0 24px 60px -34px rgba(27, 67, 50, 0.28)",
+        "card-hover": "0 22px 44px -24px rgba(27, 67, 50, 0.3)",
+        elevated: "0 16px 40px -12px rgba(11, 29, 21, 0.22)",
       },
     },
   },

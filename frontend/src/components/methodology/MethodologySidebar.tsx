@@ -147,7 +147,7 @@ export function MethodologySidebar({ result, mobile }: MethodologySidebarProps) 
       role="complementary"
       aria-label="How it works"
       className={cn(
-        "sticky top-14 h-[calc(100vh-3.5rem)]",
+        "sticky top-[68px] h-[calc(100vh-68px)]",
         "w-[400px] shrink-0",
         "border-l border-glass-border bg-bg-alt"
       )}

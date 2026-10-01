@@ -67,14 +67,14 @@ const CurrencyInput = React.forwardRef<HTMLInputElement, CurrencyInputProps>(
             }}
             className={cn(
               "h-9 min-h-[44px] w-full px-3",
-              "rounded-lg bg-bg-alt",
+              "rounded-[10px] bg-white",
               "border border-border",
               "text-body text-text-primary",
               "placeholder:text-text-tertiary",
-              "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/10",
+              "focus:border-accent focus:outline-none focus:ring-2 focus:ring-pine-mid/15",
               "transition-all duration-300",
               "disabled:cursor-not-allowed disabled:opacity-50",
-              "font-mono",
+              "font-data",
               "pl-7",
               error && "border-negative",
               className

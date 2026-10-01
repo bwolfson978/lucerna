@@ -20,28 +20,28 @@ export function NpvTimeline() {
     {
       label: "Conversion\nyears",
       pct: 0.12,
-      color: "#6C5CE7",
+      color: "#a8a294",
       opacity: 0.5,
       note: "Pay tax, shift\nbalances, grow",
     },
     {
       label: "Growth to\nretirement",
       pct: 0.38,
-      color: "#B8B0D2",
+      color: "#5c5c5c",
       opacity: 0.15,
       note: "Both accounts\ngrow untouched",
     },
     {
       label: "Retirement\ndistributions",
       pct: 0.38,
-      color: "#F0C674",
+      color: "#2d6a4f",
       opacity: 0.3,
       note: "Traditional taxed,\nRoth tax-free",
     },
     {
       label: "Final\nliquidation",
       pct: 0.12,
-      color: "#E8A838",
+      color: "#1b4332",
       opacity: 0.2,
       note: "Remaining\nbalances distributed",
     },
@@ -89,7 +89,7 @@ export function NpvTimeline() {
               y1={trackY}
               x2={p.x}
               y2={trackY + trackHeight}
-              stroke="rgba(255, 255, 255, 0.1)"
+              stroke="rgba(20, 20, 20, 0.1)"
               strokeWidth="1"
             />
           )}
@@ -107,11 +107,11 @@ export function NpvTimeline() {
                 x={p.x + p.w / 2}
                 y={trackY - 18 + li * 14}
                 textAnchor="middle"
-                fill={p.color === "#B8B0D2" ? "#B8B0D2" : p.color}
+                fill={p.color === "#5c5c5c" ? "#5c5c5c" : p.color}
                 fontFamily={labelFont}
                 fontSize="10"
                 fontWeight="600"
-                opacity={p.color === "#B8B0D2" ? 0.7 : 1}
+                opacity={p.color === "#5c5c5c" ? 0.7 : 1}
               >
                 {line}
               </text>
@@ -131,7 +131,7 @@ export function NpvTimeline() {
                 x={p.x + p.w / 2}
                 y={trackY + trackHeight + 18 + li * 13}
                 textAnchor="middle"
-                fill="#8B8A99"
+                fill="#737373"
                 fontFamily={labelFont}
                 fontSize="9"
               >
@@ -150,14 +150,14 @@ export function NpvTimeline() {
             y1={trackY + trackHeight}
             x2={marker.x}
             y2={trackY + trackHeight + 6}
-            stroke="rgba(255, 255, 255, 0.2)"
+            stroke="rgba(20, 20, 20, 0.2)"
             strokeWidth="1"
           />
           <text
             x={marker.x}
             y={trackY + trackHeight + 55}
             textAnchor="middle"
-            fill="#FAF7F2"
+            fill="#141414"
             fontFamily={DATA_FONT_FAMILY}
             fontSize="10"
             fontWeight="700"
@@ -172,7 +172,7 @@ export function NpvTimeline() {
         x={right / 2 + left / 2}
         y={195}
         textAnchor="middle"
-        fill="#8B8A99"
+        fill="#737373"
         fontFamily={labelFont}
         fontSize="9"
       >

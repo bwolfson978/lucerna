@@ -48,11 +48,11 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
           aria-invalid={ariaInvalid || undefined}
           className={cn(
             "h-9 min-h-[44px] w-full px-3",
-            "rounded-lg bg-bg-alt",
+            "rounded-[10px] bg-white",
             "border border-border",
             "text-left text-body text-text-primary",
             "data-[placeholder]:text-text-tertiary",
-            "focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/10",
+            "focus:border-accent focus:outline-none focus:ring-2 focus:ring-pine-mid/15",
             "transition-all duration-300",
             "disabled:cursor-not-allowed disabled:opacity-50",
             "flex items-center justify-between",
@@ -87,16 +87,11 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
               "z-50 min-w-[var(--radix-select-trigger-width)]",
               "max-h-[min(var(--radix-select-content-available-height,20rem),20rem)]",
               "overflow-hidden",
-              "rounded-lg border border-glass-border",
+              "rounded-lg border border-border bg-white",
               "shadow-elevated",
               "animate-in fade-in-0 zoom-in-95",
               "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95"
             )}
-            style={{
-              background: "rgba(26, 24, 50, 0.95)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-            }}
           >
             <SelectPrimitive.ScrollUpButton className="flex h-6 cursor-default items-center justify-center text-text-tertiary">
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none">

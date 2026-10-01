@@ -11,11 +11,11 @@ const Switch = React.forwardRef<
   <SwitchPrimitive.Root
     className={cn(
       "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full",
-      "border border-glass-border",
+      "border border-border",
       "transition-all duration-300",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/10",
       "disabled:cursor-not-allowed disabled:opacity-50",
-      "data-[state=checked]:bg-accent data-[state=unchecked]:bg-bg-elevated",
+      "data-[state=checked]:bg-accent data-[state=unchecked]:bg-paper-deep",
       className
     )}
     {...props}

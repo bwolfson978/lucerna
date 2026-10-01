@@ -57,7 +57,7 @@ export function MultiYearAllocation() {
     >
       {/* Bracket rate labels on the left (bottom-up) */}
       {tierPositions.map((tp) => {
-        const color = BRACKET_COLORS[tp.key] || "#8B8A99";
+        const color = BRACKET_COLORS[tp.key] || "#737373";
         return (
           <g key={tp.rate}>
             <rect x={leftMargin - 6} y={tp.y} width="3" height={tp.h} fill={color} rx="1.5" />
@@ -89,8 +89,8 @@ export function MultiYearAllocation() {
             y={tp.y}
             width={colWidth}
             height={tp.h}
-            fill="rgba(255, 255, 255, 0.03)"
-            stroke="rgba(255, 255, 255, 0.06)"
+            fill="rgba(20, 20, 20, 0.03)"
+            stroke="rgba(20, 20, 20, 0.06)"
             strokeWidth="0.5"
           />
         ));
@@ -134,7 +134,7 @@ export function MultiYearAllocation() {
               x={x + colWidth / 2}
               y={topMargin + barHeight + 20}
               textAnchor="middle"
-              fill="#FAF7F2"
+              fill="#141414"
               fontFamily={DATA_FONT_FAMILY}
               fontSize="13"
               fontWeight="700"
@@ -147,7 +147,7 @@ export function MultiYearAllocation() {
               x={x + colWidth / 2}
               y={topMargin + barHeight + 36}
               textAnchor="middle"
-              fill="#8B8A99"
+              fill="#737373"
               fontFamily={labelFont}
               fontSize="10"
             >
@@ -162,7 +162,7 @@ export function MultiYearAllocation() {
         x={leftMargin + (colWidth + colGap) - colGap / 2}
         y={topMargin + barHeight + 60}
         textAnchor="middle"
-        fill="#F0C674"
+        fill="#2d6a4f"
         fontFamily={labelFont}
         fontSize="10"
         fontWeight="500"
@@ -187,7 +187,7 @@ export function MultiYearAllocation() {
             <text
               x={leftMargin + 18}
               y={ly + 10}
-              fill="#B8B0D2"
+              fill="#5c5c5c"
               fontFamily={labelFont}
               fontSize="10"
             >
@@ -206,7 +206,7 @@ export function MultiYearAllocation() {
             <text
               x={leftMargin + 98}
               y={ly + 10}
-              fill="#B8B0D2"
+              fill="#5c5c5c"
               fontFamily={labelFont}
               fontSize="10"
             >
@@ -219,14 +219,14 @@ export function MultiYearAllocation() {
               width="12"
               height="12"
               rx="2"
-              fill="rgba(255, 255, 255, 0.03)"
-              stroke="rgba(255, 255, 255, 0.06)"
+              fill="rgba(20, 20, 20, 0.03)"
+              stroke="rgba(20, 20, 20, 0.06)"
               strokeWidth="0.5"
             />
             <text
               x={leftMargin + 208}
               y={ly + 10}
-              fill="#B8B0D2"
+              fill="#5c5c5c"
               fontFamily={labelFont}
               fontSize="10"
             >

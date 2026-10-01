@@ -90,7 +90,7 @@ export function BracketFillExplainer() {
         x="280"
         y="20"
         textAnchor="middle"
-        fill="#B8B0D2"
+        fill="#5c5c5c"
         fontFamily={labelFont}
         fontSize="11"
         fontWeight="500"
@@ -104,7 +104,7 @@ export function BracketFillExplainer() {
         const incomeWidth = bracket.filledByIncome * scale;
         const conversionWidth = bracket.filledByConversion * scale;
         const totalCapWidth = Math.min(bracket.capacity, maxCapacity) * scale;
-        const bracketColor = BRACKET_COLORS[bracket.rateKey] || "#8B8A99";
+        const bracketColor = BRACKET_COLORS[bracket.rateKey] || "#737373";
 
         return (
           <g key={bracket.rate}>
@@ -124,7 +124,7 @@ export function BracketFillExplainer() {
               y={y + barHeight / 2 + 1}
               textAnchor="end"
               dominantBaseline="middle"
-              fill="#FAF7F2"
+              fill="#141414"
               fontFamily={DATA_FONT_FAMILY}
               fontSize="13"
               fontWeight="700"
@@ -139,8 +139,8 @@ export function BracketFillExplainer() {
               width={totalCapWidth}
               height={barHeight}
               rx="4"
-              fill="rgba(255, 255, 255, 0.04)"
-              stroke="rgba(255, 255, 255, 0.06)"
+              fill="rgba(20, 20, 20, 0.04)"
+              stroke="rgba(20, 20, 20, 0.06)"
               strokeWidth="0.5"
             />
 
@@ -175,7 +175,7 @@ export function BracketFillExplainer() {
               x={leftMargin + totalCapWidth + 8}
               y={y + barHeight / 2 + 1}
               dominantBaseline="middle"
-              fill="#8B8A99"
+              fill="#737373"
               fontFamily={DATA_FONT_FAMILY}
               fontSize="10"
             >
@@ -202,7 +202,7 @@ export function BracketFillExplainer() {
             <text
               x={leftMargin + 18}
               y={legendY + 10}
-              fill="#B8B0D2"
+              fill="#5c5c5c"
               fontFamily={labelFont}
               fontSize="11"
             >
@@ -221,7 +221,7 @@ export function BracketFillExplainer() {
             <text
               x={leftMargin + 148}
               y={legendY + 10}
-              fill="#B8B0D2"
+              fill="#5c5c5c"
               fontFamily={labelFont}
               fontSize="11"
             >
@@ -234,14 +234,14 @@ export function BracketFillExplainer() {
               width="12"
               height="12"
               rx="2"
-              fill="rgba(255, 255, 255, 0.04)"
-              stroke="rgba(255, 255, 255, 0.08)"
+              fill="rgba(20, 20, 20, 0.04)"
+              stroke="rgba(20, 20, 20, 0.08)"
               strokeWidth="0.5"
             />
             <text
               x={leftMargin + 288}
               y={legendY + 10}
-              fill="#B8B0D2"
+              fill="#5c5c5c"
               fontFamily={labelFont}
               fontSize="11"
             >

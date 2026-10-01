@@ -66,7 +66,7 @@ export function TableOfContents({ items, activeId }: TableOfContentsProps) {
       </nav>
 
       {/* Mobile sticky bar */}
-      <div className="sticky top-14 z-30 border-b border-border bg-bg/90 backdrop-blur-md lg:hidden">
+      <div className="sticky top-[68px] z-30 border-b border-border bg-bg/90 backdrop-blur-md lg:hidden">
         <button
           type="button"
           onClick={() => setMobileOpen(!mobileOpen)}
