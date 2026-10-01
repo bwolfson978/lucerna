@@ -71,8 +71,10 @@ export type OpenLinkAction =
   | { type: "external"; url: string };
 
 /**
- * A View asked to open a link. Links to a result on this site open the in-app full
- * results view when the conversation has that result; anything else opens externally.
+ * A View asked to open a link. Links to a result's full results page open in the app
+ * when the conversation has that result. Otherwise a full results link (it carries its
+ * scenario) opens on this deployment rather than the production site it names, and
+ * anything else opens as is.
  */
 export function routeOpenLink(url: string, knownResultIds: Iterable<string>): OpenLinkAction {
   try {
@@ -86,6 +88,17 @@ export function routeOpenLink(url: string, knownResultIds: Iterable<string>): Op
       known.has(resultId)
     ) {
       return { type: "results", resultId };
+    }
+    if (
+      parsed.pathname === "/calculator" &&
+      parsed.searchParams.get("view") === "results" &&
+      parsed.searchParams.get("scenario") &&
+      typeof window !== "undefined"
+    ) {
+      return {
+        type: "external",
+        url: `${window.location.origin}/calculator${parsed.search}`,
+      };
     }
   } catch {
     // Fall through to external handling.

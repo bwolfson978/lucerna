@@ -44,7 +44,7 @@ Tool results can carry UI under the MCP Apps extension (`io.modelcontextprotocol
 | Brokering | Host | `AppBridge` over postMessage (`McpAppFrame.tsx`): tool input/result in, size changes, link requests, and View `tools/call` proxied to `POST /api/mcp-apps/tools/call` (app-visible tools only) |
 | Visibility | Host | Tools without `"model"` never reach the model's tool list; tools without `"app"` can't be called by a View |
 
-The same View renders in Claude, ChatGPT or any MCP Apps host with no changes. In those hosts, "See full results" opens `rothconversionsoptimizer.com/calculator?view=results&result=…`; in our own host it opens the in-app results page for that result.
+The same View renders in Claude, ChatGPT or any MCP Apps host with no changes. "See full results" opens the result's `full_results_url` (`what_if_full_results_url` for a what-if), which the server builds (`app/tools/links.py`): `/calculator?view=results&result=<id>&scenario=<encoded scenario>`. Results aren't stored, so the link carries the scenario; the site sends it to `POST /api/scenario-links/open`, which rebuilds and runs it (same scenario, same `result_id`) and opens the results page with the conversation filled in underneath. In our own host, a link to a result the conversation already has opens in place. The model sees the URL too, so in hosts without UI it can share the link.
 
 **Building Views:** `npm run build:views` (repo root). CI fails if `backend/app/mcp/views/` is out of date with its sources (`mcp-views/src/` and `ui/`). The result card is ~365 KB uncompressed, most of it the SDK's MCP client and zod; hosts cache it.
 
@@ -90,7 +90,9 @@ Chart series the model doesn't need (bracket fill, balances) travel in the tool 
 | `AGENT_DAILY_SPEND_USD` | `50` | Estimated model spend per day before the assistant pauses. |
 | `AGENT_CACHE_DIR` | `backend/.cache` | Where the generated demo conversation is cached. |
 | `MCP_REQUESTS_PER_IP_PER_DAY` | `300` | MCP requests per client IP per day. |
-| `AGENT_MCP_URL` | unset | When set (e.g. `http://localhost:8000/mcp`), the web assistant reaches its tools over streamable HTTP instead of in process. The E2E suite uses it. In production, leave it unset or exempt the backend's own address from the MCP rate limit. |
+| `AGENT_MCP_URL` | unset | When set (e.g. `http://localhost:8000/mcp`), the web assistant reaches its tools over streamable HTTP instead of in process. The E2E suite uses it. **Production: leave it unset** (in process, no network hop). If you do set it, also set `MCP_INTERNAL_TOKEN`. |
+| `SITE_URL` | `https://rothconversionsoptimizer.com` | Website that `full_results_url` links point to. |
+| `MCP_INTERNAL_TOKEN` | unset | Shared secret the web assistant sends (`x-lucerna-internal` header) when it calls `/mcp` over HTTP, so its calls skip the per-IP MCP limit. Its users are already limited at `/api/agent`. Without it, `AGENT_MCP_URL` logs a warning and the backend's own calls use up its IP's daily allowance. |
 | `AGENT_OFFLINE` | unset | `1` replaces the model with a rule-based stand-in (development and E2E only). |
 
 Limits are kept in process memory, which fits the single Railway instance. Move them to Redis or Postgres before scaling out.

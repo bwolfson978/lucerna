@@ -182,6 +182,53 @@ describe("ScenarioWorkspace (calculator)", () => {
   });
 });
 
+describe("ScenarioWorkspace (full results links)", () => {
+  const LINK = "/calculator?view=results&result=r_0000000009&scenario=eyJhZ2UiOjUyfQ&label=Retire";
+
+  it("rebuilds a linked scenario and opens its results", async () => {
+    const requests: unknown[] = [];
+    server.use(
+      http.post("http://localhost:8000/api/scenario-links/open", async ({ request }) => {
+        requests.push(await request.json());
+        return HttpResponse.json({
+          result_id: "r_0000000009",
+          label: "Retire",
+          draft: DRAFT,
+          result: sampleOptimizationResult,
+        });
+      })
+    );
+    window.history.replaceState(null, "", LINK);
+    renderWorkspace("calculator");
+    expect(screen.getByText("Opening your results…")).toBeInTheDocument();
+    const back = await screen.findByRole("button", { name: /Back to conversation/ });
+    expect(requests).toEqual([{ scenario: "eyJhZ2UiOjUyfQ", label: "Retire" }]);
+    // The scenario stays in the address so the link can still be shared.
+    expect(window.location.search).toContain("scenario=eyJhZ2UiOjUyfQ");
+    expect(JSON.parse(sessionStorage.getItem("lucerna:draft:v1")!).age).toBe(52);
+    // Back returns to the conversation on this page, not to whatever came before.
+    const backSpy = vi.spyOn(window.history, "back").mockImplementation(() => {
+      window.history.replaceState(null, "", "/calculator");
+      window.dispatchEvent(new PopStateEvent("popstate", { state: null }));
+    });
+    fireEvent.click(back);
+    expect(backSpy).toHaveBeenCalled();
+    expect(await screen.findByLabelText("Message")).toBeInTheDocument();
+    backSpy.mockRestore();
+  });
+
+  it("says so when a link can't be opened", async () => {
+    server.use(
+      http.post("http://localhost:8000/api/scenario-links/open", () =>
+        HttpResponse.json({ detail: "bad" }, { status: 400 })
+      )
+    );
+    window.history.replaceState(null, "", LINK);
+    renderWorkspace("calculator");
+    expect(await screen.findByRole("alert")).toHaveTextContent("couldn't be opened");
+  });
+});
+
 describe("ScenarioWorkspace (demo)", () => {
   it("replays the example conversation and then accepts follow-ups", async () => {
     server.use(

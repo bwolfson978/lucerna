@@ -10,6 +10,15 @@ describe("routeOpenLink", () => {
     expect(routeOpenLink(url, ["r_1"])).toEqual({ type: "results", resultId: "r_1" });
   });
 
+  it("opens full results links for unknown results on this deployment", () => {
+    const link =
+      "https://rothconversionsoptimizer.com/calculator?view=results&result=r_2&scenario=eyJ9";
+    expect(routeOpenLink(link, ["r_1"])).toEqual({
+      type: "external",
+      url: `${window.location.origin}/calculator?view=results&result=r_2&scenario=eyJ9`,
+    });
+  });
+
   it("opens anything else externally", () => {
     const unknown = "https://rothconversionsoptimizer.com/calculator?view=results&result=r_2";
     expect(routeOpenLink(unknown, ["r_1"])).toEqual({ type: "external", url: unknown });

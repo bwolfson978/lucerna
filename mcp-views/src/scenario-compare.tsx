@@ -15,10 +15,11 @@ import { startView, type ViewContext } from "./view";
 
 function Compare({ data, view }: { data: ScenarioCompareData; view: ViewContext }) {
   const [applied, setApplied] = useState(false);
+  const url = (data as { what_if_full_results_url?: unknown }).what_if_full_results_url;
   return (
     <ScenarioCompareCard
       data={data}
-      onOpenFullResults={() => view.openResults(data.variant_result_id)}
+      onOpenFullResults={typeof url === "string" ? () => view.openLink(url) : undefined}
       onApply={
         view.canMessage
           ? async () => setApplied(await view.sendMessage(applyWhatIfMessage(data.label)))

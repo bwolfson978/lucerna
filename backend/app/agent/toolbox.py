@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -36,6 +37,8 @@ from app.mcp.server import APP_MIME_TYPE, RESULTS_META_KEY, UI_META_KEY
 from app.tools import core
 from app.tools.draft import ScenarioDraft
 from app.tools.models import DisplayKind, ScenarioUpdate, ShowArgs
+
+logger = logging.getLogger(__name__)
 
 STATUS = {
     "record_scenario": "Updating your scenario",
@@ -195,15 +198,36 @@ def view_result(result: CallToolResult) -> dict:
     return data
 
 
+_warned: set[str] = set()
+
+
+def _warn_once(message: str) -> None:
+    if message not in _warned:
+        _warned.add(message)
+        logger.warning(message)
+
+
 @asynccontextmanager
 async def open_toolbox() -> AsyncIterator[McpToolbox]:
     """Connect to the MCP server (in process, or over HTTP when AGENT_MCP_URL is set)."""
     url = os.environ.get("AGENT_MCP_URL")
     if url:
         from mcp.client.streamable_http import streamable_http_client
+        from mcp.shared._httpx_utils import create_mcp_http_client
 
+        from app.mcp.server import INTERNAL_HEADER, internal_token
+
+        token = internal_token()
+        if not token:
+            _warn_once(
+                "AGENT_MCP_URL is set without MCP_INTERNAL_TOKEN: the web assistant's tool "
+                "calls count against /mcp's per-IP daily limit and will start failing. Set "
+                "MCP_INTERNAL_TOKEN, or unset AGENT_MCP_URL to call the tools in process."
+            )
+        http_client = create_mcp_http_client(headers={INTERNAL_HEADER: token} if token else None)
         async with (
-            streamable_http_client(url) as (read, write, _session_id),
+            http_client,
+            streamable_http_client(url, http_client=http_client) as (read, write, _session_id),
             ClientSession(read, write) as session,
         ):
             await session.initialize()

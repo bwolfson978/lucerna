@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useReducer, useRef } from "react";
 import posthog from "posthog-js";
+import type { OptimizationResult } from "@/lib/types";
 import { streamAgent } from "@/lib/agent/client";
 import {
   INITIAL_CONVERSATION,
@@ -177,7 +178,14 @@ export function useConversation({
     []
   );
 
-  return { state, send, replay, reset, loadResult };
+  /** Add a result that didn't come from the assistant (a full results link). */
+  const addResult = useCallback(
+    (entry: { result_id: string; label: string; result: OptimizationResult }) =>
+      dispatch({ type: "event", event: { type: "result", ...entry } }),
+    []
+  );
+
+  return { state, send, replay, reset, loadResult, addResult };
 }
 
 export type ConversationApi = ReturnType<typeof useConversation>;

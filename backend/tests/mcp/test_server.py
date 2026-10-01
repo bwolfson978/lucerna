@@ -145,6 +145,15 @@ async def test_http_endpoint_client_and_rate_limit(monkeypatch):
             response = await client.post("/mcp", json=body, headers=HEADERS)
             assert response.status_code == 429
 
+            # The web app's own agent (AGENT_MCP_URL) skips the per-IP limit with the
+            # shared internal token, and only with the right one.
+            monkeypatch.setenv("MCP_INTERNAL_TOKEN", "s3cret")
+            wrong = {**HEADERS, server.INTERNAL_HEADER: "nope"}
+            assert (await client.post("/mcp", json=body, headers=wrong)).status_code == 429
+            internal = {**HEADERS, server.INTERNAL_HEADER: "s3cret"}
+            response = await client.post("/mcp", json=body, headers=internal)
+            assert response.status_code == 200
+
 
 async def test_tools_declare_their_views():
     expected = {

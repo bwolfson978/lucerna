@@ -1,5 +1,7 @@
 """The web assistant's MCP toolbox: tool listing, UI events and the local show tool."""
 
+import pytest
+
 from app.agent.toolbox import ToolContext, open_toolbox
 from app.tools.draft import ScenarioDraft
 
@@ -142,3 +144,31 @@ async def test_visibility_scopes_tools_to_model_or_app():
 
     with pytest.raises(PermissionError):
         await toolbox.call_from_app("model_only", {})
+
+
+async def test_http_mode_sends_the_internal_token(monkeypatch):
+    """Over HTTP (AGENT_MCP_URL), the agent's calls carry the internal token so the
+    server's per-IP limit doesn't count the backend calling itself."""
+    from contextlib import asynccontextmanager
+
+    import mcp.client.streamable_http as streamable_http
+
+    from app.agent import toolbox as toolbox_module
+    from app.mcp.server import INTERNAL_HEADER
+
+    seen = {}
+
+    @asynccontextmanager
+    async def fake_client(url, *, http_client=None, **_):
+        seen["url"] = url
+        seen["header"] = http_client.headers.get(INTERNAL_HEADER)
+        raise RuntimeError("stop here")
+        yield  # pragma: no cover
+
+    monkeypatch.setattr(streamable_http, "streamable_http_client", fake_client)
+    monkeypatch.setenv("AGENT_MCP_URL", "http://localhost:8000/mcp")
+    monkeypatch.setenv("MCP_INTERNAL_TOKEN", "s3cret")
+    with pytest.raises(RuntimeError, match="stop here"):
+        async with toolbox_module.open_toolbox():
+            pass  # pragma: no cover
+    assert seen == {"url": "http://localhost:8000/mcp", "header": "s3cret"}

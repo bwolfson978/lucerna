@@ -184,7 +184,8 @@
             "note": "Sabbatical"
           }
         ]
-      }
+      },
+      "full_results_url": "https://rothconversionsoptimizer.com/calculator?view=results&result=r_c38d94c790&scenario=eyJhZ2UiOjYwLCJjdXJyZW50X2luY29tZSI6MTIwMDAwLjAsImRpc2NvdW50X3JhdGVfcGN0Ijo1LjAsImZpbGluZ19zdGF0dXMiOiJtYXJyaWVkX2ZpbGluZ19qb2ludGx5IiwiaG91c2Vob2xkX3NpemUiOjEsImluY2x1ZGVfYWNhIjpmYWxzZSwiaW5jb21lX2NoYW5nZXMiOlt7Imdyb3NzX2luY29tZSI6NjAwMDAuMCwibm90ZSI6IlNhYmJhdGljYWwiLCJ5ZWFyIjoyMDI3fV0sImluY29tZV9ncm93dGhfcmF0ZV9wY3QiOjMuMCwiaW52ZXN0bWVudF9yZXR1cm5fcGN0Ijo3LjAsIm1vbnRobHlfc2xjc3BfcHJlbWl1bSI6NjIwLjAsInBsYW5uaW5nX2hvcml6b25fYWdlIjo5MCwicmV0aXJlbWVudF9hZ2UiOjYzLCJyZXRpcmVtZW50X3N0YXRlIjoiQVoiLCJyb3RoX2JhbGFuY2UiOjUwMDAwLjAsInN0YXRlIjoiQ0EiLCJ0cmFkaXRpb25hbF9iYWxhbmNlIjo5MDAwMDAuMH0"
     },
     "view_meta": {
       "bracket_fill": {
@@ -1085,7 +1086,8 @@
             "note": "Sabbatical"
           }
         ]
-      }
+      },
+      "what_if_full_results_url": "https://rothconversionsoptimizer.com/calculator?view=results&result=r_13658c29a7&scenario=eyJhZ2UiOjYwLCJjdXJyZW50X2luY29tZSI6MTIwMDAwLjAsImRpc2NvdW50X3JhdGVfcGN0Ijo1LjAsImZpbGluZ19zdGF0dXMiOiJtYXJyaWVkX2ZpbGluZ19qb2ludGx5IiwiaG91c2Vob2xkX3NpemUiOjEsImluY2x1ZGVfYWNhIjpmYWxzZSwiaW5jb21lX2NoYW5nZXMiOlt7Imdyb3NzX2luY29tZSI6NjAwMDAuMCwibm90ZSI6IlNhYmJhdGljYWwiLCJ5ZWFyIjoyMDI3fV0sImluY29tZV9ncm93dGhfcmF0ZV9wY3QiOjMuMCwiaW52ZXN0bWVudF9yZXR1cm5fcGN0Ijo3LjAsIm1vbnRobHlfc2xjc3BfcHJlbWl1bSI6NjIwLjAsInBsYW5uaW5nX2hvcml6b25fYWdlIjo5MCwicmV0aXJlbWVudF9hZ2UiOjYyLCJyZXRpcmVtZW50X3N0YXRlIjoiQVoiLCJyb3RoX2JhbGFuY2UiOjUwMDAwLjAsInN0YXRlIjoiQ0EiLCJ0cmFkaXRpb25hbF9iYWxhbmNlIjo5MDAwMDAuMH0&label=Retire+at+62"
     },
     "base_result": {
       "yearly_conversions": [
@@ -1921,7 +1923,7 @@
         }
       ],
       "reasoning_trace": {
-        "binding_constraint": "Top of 22% bracket in 2 years",
+        "binding_constraint": "Top of 12% bracket in 2 years",
         "marginal_tax_rate_at_optimal": 0.333,
         "marginal_benefit_at_optimal": 60428.68,
         "cost_of_next_bracket": {

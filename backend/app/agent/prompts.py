@@ -76,7 +76,8 @@ button sends a message asking to use the what-if; then call record_scenario with
 comparison's what_if_scenario and show the scenario summary for them to confirm.
 - For questions about how the tool works, its assumptions or concepts like RMDs, ACA \
 subsidies or IRMAA, read explain_methodology first and answer from it.
-- Mention "See full results" when the user wants more detail than the conversation shows.
+- Mention "See full results" when the user wants more detail than the conversation shows. \
+Point to the button; don't paste full_results_url links, which are for other apps.
 </explaining_results>"""
 
 STYLE = """\

@@ -35,7 +35,7 @@ export default defineConfig({
       // AGENT_MCP_URL makes the web assistant reach its tools over HTTP through /mcp,
       // the same way Claude and ChatGPT do.
       command:
-        'cd ../backend && AGENT_OFFLINE=1 AGENT_MCP_URL=http://localhost:8000/mcp uvicorn app.main:app --port 8000',
+        'cd ../backend && AGENT_OFFLINE=1 AGENT_MCP_URL=http://localhost:8000/mcp MCP_INTERNAL_TOKEN=e2e-internal uvicorn app.main:app --port 8000',
       port: 8000,
       reuseExistingServer: !process.env.CI,
       timeout: 30000,

@@ -77,6 +77,7 @@ from app.api.feedback import router as feedback_router
 from app.api.mcp_apps import router as mcp_apps_router
 from app.api.mcp_apps import sandbox_router as mcp_apps_sandbox_router
 from app.api.optimize import router as optimize_router
+from app.api.scenario_links import router as scenario_links_router
 from app.api.tax_config import router as tax_config_router
 
 app.include_router(optimize_router, prefix="/api")
@@ -86,6 +87,7 @@ app.include_router(email_router, prefix="/api")
 app.include_router(feedback_router, prefix="/api")
 app.include_router(tax_config_router, prefix="/api")
 app.include_router(mcp_apps_router, prefix="/api")
+app.include_router(scenario_links_router, prefix="/api")
 app.include_router(mcp_apps_sandbox_router)
 
 # Remote MCP server (streamable HTTP) for Claude, ChatGPT and other MCP clients.

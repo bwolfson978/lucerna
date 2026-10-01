@@ -159,7 +159,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
     onFallback: handleFallback,
     surface: variant,
   });
-  const { state, send, replay, reset, loadResult } = conversation;
+  const { state, send, replay, reset, loadResult, addResult } = conversation;
 
   // Demo: replay Margaret's conversation unless this tab already has one.
   const [demo, setDemo] = useState<DemoConversation | null>(null);
@@ -251,6 +251,38 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
       setResultsView(id);
     }
   }, [state.results]);
+
+  // A full results link from another app (an MCP App View in ChatGPT or Claude, or a
+  // shared link) carries its scenario: rebuild and run it, then open its results.
+  const [linkStatus, setLinkStatus] = useState<"idle" | "loading" | "error">("idle");
+  const linkOpened = useRef(false);
+  useEffect(() => {
+    if (isDemo || linkOpened.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const scenario = params.get("scenario");
+    if (params.get("view") !== "results" || !scenario) return;
+    linkOpened.current = true;
+    const known = params.get("result");
+    if (known && loadConversation(keys.conversation)?.results[known]) return; // reload
+    setLinkStatus("loading");
+    apiClient
+      .openScenarioLink(scenario, params.get("label"))
+      .then((opened) => {
+        updateDraft(normalizeDraft(opened.draft));
+        addResult(opened);
+        posthog.capture("full_results_link_opened");
+        // The conversation goes underneath, so "Back to conversation" stays on the site
+        // even in a fresh tab. The results entry keeps the scenario in its address so
+        // the link can still be shared.
+        const url = new URL(window.location.href);
+        url.searchParams.set("result", opened.result_id);
+        window.history.replaceState(null, "", window.location.pathname);
+        window.history.pushState({ lucernaResults: opened.result_id }, "", url.toString());
+        setResultsView(opened.result_id);
+        setLinkStatus("idle");
+      })
+      .catch(() => setLinkStatus("error"));
+  }, [isDemo, keys.conversation, updateDraft, addResult]);
 
   const applyWhatIf = useCallback(
     (id: string) => {
@@ -356,7 +388,13 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
   const replayDone = !isDemo || state.apiMessages.length > 0;
 
   let body: ReactNode;
-  if (openStored) {
+  if (linkStatus === "loading") {
+    body = (
+      <div className="card animate-pulse text-body-sm text-text-tertiary" role="status">
+        Opening your results…
+      </div>
+    );
+  } else if (openStored) {
     body = (
       <FullResultsView
         stored={openStored}
@@ -367,6 +405,15 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
   } else if (conversationLive) {
     body = (
       <>
+        {linkStatus === "error" && (
+          <div
+            role="alert"
+            className="rounded-[14px] border border-border bg-paper-warm px-4 py-3 text-body-sm text-text-secondary"
+          >
+            That results link couldn&apos;t be opened. Describe your situation below to run it
+            again.
+          </div>
+        )}
         <ConversationThread
           state={state}
           intro={

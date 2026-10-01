@@ -9,8 +9,6 @@ import { createRoot } from "react-dom/client";
 import { App } from "@modelcontextprotocol/ext-apps";
 import type { CallToolResult } from "@modelcontextprotocol/client";
 
-export const SITE = "https://rothconversionsoptimizer.com";
-
 /** Chart series the server sends Views in `_meta` (backend app/tools/views.py). */
 export const VIEW_META_KEY = "lucerna/view";
 
@@ -20,8 +18,8 @@ export interface ViewContext {
   canMessage: boolean;
   /** Send a chat message as the user. */
   sendMessage: (text: string) => Promise<boolean>;
-  /** Open this product's results page for a result. */
-  openResults: (resultId: string) => void;
+  /** Ask the host to open a link, such as a result's `full_results_url`. */
+  openLink: (url: string) => void;
 }
 
 export function startView(
@@ -50,12 +48,7 @@ export function startView(
         return false;
       }
     },
-    openResults: (resultId) => {
-      const url = new URL("/calculator", SITE);
-      url.searchParams.set("view", "results");
-      url.searchParams.set("result", resultId);
-      void app.openLink({ url: url.toString() });
-    },
+    openLink: (url) => void app.openLink({ url }),
   };
 
   app.ontoolresult = (result) => {

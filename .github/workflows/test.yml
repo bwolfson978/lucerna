@@ -73,8 +73,9 @@ jobs:
       - run: npm run test:run
 
   ui-drift:
-    # The shared result card (ui/) rendered natively and as the MCP App View must look
-    # the same. Runs only the drift check, against the offline stand-in model.
+    # MCP App Views end to end, against the offline stand-in model: shared cards (ui/)
+    # look the same natively and as Views, the scenario View renders, and a View's
+    # "See full results" link opens on the site.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -99,5 +100,5 @@ jobs:
         working-directory: frontend
       - run: npm ci && npx playwright install --with-deps chromium
         working-directory: e2e
-      - run: npx playwright test ui-drift.spec.ts scenario-view.spec.ts --reporter=list
+      - run: npx playwright test ui-drift.spec.ts scenario-view.spec.ts results-link.spec.ts --reporter=list
         working-directory: e2e

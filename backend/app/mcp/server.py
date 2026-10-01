@@ -13,6 +13,7 @@ in the result ``_meta`` under ``lucerna/results``, outside what a model sees.
 
 from __future__ import annotations
 
+import hmac
 import json
 import os
 from pathlib import Path
@@ -31,6 +32,7 @@ from app.agent.limits import UsageLimiter
 from app.engine.types import FilingStatus, OptimizationResult, ScenarioInput
 from app.tools import core
 from app.tools.draft import ScenarioDraft, current_year
+from app.tools.links import full_results_url
 from app.tools.models import MethodologyTopic, ScenarioUpdate
 from app.tools.views import VIEW_META_KEY, result_view
 
@@ -46,8 +48,9 @@ Confirm the values with the user before analyze_roth_conversions. In hosts that 
 server's UI, scenario, result and what-if cards appear on their own: don't repeat their \
 numbers as a table. A card button may send "Looks right. Run the numbers." (run the \
 analysis) or ask to use a what-if as the scenario (call record_scenario with that \
-comparison's what_if_scenario). The full interactive analysis is available at \
-https://rothconversionsoptimizer.com/calculator."""
+comparison's what_if_scenario). Results include full_results_url, a link to the full \
+interactive analysis of that scenario on the website; share it when the user wants more \
+detail."""
 
 UI_META_KEY = "lucerna/ui"
 RESULTS_META_KEY = "lucerna/results"
@@ -223,6 +226,7 @@ async def analyze_roth_conversions(
     result_id = core.result_id_for(scenario_input)
     summary = core.summarize_result(result, result_id)
     summary["scenario"] = core.scenario_from_draft(draft, current_year())
+    summary["full_results_url"] = full_results_url(summary["scenario"], result_id)
     # Chart series for the View travel in _meta, which hosts don't show the model.
     meta = {VIEW_META_KEY: result_view(result)}
     if _wants_ui(ctx):
@@ -265,6 +269,9 @@ async def compare_roth_scenarios(
     base_id, variant_id = core.result_id_for(base_input), core.result_id_for(variant_input)
     comparison = core.compare_results(base, variant, base_id, variant_id, label)
     comparison["what_if_scenario"] = core.scenario_from_draft(variant_draft, year)
+    comparison["what_if_full_results_url"] = full_results_url(
+        comparison["what_if_scenario"], variant_id, label
+    )
     meta = (
         _ui_results(
             [
@@ -358,6 +365,21 @@ _register_views()
 _mcp_limiter = UsageLimiter()
 
 
+# The web app's own agent can reach this server over HTTP (AGENT_MCP_URL). Its calls
+# all come from the backend's IP and are already limited per user at /api/agent, so
+# they carry a shared secret and skip this per-IP limit.
+INTERNAL_HEADER = "x-lucerna-internal"
+
+
+def internal_token() -> str:
+    return os.environ.get("MCP_INTERNAL_TOKEN", "")
+
+
+def _is_internal(request: Request) -> bool:
+    token = internal_token()
+    return bool(token) and hmac.compare_digest(request.headers.get(INTERNAL_HEADER, ""), token)
+
+
 def _requests_per_ip_per_day() -> int:
     try:
         return int(os.environ.get("MCP_REQUESTS_PER_IP_PER_DAY", 300))
@@ -372,6 +394,9 @@ class _RateLimited:
     async def __call__(self, scope, receive, send):
         if scope["type"] == "http" and scope.get("method") == "POST":
             request = Request(scope)
+            if _is_internal(request):
+                await self.app(scope, receive, send)
+                return
             forwarded = request.headers.get("x-forwarded-for", "")
             ip = (
                 forwarded.split(",")[0].strip()
