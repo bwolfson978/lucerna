@@ -1,0 +1,231 @@
+"""The agent loop: one user message in, a stream of events out.
+
+The backend is stateless. The browser keeps the API-format history (assistant
+turns are stored exactly as the model returned them, thinking blocks included)
+and the scenario draft, and sends both with each message. The loop appends the
+new user turn, alternates model turns and tool calls until the model finishes,
+and streams events for the UI as it goes:
+
+    text_delta  {text}
+    tool_start  {name, status}
+    draft       {draft, missing}
+    result      {result_id, label, result, draft?}
+    part        {part}
+    error       {code, message}
+    done        {messages}
+
+``done.messages`` holds the turns to append to the stored history. History is
+append-only: nothing earlier in it is rewritten.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import json
+import re
+from collections.abc import AsyncIterator
+
+from app.agent.model import Final, ModelClient, ModelUnavailable, TextDelta, ToolStart
+from app.agent.prompts import SYSTEM_PROMPT
+from app.tools import core
+from app.tools.draft import ScenarioDraft
+from app.tools.registry import TOOLS_BY_NAME, ToolContext, anthropic_tools, run_tool
+
+MAX_MODEL_CALLS_PER_TURN = 8
+MAX_TOOL_CALLS_PER_TURN = 12
+
+_RESULT_ID = re.compile(r"\br_[0-9a-f]{10}\b")
+_DRAFT_HASH = re.compile(r'draft_hash[\\"\s:=]+([0-9a-f]{12})')
+
+ERROR_MESSAGES = {
+    "conversation_limit": (
+        "This conversation has reached its message limit. Your scenario is saved in the form, "
+        "where you can keep adjusting it."
+    ),
+    "daily_limit": (
+        "You've reached today's limit for the assistant. Your scenario is saved in the form, "
+        "where you can keep working."
+    ),
+    "unavailable": (
+        "The assistant is unavailable right now. Your scenario is saved in the form, where you "
+        "can keep working."
+    ),
+    "refusal": "I can't help with that one. I can answer questions about Roth conversions and your scenario.",
+    "too_long": "That conversation is too long to continue. Start a new one or use the form.",
+}
+
+
+def count_user_messages(history: list[dict]) -> int:
+    """User turns that carry the user's own words (tool results don't count)."""
+    count = 0
+    for message in history:
+        if message.get("role") != "user":
+            continue
+        content = message.get("content")
+        if isinstance(content, str) or (
+            isinstance(content, list)
+            and any(isinstance(b, dict) and b.get("type") == "text" for b in content)
+        ):
+            count += 1
+    return count
+
+
+def known_result_ids(history: list[dict]) -> set[str]:
+    return set(_RESULT_ID.findall(json.dumps(history)))
+
+
+def last_seen_draft_hash(history: list[dict]) -> str | None:
+    matches = _DRAFT_HASH.findall(json.dumps(history))
+    return matches[-1] if matches else None
+
+
+def build_user_turn(text: str, draft: ScenarioDraft, history: list[dict]) -> dict:
+    """The user's message, prefixed with the scenario if it changed outside the conversation."""
+    blocks: list[dict] = []
+    described = core.describe_draft(draft)
+    has_values = bool(described["values"].keys() - _DEFAULT_ONLY_KEYS) or described["timeline"]
+    if has_values and last_seen_draft_hash(history) != described["draft_hash"]:
+        blocks.append(
+            {
+                "type": "text",
+                "text": "<scenario_state>\n"
+                + json.dumps(described, separators=(",", ":"))
+                + "\n</scenario_state>",
+            }
+        )
+    blocks.append({"type": "text", "text": text})
+    return {"role": "user", "content": blocks}
+
+
+# Keys that hold defaults even on an empty draft; their presence alone means nothing was entered.
+_DEFAULT_ONLY_KEYS = {
+    "income_growth_rate_pct",
+    "planning_horizon_age",
+    "investment_return_pct",
+    "discount_rate_pct",
+    "include_aca",
+    "household_size",
+    "monthly_slcsp_premium",
+}
+
+
+async def run_turn(
+    *,
+    client: ModelClient,
+    history: list[dict],
+    text: str,
+    draft: ScenarioDraft,
+    start_year: int,
+    on_usage=None,
+) -> AsyncIterator[dict]:
+    """Run one user message through the agent. Yields UI events (see module docstring)."""
+    ctx = ToolContext(
+        draft=draft, start_year=start_year, known_result_ids=known_result_ids(history)
+    )
+    user_turn = build_user_turn(text, draft, history)
+    new_messages: list[dict] = [user_turn]
+    tools = anthropic_tools()
+    tool_calls = 0
+
+    for _ in range(MAX_MODEL_CALLS_PER_TURN):
+        turn = None
+        try:
+            async for event in client.stream(
+                system=SYSTEM_PROMPT, tools=tools, messages=[*history, *new_messages]
+            ):
+                if isinstance(event, TextDelta):
+                    yield {"type": "text_delta", "text": event.text}
+                elif isinstance(event, ToolStart):
+                    tool = TOOLS_BY_NAME.get(event.name)
+                    yield {
+                        "type": "tool_start",
+                        "name": event.name,
+                        "status": tool.status if tool else "Working",
+                    }
+                elif isinstance(event, Final):
+                    turn = event.turn
+        except ModelUnavailable:
+            yield _error("unavailable")
+            yield {"type": "done", "messages": []}
+            return
+
+        if turn is None:  # pragma: no cover - a client must always finish with Final
+            yield _error("unavailable")
+            yield {"type": "done", "messages": []}
+            return
+        if on_usage is not None:
+            on_usage(turn.model, turn.usage)
+
+        if turn.stop_reason == "refusal":
+            # Drop the whole exchange so the stored history stays valid.
+            yield _error("refusal")
+            yield {"type": "done", "messages": []}
+            return
+
+        new_messages.append({"role": "assistant", "content": turn.content})
+        tool_uses = [b for b in turn.content if b.get("type") == "tool_use"]
+
+        if turn.stop_reason == "pause_turn":
+            continue
+        if not tool_uses:
+            break
+        if turn.stop_reason == "max_tokens":
+            # A tool call cut off mid-input: answer it with an error instead of running it,
+            # so every tool_use keeps its matching tool_result.
+            new_messages.append(
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": b["id"],
+                            "content": "Tool input was cut off. Try again with a shorter call.",
+                            "is_error": True,
+                        }
+                        for b in tool_uses
+                    ],
+                }
+            )
+            continue
+
+        results = []
+        for block in tool_uses:
+            tool_calls += 1
+            if tool_calls > MAX_TOOL_CALLS_PER_TURN:
+                content, is_error = {"error": "Tool call limit reached for this message."}, True
+            else:
+                before = len(ctx.events)
+                content, is_error = await asyncio.to_thread(
+                    run_tool, block["name"], block.get("input"), ctx
+                )
+                for event in ctx.events[before:]:
+                    yield _serialize_event(event)
+            results.append(
+                {
+                    "type": "tool_result",
+                    "tool_use_id": block["id"],
+                    "content": json.dumps(content, separators=(",", ":")),
+                    **({"is_error": True} if is_error else {}),
+                }
+            )
+        new_messages.append({"role": "user", "content": results})
+    else:
+        # Ran out of model calls while the model still wanted tools. Close the turn
+        # with a short assistant message so the history stays well-formed.
+        if new_messages[-1]["role"] == "user":
+            note = "I ran out of steps for this message. Ask me to continue."
+            new_messages.append({"role": "assistant", "content": [{"type": "text", "text": note}]})
+            yield {"type": "text_delta", "text": note}
+
+    yield {"type": "done", "messages": new_messages}
+
+
+def _serialize_event(event: dict) -> dict:
+    out = dict(event)
+    if "result" in out and hasattr(out["result"], "model_dump"):
+        out["result"] = out["result"].model_dump(mode="json")
+    return out
+
+
+def _error(code: str) -> dict:
+    return {"type": "error", "code": code, "message": ERROR_MESSAGES[code]}

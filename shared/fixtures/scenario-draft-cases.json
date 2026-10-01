@@ -1,0 +1,923 @@
+{
+  "_comment": "Shared parity cases for the scenario draft. Generated from backend/app/tools/draft.py (the reference). frontend/src/lib/scenario/draft.ts must produce the same timelines and scenarios. Regenerate with backend/scripts/generate_draft_fixtures.py.",
+  "build": [
+    {
+      "name": "working, single, federal only",
+      "start_year": 2026,
+      "draft": {
+        "age": 45,
+        "filing_status": "single",
+        "current_income": 85000,
+        "traditional_balance": 250000,
+        "retirement_age": 65
+      },
+      "timeline": [
+        {
+          "year": 2026,
+          "gross_income": 85000.0
+        },
+        {
+          "year": 2027,
+          "gross_income": 87550.0
+        },
+        {
+          "year": 2028,
+          "gross_income": 90177.0
+        },
+        {
+          "year": 2029,
+          "gross_income": 92882.0
+        },
+        {
+          "year": 2030,
+          "gross_income": 95668.0
+        },
+        {
+          "year": 2031,
+          "gross_income": 98538.0
+        },
+        {
+          "year": 2032,
+          "gross_income": 101494.0
+        },
+        {
+          "year": 2033,
+          "gross_income": 104539.0
+        },
+        {
+          "year": 2034,
+          "gross_income": 107675.0
+        },
+        {
+          "year": 2035,
+          "gross_income": 110906.0
+        },
+        {
+          "year": 2036,
+          "gross_income": 114233.0
+        },
+        {
+          "year": 2037,
+          "gross_income": 117660.0
+        },
+        {
+          "year": 2038,
+          "gross_income": 121190.0
+        },
+        {
+          "year": 2039,
+          "gross_income": 124825.0
+        },
+        {
+          "year": 2040,
+          "gross_income": 128570.0
+        },
+        {
+          "year": 2041,
+          "gross_income": 132427.0
+        },
+        {
+          "year": 2042,
+          "gross_income": 136400.0
+        },
+        {
+          "year": 2043,
+          "gross_income": 140492.0
+        },
+        {
+          "year": 2044,
+          "gross_income": 144707.0
+        },
+        {
+          "year": 2045,
+          "gross_income": 149048.0
+        }
+      ],
+      "scenario": {
+        "age": 45,
+        "filing_status": "single",
+        "timeline": [
+          {
+            "year": 2026,
+            "gross_income": 85000.0,
+            "notes": ""
+          },
+          {
+            "year": 2027,
+            "gross_income": 87550.0,
+            "notes": ""
+          },
+          {
+            "year": 2028,
+            "gross_income": 90177.0,
+            "notes": ""
+          },
+          {
+            "year": 2029,
+            "gross_income": 92882.0,
+            "notes": ""
+          },
+          {
+            "year": 2030,
+            "gross_income": 95668.0,
+            "notes": ""
+          },
+          {
+            "year": 2031,
+            "gross_income": 98538.0,
+            "notes": ""
+          },
+          {
+            "year": 2032,
+            "gross_income": 101494.0,
+            "notes": ""
+          },
+          {
+            "year": 2033,
+            "gross_income": 104539.0,
+            "notes": ""
+          },
+          {
+            "year": 2034,
+            "gross_income": 107675.0,
+            "notes": ""
+          },
+          {
+            "year": 2035,
+            "gross_income": 110906.0,
+            "notes": ""
+          },
+          {
+            "year": 2036,
+            "gross_income": 114233.0,
+            "notes": ""
+          },
+          {
+            "year": 2037,
+            "gross_income": 117660.0,
+            "notes": ""
+          },
+          {
+            "year": 2038,
+            "gross_income": 121190.0,
+            "notes": ""
+          },
+          {
+            "year": 2039,
+            "gross_income": 124825.0,
+            "notes": ""
+          },
+          {
+            "year": 2040,
+            "gross_income": 128570.0,
+            "notes": ""
+          },
+          {
+            "year": 2041,
+            "gross_income": 132427.0,
+            "notes": ""
+          },
+          {
+            "year": 2042,
+            "gross_income": 136400.0,
+            "notes": ""
+          },
+          {
+            "year": 2043,
+            "gross_income": 140492.0,
+            "notes": ""
+          },
+          {
+            "year": 2044,
+            "gross_income": 144707.0,
+            "notes": ""
+          },
+          {
+            "year": 2045,
+            "gross_income": 149048.0,
+            "notes": ""
+          }
+        ],
+        "traditional_ira_balance": 250000.0,
+        "roth_ira_balance": 0.0,
+        "drawdown_start_age": 65,
+        "planning_horizon_age": 90,
+        "annual_growth_rate": 0.07,
+        "discount_rate": 0.05
+      }
+    },
+    {
+      "name": "married with state, roth, spending, custom assumptions",
+      "start_year": 2026,
+      "draft": {
+        "age": 52,
+        "filing_status": "married_filing_jointly",
+        "current_income": 90000,
+        "income_growth_rate_pct": 2.5,
+        "traditional_balance": 600000,
+        "roth_balance": 40000,
+        "retirement_age": 60,
+        "retirement_spending": 80000,
+        "state": "CA",
+        "retirement_state": "TX",
+        "planning_horizon_age": 95,
+        "investment_return_pct": 6,
+        "discount_rate_pct": 4
+      },
+      "timeline": [
+        {
+          "year": 2026,
+          "gross_income": 90000.0
+        },
+        {
+          "year": 2027,
+          "gross_income": 92250.0
+        },
+        {
+          "year": 2028,
+          "gross_income": 94556.0
+        },
+        {
+          "year": 2029,
+          "gross_income": 96920.0
+        },
+        {
+          "year": 2030,
+          "gross_income": 99343.0
+        },
+        {
+          "year": 2031,
+          "gross_income": 101827.0
+        },
+        {
+          "year": 2032,
+          "gross_income": 104372.0
+        },
+        {
+          "year": 2033,
+          "gross_income": 106982.0
+        }
+      ],
+      "scenario": {
+        "age": 52,
+        "filing_status": "married_filing_jointly",
+        "timeline": [
+          {
+            "year": 2026,
+            "gross_income": 90000.0,
+            "notes": ""
+          },
+          {
+            "year": 2027,
+            "gross_income": 92250.0,
+            "notes": ""
+          },
+          {
+            "year": 2028,
+            "gross_income": 94556.0,
+            "notes": ""
+          },
+          {
+            "year": 2029,
+            "gross_income": 96920.0,
+            "notes": ""
+          },
+          {
+            "year": 2030,
+            "gross_income": 99343.0,
+            "notes": ""
+          },
+          {
+            "year": 2031,
+            "gross_income": 101827.0,
+            "notes": ""
+          },
+          {
+            "year": 2032,
+            "gross_income": 104372.0,
+            "notes": ""
+          },
+          {
+            "year": 2033,
+            "gross_income": 106982.0,
+            "notes": ""
+          }
+        ],
+        "traditional_ira_balance": 600000.0,
+        "roth_ira_balance": 40000.0,
+        "drawdown_start_age": 60,
+        "default_drawdown": 80000.0,
+        "planning_horizon_age": 95,
+        "annual_growth_rate": 0.06,
+        "discount_rate": 0.04,
+        "state": "CA",
+        "retirement_state": "TX"
+      }
+    },
+    {
+      "name": "retirement state same as state is dropped",
+      "start_year": 2026,
+      "draft": {
+        "age": 40,
+        "filing_status": "single",
+        "current_income": 120000,
+        "traditional_balance": 300000,
+        "retirement_age": 55,
+        "state": "NY",
+        "retirement_state": "NY"
+      },
+      "timeline": [
+        {
+          "year": 2026,
+          "gross_income": 120000.0
+        },
+        {
+          "year": 2027,
+          "gross_income": 123600.0
+        },
+        {
+          "year": 2028,
+          "gross_income": 127308.0
+        },
+        {
+          "year": 2029,
+          "gross_income": 131127.0
+        },
+        {
+          "year": 2030,
+          "gross_income": 135061.0
+        },
+        {
+          "year": 2031,
+          "gross_income": 139113.0
+        },
+        {
+          "year": 2032,
+          "gross_income": 143286.0
+        },
+        {
+          "year": 2033,
+          "gross_income": 147585.0
+        },
+        {
+          "year": 2034,
+          "gross_income": 152012.0
+        },
+        {
+          "year": 2035,
+          "gross_income": 156573.0
+        },
+        {
+          "year": 2036,
+          "gross_income": 161270.0
+        },
+        {
+          "year": 2037,
+          "gross_income": 166108.0
+        },
+        {
+          "year": 2038,
+          "gross_income": 171091.0
+        },
+        {
+          "year": 2039,
+          "gross_income": 176224.0
+        },
+        {
+          "year": 2040,
+          "gross_income": 181511.0
+        }
+      ],
+      "scenario": {
+        "age": 40,
+        "filing_status": "single",
+        "timeline": [
+          {
+            "year": 2026,
+            "gross_income": 120000.0,
+            "notes": ""
+          },
+          {
+            "year": 2027,
+            "gross_income": 123600.0,
+            "notes": ""
+          },
+          {
+            "year": 2028,
+            "gross_income": 127308.0,
+            "notes": ""
+          },
+          {
+            "year": 2029,
+            "gross_income": 131127.0,
+            "notes": ""
+          },
+          {
+            "year": 2030,
+            "gross_income": 135061.0,
+            "notes": ""
+          },
+          {
+            "year": 2031,
+            "gross_income": 139113.0,
+            "notes": ""
+          },
+          {
+            "year": 2032,
+            "gross_income": 143286.0,
+            "notes": ""
+          },
+          {
+            "year": 2033,
+            "gross_income": 147585.0,
+            "notes": ""
+          },
+          {
+            "year": 2034,
+            "gross_income": 152012.0,
+            "notes": ""
+          },
+          {
+            "year": 2035,
+            "gross_income": 156573.0,
+            "notes": ""
+          },
+          {
+            "year": 2036,
+            "gross_income": 161270.0,
+            "notes": ""
+          },
+          {
+            "year": 2037,
+            "gross_income": 166108.0,
+            "notes": ""
+          },
+          {
+            "year": 2038,
+            "gross_income": 171091.0,
+            "notes": ""
+          },
+          {
+            "year": 2039,
+            "gross_income": 176224.0,
+            "notes": ""
+          },
+          {
+            "year": 2040,
+            "gross_income": 181511.0,
+            "notes": ""
+          }
+        ],
+        "traditional_ira_balance": 300000.0,
+        "roth_ira_balance": 0.0,
+        "drawdown_start_age": 55,
+        "planning_horizon_age": 90,
+        "annual_growth_rate": 0.07,
+        "discount_rate": 0.05,
+        "state": "NY"
+      }
+    },
+    {
+      "name": "already retired plans to 73",
+      "start_year": 2026,
+      "draft": {
+        "age": 66,
+        "filing_status": "married_filing_jointly",
+        "current_income": 30000,
+        "income_growth_rate_pct": 0,
+        "traditional_balance": 900000,
+        "retirement_age": 62
+      },
+      "timeline": [
+        {
+          "year": 2026,
+          "gross_income": 30000.0
+        },
+        {
+          "year": 2027,
+          "gross_income": 30000.0
+        },
+        {
+          "year": 2028,
+          "gross_income": 30000.0
+        },
+        {
+          "year": 2029,
+          "gross_income": 30000.0
+        },
+        {
+          "year": 2030,
+          "gross_income": 30000.0
+        },
+        {
+          "year": 2031,
+          "gross_income": 30000.0
+        },
+        {
+          "year": 2032,
+          "gross_income": 30000.0
+        }
+      ],
+      "scenario": {
+        "age": 66,
+        "filing_status": "married_filing_jointly",
+        "timeline": [
+          {
+            "year": 2026,
+            "gross_income": 30000.0,
+            "notes": ""
+          },
+          {
+            "year": 2027,
+            "gross_income": 30000.0,
+            "notes": ""
+          },
+          {
+            "year": 2028,
+            "gross_income": 30000.0,
+            "notes": ""
+          },
+          {
+            "year": 2029,
+            "gross_income": 30000.0,
+            "notes": ""
+          },
+          {
+            "year": 2030,
+            "gross_income": 30000.0,
+            "notes": ""
+          },
+          {
+            "year": 2031,
+            "gross_income": 30000.0,
+            "notes": ""
+          },
+          {
+            "year": 2032,
+            "gross_income": 30000.0,
+            "notes": ""
+          }
+        ],
+        "traditional_ira_balance": 900000.0,
+        "roth_ira_balance": 0.0,
+        "drawdown_start_age": 62,
+        "planning_horizon_age": 90,
+        "annual_growth_rate": 0.07,
+        "discount_rate": 0.05
+      }
+    },
+    {
+      "name": "custom state rate and ACA",
+      "start_year": 2026,
+      "draft": {
+        "age": 58,
+        "filing_status": "single",
+        "current_income": 45000,
+        "traditional_balance": 500000,
+        "retirement_age": 63,
+        "state": "custom",
+        "custom_state_rate_pct": 4.5,
+        "include_aca": true,
+        "household_size": 2,
+        "monthly_slcsp_premium": 900,
+        "employer_coverage_year": 2029
+      },
+      "timeline": [
+        {
+          "year": 2026,
+          "gross_income": 45000.0
+        },
+        {
+          "year": 2027,
+          "gross_income": 46350.0
+        },
+        {
+          "year": 2028,
+          "gross_income": 47741.0
+        },
+        {
+          "year": 2029,
+          "gross_income": 49173.0
+        },
+        {
+          "year": 2030,
+          "gross_income": 50648.0
+        }
+      ],
+      "scenario": {
+        "age": 58,
+        "filing_status": "single",
+        "timeline": [
+          {
+            "year": 2026,
+            "gross_income": 45000.0,
+            "notes": ""
+          },
+          {
+            "year": 2027,
+            "gross_income": 46350.0,
+            "notes": ""
+          },
+          {
+            "year": 2028,
+            "gross_income": 47741.0,
+            "notes": ""
+          },
+          {
+            "year": 2029,
+            "gross_income": 49173.0,
+            "notes": ""
+          },
+          {
+            "year": 2030,
+            "gross_income": 50648.0,
+            "notes": ""
+          }
+        ],
+        "traditional_ira_balance": 500000.0,
+        "roth_ira_balance": 0.0,
+        "drawdown_start_age": 63,
+        "planning_horizon_age": 90,
+        "annual_growth_rate": 0.07,
+        "discount_rate": 0.05,
+        "healthcare": {
+          "household_size": 2,
+          "monthly_slcsp_premium": 900.0,
+          "has_employer_coverage_after": 2029
+        },
+        "state": "custom",
+        "custom_state_rate": 0.045
+      }
+    },
+    {
+      "name": "half-dollar growth rounding",
+      "start_year": 2026,
+      "draft": {
+        "age": 30,
+        "filing_status": "single",
+        "current_income": 50001,
+        "income_growth_rate_pct": 3,
+        "traditional_balance": 10000,
+        "retirement_age": 40
+      },
+      "timeline": [
+        {
+          "year": 2026,
+          "gross_income": 50001.0
+        },
+        {
+          "year": 2027,
+          "gross_income": 51501.0
+        },
+        {
+          "year": 2028,
+          "gross_income": 53046.0
+        },
+        {
+          "year": 2029,
+          "gross_income": 54637.0
+        },
+        {
+          "year": 2030,
+          "gross_income": 56277.0
+        },
+        {
+          "year": 2031,
+          "gross_income": 57965.0
+        },
+        {
+          "year": 2032,
+          "gross_income": 59704.0
+        },
+        {
+          "year": 2033,
+          "gross_income": 61495.0
+        },
+        {
+          "year": 2034,
+          "gross_income": 63340.0
+        },
+        {
+          "year": 2035,
+          "gross_income": 65240.0
+        }
+      ],
+      "scenario": {
+        "age": 30,
+        "filing_status": "single",
+        "timeline": [
+          {
+            "year": 2026,
+            "gross_income": 50001.0,
+            "notes": ""
+          },
+          {
+            "year": 2027,
+            "gross_income": 51501.0,
+            "notes": ""
+          },
+          {
+            "year": 2028,
+            "gross_income": 53046.0,
+            "notes": ""
+          },
+          {
+            "year": 2029,
+            "gross_income": 54637.0,
+            "notes": ""
+          },
+          {
+            "year": 2030,
+            "gross_income": 56277.0,
+            "notes": ""
+          },
+          {
+            "year": 2031,
+            "gross_income": 57965.0,
+            "notes": ""
+          },
+          {
+            "year": 2032,
+            "gross_income": 59704.0,
+            "notes": ""
+          },
+          {
+            "year": 2033,
+            "gross_income": 61495.0,
+            "notes": ""
+          },
+          {
+            "year": 2034,
+            "gross_income": 63340.0,
+            "notes": ""
+          },
+          {
+            "year": 2035,
+            "gross_income": 65240.0,
+            "notes": ""
+          }
+        ],
+        "traditional_ira_balance": 10000.0,
+        "roth_ira_balance": 0.0,
+        "drawdown_start_age": 40,
+        "planning_horizon_age": 90,
+        "annual_growth_rate": 0.07,
+        "discount_rate": 0.05
+      }
+    },
+    {
+      "name": "zero spending means 4% rule",
+      "start_year": 2026,
+      "draft": {
+        "age": 50,
+        "filing_status": "single",
+        "current_income": 70000,
+        "traditional_balance": 200000,
+        "retirement_age": 60,
+        "retirement_spending": 0
+      },
+      "timeline": [
+        {
+          "year": 2026,
+          "gross_income": 70000.0
+        },
+        {
+          "year": 2027,
+          "gross_income": 72100.0
+        },
+        {
+          "year": 2028,
+          "gross_income": 74263.0
+        },
+        {
+          "year": 2029,
+          "gross_income": 76491.0
+        },
+        {
+          "year": 2030,
+          "gross_income": 78786.0
+        },
+        {
+          "year": 2031,
+          "gross_income": 81149.0
+        },
+        {
+          "year": 2032,
+          "gross_income": 83584.0
+        },
+        {
+          "year": 2033,
+          "gross_income": 86091.0
+        },
+        {
+          "year": 2034,
+          "gross_income": 88674.0
+        },
+        {
+          "year": 2035,
+          "gross_income": 91334.0
+        }
+      ],
+      "scenario": {
+        "age": 50,
+        "filing_status": "single",
+        "timeline": [
+          {
+            "year": 2026,
+            "gross_income": 70000.0,
+            "notes": ""
+          },
+          {
+            "year": 2027,
+            "gross_income": 72100.0,
+            "notes": ""
+          },
+          {
+            "year": 2028,
+            "gross_income": 74263.0,
+            "notes": ""
+          },
+          {
+            "year": 2029,
+            "gross_income": 76491.0,
+            "notes": ""
+          },
+          {
+            "year": 2030,
+            "gross_income": 78786.0,
+            "notes": ""
+          },
+          {
+            "year": 2031,
+            "gross_income": 81149.0,
+            "notes": ""
+          },
+          {
+            "year": 2032,
+            "gross_income": 83584.0,
+            "notes": ""
+          },
+          {
+            "year": 2033,
+            "gross_income": 86091.0,
+            "notes": ""
+          },
+          {
+            "year": 2034,
+            "gross_income": 88674.0,
+            "notes": ""
+          },
+          {
+            "year": 2035,
+            "gross_income": 91334.0,
+            "notes": ""
+          }
+        ],
+        "traditional_ira_balance": 200000.0,
+        "roth_ira_balance": 0.0,
+        "drawdown_start_age": 60,
+        "planning_horizon_age": 90,
+        "annual_growth_rate": 0.07,
+        "discount_rate": 0.05
+      }
+    }
+  ],
+  "missing": [
+    {
+      "name": "empty",
+      "draft": {},
+      "missing": [
+        "age",
+        "filing_status",
+        "current_income",
+        "traditional_balance",
+        "retirement_age"
+      ]
+    },
+    {
+      "name": "partial",
+      "draft": {
+        "age": 45,
+        "filing_status": "single"
+      },
+      "missing": [
+        "current_income",
+        "traditional_balance",
+        "retirement_age"
+      ]
+    },
+    {
+      "name": "zero income",
+      "draft": {
+        "age": 45,
+        "filing_status": "single",
+        "current_income": 0,
+        "traditional_balance": 1000,
+        "retirement_age": 60
+      },
+      "missing": [
+        "current_income"
+      ]
+    }
+  ]
+}

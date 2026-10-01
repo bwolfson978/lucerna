@@ -34,3 +34,6 @@ Thumbs.db
 
 # Vercel
 .vercel
+
+# Agent demo conversation cache
+backend/.cache/
