@@ -6,11 +6,11 @@ import { TaxConfigProvider } from "@/lib/tax/TaxConfigProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Roth Conversion Optimizer | Model. Optimize. Convert.",
+  title: "Roth Conversions Optimizer | Model. Optimize. Convert.",
   description:
     "Roth conversion planning. Find the low-tax window before required minimum distributions begin and build a year-by-year conversion schedule.",
   openGraph: {
-    title: "Roth Conversion Optimizer | Model. Optimize. Convert.",
+    title: "Roth Conversions Optimizer | Model. Optimize. Convert.",
     description:
       "Roth conversion planning. Find the low-tax window before required minimum distributions begin and build a year-by-year conversion schedule.",
     type: "website",
