@@ -1,0 +1,196 @@
+{
+  "_comment": "Single source for methodology copy. The frontend methodology sidebar renders the sections marked sidebar=true from its copy at frontend/src/content/methodology.json; the assistant and the MCP server read every section through explain_methodology. Keep the two files identical (a backend test enforces it). No em dashes in this copy.",
+  "sections": [
+    {
+      "id": "savings-number",
+      "title": "Your Savings Number",
+      "sidebar": true,
+      "blocks": [
+        {
+          "text": "This is the difference in your after-tax wealth between converting the recommended amount and converting nothing, expressed in today's dollars so it reflects real purchasing power."
+        },
+        {
+          "heading": "Why “today's dollars?”",
+          "text": "A dollar 20 years from now buys less than a dollar today. We discount future savings at 5% so the number reflects what that money is actually worth to you right now, not an inflated future amount."
+        },
+        {
+          "heading": "What's included",
+          "text": "We model your full financial timeline: the tax cost of conversions now, growth in both accounts over time, retirement withdrawals (traditional is taxed, Roth is not), and any remaining balance. The savings number is the gap between converting optimally and not converting at all."
+        }
+      ]
+    },
+    {
+      "id": "bracket-filling",
+      "title": "Tax Bracket Filling",
+      "sidebar": true,
+      "blocks": [
+        {
+          "text": "Tax brackets are “buckets” that fill from the bottom up. Your regular income fills the lowest brackets first. Conversions then fill the next available space."
+        },
+        {
+          "heading": "Where the analysis stops",
+          "text": "The analysis stops converting when the cost of entering the next bracket exceeds the long-term benefit. Converting into a bracket that's cheaper than your expected retirement rate saves money. Going higher costs more than it saves."
+        },
+        {
+          "heading": "Why this changes year to year",
+          "text": "In years when your income is lower, there's more room in cheaper brackets, so the analysis places more conversion there. This is why your income trajectory matters so much."
+        }
+      ]
+    },
+    {
+      "id": "conversion-tradeoff",
+      "title": "The Conversion Trade-Off",
+      "sidebar": true,
+      "blocks": [
+        {
+          "text": "Every conversion involves a trade-off: pay tax now at your current rate, or pay tax later at your retirement rate. The optimal amount is where the cost of converting one more dollar roughly equals the benefit."
+        },
+        {
+          "heading": "Why not convert everything?",
+          "text": "Converting your entire IRA at once pushes income into higher tax brackets. You'd pay more in tax today than the optimal strategy, and that tax doesn't get recovered by future tax-free growth."
+        },
+        {
+          "heading": "Why not convert nothing?",
+          "text": "Leaving everything in traditional means paying tax on every dollar in retirement, likely at rates similar to or higher than your current low brackets. You'd miss significant potential savings."
+        }
+      ]
+    },
+    {
+      "id": "multi-year-allocation",
+      "title": "Multi-Year Allocation",
+      "sidebar": true,
+      "blocks": [
+        {
+          "text": "When you adjust the total conversion amount, the analysis doesn't divide it evenly across years. It prioritizes your lowest-income years where bracket space is cheapest."
+        },
+        {
+          "heading": "How redistribution works",
+          "text": "Low-income years get filled first because each dollar converted costs less in tax. Only when those years are full does the analysis spill into higher-income years. This means even a “suboptimal” total is allocated as efficiently as possible."
+        },
+        {
+          "heading": "Your timeline",
+          "text": "The analysis places most of your conversion in the years where your income is lowest, taking advantage of the bracket room available in those years."
+        }
+      ]
+    },
+    {
+      "id": "assumptions-limitations",
+      "title": "Assumptions & Limitations",
+      "sidebar": true,
+      "blocks": [
+        {
+          "text": "Every projection requires assumptions about the future. Here's what we use and why they're reasonable, but not guaranteed."
+        },
+        {
+          "heading": "7% annual growth",
+          "text": "The historical average real return of a diversified stock portfolio. Your actual returns will vary year to year, but this is a widely-used baseline for long-term planning."
+        },
+        {
+          "heading": "5% discount rate",
+          "text": "How we convert future dollars to today's dollars. A moderate assumption that avoids overstating benefits."
+        },
+        {
+          "heading": "What's not included",
+          "text": "Social Security benefits and income are not modeled. IRMAA surcharges are factored in during optimization but are not a direct user input. These omissions could shift the optimal amount depending on your situation."
+        }
+      ]
+    },
+    {
+      "id": "what-is-a-roth-conversion",
+      "title": "What a Roth Conversion Is",
+      "sidebar": false,
+      "blocks": [
+        {
+          "text": "A Roth conversion moves money from a Traditional IRA (or rolled-over 401k) into a Roth IRA. Traditional accounts grow tax-deferred: every dollar withdrawn in retirement is taxed as ordinary income. Roth accounts hold after-tax dollars, and all future growth and qualified withdrawals are tax-free."
+        },
+        {
+          "text": "The conversion itself triggers a tax bill. The amount converted is added to your taxable income for the year, just like earning extra wages. The question is whether paying that tax now, at your current rate, costs less than paying tax later when you withdraw in retirement. When your current rate is lower than the rate you expect in retirement, converting creates a net benefit."
+        }
+      ]
+    },
+    {
+      "id": "how-the-optimizer-works",
+      "title": "How the Optimizer Works",
+      "sidebar": false,
+      "blocks": [
+        {
+          "text": "The tool looks across your entire income timeline at once instead of one year at a time. It finds the cheapest bracket space across all years and fills it from cheapest to most expensive, which is why career breaks, early retirement and other low-income years often get the largest conversions."
+        },
+        {
+          "heading": "Four phases",
+          "text": "1) Conversion years: tax is paid on conversions and money moves from Traditional to Roth while both accounts grow. 2) Growth to retirement: both accounts compound until retirement age. 3) Retirement distributions: Traditional withdrawals are taxed, Roth withdrawals are not, and Required Minimum Distributions are enforced. 4) Final liquidation at the planning horizon age: remaining Traditional balances are taxed, Roth balances are not."
+        },
+        {
+          "heading": "Two-stage search",
+          "text": "A fast bracket-fill heuristic estimates your retirement tax rate and fills every bracket slot below it. A numerical optimizer (sequential least-squares programming) then searches from several starting points for the schedule with the highest after-tax wealth in today's dollars, falling back to the heuristic if it does not converge."
+        },
+        {
+          "heading": "Your preferences",
+          "text": "Limits such as a maximum annual tax cost or a per-year cap are treated as hard constraints. The optimizer finds the best schedule that respects them."
+        }
+      ]
+    },
+    {
+      "id": "rmds",
+      "title": "Required Minimum Distributions",
+      "sidebar": false,
+      "blocks": [
+        {
+          "text": "Starting at age 73 (75 for people born in 1960 or later), the IRS requires a minimum withdrawal from Traditional accounts each year. These Required Minimum Distributions are taxed as ordinary income whether or not you need the money, and they grow with your Traditional balance."
+        },
+        {
+          "text": "Every dollar converted reduces the future Traditional balance, which shrinks RMDs and the forced taxable income that comes with them. Roth IRAs have no RMDs during the owner's lifetime. The results compare projected RMDs with and without conversions."
+        }
+      ]
+    },
+    {
+      "id": "aca-subsidies",
+      "title": "ACA Premium Subsidies",
+      "sidebar": false,
+      "blocks": [
+        {
+          "text": "If you buy health insurance on the ACA marketplace, conversions raise your Modified Adjusted Gross Income, which shrinks your premium subsidy. That lost subsidy is a hidden cost on top of the tax bill."
+        },
+        {
+          "text": "When you include marketplace coverage, the analysis counts lost subsidies as part of the cost of converting and avoids pushing income over thresholds unless the long-term benefit clearly outweighs the loss. It only applies to years when you buy marketplace coverage; employer coverage and Medicare years are unaffected."
+        }
+      ]
+    },
+    {
+      "id": "irmaa",
+      "title": "Medicare Surcharges (IRMAA)",
+      "sidebar": false,
+      "blocks": [
+        {
+          "text": "Once you are on Medicare, income above certain thresholds raises Part B and Part D premiums two years later. These surcharges are called IRMAA. Large conversions after 63 can trigger them, so the optimizer counts projected surcharges as part of the cost of converting."
+        }
+      ]
+    },
+    {
+      "id": "state-taxes",
+      "title": "State Income Taxes",
+      "sidebar": false,
+      "blocks": [
+        {
+          "text": "When you choose a state, its income tax is added to the cost of converting in your working years, and your retirement state's tax applies to withdrawals later. Moving from a high-tax state to a no-tax state in retirement makes conversions less attractive before the move and more attractive after it. Without a state selected, the analysis is federal only."
+        }
+      ]
+    },
+    {
+      "id": "using-this-tool",
+      "title": "Using This Tool",
+      "sidebar": false,
+      "blocks": [
+        {
+          "text": "You can talk through your situation in the conversation or fill in the form. Both edit the same scenario, so switching never loses anything. The conversation shows a summary of every value before running the numbers so you can check it."
+        },
+        {
+          "text": "Results appear in the conversation: estimated lifetime tax savings, the conversion schedule, and charts. “See full results” opens the complete analysis with the conversion slider, scenario comparison, balance projections and year-by-year table. You can ask what-if questions, such as a different retirement age or income, and apply a what-if to your scenario."
+        },
+        {
+          "text": "This is educational scenario analysis based on your inputs, not financial advice. Tax rules are complex, so consider discussing any plan with a tax professional before acting."
+        }
+      ]
+    }
+  ]
+}

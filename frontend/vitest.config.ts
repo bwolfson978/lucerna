@@ -23,8 +23,11 @@ export default defineConfig({
     },
   },
   resolve: {
+    // ../ui has no node_modules: resolve its react from here.
+    dedupe: ['react', 'react-dom'],
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@lucerna/ui': path.resolve(__dirname, '../ui/src/index.ts'),
     },
   },
 })

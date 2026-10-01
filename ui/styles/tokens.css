@@ -1,0 +1,224 @@
+/*
+ * "Paper & Pine" design tokens and shared component classes: the single source for
+ * the web app (imported by frontend/src/app/globals.css) and for MCP App Views
+ * (compiled into each View by mcp-views/build.mjs). See docs/design-aesthetic.md.
+ */
+
+@layer base {
+  /* "Paper & Pine" palette. See docs/design-aesthetic.md. */
+  :root {
+    --background: 0 0% 98%;
+    --background-alt: 42 25% 92%;
+    --background-elevated: 0 0% 100%;
+    --background-hover: 42 23% 89%;
+    --foreground: 0 0% 8%;
+    --muted-foreground: 0 0% 24%;
+    --tertiary-foreground: 0 0% 42%;
+    --border: 43 21% 87%;
+    --border-emphasis: 43 18% 77%;
+    --accent: 154 43% 18%;
+    --accent-hover: 153 40% 30%;
+    --accent-light: 153 40% 30% / 0.12;
+    --accent-muted: 153 40% 30% / 0.06;
+    --optimal: 153 40% 30%;
+    --destructive: 17 88% 40%;
+    --neutral: 0 0% 45%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 8%;
+    --ring: 153 40% 30%;
+    --radius: 20px;
+  }
+
+  .font-data {
+    font-family: "Inter", system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .font-serif {
+    font-family: "Playfair Display", Georgia, serif;
+  }
+
+  .font-ui {
+    font-family: "Inter", system-ui, sans-serif;
+  }
+}
+
+@layer components {
+  .card {
+    @apply border-border bg-card border;
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 24px 60px -34px rgba(27, 67, 50, 0.22);
+    transition:
+      box-shadow 250ms ease,
+      border-color 250ms ease;
+  }
+
+  .card-recommended {
+    @apply bg-card relative;
+    border-radius: 20px;
+    padding: 32px;
+    border: 2px solid #2d6a4f;
+    box-shadow: 0 24px 60px -30px rgba(27, 67, 50, 0.35);
+    transition: box-shadow 250ms ease;
+  }
+
+  .card-current {
+    @apply bg-card relative;
+    border-radius: 20px;
+    padding: 32px;
+    border: 2px solid #66a183;
+    box-shadow: 0 24px 60px -30px rgba(102, 161, 131, 0.3);
+    transition: box-shadow 250ms ease;
+  }
+
+  .card-elevated {
+    @apply bg-card;
+    border-radius: 20px;
+    padding: 32px;
+    box-shadow: 0 24px 60px -24px rgba(27, 67, 50, 0.3);
+  }
+
+  @media (max-width: 640px) {
+    .card,
+    .card-recommended,
+    .card-current,
+    .card-elevated {
+      padding: 16px;
+      border-radius: 16px;
+    }
+  }
+
+  /* Small uppercase mono caption, e.g. "LIFETIME INCOME MAP" */
+  .eyebrow {
+    @apply text-text-tertiary font-mono text-[11px] font-medium tracking-[0.16em] uppercase;
+  }
+
+  .eyebrow-pine {
+    @apply font-ui text-pine-mid text-[12px] font-bold tracking-[0.22em] uppercase;
+  }
+
+  /* Display headline with an italic pine phrase: <h2>Fill your brackets, <em>not the IRS's.</em></h2> */
+  .display-heading {
+    @apply text-text-primary font-serif font-semibold;
+    letter-spacing: -0.015em;
+    line-height: 1.06;
+  }
+
+  .display-heading em {
+    @apply text-pine italic;
+  }
+
+  /* Domain-specific data display tokens */
+  .metric-label {
+    @apply font-ui text-caption text-text-tertiary tracking-wide uppercase;
+  }
+
+  .metric-value {
+    @apply text-data-sm text-text-primary sm:text-data-lg font-serif;
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+
+  .metric-value-hero {
+    @apply text-data-hero-sm text-text-primary sm:text-data-hero font-serif;
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+
+  /* Badge variants */
+  .badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-[12px] font-medium tracking-wide uppercase;
+  }
+
+  .badge-positive {
+    @apply badge border-optimal/30 text-optimal border;
+    background: rgba(45, 106, 79, 0.08);
+  }
+
+  .badge-negative {
+    @apply badge border-negative/30 text-negative border;
+    background: rgba(242, 101, 34, 0.08);
+  }
+
+  .badge-neutral {
+    @apply badge border-border text-text-secondary border;
+    background: #f0ede6;
+  }
+
+  /* Pill buttons */
+  .btn-pill {
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-transparent px-7 py-3 text-[15px] font-semibold whitespace-nowrap;
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease,
+      background-color 180ms ease,
+      border-color 180ms ease;
+  }
+
+  .btn-pill:hover {
+    transform: translateY(-2px);
+  }
+
+  .btn-pill:active {
+    transform: translateY(0);
+  }
+
+  .btn-dark {
+    @apply btn-pill bg-pine-deep text-[#f5f2ea];
+  }
+
+  .btn-dark:hover {
+    @apply bg-pine;
+    box-shadow: 0 12px 28px -10px rgba(11, 29, 21, 0.5);
+  }
+
+  .btn-ghost {
+    @apply btn-pill border-border text-text-primary bg-transparent;
+  }
+
+  .btn-ghost:hover {
+    @apply border-text-primary;
+  }
+
+  .btn-paper {
+    @apply btn-pill bg-paper text-pine-deep;
+  }
+
+  .btn-outline-paper {
+    @apply btn-pill border-[rgba(250,250,250,0.35)] bg-transparent text-[#f5f2ea];
+  }
+
+  .btn-outline-paper:hover {
+    @apply border-[#f5f2ea];
+  }
+
+  .link-arrow {
+    @apply text-pine inline-flex items-center gap-2 font-semibold;
+    transition: gap 200ms ease;
+  }
+
+  .link-arrow:hover {
+    gap: 12px;
+  }
+}
+
+/* Bars and lines that grow in when a chart first renders. */
+@keyframes ui-grow-y {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.ui-grow-y {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: ui-grow-y 500ms ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-grow-y {
+    animation: none;
+  }
+}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useSyncExternalStore, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 
 /**
  * Reports when an element first scrolls into view. Fires once, then stops
@@ -34,20 +34,5 @@ export function useInView<T extends Element = HTMLDivElement>(
   return [ref, inView];
 }
 
-const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
-
-function subscribeReducedMotion(onChange: () => void): () => void {
-  if (typeof window === "undefined" || !window.matchMedia) return () => {};
-  const mq = window.matchMedia(REDUCED_MOTION_QUERY);
-  mq.addEventListener?.("change", onChange);
-  return () => mq.removeEventListener?.("change", onChange);
-}
-
-/** True when the user has asked the OS to minimize motion. */
-export function usePrefersReducedMotion(): boolean {
-  return useSyncExternalStore(
-    subscribeReducedMotion,
-    () => (window.matchMedia ? window.matchMedia(REDUCED_MOTION_QUERY).matches : false),
-    () => false
-  );
-}
+// Shared with the cards in ui/ (also rendered inside MCP App Views).
+export { usePrefersReducedMotion } from "@lucerna/ui";

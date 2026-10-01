@@ -11,6 +11,10 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
+    // Use a preinstalled Chromium when provided (e.g. PW_CHROMIUM_PATH=/opt/pw-browsers/chromium).
+    launchOptions: process.env.PW_CHROMIUM_PATH
+      ? { executablePath: process.env.PW_CHROMIUM_PATH }
+      : undefined,
     screenshot: 'only-on-failure',
   },
 
@@ -27,7 +31,11 @@ export default defineConfig({
 
   webServer: [
     {
-      command: 'cd ../backend && uvicorn app.main:app --port 8000',
+      // AGENT_OFFLINE=1 swaps the model for a rule-based stand-in (no API key needed).
+      // AGENT_MCP_URL makes the web assistant reach its tools over HTTP through /mcp,
+      // the same way Claude and ChatGPT do.
+      command:
+        'cd ../backend && AGENT_OFFLINE=1 AGENT_MCP_URL=http://localhost:8000/mcp MCP_INTERNAL_TOKEN=e2e-internal uvicorn app.main:app --port 8000',
       port: 8000,
       reuseExistingServer: !process.env.CI,
       timeout: 30000,

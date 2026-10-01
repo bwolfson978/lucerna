@@ -17,7 +17,7 @@ export function InfoTrigger({ label, sectionId, triggerId, className }: InfoTrig
   return (
     <button
       type="button"
-      onClick={() => openSidebar(sectionId, triggerId)}
+      onClick={() => openSidebar(sectionId, triggerId, label)}
       className={cn(
         "inline-flex items-center gap-1.5",
         "whitespace-nowrap text-xs font-medium",
