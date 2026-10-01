@@ -1,0 +1,14 @@
+{
+  "name": "@lucerna/ui",
+  "private": true,
+  "description": "Display-only components and Paper & Pine tokens shared by the web app and the MCP App Views. Source-only: consumers import it by path and supply react.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tailwind-preset": "./tailwind/preset.js",
+    "./tokens.css": "./styles/tokens.css"
+  },
+  "peerDependencies": {
+    "react": ">=18"
+  }
+}

@@ -34,7 +34,7 @@ Tool results can carry UI under the MCP Apps extension (`io.modelcontextprotocol
 
 | Responsibility | Owner | Where |
 |---|---|---|
-| Writing the View (HTML/JS bundle) | MCP server | `mcp-views/src/` → built into `backend/app/mcp/views/*.html` |
+| Writing the View (HTML/JS bundle) | MCP server | `mcp-views/src/` (a thin entry around a shared `ui/` component) → built into `backend/app/mcp/views/*.html` |
 | Serving it | MCP server | `ui://roth-conversions/result-card.html`, `text/html;profile=mcp-app`, with `_meta.ui.csp` (fonts only) and `prefersBorder: false` |
 | Linking tool → View | MCP server | `_meta.ui.resourceUri` on the tool, `visibility: ["model", "app"]` |
 | Data contract | MCP server | `structuredContent` for the View, text `content` for the model and text-only hosts |
@@ -46,9 +46,29 @@ Tool results can carry UI under the MCP Apps extension (`io.modelcontextprotocol
 
 The same View renders in Claude, ChatGPT or any MCP Apps host with no changes. In those hosts, "See full results" opens `rothconversionsoptimizer.com/calculator?view=results&result=…`; in our own host it opens the in-app results page for that result.
 
-**Building Views:** `npm run build:views` (repo root). CI fails if `backend/app/mcp/views/` is out of date with `mcp-views/src/`. The result card is ~340 KB uncompressed, most of it the SDK's MCP client and zod; hosts cache it.
+**Building Views:** `npm run build:views` (repo root). CI fails if `backend/app/mcp/views/` is out of date with its sources (`mcp-views/src/` and `ui/`). The result card is ~365 KB uncompressed, most of it the SDK's MCP client and zod; hosts cache it.
 
-**Migration status:** only the result card is a View so far. The scenario summary, bracket-fill and balance charts, what-if comparison and suggestion chips are still native cards selected by the web-only `show` tool; the full results page is first-party and fed by full results the web host requests through `_meta`. Each can move to a View the same way.
+## One component, two renderers (`ui/`)
+
+Cards that appear both in MCP App Views and natively in the web app are defined once, in `ui/`:
+
+- `ui/src/`: display-only React components (`ResultCard`, `ConversionStrip`, `MetricCard`). Plain data and callbacks in; no app context, data fetching, analytics or Next imports.
+- `ui/tailwind/preset.js` and `ui/styles/tokens.css`: the Paper & Pine theme, CSS variables and component classes (`card-recommended`, `eyebrow`, `metric-*`, `btn-*`). The web app's `tailwind.config.ts` and `globals.css` pull them in.
+
+`ui/` is source-only with no `node_modules`; each consumer resolves its `react` import:
+
+| Consumer | How it renders `ui/` |
+|---|---|
+| Web app (`frontend/`) | Imports `@lucerna/ui` (path alias in `tsconfig.json`, `next.config.js`, `vitest.config.ts`) and renders it with React. `common/MetricCard` wraps the shared one with the app's tooltip. |
+| MCP App Views (`mcp-views/`) | esbuild aliases React to `preact/compat` (~15 KB) and Tailwind compiles the same preset and tokens into the View's inline CSS. |
+
+**Data contract.** The View renders the tool's `structuredContent`; the native card renders the same shape (`ResultCardData`), built from the full engine result by `frontend/src/lib/results/cardData.ts`. `shared/fixtures/result-card-data.json` holds one real tool call (both payloads; regenerate with `python -m scripts.generate_result_card_fixture` from `backend/`). Backend and frontend tests check both sides against it.
+
+**Drift check.** `e2e/tests/ui-drift.spec.ts` renders the demo result as the View (inside the sandbox iframes) and natively (the host's fallback, shown while a View loads or if it fails), then compares computed styles and sizes of each part. Any visual difference between the two renderers fails CI.
+
+**Deploying.** The frontend imports files outside its directory, so the Vercel project must keep "Include files outside the root directory in the Build Step" enabled (the default).
+
+**Migration status:** only the result card is a View so far. The scenario summary, bracket-fill and balance charts, what-if comparison and suggestion chips are still native cards selected by the web-only `show` tool; the full results page is first-party and fed by full results the web host requests through `_meta`. Each can move to a View the same way: move the component into `ui/`, add a View entry in `mcp-views/src/`, and extend the drift check. The full results page already uses the shared `MetricCard`.
 
 ## Configuration (backend)
 

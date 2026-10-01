@@ -19,6 +19,7 @@ Ask the user which workstream or task they're picking up.
 
 - **Deterministic engine + AI explanation layer.** The optimization engine does the math and produces a structured reasoning trace. The AI translates that trace into natural language. The AI never computes financial results.
 - **Progressive disclosure.** Simplicity first, complexity on demand. Headline results up front; detailed analysis available on scroll/click.
+- **One definition per card.** Cards shown both natively and in MCP App Views live in `ui/` (display-only React, shared Tailwind preset and tokens). The web app imports them; Views render them through preact/compat. Change the shared component, not a copy. See `docs/agent-and-mcp.md`.
 - **Mobile-first.** All UI must be responsive from the start — many users arrive from Reddit on phones.
 
 ## Design aesthetic
@@ -101,6 +102,12 @@ lucerna/
 │       ├── agent/         # Loop, limits, demo tests (scripted model clients)
 │       └── mcp/           # MCP server tests
 ├── mcp-views/             # MCP App Views (TS → single-file HTML served by the MCP server)
+├── ui/                    # Shared display components + Paper & Pine tokens/preset
+│   ├── src/               # ResultCard, ConversionStrip, MetricCard (no app context)
+│   ├── tailwind/preset.js # Theme (used by frontend and mcp-views)
+│   └── styles/tokens.css  # CSS variables + component classes
+├── mcp-views/             # MCP App Views: entries around ui/ components, built into backend/app/mcp/views/
+├── shared/fixtures/       # Cross-language fixtures (scenario draft, result card data)
 ├── e2e/                   # Playwright E2E tests (spans both services)
 │   ├── playwright.config.ts
 │   ├── fixtures/

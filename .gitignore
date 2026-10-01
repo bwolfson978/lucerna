@@ -40,3 +40,5 @@ backend/.cache/
 
 # Agent eval reports
 backend/evals/results/
+e2e/test-results/
+e2e/playwright-report/

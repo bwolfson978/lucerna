@@ -22,7 +22,7 @@ test.describe('Conversation flow', () => {
     const headline = page
       .frameLocator('[data-testid=mcp-app] iframe')
       .frameLocator('iframe')
-      .locator('[data-testid=result-card]')
+      .locator('[data-ui=result-card]')
     await expect(headline).toBeVisible({ timeout: 30000 })
     await expect(headline.getByText(/\$\d/).first()).toBeVisible()
 

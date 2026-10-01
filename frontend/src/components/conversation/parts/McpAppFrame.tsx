@@ -7,10 +7,14 @@
  * origin, connects the official AppBridge over postMessage, hands the View the tool
  * input and result, and handles what the View asks for (resizing, opening links,
  * calling app-visible tools). The View's code comes from the server, not from here.
+ *
+ * Until the View is ready (or if it fails), the same shared component the View
+ * renders is shown natively from the tool's structuredContent, so the swap is seamless.
  */
 
 import { useEffect, useRef, useState } from "react";
 import posthog from "posthog-js";
+import { ResultCard, isResultCardData } from "@lucerna/ui";
 import type { McpToolResult } from "@/lib/agent/types";
 import {
   callAppTool,
@@ -142,19 +146,44 @@ export function McpAppFrame({ resourceUri, toolName, toolInput, toolResult }: Mc
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resourceUri]);
 
+  const fallback = isResultCardData(toolResult.structuredContent)
+    ? toolResult.structuredContent
+    : null;
+  const ready = status === "ready";
+
   return (
-    <div className="relative" data-testid="mcp-app">
+    <div className="relative" data-testid="mcp-app" data-status={status}>
+      {!ready && fallback && (
+        <div data-testid="mcp-app-fallback">
+          <ResultCard
+            data={fallback}
+            onOpenFullResults={
+              results[fallback.result_id]
+                ? () => {
+                    posthog.capture("full_results_opened", { from: "mcp_app_fallback" });
+                    openResults(fallback.result_id);
+                  }
+                : undefined
+            }
+          />
+        </div>
+      )}
       <iframe
         ref={iframeRef}
         title={`${toolName} result`}
         sandbox="allow-scripts allow-same-origin allow-forms"
-        className="block w-full border-0 bg-transparent transition-[height] duration-300"
+        aria-hidden={!ready}
+        className={
+          ready
+            ? "block w-full border-0 bg-transparent"
+            : "pointer-events-none absolute inset-x-0 top-0 w-full border-0 bg-transparent opacity-0"
+        }
         style={{ height }}
       />
-      {status !== "ready" && (
+      {!ready && !fallback && (
         <div
           role="status"
-          className="absolute inset-0 flex items-center justify-center rounded-[20px] border border-border bg-white text-body-sm text-text-tertiary"
+          className="flex min-h-[120px] items-center justify-center rounded-[20px] border border-border bg-white text-body-sm text-text-tertiary"
         >
           {status === "error" ? "This result couldn't be displayed." : "Loading the result…"}
         </div>

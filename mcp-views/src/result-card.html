@@ -9,76 +9,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
     />
     <style>
-      /* "Paper & Pine" tokens (docs/design-aesthetic.md). The card carries its own
-         surface so it reads the same in any host. */
-      :root {
-        --ink: #141414;
-        --ink-soft: #3d3d3d;
-        --muted: #6b6b6b;
-        --paper: #fafafa;
-        --line: #e4e0d6;
-        --pine-deep: #0b1d15;
-        --pine: #1b4332;
-        --pine-mid: #2d6a4f;
-        --sage: #66a183;
-        --cream: #f5f2ea;
-        --serif: "Playfair Display", Georgia, serif;
-        --sans: "Inter", system-ui, -apple-system, sans-serif;
-        --mono: "IBM Plex Mono", ui-monospace, monospace;
-      }
-      * { box-sizing: border-box; }
-      html, body { margin: 0; padding: 0; background: transparent; }
-      body { font-family: var(--sans); color: var(--ink); -webkit-font-smoothing: antialiased; }
-      /* Room for the card shadow inside the iframe bounds. */
-      #root { padding: 2px 2px 30px; }
-      .card {
-        display: flex; flex-direction: column; gap: 20px;
-        background: #fff; border: 2px solid var(--pine-mid); border-radius: 20px;
-        padding: 24px; box-shadow: 0 24px 60px -30px rgba(27, 67, 50, 0.35);
-      }
-      .head { display: flex; flex-direction: column; gap: 6px; }
-      .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
-      .hero { font-family: var(--serif); font-weight: 700; font-size: 40px; line-height: 1; color: var(--pine); font-variant-numeric: lining-nums tabular-nums; }
-      .caption { font-size: 13px; color: var(--muted); }
-      .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-      .stat { display: flex; flex-direction: column; gap: 4px; }
-      .stat .label { font-size: 12px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); }
-      .stat .value { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
-      .strip { position: relative; }
-      .strip svg { display: block; width: 100%; height: auto; overflow: visible; }
-      .strip g { outline: none; }
-      .baseline { stroke: var(--line); }
-      .bar { fill: var(--pine-mid); transform-box: fill-box; transform-origin: bottom; animation: grow 500ms ease both; }
-      .strip g:hover .bar, .strip g:focus .bar { fill: var(--pine); }
-      .axis { font-family: var(--mono); font-size: 11px; fill: var(--muted); }
-      .tooltip {
-        position: absolute; top: 0; transform: translateX(-50%); pointer-events: none;
-        background: var(--pine-deep); color: var(--cream); border-radius: 12px;
-        padding: 6px 10px; font-size: 12px; white-space: nowrap;
-      }
-      .tooltip .tip-year { display: block; font-family: var(--mono); font-size: 11px; color: #b9c9bd; }
-      .tooltip .tip-label { color: #b9c9bd; }
-      .footer { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding-top: 16px; border-top: 1px solid var(--line); }
-      .btn {
-        min-height: 44px; padding: 0 22px; border: 0; border-radius: 999px; cursor: pointer;
-        background: var(--pine-deep); color: var(--cream); font: 600 15px var(--sans);
-        transition: background-color 180ms ease, transform 180ms ease;
-      }
-      .btn:hover { background: var(--pine); transform: translateY(-1px); }
-      .btn:focus-visible { outline: 2px solid var(--sage); outline-offset: 2px; }
-      .message { margin: 0; padding: 16px; font-size: 14px; color: var(--muted); }
-      @keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
-      @media (max-width: 420px) {
-        .card { padding: 16px; border-radius: 16px; }
-        .hero { font-size: 32px; }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .bar { animation: none; }
-        .btn { transition: none; }
-      }
+      /*__CSS__*/
     </style>
   </head>
   <body>

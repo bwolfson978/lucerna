@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import posthog from "posthog-js";
+import { ResultCard } from "@lucerna/ui";
 import type { StoredResult } from "@/lib/agent/types";
 import type { OptimizationResult } from "@/lib/types";
 import { formatCompactCurrency, formatCurrency, formatSavings } from "@/lib/utils/formatting";
 import { cn } from "@/lib/utils";
+import { resultCardData } from "@/lib/results/cardData";
 import { useConversationContext } from "../ConversationContext";
-import { BalanceLines, BracketScheduleChart, CompareBars, ConversionStrip } from "./charts";
+import { BalanceLines, BracketScheduleChart, CompareBars } from "./charts";
 
 /** Look up a result, recomputing it if it was dropped from session storage. */
 function useStoredResult(id: string): StoredResult | undefined {
@@ -50,37 +52,12 @@ export function ResultHeadlineCard({ resultId }: { resultId: string }) {
   if (!stored) return null;
   const result = stored.result;
   if (!result) return <Pending />;
-  const years = result.yearly_conversions.filter((c) => c > 0).length;
-
   return (
-    <div className="card-recommended flex flex-col gap-comfortable" data-testid="result-headline">
-      <div className="flex flex-col gap-1.5">
-        <span className="eyebrow">Estimated lifetime tax savings</span>
-        <span className="metric-value-hero text-pine">
-          {formatSavings(result.estimated_lifetime_tax_savings)}
-        </span>
-        <span className="text-caption text-text-tertiary">
-          In today&apos;s dollars, compared with not converting
-        </span>
-      </div>
-      <div className="grid grid-cols-3 gap-3">
-        <Stat label="Converted" value={formatCompactCurrency(result.total_conversion)} />
-        <Stat label="Tax cost" value={formatCompactCurrency(result.total_tax_on_conversions)} />
-        <Stat label="Years" value={String(years)} />
-      </div>
-      <ConversionStrip result={result} />
-      <div className="flex flex-wrap items-center gap-3 border-t border-border pt-default">
-        <button
-          type="button"
-          className="btn-dark"
-          onClick={() => openFull(openResults, resultId, "headline")}
-        >
-          See full results
-        </button>
-        <span className="text-caption text-text-tertiary">
-          Slider, scenario comparison, year-by-year table
-        </span>
-      </div>
+    <div data-testid="result-headline">
+      <ResultCard
+        data={resultCardData(resultId, result)}
+        onOpenFullResults={() => openFull(openResults, resultId, "headline")}
+      />
     </div>
   );
 }
