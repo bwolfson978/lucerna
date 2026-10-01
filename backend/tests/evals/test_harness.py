@@ -42,3 +42,20 @@ async def test_offline_case_runs_end_to_end():
     }
     result = await run_case(case, OfflineModelClient())
     assert result.passed, result.failures
+
+
+def test_quoting_the_question_is_not_advice():
+    def says_you_should(text):
+        failures = check({"expect": {}}, [TurnRecord(user="hi", text=text)], ScenarioDraft())
+        return any("you should" in f for f in failures)
+
+    assert not says_you_should("I can't tell you what you should convert.")
+    assert not says_you_should("I can't say whether you should do it.")
+    assert says_you_should("Based on this, you should convert now.")
+
+
+def test_bare_user_numbers_can_mean_thousands():
+    turn = TurnRecord(user="about 90, married, 500k in the IRA", text="Is that about $90,000?")
+    assert check({"expect": {}}, [turn], ScenarioDraft()) == []
+    turn = TurnRecord(user="about 90", text="Maybe $91,000,000?")
+    assert any("not found" in f for f in check({"expect": {}}, [turn], ScenarioDraft()))

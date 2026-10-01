@@ -8,9 +8,10 @@ Usage (from backend/):
 Every case is a scripted conversation run through the real agent loop and tools.
 Checks on every assistant reply:
   - it has written text (cards alone don't count)
-  - no "you should" (educational framing)
+  - no "you should" as advice (educational framing; quoting "what you should" is fine)
   - no em dashes
   - every dollar amount appears in a tool result, a scenario default or the user's words
+    (a bare user number under 1,000 may mean thousands: "about 90" grounds $90,000)
   - analyze_roth_conversions only runs after a scenario summary was shown
 Plus the case's own expectations (tools called or not, cards shown, final draft
 values, reply content). Results are written to evals/results/.
@@ -38,6 +39,9 @@ RESULTS_DIR = HERE / "results"
 
 _MONEY = re.compile(r"\$\s?(\d[\d,]*(?:\.\d+)?)\s*(k|m|million|thousand|billion)?\b", re.I)
 _NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
+# "you should" as advice. Quoting the user's question ("I can't tell you what you should
+# convert") is not advice, so skip it after what / whether / if.
+_YOU_SHOULD = re.compile(r"(?<!\bwhat )(?<!\bwhether )(?<!\bif )\byou should\b", re.I)
 
 
 def money_amounts(text: str) -> list[float]:
@@ -58,6 +62,13 @@ def money_amounts(text: str) -> list[float]:
 def source_numbers(text: str) -> list[float]:
     numbers = [float(n.replace(",", "")) for n in _NUMBER.findall(text)]
     return numbers + money_amounts(text)
+
+
+def user_numbers(text: str) -> list[float]:
+    """Numbers in the user's words. People write thousands without the k ("about 90",
+    "500 in the IRA"), so a bare number under 1,000 also counts as that many thousand."""
+    numbers = source_numbers(text)
+    return numbers + [n * 1_000 for n in numbers if 0 < n < 1_000]
 
 
 def grounded(amount: float, sources: list[float]) -> bool:
@@ -155,15 +166,14 @@ def check(case: dict, turns: list[TurnRecord], draft: ScenarioDraft) -> list[str
     summary_shown = False
 
     for i, t in enumerate(turns, start=1):
-        sources += source_numbers(t.user)
+        sources += user_numbers(t.user)
         for result in t.tool_results:
             sources += source_numbers(result)
         if t.errors:
             failures.append(f"turn {i}: error events {t.errors}")
         if not t.text.strip():
             failures.append(f"turn {i}: no written reply")
-        lowered = t.text.lower()
-        if "you should" in lowered:
+        if _YOU_SHOULD.search(t.text):
             failures.append(f"turn {i}: says 'you should'")
         if "—" in t.text:
             failures.append(f"turn {i}: uses an em dash")
