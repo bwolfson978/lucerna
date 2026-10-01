@@ -11,6 +11,7 @@ import {
   type ScenarioSummaryData,
 } from "@lucerna/ui";
 import fixture from "../../../../../shared/fixtures/view-data.json";
+import { balanceData } from "@/lib/results/viewData";
 import { MetricCard } from "../MetricCard";
 
 const card = fixture.analyze_roth_conversions.structured_content as unknown as ResultCardData;
@@ -30,23 +31,25 @@ it("renders the result card from tool output", () => {
   expect(open).toHaveBeenCalled();
 });
 
-it("opens the result card's chart panels", () => {
+it("shows the tax bracket chart in the result card", () => {
   render(<ResultCard data={card} details={details} />);
   expect(screen.queryByRole("button", { name: "See full results" })).not.toBeInTheDocument();
-  const brackets = screen.getByRole("button", { name: "Tax brackets by year" });
-  fireEvent.click(brackets);
-  expect(brackets).toHaveAttribute("aria-expanded", "true");
-  expect(screen.getByRole("img", { name: /colored by tax bracket/ })).toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Balances over time" }));
-  expect(screen.queryByRole("img", { name: /colored by tax bracket/ })).not.toBeInTheDocument();
-  expect(screen.getByText("Roth at retirement")).toBeInTheDocument();
+  expect(screen.getByRole("img", { name: /against the tax brackets/ })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /Balances over time/ })).not.toBeInTheDocument();
+  // Bracket lines carry their rates, and each year's bar explains itself on focus.
+  expect(screen.getByText("12%")).toBeInTheDocument();
+  const bars = screen.getAllByRole("img", { name: /: converted / });
+  expect(bars).toHaveLength(details.bracket_fill!.years.length);
+  const first = details.bracket_fill!.years.findIndex((y) => y.conversion > 0);
+  fireEvent.focus(bars[first]);
+  expect(screen.getByRole("status")).toHaveTextContent("tax on the conversion");
 });
 
 it("renders the standalone charts with their own titles", () => {
   render(
     <>
       <BracketFillChart data={details.bracket_fill!} />
-      <BalanceComparison data={details.balances!} />
+      <BalanceComparison data={balanceData(fixture.analyze_roth_conversions.result as never)} />
     </>
   );
   expect(screen.getByText("How conversions fill your tax brackets")).toBeInTheDocument();

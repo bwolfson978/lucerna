@@ -15,6 +15,7 @@ import type {
 } from "@lucerna/ui";
 import type { OptimizationResult } from "@/lib/types";
 import type { ScenarioDraft } from "@/lib/scenario/draft";
+import { getFallbackTaxConfig } from "@/lib/tax/TaxConfigProvider";
 
 const round = Math.round;
 
@@ -50,6 +51,11 @@ export function bracketFillData(result: OptimizationResult): BracketFillData {
           .map((b) => ({ rate: b.bracket_rate, amount: round(b.filled_by_conversion) })),
       };
     }),
+    brackets: getFallbackTaxConfig().brackets[result.input.filing_status].map((b) => ({
+      rate: b.rate,
+      min: round(b.min),
+      max: b.max == null ? null : round(b.max),
+    })),
   };
 }
 
@@ -74,7 +80,7 @@ export function balanceData(result: OptimizationResult): BalanceComparisonData {
 }
 
 export function resultDetails(result: OptimizationResult): ResultDetails {
-  return { bracket_fill: bracketFillData(result), balances: balanceData(result) };
+  return { bracket_fill: bracketFillData(result) };
 }
 
 export function compareData(

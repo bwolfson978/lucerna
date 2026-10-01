@@ -63,7 +63,7 @@ async def test_record_then_analyze_with_the_returned_scenario():
         assert set(analyzed.meta) == {VIEW_META_KEY}
         view = analyzed.meta[VIEW_META_KEY]
         assert len(view["bracket_fill"]["years"]) == len(data["schedule_by_year"])
-        assert view["balances"]["points"]
+        assert view["bracket_fill"]["brackets"][0]["rate"] == 0.10
         # The text content mirrors the structured content for clients that read text.
         assert json.loads(analyzed.content[0].text) == data
 

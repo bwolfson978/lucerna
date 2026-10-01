@@ -243,109 +243,42 @@
               }
             ]
           }
-        ]
-      },
-      "balances": {
-        "roth_at_retirement": 584239,
-        "peak_rmd_with": 20431,
-        "peak_rmd_without": 160188,
-        "after_tax_wealth_change": 86301,
-        "points": [
+        ],
+        "brackets": [
           {
-            "age": 75,
-            "year": 2041,
-            "with": 485118,
-            "without": 1585928
+            "rate": 0.1,
+            "min": 0,
+            "max": 24800
           },
           {
-            "age": 76,
-            "year": 2042,
-            "with": 472524,
-            "without": 1632475
+            "rate": 0.12,
+            "min": 24800,
+            "max": 100800
           },
           {
-            "age": 77,
-            "year": 2043,
-            "with": 459050,
-            "without": 1677867
+            "rate": 0.22,
+            "min": 100800,
+            "max": 211400
           },
           {
-            "age": 78,
-            "year": 2044,
-            "with": 444631,
-            "without": 1722049
+            "rate": 0.24,
+            "min": 211400,
+            "max": 403550
           },
           {
-            "age": 79,
-            "year": 2045,
-            "with": 429204,
-            "without": 1764317
+            "rate": 0.32,
+            "min": 403550,
+            "max": 512450
           },
           {
-            "age": 80,
-            "year": 2046,
-            "with": 412697,
-            "without": 1804202
+            "rate": 0.35,
+            "min": 512450,
+            "max": 768700
           },
           {
-            "age": 81,
-            "year": 2047,
-            "with": 395034,
-            "without": 1841180
-          },
-          {
-            "age": 82,
-            "year": 2048,
-            "with": 376134,
-            "without": 1875156
-          },
-          {
-            "age": 83,
-            "year": 2049,
-            "with": 355912,
-            "without": 1905057
-          },
-          {
-            "age": 84,
-            "year": 2050,
-            "with": 334274,
-            "without": 1930781
-          },
-          {
-            "age": 85,
-            "year": 2051,
-            "with": 311122,
-            "without": 1951008
-          },
-          {
-            "age": 86,
-            "year": 2052,
-            "with": 286349,
-            "without": 1965641
-          },
-          {
-            "age": 87,
-            "year": 2053,
-            "with": 259842,
-            "without": 1973917
-          },
-          {
-            "age": 88,
-            "year": 2054,
-            "with": 231479,
-            "without": 1975014
-          },
-          {
-            "age": 89,
-            "year": 2055,
-            "with": 201131,
-            "without": 1969103
-          },
-          {
-            "age": 90,
-            "year": 2056,
-            "with": 168658,
-            "without": 1954296
+            "rate": 0.37,
+            "min": 768700,
+            "max": null
           }
         ]
       }

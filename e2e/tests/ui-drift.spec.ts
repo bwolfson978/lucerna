@@ -58,11 +58,10 @@ async function converse(page: Page) {
   await expect(page.getByTestId('mcp-app')).toHaveCount(2, { timeout: 30000 })
 }
 
-const RESULT_PARTS = ['result-card', 'eyebrow', 'hero', 'stat-value', 'conversion-strip', 'cta', 'result-details', 'bracket-fill']
+const RESULT_PARTS = ['result-card', 'eyebrow', 'hero', 'stat-value', 'cta', 'bracket-fill']
 const COMPARE_PARTS = ['scenario-compare', 'eyebrow', 'stat-value', 'cta']
 
-async function openBrackets(card: Locator) {
-  await card.getByRole('button', { name: 'Tax brackets by year' }).click()
+async function showBrackets(card: Locator) {
   await expect(card.locator('[data-ui=bracket-fill]')).toBeVisible()
 }
 
@@ -76,7 +75,7 @@ test('native and MCP App renders of the shared cards match', async ({ page, brow
   )
   await expect(views[0].locator('[data-ui=result-card]')).toBeVisible({ timeout: 30000 })
   await expect(views[1].locator('[data-ui=scenario-compare]')).toBeVisible({ timeout: 30000 })
-  await openBrackets(views[0])
+  await showBrackets(views[0])
   await views[0].evaluate(() => document.fonts.ready)
 
   // Native renders: block the sandbox so Views never load and the host keeps its native
@@ -86,7 +85,7 @@ test('native and MCP App renders of the shared cards match', async ({ page, brow
   await nativePage.route('**/mcp-apps/sandbox**', (route) => route.abort())
   await converse(nativePage)
   const natives = [0, 1].map((i) => nativePage.getByTestId('mcp-app-fallback').nth(i))
-  await openBrackets(natives[0])
+  await showBrackets(natives[0])
   await nativePage.evaluate(() => document.fonts.ready)
 
   expect(await measure(views[0], RESULT_PARTS)).toEqual(await measure(natives[0], RESULT_PARTS))

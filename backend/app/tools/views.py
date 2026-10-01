@@ -9,13 +9,16 @@ shared/fixtures/view-data.json keeps the two in step.
 
 from __future__ import annotations
 
+from app.engine.tax import BRACKETS
 from app.engine.types import OptimizationResult
 
 VIEW_META_KEY = "lucerna/view"
 
 
 def bracket_fill_view(result: OptimizationResult) -> dict:
-    """Per year: other taxable income, the conversion, and the brackets it fills."""
+    """Per year: other taxable income, the conversion, and the brackets it fills. Also the
+    bracket schedule (taxable income, ``max`` None for the top bracket) for the
+    chart's bracket lines and remaining space."""
     years = []
     for i, plan_year in enumerate(result.input.timeline):
         fill = result.yearly_bracket_fill[i] if i < len(result.yearly_bracket_fill) else []
@@ -32,33 +35,16 @@ def bracket_fill_view(result: OptimizationResult) -> dict:
                 ],
             }
         )
-    return {"years": years}
-
-
-def balance_view(result: OptimizationResult) -> dict:
-    """Traditional balance with and without conversions, plus the headline numbers."""
-    with_rmd = result.rmd_projection
-    without_rmd = result.rmd_projection_no_conversion
-    without_by_age = (
-        {d.age: d.trad_balance_start for d in without_rmd.yearly_detail} if without_rmd else {}
-    )
-    points = [
+    brackets = [
         {
-            "age": d.age,
-            "year": d.year,
-            "with": round(d.trad_balance_start),
-            "without": round(without_by_age.get(d.age, 0)),
+            "rate": b["rate"],
+            "min": round(b["min"]),
+            "max": None if b["max"] == float("inf") else round(b["max"]),
         }
-        for d in (with_rmd.yearly_detail if with_rmd else [])
+        for b in BRACKETS[result.input.filing_status]
     ]
-    return {
-        "roth_at_retirement": round(result.roth_at_retirement),
-        "peak_rmd_with": round(with_rmd.peak_rmd_amount) if with_rmd else None,
-        "peak_rmd_without": round(without_rmd.peak_rmd_amount) if without_rmd else None,
-        "after_tax_wealth_change": round(result.npv_at_optimal - result.npv_at_zero),
-        "points": points,
-    }
+    return {"years": years, "brackets": brackets}
 
 
 def result_view(result: OptimizationResult) -> dict:
-    return {"bracket_fill": bracket_fill_view(result), "balances": balance_view(result)}
+    return {"bracket_fill": bracket_fill_view(result)}
