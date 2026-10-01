@@ -141,7 +141,7 @@ Reports land in `backend/evals/results/` (git-ignored). Run the live set after a
 
 ## Connecting the MCP server
 
-The server speaks MCP over streamable HTTP at `https://<backend-host>/mcp`, with no login yet (rate-limited per IP).
+The server speaks MCP over streamable HTTP at `https://<backend-host>/mcp`, with no login yet (rate-limited per IP). Production: `https://lucerna-production.up.railway.app/mcp` (the Railway backend, not the Vercel site, which has no `/mcp` route).
 
 - **Claude:** add a custom connector and enter the `/mcp` URL. In a conversation, enable the connector and ask a Roth conversion question.
 - **ChatGPT:** with developer mode enabled, create a connector pointing at the same URL.
