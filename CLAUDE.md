@@ -12,7 +12,7 @@ Ask the user which workstream or task they're picking up.
 - **Frontend:** Next.js 14+ (App Router), TypeScript, Tailwind → deployed to Vercel
 - **Backend:** Python, FastAPI, Pydantic → deployed to Railway
 - **AI:** Anthropic Claude Sonnet, called from backend — never from frontend
-- **Charts:** ApexCharts (standard charts) + custom SVG (bracket visualization)
+- **Charts:** ApexCharts (standard charts) + custom SVG/HTML (bracket visualization, landing explainers)
 - **Monorepo:** `frontend/` and `backend/` are independently deployable services
 
 ## Core principles
@@ -23,7 +23,7 @@ Ask the user which workstream or task they're picking up.
 
 ## Design aesthetic
 
-The current aesthetic is **"Warm Midnight"** — a dark-mode, warm, premium design with glassmorphic cards, gold accents (#F0C674), and four-font typography (DM Serif Display, DM Sans, Inter, Manrope). When working on any frontend code, follow the design spec in `docs/design-aesthetic.md`. It defines Lucerna's visual language — colors, typography, spacing, component patterns, chart styling, and anti-patterns. Read it before building or modifying UI.
+The current aesthetic is **"Paper & Pine"** — a light, editorial design with warm paper backgrounds, deep pine green (#1b4332) as the brand color, ember (#f26522) reserved for costs and danger, three-font typography (Playfair Display, Inter, IBM Plex Mono), and animated, interactive explainer diagrams. When working on any frontend code, follow the design spec in `docs/design-aesthetic.md`. It defines Lucerna's visual language — colors, typography, spacing, component patterns, chart styling, and anti-patterns. Read it before building or modifying UI.
 
 ## Frontend guidelines
 

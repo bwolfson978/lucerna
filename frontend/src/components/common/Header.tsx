@@ -5,6 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { HowItWorksButton } from "@/components/methodology/HowItWorksButton";
+import { Wordmark } from "@/components/common/Wordmark";
+
+const NAV_LINKS = [
+  { href: "/demo", label: "Demo" },
+  { href: "/methodology", label: "Methodology" },
+] as const;
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -20,52 +26,38 @@ export function Header() {
 
   return (
     <>
-      <header
-        className={cn("sticky top-0 z-40 bg-bg/80 backdrop-blur-md", "border-b border-border")}
-      >
-        <div className="flex h-14 items-center px-default md:px-page">
-          <div className="mx-auto flex w-full max-w-content items-center justify-between">
-            {/* Desktop nav — left-aligned, no logo */}
-            <nav className="hidden items-center gap-5 sm:flex">
-              <Link
-                href="/"
-                className="text-body-sm text-text-secondary transition-colors duration-300 hover:text-accent"
-              >
-                Home
-              </Link>
-              <span className="text-text-tertiary opacity-40">|</span>
-              <Link
-                href="/demo"
-                className="text-body-sm text-text-secondary transition-colors duration-300 hover:text-accent"
-              >
-                Demo
-              </Link>
-              <span className="text-text-tertiary opacity-40">|</span>
-              <Link
-                href="/calculator"
-                className="text-body-sm text-text-secondary transition-colors duration-300 hover:text-accent"
-              >
-                Run Your Own Scenario
-              </Link>
-              <span className="text-text-tertiary opacity-40">|</span>
-              <Link
-                href="/methodology"
-                className="text-body-sm text-text-secondary transition-colors duration-300 hover:text-accent"
-              >
-                Methodology
-              </Link>
-            </nav>
+      <header className="sticky top-0 z-40 border-b border-border bg-paper/80 backdrop-blur-[14px]">
+        <div className="mx-auto flex h-[68px] w-full max-w-wide items-center justify-between gap-4 px-default sm:px-7">
+          <Wordmark />
 
-            {/* Desktop: How It Works on far right */}
-            <div className="hidden sm:flex">
-              <HowItWorksButton />
-            </div>
+          {/* Desktop nav */}
+          <nav className="hidden items-center gap-8 sm:flex" aria-label="Main">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={pathname === link.href ? "page" : undefined}
+                className={cn(
+                  "text-[15px] font-medium transition-colors duration-200 hover:text-text-primary",
+                  pathname === link.href ? "text-pine" : "text-text-secondary"
+                )}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <HowItWorksButton />
+            <Link href="/calculator" className="btn-dark min-h-[40px] px-6 py-2.5 text-[14.5px]">
+              Run your scenario
+            </Link>
+          </nav>
 
-            {/* Mobile: hamburger on left */}
+          {/* Mobile controls */}
+          <div className="flex items-center gap-2 sm:hidden">
+            <HowItWorksButton />
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="flex h-10 w-10 items-center justify-center rounded-lg text-text-secondary transition-colors duration-200 hover:text-text-primary sm:hidden"
+              className="flex h-11 w-11 items-center justify-center rounded-full text-text-secondary transition-colors duration-200 hover:text-text-primary"
               aria-label="Toggle menu"
               aria-expanded={mobileMenuOpen}
             >
@@ -95,44 +87,31 @@ export function Header() {
                 </svg>
               )}
             </button>
-
-            {/* Mobile: How It Works on right */}
-            <div className="sm:hidden">
-              <HowItWorksButton />
-            </div>
           </div>
         </div>
 
         {/* Mobile dropdown menu — absolute so it overlays content instead of pushing it down */}
         {mobileMenuOpen && (
-          <nav className="absolute left-0 right-0 top-full z-50 flex flex-col gap-1 border-b border-border bg-bg px-default py-3 shadow-elevated sm:hidden">
-            <Link
-              href="/"
-              onClick={() => handleNavClick("/")}
-              className="rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-300 hover:bg-glass-bg hover:text-accent"
-            >
-              Home
-            </Link>
-            <Link
-              href="/demo"
-              onClick={() => handleNavClick("/demo")}
-              className="rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-300 hover:bg-glass-bg hover:text-accent"
-            >
-              Demo
-            </Link>
+          <nav
+            className="absolute left-0 right-0 top-full z-50 flex flex-col gap-1 border-b border-border bg-paper px-default py-3 shadow-elevated sm:hidden"
+            aria-label="Mobile"
+          >
+            {[{ href: "/", label: "Home" }, ...NAV_LINKS].map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => handleNavClick(link.href)}
+                className="rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-200 hover:bg-paper-warm hover:text-pine"
+              >
+                {link.label}
+              </Link>
+            ))}
             <Link
               href="/calculator"
               onClick={() => handleNavClick("/calculator")}
-              className="rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-300 hover:bg-glass-bg hover:text-accent"
+              className="btn-dark mt-2"
             >
-              Run Your Own Scenario
-            </Link>
-            <Link
-              href="/methodology"
-              onClick={() => handleNavClick("/methodology")}
-              className="rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-300 hover:bg-glass-bg hover:text-accent"
-            >
-              Methodology
+              Run your scenario
             </Link>
           </nav>
         )}
@@ -140,7 +119,7 @@ export function Header() {
       {/* Scrim — covers page content behind the mobile menu, closes on tap */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 z-[39] bg-bg/85 sm:hidden"
+          className="fixed inset-0 z-[39] bg-ink/20 backdrop-blur-[2px] sm:hidden"
           onClick={() => setMobileMenuOpen(false)}
           aria-hidden="true"
         />

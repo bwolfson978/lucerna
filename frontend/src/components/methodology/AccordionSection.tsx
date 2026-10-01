@@ -35,12 +35,12 @@ export function AccordionSection({
         <CollapsibleTrigger
           className={cn(
             "flex w-full items-center justify-between px-4 py-3.5",
-            "rounded-lg border border-glass-border bg-glass-bg",
+            "rounded-xl border border-border bg-white",
             "text-left text-sm font-medium text-text-primary",
             "transition-all duration-200",
-            "hover:bg-[rgba(255,255,255,0.06)]",
+            "hover:bg-paper-warm",
             open && "text-accent",
-            highlighted && "border-accent/35 shadow-[0_0_12px_rgba(240,198,116,0.08)]"
+            highlighted && "border-accent/35 shadow-[0_0_12px_rgba(45,106,79,0.12)]"
           )}
         >
           {title}

@@ -58,7 +58,7 @@ export function TimelineChart({ data, onYearClick }: TimelineChartProps) {
     fill: {
       type: "gradient",
       gradient: {
-        shade: "dark",
+        shade: "light",
         type: "vertical",
         shadeIntensity: 0.15,
         opacityFrom: 0.85,
@@ -67,7 +67,7 @@ export function TimelineChart({ data, onYearClick }: TimelineChartProps) {
       },
     },
     grid: {
-      borderColor: "rgba(255, 255, 255, 0.04)",
+      borderColor: "rgba(20, 20, 20, 0.04)",
       strokeDashArray: 4,
       padding: { left: 8, right: 8 },
     },
@@ -77,7 +77,7 @@ export function TimelineChart({ data, onYearClick }: TimelineChartProps) {
         style: {
           fontSize: "13px",
           fontFamily: DATA_FONT_FAMILY,
-          colors: "#B8B0D2",
+          colors: "#5c5c5c",
         },
       },
       axisBorder: { show: false },
@@ -89,12 +89,12 @@ export function TimelineChart({ data, onYearClick }: TimelineChartProps) {
         style: {
           fontSize: "12px",
           fontFamily: DATA_FONT_FAMILY,
-          colors: "#8B8A99",
+          colors: "#737373",
         },
       },
     },
     tooltip: {
-      theme: "dark",
+      theme: "light",
       y: {
         formatter: (val: number) => formatCurrency(val),
       },
@@ -110,7 +110,7 @@ export function TimelineChart({ data, onYearClick }: TimelineChartProps) {
     annotations: {
       yaxis: bracketBoundaries.map((boundary) => ({
         y: boundary,
-        borderColor: "rgba(255, 255, 255, 0.08)",
+        borderColor: "rgba(20, 20, 20, 0.08)",
         strokeDashArray: 4,
         label: {
           text: formatAxisCurrency(boundary),
@@ -118,7 +118,7 @@ export function TimelineChart({ data, onYearClick }: TimelineChartProps) {
           style: {
             fontSize: "12px",
             fontFamily: DATA_FONT_FAMILY,
-            color: "#8B8A99",
+            color: "#737373",
             background: "transparent",
           },
         },

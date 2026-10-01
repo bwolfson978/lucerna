@@ -18,7 +18,7 @@ export function IncomeMilestonesTable({ timeline }: IncomeMilestonesTableProps) 
         style={{ gridTemplateColumns: `80px repeat(${timeline.length}, ${colWidth}px)` }}
       >
         {/* Year row */}
-        <div className="sticky left-0 z-10 flex h-8 items-center border-r border-border bg-bg px-1 text-data-xs font-medium text-text-tertiary">
+        <div className="sticky left-0 z-10 flex h-8 items-center border-r border-border bg-paper-warm px-1 text-data-xs font-medium text-text-tertiary">
           Year
         </div>
         {timeline.map((yi) => (
@@ -32,7 +32,7 @@ export function IncomeMilestonesTable({ timeline }: IncomeMilestonesTableProps) 
         ))}
 
         {/* Income row */}
-        <div className="sticky left-0 z-10 flex h-8 items-center border-r border-border bg-bg px-1 text-data-xs font-medium text-text-tertiary">
+        <div className="sticky left-0 z-10 flex h-8 items-center border-r border-border bg-paper-warm px-1 text-data-xs font-medium text-text-tertiary">
           Income
         </div>
         {timeline.map((yi) => (
@@ -46,7 +46,7 @@ export function IncomeMilestonesTable({ timeline }: IncomeMilestonesTableProps) 
         ))}
 
         {/* Notes row — min-h lets the entire row expand if any cell wraps */}
-        <div className="sticky left-0 z-10 flex min-h-8 items-start border-r border-border bg-bg px-1 py-2 text-data-xs font-medium text-text-tertiary">
+        <div className="sticky left-0 z-10 flex min-h-8 items-start border-r border-border bg-paper-warm px-1 py-2 text-data-xs font-medium text-text-tertiary">
           Notes
         </div>
         {timeline.map((yi) => (

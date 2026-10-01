@@ -58,12 +58,12 @@ export function YearlyDetailTable({ details }: YearlyDetailTableProps) {
                     i % 2 === 1 ? "bg-bg-alt" : ""
                   }`}
                 >
-                  <td className="py-3 pr-4 font-mono">{row.year}</td>
-                  <td className="py-3 pr-4 text-right font-mono">{formatCurrency(row.income)}</td>
-                  <td className="py-3 pr-4 text-right font-mono text-accent">
+                  <td className="font-data py-3 pr-4">{row.year}</td>
+                  <td className="font-data py-3 pr-4 text-right">{formatCurrency(row.income)}</td>
+                  <td className="font-data py-3 pr-4 text-right text-accent">
                     {formatCurrency(row.conversion)}
                   </td>
-                  <td className="py-3 pr-4 text-right font-mono">{formatCurrency(row.tax_cost)}</td>
+                  <td className="font-data py-3 pr-4 text-right">{formatCurrency(row.tax_cost)}</td>
                 </tr>
               ))}
             </tbody>

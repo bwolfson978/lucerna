@@ -20,8 +20,8 @@ const LEFT_PAD = 62;
 const RIGHT_PAD = 16;
 const PLOT_HEIGHT = TOTAL_HEIGHT - TOP_PAD - BOTTOM_PAD;
 
-const COLOR_WITH = "#5EBD8C";
-const COLOR_WITHOUT = "#B8B0D2";
+const COLOR_WITH = "#2d6a4f";
+const COLOR_WITHOUT = "#5c5c5c";
 
 type RmdPoint = { year: number; age: number; without: number; with: number };
 
@@ -143,10 +143,10 @@ export function RmdImpactChart({ result }: RmdImpactChartProps) {
                       x2={LEFT_PAD + plotWidth}
                       y1={y}
                       y2={y}
-                      stroke="rgba(255,255,255,0.07)"
+                      stroke="rgba(20, 20, 20, 0.07)"
                       strokeWidth={1}
                     />
-                    <text x={LEFT_PAD - 8} y={y + 4} textAnchor="end" fontSize={11} fill="#8B8A99">
+                    <text x={LEFT_PAD - 8} y={y + 4} textAnchor="end" fontSize={11} fill="#737373">
                       {formatAxisCurrency(val)}
                     </text>
                   </g>
@@ -179,7 +179,7 @@ export function RmdImpactChart({ result }: RmdImpactChartProps) {
                     y={TOTAL_HEIGHT - 18}
                     textAnchor="middle"
                     fontSize={11}
-                    fill="#8B8A99"
+                    fill="#737373"
                   >
                     Age {p.age}
                   </text>
@@ -194,7 +194,7 @@ export function RmdImpactChart({ result }: RmdImpactChartProps) {
                     y={TOTAL_HEIGHT - 5}
                     textAnchor="middle"
                     fontSize={10}
-                    fill="#5C5B6A"
+                    fill="#a8a294"
                   >
                     {p.year}
                   </text>

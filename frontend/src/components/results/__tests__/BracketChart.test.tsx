@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeAll } from "vitest";
 import { render } from "@testing-library/react";
 import { BracketChart } from "../BracketChart";
+import { CHART_COLORS } from "@/lib/utils/constants";
 
 // Mock useContainerWidth to return a fixed desktop width
 vi.mock("@/hooks/useContainerWidth", () => ({
@@ -79,7 +80,9 @@ describe("BracketChart", () => {
 
       // Find all rects with the conversion gold color
       const rects = container.querySelectorAll("rect");
-      const conversionRects = Array.from(rects).filter((r) => r.getAttribute("fill") === "#F0C674");
+      const conversionRects = Array.from(rects).filter(
+        (r) => r.getAttribute("fill") === CHART_COLORS.conversion
+      );
 
       // The small conversion should still produce a visible rect
       expect(conversionRects.length).toBeGreaterThan(0);
@@ -121,7 +124,9 @@ describe("BracketChart", () => {
       const { container } = render(<BracketChart years={years} filingStatus="single" />);
 
       const rects = container.querySelectorAll("rect");
-      const incomeRects = Array.from(rects).filter((r) => r.getAttribute("fill") === "#6C5CE7");
+      const incomeRects = Array.from(rects).filter(
+        (r) => r.getAttribute("fill") === CHART_COLORS.income
+      );
 
       expect(incomeRects.length).toBeGreaterThan(0);
       const height = parseFloat(incomeRects[0].getAttribute("height") || "0");
@@ -159,8 +164,12 @@ describe("BracketChart", () => {
 
       const rects = container.querySelectorAll("rect");
       // No income or conversion colored rects should appear
-      const incomeRects = Array.from(rects).filter((r) => r.getAttribute("fill") === "#6C5CE7");
-      const conversionRects = Array.from(rects).filter((r) => r.getAttribute("fill") === "#F0C674");
+      const incomeRects = Array.from(rects).filter(
+        (r) => r.getAttribute("fill") === CHART_COLORS.income
+      );
+      const conversionRects = Array.from(rects).filter(
+        (r) => r.getAttribute("fill") === CHART_COLORS.conversion
+      );
 
       expect(incomeRects.length).toBe(0);
       expect(conversionRects.length).toBe(0);

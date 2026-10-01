@@ -89,9 +89,9 @@ export function ConversionSlider({
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <path d="M7 0L12 6L7 12L2 6Z" fill="#F0C674" />
-            <path d="M7 1.5L10.5 6L7 10.5L3.5 6Z" fill="#FAF7F2" fillOpacity="0.25" />
-            <rect x="6" y="12" width="2" height="8" rx="1" fill="#F0C674" fillOpacity="0.6" />
+            <path d="M7 0L12 6L7 12L2 6Z" fill="#2d6a4f" />
+            <path d="M7 1.5L10.5 6L7 10.5L3.5 6Z" fill="#141414" fillOpacity="0.25" />
+            <rect x="6" y="12" width="2" height="8" rx="1" fill="#2d6a4f" fillOpacity="0.6" />
           </svg>
         </div>
       </div>
@@ -109,10 +109,10 @@ export function ConversionSlider({
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
           className="flex-shrink-0"
-          style={{ filter: "drop-shadow(0 0 3px rgba(240,198,116,0.4))" }}
+          style={{ filter: "drop-shadow(0 0 3px rgba(45, 106, 79, 0.4))" }}
         >
-          <path d="M7 0L12 6L7 12L2 6Z" fill="#F0C674" />
-          <rect x="6" y="12" width="2" height="8" rx="1" fill="#F0C674" fillOpacity="0.6" />
+          <path d="M7 0L12 6L7 12L2 6Z" fill="#2d6a4f" />
+          <rect x="6" y="12" width="2" height="8" rx="1" fill="#2d6a4f" fillOpacity="0.6" />
         </svg>
         <span>Highest savings</span>
       </button>

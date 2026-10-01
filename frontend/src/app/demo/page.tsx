@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import posthog from "posthog-js";
 import Link from "next/link";
 import { Header } from "@/components/common/Header";
+import { PageFooter } from "@/components/common/PageFooter";
 import { ResultsView } from "@/components/results/ResultsView";
 import { MetricCardSkeleton, ChartSkeleton, TableSkeleton } from "@/components/common/Skeleton";
 import { apiClient } from "@/lib/api/client";
@@ -51,9 +52,14 @@ export default function DemoPage() {
           <div className="mx-auto flex max-w-content flex-col gap-section">
             {/* Persona intro */}
             <div className="flex flex-col gap-comfortable">
-              <h1 className="font-serif text-h1 text-text-primary">Meet Margaret</h1>
+              <div>
+                <span className="eyebrow-pine mb-3 block">Demo scenario</span>
+                <h1 className="display-heading text-display">
+                  Meet Margaret. <em>Her window is open.</em>
+                </h1>
+              </div>
 
-              <Card className="bg-bg-alt">
+              <Card className="border-transparent bg-paper-warm shadow-none">
                 <div className="flex flex-col gap-default">
                   <p className="text-body leading-relaxed text-text-primary">
                     <strong>Margaret, 63.</strong> Registered nurse who retired last year after a
@@ -107,7 +113,7 @@ export default function DemoPage() {
             {demo && <ResultsView result={demo.result} />}
 
             {/* CTA */}
-            <div className="flex items-center gap-3 border-t border-border pt-section">
+            <div className="flex flex-col gap-3 border-t border-border pt-section sm:flex-row sm:items-center">
               <Link
                 href="/calculator"
                 onClick={() =>
@@ -116,13 +122,17 @@ export default function DemoPage() {
                     source: "demo_page",
                   })
                 }
-                className="glow-button inline-flex min-h-[44px] items-center justify-center rounded-[12px] px-8 py-3.5 text-[15px] font-semibold tracking-[0.3px] text-bg transition-all duration-300 active:scale-[0.98]"
+                className="btn-dark"
               >
                 Run your own scenario
+              </Link>
+              <Link href="/methodology" className="btn-ghost">
+                Read the methodology
               </Link>
             </div>
           </div>
         </main>
+        <PageFooter />
       </MethodologyLayout>
     </MethodologyProvider>
   );

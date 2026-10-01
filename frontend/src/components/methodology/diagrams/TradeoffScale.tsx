@@ -60,14 +60,14 @@ export function TradeoffScale() {
         y1={top}
         x2={left}
         y2={bottom}
-        stroke="rgba(255, 255, 255, 0.08)"
+        stroke="rgba(20, 20, 20, 0.08)"
         strokeWidth="1"
       />
       <text
         x={left - 8}
         y={top + 5}
         textAnchor="end"
-        fill="#8B8A99"
+        fill="#737373"
         fontFamily={labelFont}
         fontSize="9"
       >
@@ -77,7 +77,7 @@ export function TradeoffScale() {
         x={left - 8}
         y={bottom}
         textAnchor="end"
-        fill="#8B8A99"
+        fill="#737373"
         fontFamily={labelFont}
         fontSize="9"
       >
@@ -87,7 +87,7 @@ export function TradeoffScale() {
         x={20}
         y={top + height / 2}
         textAnchor="middle"
-        fill="#8B8A99"
+        fill="#737373"
         fontFamily={labelFont}
         fontSize="9"
         transform={`rotate(-90, 20, ${top + height / 2})`}
@@ -101,14 +101,14 @@ export function TradeoffScale() {
         y1={bottom}
         x2={right}
         y2={bottom}
-        stroke="rgba(255, 255, 255, 0.08)"
+        stroke="rgba(20, 20, 20, 0.08)"
         strokeWidth="1"
       />
       <text
         x={left + width / 2}
         y={bottom + 30}
         textAnchor="middle"
-        fill="#8B8A99"
+        fill="#737373"
         fontFamily={labelFont}
         fontSize="9"
       >
@@ -118,7 +118,7 @@ export function TradeoffScale() {
         x={left}
         y={bottom + 16}
         textAnchor="start"
-        fill="#8B8A99"
+        fill="#737373"
         fontFamily={labelFont}
         fontSize="9"
       >
@@ -128,7 +128,7 @@ export function TradeoffScale() {
         x={right}
         y={bottom + 16}
         textAnchor="end"
-        fill="#8B8A99"
+        fill="#737373"
         fontFamily={labelFont}
         fontSize="9"
       >
@@ -143,7 +143,7 @@ export function TradeoffScale() {
           y1={top + frac * height}
           x2={right}
           y2={top + frac * height}
-          stroke="rgba(255, 255, 255, 0.04)"
+          stroke="rgba(20, 20, 20, 0.04)"
           strokeWidth="1"
           strokeDasharray="4 4"
         />
@@ -155,14 +155,14 @@ export function TradeoffScale() {
         y1={retirementY}
         x2={right}
         y2={retirementY}
-        stroke="#5EBD8C"
+        stroke="#2d6a4f"
         strokeWidth="1.5"
         strokeDasharray="6 4"
       />
       <text
         x={right + 4}
         y={retirementY + 4}
-        fill="#5EBD8C"
+        fill="#2d6a4f"
         fontFamily={labelFont}
         fontSize="9"
         fontWeight="500"
@@ -172,7 +172,7 @@ export function TradeoffScale() {
       <text
         x={right + 4}
         y={retirementY + 14}
-        fill="#5EBD8C"
+        fill="#2d6a4f"
         fontFamily={labelFont}
         fontSize="9"
         fontWeight="500"
@@ -181,7 +181,7 @@ export function TradeoffScale() {
       </text>
 
       {/* Marginal cost stepped line */}
-      <path d={costPath} fill="none" stroke="#F0C674" strokeWidth="2" />
+      <path d={costPath} fill="none" stroke="#2d6a4f" strokeWidth="2" />
 
       {/* Shaded "beneficial" area (below retirement rate) */}
       <rect
@@ -189,7 +189,7 @@ export function TradeoffScale() {
         y={retirementY}
         width={intersectX - left}
         height={bottom - retirementY}
-        fill="rgba(94, 189, 140, 0.06)"
+        fill="rgba(45, 106, 79, 0.06)"
       />
 
       {/* Shaded "costly" area (above retirement rate, after intersection) */}
@@ -198,19 +198,19 @@ export function TradeoffScale() {
         y={top}
         width={right - intersectX}
         height={retirementY - top}
-        fill="rgba(232, 112, 112, 0.04)"
+        fill="rgba(242, 101, 34, 0.04)"
       />
 
       {/* Optimal point marker */}
-      <circle cx={intersectX} cy={retirementY} r="6" fill="#F0C674" className="optimal-marker" />
-      <circle cx={intersectX} cy={retirementY} r="3" fill="#0F0E1A" />
+      <circle cx={intersectX} cy={retirementY} r="6" fill="#2d6a4f" className="optimal-marker" />
+      <circle cx={intersectX} cy={retirementY} r="3" fill="#ffffff" />
 
       {/* Optimal label */}
       <text
         x={intersectX}
         y={retirementY - 14}
         textAnchor="middle"
-        fill="#F0C674"
+        fill="#2d6a4f"
         fontFamily={DATA_FONT_FAMILY}
         fontSize="11"
         fontWeight="700"
@@ -223,7 +223,7 @@ export function TradeoffScale() {
         x={left + (intersectX - left) / 2}
         y={bottom - 8}
         textAnchor="middle"
-        fill="#5EBD8C"
+        fill="#2d6a4f"
         fontFamily={labelFont}
         fontSize="9"
         opacity="0.8"
@@ -234,7 +234,7 @@ export function TradeoffScale() {
         x={intersectX + (right - intersectX) / 2}
         y={top + 20}
         textAnchor="middle"
-        fill="#E87070"
+        fill="#c2410c"
         fontFamily={labelFont}
         fontSize="9"
         opacity="0.7"

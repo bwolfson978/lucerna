@@ -29,7 +29,7 @@ function BarGroup({ x, tradHeight, rmdHeight, rothHeight, title }: BarGroupProps
         x={x + BAR_WIDTH}
         y={20}
         textAnchor="middle"
-        fill="#FAF7F2"
+        fill="#141414"
         fontFamily={LABEL_FONT}
         fontSize="11"
         fontWeight="600"
@@ -51,7 +51,7 @@ function BarGroup({ x, tradHeight, rmdHeight, rothHeight, title }: BarGroupProps
         x={x + BAR_WIDTH / 2}
         y={BAR_BOTTOM - tradH - 6}
         textAnchor="middle"
-        fill="#B8B0D2"
+        fill="#5c5c5c"
         fontFamily={LABEL_FONT}
         fontSize="9"
       >
@@ -65,9 +65,9 @@ function BarGroup({ x, tradHeight, rmdHeight, rothHeight, title }: BarGroupProps
         width={BAR_WIDTH - 8}
         height={rmdH}
         rx="3"
-        fill="#E87070"
+        fill="#c2410c"
         opacity="0.25"
-        stroke="#E87070"
+        stroke="#c2410c"
         strokeWidth="1"
         strokeDasharray="3 2"
       />
@@ -76,7 +76,7 @@ function BarGroup({ x, tradHeight, rmdHeight, rothHeight, title }: BarGroupProps
           x={x + BAR_WIDTH / 2}
           y={BAR_BOTTOM - rmdH / 2 + 4}
           textAnchor="middle"
-          fill="#E87070"
+          fill="#c2410c"
           fontFamily={DATA_FONT_FAMILY}
           fontSize="9"
           fontWeight="600"
@@ -99,7 +99,7 @@ function BarGroup({ x, tradHeight, rmdHeight, rothHeight, title }: BarGroupProps
         x={x + BAR_WIDTH + 10 + BAR_WIDTH / 2}
         y={BAR_BOTTOM - rothH - 6}
         textAnchor="middle"
-        fill="#B8B0D2"
+        fill="#5c5c5c"
         fontFamily={LABEL_FONT}
         fontSize="9"
       >
@@ -147,20 +147,20 @@ export function RmdComparison() {
         y1={BAR_BOTTOM / 2 + 20}
         x2={g2x - 20}
         y2={BAR_BOTTOM / 2 + 20}
-        stroke="#F0C674"
+        stroke="#2d6a4f"
         strokeWidth="1.5"
         strokeOpacity="0.4"
       />
       <polygon
         points={`${g2x - 22},${BAR_BOTTOM / 2 + 16} ${g2x - 14},${BAR_BOTTOM / 2 + 20} ${g2x - 22},${BAR_BOTTOM / 2 + 24}`}
-        fill="#F0C674"
+        fill="#2d6a4f"
         opacity="0.5"
       />
       <text
         x={(g1x + BAR_WIDTH * 2 + 20 + g2x - 20) / 2}
         y={BAR_BOTTOM / 2 + 10}
         textAnchor="middle"
-        fill="#F0C674"
+        fill="#2d6a4f"
         fontFamily={LABEL_FONT}
         fontSize="9"
         fontWeight="500"
@@ -181,7 +181,7 @@ export function RmdComparison() {
         x={g1x + BAR_WIDTH}
         y={BAR_BOTTOM + 18}
         textAnchor="middle"
-        fill="#E87070"
+        fill="#c2410c"
         fontFamily={LABEL_FONT}
         fontSize="9"
       >
@@ -191,7 +191,7 @@ export function RmdComparison() {
         x={g2x + BAR_WIDTH}
         y={BAR_BOTTOM + 18}
         textAnchor="middle"
-        fill="#5EBD8C"
+        fill="#2d6a4f"
         fontFamily={LABEL_FONT}
         fontSize="9"
       >
@@ -206,12 +206,12 @@ export function RmdComparison() {
           width="10"
           height="10"
           rx="2"
-          fill="#E87070"
+          fill="#c2410c"
           opacity="0.25"
-          stroke="#E87070"
+          stroke="#c2410c"
           strokeWidth="0.5"
         />
-        <text x={LEFT + 16} y={221} fill="#B8B0D2" fontFamily={LABEL_FONT} fontSize="9">
+        <text x={LEFT + 16} y={221} fill="#5c5c5c" fontFamily={LABEL_FONT} fontSize="9">
           Required Minimum Distributions (taxed)
         </text>
       </g>

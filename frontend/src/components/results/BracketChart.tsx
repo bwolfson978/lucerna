@@ -374,7 +374,7 @@ export function BracketChart({
                     y1={y}
                     x2={leftAxisWidth}
                     y2={y}
-                    stroke="rgba(255,255,255,0.15)"
+                    stroke="rgba(20, 20, 20, 0.15)"
                     strokeWidth={1}
                   />
                   <text
@@ -572,10 +572,10 @@ export function BracketChart({
             <div
               className="min-w-[180px] rounded-[12px] border border-glass-border px-4 py-3 text-body-sm"
               style={{
-                background: "rgba(26, 24, 50, 0.95)",
+                background: "rgba(255, 255, 255, 0.97)",
                 backdropFilter: "blur(20px)",
                 WebkitBackdropFilter: "blur(20px)",
-                boxShadow: "0 12px 40px rgba(15, 14, 26, 0.5)",
+                boxShadow: "0 12px 40px rgba(11, 29, 21, 0.18)",
               }}
             >
               <div className="mb-2 font-semibold text-text-primary">
