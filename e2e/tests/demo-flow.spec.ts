@@ -1,15 +1,17 @@
 import { test, expect } from '@playwright/test'
 
-test.describe('Demo flow', () => {
-  test('loads demo and displays Margaret scenario results', async ({ page }) => {
+test.describe('Demo conversation', () => {
+  test('replays Margaret and accepts a follow-up', async ({ page }) => {
     await page.goto('/')
+    await page.getByRole('link', { name: 'See an example' }).first().click()
+    await expect(page).toHaveURL(/\/demo/)
 
-    // Click the demo CTA
-    const demoCta = page.getByRole('button', { name: /see demo|try demo|view example/i })
-    await demoCta.click()
+    await expect(page.getByText(/Hi, I'm Margaret/)).toBeVisible({ timeout: 20000 })
+    await expect(page.getByTestId('result-headline')).toBeVisible({ timeout: 30000 })
+    await expect(page.getByText('Ready to try yours?')).toBeVisible({ timeout: 30000 })
 
-    // Should show optimization results
-    await expect(page.getByText(/conversion/i)).toBeVisible()
-    await expect(page.getByText(/tax/i)).toBeVisible()
+    await page.getByLabel('Message').fill('How do RMDs work?')
+    await page.getByRole('button', { name: 'Send' }).click()
+    await expect(page.getByText(/Required Minimum Distributions/i).last()).toBeVisible({ timeout: 20000 })
   })
 })

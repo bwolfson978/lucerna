@@ -42,7 +42,10 @@ The AI conversation layer must use educational framing (legal requirement):
 ## Backend guidelines
 
 - All API inputs and outputs use Pydantic models
-- Engine code lives in `app/engine/`, API routes in `app/api/`, AI layer in `app/ai/`
+- Engine code lives in `app/engine/`, API routes in `app/api/`, tools in `app/tools/`, the agent harness in `app/agent/`, the MCP server in `app/mcp/`
+- **Tools are transport-neutral** (`app/tools/`): Pydantic inputs with generated schemas, shared by the web agent (`POST /api/agent`) and the remote MCP server (`/mcp`). Add a capability there once; both surfaces get it.
+- The scenario draft (`app/tools/draft.py`) mirrors the calculator form; `frontend/src/lib/scenario/draft.ts` must stay in parity (shared fixtures in `shared/fixtures/`, regenerate with `python -m scripts.generate_draft_fixtures`)
+- Methodology copy lives in `backend/app/content/methodology.json` with an identical copy at `frontend/src/content/methodology.json`
 - The reasoning trace (`app/engine/trace.py`) is the contract between engine and AI — keep it structured and complete
 - **Multi-year optimizer** is the only engine mode — `scipy.optimize.minimize` (SLSQP) with greedy bracket-fill heuristic as initialization and fallback. No separate single-year path; a 1-year timeline is just `len(income_timeline) == 1`.
 - Engine files: `types.py` → `tax.py` → `heuristic.py` → `optimizer.py` → `trace.py` → `demo.py`
@@ -87,11 +90,15 @@ lucerna/
 │   │   │   ├── trace.py   # Reasoning trace generator
 │   │   │   └── demo.py    # Alex 3-year demo scenario
 │   │   ├── api/           # FastAPI route handlers
-│   │   └── ai/            # System prompt, tool definitions
+│   │   ├── tools/         # Transport-neutral tools + scenario draft
+│   │   ├── agent/         # Agent loop, system prompt, limits, demo conversation
+│   │   └── mcp/           # Remote MCP server (/mcp)
 │   └── tests/
 │       ├── engine/        # Pure math tests (no mocks)
 │       ├── api/           # Endpoint tests (httpx AsyncClient)
-│       └── ai/            # Prompt/tool schema tests (mocked SDK)
+│       ├── tools/         # Tool + draft tests
+│       ├── agent/         # Loop, limits, demo tests (scripted model clients)
+│       └── mcp/           # MCP server tests
 ├── e2e/                   # Playwright E2E tests (spans both services)
 │   ├── playwright.config.ts
 │   ├── fixtures/

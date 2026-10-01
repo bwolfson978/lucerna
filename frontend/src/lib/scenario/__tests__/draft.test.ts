@@ -1,0 +1,96 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import {
+  EMPTY_DRAFT,
+  applyDraftPatch,
+  buildScenarioInput,
+  hasDraftValues,
+  isDraftReady,
+  missingFields,
+  normalizeDraft,
+  syncTimeline,
+  type ScenarioDraft,
+} from "../draft";
+
+interface Fixture {
+  build: { name: string; start_year: number; draft: Partial<ScenarioDraft>; scenario: unknown }[];
+  missing: { name: string; draft: Partial<ScenarioDraft>; missing: string[] }[];
+}
+
+const fixture: Fixture = JSON.parse(
+  readFileSync(resolve(process.cwd(), "../shared/fixtures/scenario-draft-cases.json"), "utf8")
+);
+
+/** Drop nulls and empty notes so TS output compares with Python's exclude_none dump. */
+function clean(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(clean);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([k, v]) => v != null && !(k === "notes" && v === ""))
+        .map(([k, v]) => [k, clean(v)])
+    );
+  }
+  return value;
+}
+
+describe("scenario draft parity with the backend", () => {
+  it.each(fixture.build.map((c) => [c.name, c] as const))("builds %s", (_name, c) => {
+    const draft = syncTimeline(normalizeDraft(c.draft), null, c.start_year);
+    expect(clean(buildScenarioInput(draft))).toEqual(clean(c.scenario));
+  });
+
+  it.each(fixture.missing.map((c) => [c.name, c] as const))("missing fields: %s", (_name, c) => {
+    expect(missingFields(normalizeDraft(c.draft))).toEqual(c.missing);
+  });
+});
+
+describe("applyDraftPatch", () => {
+  const base = applyDraftPatch(
+    EMPTY_DRAFT,
+    {
+      age: 45,
+      filing_status: "single",
+      current_income: 100000,
+      traditional_balance: 200000,
+      retirement_age: 48,
+      income_growth_rate_pct: 0,
+    },
+    2026
+  );
+
+  it("generates the timeline once base inputs are present", () => {
+    expect(base.timeline.map((y) => y.year)).toEqual([2026, 2027, 2028]);
+    expect(isDraftReady(base)).toBe(true);
+  });
+
+  it("keeps edited rows unless base inputs change", () => {
+    const edited = applyDraftPatch(
+      base,
+      {
+        timeline: base.timeline.map((y) => (y.year === 2027 ? { ...y, gross_income: 5 } : y)),
+      },
+      2026
+    );
+    const unrelated = applyDraftPatch(edited, { roth_balance: 10 }, 2026);
+    expect(unrelated.timeline[1].gross_income).toBe(5);
+    const rebased = applyDraftPatch(unrelated, { current_income: 90000 }, 2026);
+    expect(rebased.timeline[1].gross_income).toBe(90000);
+  });
+
+  it("choosing a state also sets the retirement state", () => {
+    const next = applyDraftPatch(base, { state: "CA" }, 2026);
+    expect(next.retirement_state).toBe("CA");
+    const moved = applyDraftPatch(next, { retirement_state: "TX" }, 2026);
+    expect(buildScenarioInput(moved).retirement_state).toBe("TX");
+  });
+
+  it("knows when a draft has user values", () => {
+    expect(hasDraftValues(EMPTY_DRAFT)).toBe(false);
+    expect(hasDraftValues(base)).toBe(true);
+  });
+
+  it("refuses to build an incomplete draft", () => {
+    expect(() => buildScenarioInput(EMPTY_DRAFT)).toThrow(/missing age/);
+  });
+});

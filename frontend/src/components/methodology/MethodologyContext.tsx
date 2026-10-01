@@ -6,27 +6,40 @@ interface MethodologyState {
   isOpen: boolean;
   activeSection: string | null;
   activeTrigger: string | null;
-  openSidebar: (section?: string, trigger?: string) => void;
+  /** The question on the trigger that opened the sidebar, if any. */
+  activeQuestion: string | null;
+  openSidebar: (section?: string, trigger?: string, question?: string) => void;
   closeSidebar: () => void;
+  /** Ask the assistant about a topic. Present only where a conversation exists. */
+  askAbout?: (question: string) => void;
 }
 
 const MethodologyContext = createContext<MethodologyState | null>(null);
 
-export function MethodologyProvider({ children }: { children: ReactNode }) {
+export function MethodologyProvider({
+  children,
+  askAbout,
+}: {
+  children: ReactNode;
+  askAbout?: (question: string) => void;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [activeTrigger, setActiveTrigger] = useState<string | null>(null);
+  const [activeQuestion, setActiveQuestion] = useState<string | null>(null);
 
-  const openSidebar = useCallback((section?: string, trigger?: string) => {
+  const openSidebar = useCallback((section?: string, trigger?: string, question?: string) => {
     setIsOpen(true);
     setActiveSection(section ?? null);
     setActiveTrigger(trigger ?? null);
+    setActiveQuestion(question ?? null);
   }, []);
 
   const closeSidebar = useCallback(() => {
     setIsOpen(false);
     setActiveSection(null);
     setActiveTrigger(null);
+    setActiveQuestion(null);
   }, []);
 
   useEffect(() => {
@@ -40,7 +53,15 @@ export function MethodologyProvider({ children }: { children: ReactNode }) {
 
   return (
     <MethodologyContext.Provider
-      value={{ isOpen, activeSection, activeTrigger, openSidebar, closeSidebar }}
+      value={{
+        isOpen,
+        activeSection,
+        activeTrigger,
+        activeQuestion,
+        openSidebar,
+        closeSidebar,
+        askAbout,
+      }}
     >
       {children}
     </MethodologyContext.Provider>

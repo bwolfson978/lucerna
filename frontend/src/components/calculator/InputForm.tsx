@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, FormEvent } from "react";
-import type { ScenarioInput, PlanYear, FilingStatus, HealthcareInput } from "@/lib/types";
+import type { ScenarioInput, FilingStatus } from "@/lib/types";
 import { NumericField } from "@/components/common/NumericField";
 import { CurrencyInput } from "@/components/common/CurrencyInput";
 import { FormSelect } from "@/components/common/FormSelect";
@@ -13,12 +13,22 @@ import { Label } from "@/components/ui/label";
 import { IncomeTimelineEditor } from "@/components/calculator/IncomeTimelineEditor";
 import { CURRENT_YEAR } from "@/lib/utils/constants";
 import { FILING_STATUS_OPTIONS, STATE_OPTIONS } from "@/lib/utils/formOptions";
-import { generateTimeline, mergeTimeline } from "@/lib/utils/timeline";
+import { generateTimeline } from "@/lib/utils/timeline";
+import {
+  EMPTY_DRAFT,
+  applyDraftPatch,
+  buildScenarioInput,
+  type DraftPatch,
+  type ScenarioDraft,
+} from "@/lib/scenario/draft";
 
 interface InputFormProps {
   onSubmit: (input: ScenarioInput) => void;
   loading?: boolean;
   loadingLabel?: string;
+  /** Shared scenario draft. When omitted the form manages its own. */
+  draft?: ScenarioDraft;
+  onDraftChange?: (draft: ScenarioDraft) => void;
 }
 
 // Order must match the on-screen layout of fields. Used to find the first
@@ -38,7 +48,13 @@ const FIELD_ORDER = [
   "monthlySlcspPremium",
 ] as const;
 
-export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
+export function InputForm({
+  onSubmit,
+  loading,
+  loadingLabel,
+  draft: controlledDraft,
+  onDraftChange,
+}: InputFormProps) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showMore, setShowAdvanced] = useState(false);
 
@@ -48,57 +64,62 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
   const fieldRefs = useRef<Record<string, HTMLElement | null>>({});
   const timelineRef = useRef<HTMLDivElement | null>(null);
 
-  // Form state. Required personal-data fields start as null so they appear
-  // genuinely empty — the user should consciously answer them rather than
-  // inherit a silent default.
-  const [age, setAge] = useState<number | null>(null);
-  const [filingStatus, setFilingStatus] = useState<FilingStatus | null>(null);
-  const [currentIncome, setCurrentIncome] = useState<number | null>(null);
-  const [traditionalBalance, setTraditionalBalance] = useState<number | null>(null);
-  const [rothBalance, setRothBalance] = useState<number | null>(null);
-  const [drawdownStartAge, setDrawdownStartAge] = useState<number | null>(null);
-  // Assumption fields keep their sensible defaults — users don't know these
-  // numbers and the engine has defensible industry standards.
-  const [incomeGrowthRate, setIncomeGrowthRate] = useState<number | null>(3);
-  const [retirementSpending, setRetirementSpending] = useState<number | null>(null);
-
-  // Additional settings
-  const [planningHorizonAge, setPlanningHorizonAge] = useState<number | null>(90);
-  const [growthRate, setGrowthRate] = useState<number | null>(7);
-  const [discountRate, setDiscountRate] = useState<number | null>(5);
-
-  // State tax inputs
-  const [state, setState] = useState<string>("none");
-  const [retirementState, setRetirementState] = useState<string>("none");
-  const [customStateRate, setCustomStateRate] = useState<number | null>(null);
-
-  // ACA healthcare inputs
-  const [includeAca, setIncludeAca] = useState(false);
-  const [householdSize, setHouseholdSize] = useState<number | null>(1);
-  const [monthlySlcspPremium, setMonthlySlcspPremium] = useState<number>(620);
-  const [employerCoverageYear, setEmployerCoverageYear] = useState<number | null>(null);
-
-  // Income timeline state
-  const [timeline, setTimeline] = useState<PlanYear[]>([]);
-
-  // Regenerate timeline when base inputs change, preserving pinned years.
-  // All three personal-data inputs must be filled before the timeline is
-  // meaningful — otherwise we'd generate wrong-length arrays from defaults.
+  // The form edits a scenario draft. On the calculator page the draft is shared
+  // with the conversation (controlled); standalone, the form keeps its own.
+  // Required personal-data fields start empty so the user consciously answers
+  // them; assumption fields keep sensible defaults.
+  const [internalDraft, setInternalDraft] = useState<ScenarioDraft>(EMPTY_DRAFT);
+  const draft = controlledDraft ?? internalDraft;
+  const draftRef = useRef(draft);
   useEffect(() => {
-    if (age == null || drawdownStartAge == null || currentIncome == null || currentIncome <= 0) {
-      setTimeline([]);
-      return;
-    }
-    const incGrowthVal = incomeGrowthRate ?? 0;
-    const fresh = generateTimeline(age, drawdownStartAge, currentIncome, incGrowthVal);
-    setTimeline((prev) => (prev.length === 0 ? fresh : mergeTimeline(fresh, prev)));
-  }, [age, drawdownStartAge, currentIncome, incomeGrowthRate]);
+    draftRef.current = draft;
+  }, [draft]);
+
+  // Functional updates read the latest draft, so several edits in one event all apply.
+  const patch = useCallback(
+    (changes: DraftPatch) => {
+      const next = applyDraftPatch(draftRef.current, changes, CURRENT_YEAR);
+      draftRef.current = next;
+      if (onDraftChange) onDraftChange(next);
+      else setInternalDraft(next);
+    },
+    [onDraftChange]
+  );
+
+  const {
+    age,
+    filing_status: filingStatus,
+    current_income: currentIncome,
+    traditional_balance: traditionalBalance,
+    roth_balance: rothBalance,
+    retirement_age: drawdownStartAge,
+    income_growth_rate_pct: incomeGrowthRate,
+    retirement_spending: retirementSpending,
+    planning_horizon_age: planningHorizonAge,
+    investment_return_pct: growthRate,
+    discount_rate_pct: discountRate,
+    custom_state_rate_pct: customStateRate,
+    include_aca: includeAca,
+    household_size: householdSize,
+    employer_coverage_year: employerCoverageYear,
+    timeline,
+  } = draft;
+  const state = draft.state ?? "none";
+  const retirementState = draft.retirement_state ?? "none";
+  const monthlySlcspPremium = draft.monthly_slcsp_premium ?? 620;
 
   const handleResetTimeline = useCallback(() => {
-    if (age == null || drawdownStartAge == null || currentIncome == null) return;
-    const incGrowthVal = incomeGrowthRate ?? 0;
-    setTimeline(generateTimeline(age, drawdownStartAge, currentIncome, incGrowthVal));
-  }, [age, drawdownStartAge, currentIncome, incomeGrowthRate]);
+    const d = draftRef.current;
+    if (d.age == null || d.retirement_age == null || d.current_income == null) return;
+    patch({
+      timeline: generateTimeline(
+        d.age,
+        d.retirement_age,
+        d.current_income,
+        d.income_growth_rate_pct ?? 0
+      ),
+    });
+  }, [patch]);
 
   const showTimeline = timeline.length > 0;
   const hasCustomizations = timeline.some(
@@ -138,8 +159,6 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
     const errs: Record<string, string> = {};
 
     const planningHorizonVal = planningHorizonAge ?? 90;
-    const growthVal = growthRate ?? 7;
-    const discountVal = discountRate ?? 5;
     const hhSize = householdSize ?? 1;
 
     if (age == null) errs.age = "Enter your age";
@@ -171,33 +190,8 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
       return;
     }
 
-    // All required fields have passed validation above — the non-null
-    // assertions below are safe.
-    const healthcare: HealthcareInput | null = includeAca
-      ? {
-          household_size: hhSize,
-          monthly_slcsp_premium: monthlySlcspPremium,
-          has_employer_coverage_after: employerCoverageYear,
-        }
-      : null;
-
-    const input: ScenarioInput = {
-      age: age!,
-      filing_status: filingStatus!,
-      timeline,
-      traditional_ira_balance: traditionalBalance!,
-      roth_ira_balance: rothBalance ?? 0,
-      drawdown_start_age: drawdownStartAge!,
-      planning_horizon_age: planningHorizonVal,
-      default_drawdown: retirementSpending,
-      annual_growth_rate: growthVal / 100,
-      discount_rate: discountVal / 100,
-      healthcare,
-      state: state !== "none" ? state : null,
-      retirement_state:
-        retirementState !== "none" && retirementState !== state ? retirementState : null,
-      custom_state_rate: state === "custom" && customStateRate ? customStateRate / 100 : null,
-    };
+    // All required fields have passed validation above.
+    const input: ScenarioInput = buildScenarioInput(draft);
     onSubmit(input);
   }
 
@@ -215,7 +209,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
           max={120}
           required
           error={errors.age}
-          onChange={setAge}
+          onChange={(v) => patch({ age: v })}
         />
         <FormSelect
           ref={(el) => {
@@ -227,7 +221,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
           placeholder="Choose filing status"
           required
           error={errors.filingStatus}
-          onChange={(e) => setFilingStatus(e.target.value as FilingStatus)}
+          onChange={(e) => patch({ filing_status: e.target.value as FilingStatus })}
         />
         <FormSelect
           label="State"
@@ -235,8 +229,8 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
           options={STATE_OPTIONS}
           onChange={(e) => {
             const newState = e.target.value;
-            setState(newState);
-            setRetirementState(newState);
+            // Choosing a state also sets the retirement state.
+            patch({ state: newState === "none" ? null : newState });
           }}
         />
         <CurrencyInput
@@ -249,7 +243,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
           min={0}
           required
           error={errors.currentIncome}
-          onChange={setCurrentIncome}
+          onChange={(v) => patch({ current_income: v })}
         />
         <CurrencyInput
           ref={(el) => {
@@ -263,7 +257,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
           error={errors.traditionalBalance}
           helper="Includes 401k rollovers"
           tooltip="Your total pre-tax retirement savings eligible for Roth conversion. Include traditional IRAs and old 401(k) rollovers. Exclude a current employer 401(k) unless eligible for in-service conversions."
-          onChange={setTraditionalBalance}
+          onChange={(v) => patch({ traditional_balance: v })}
         />
         <NumericField
           ref={(el) => {
@@ -276,13 +270,15 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
           max={120}
           required
           error={errors.retirementAge}
-          onChange={setDrawdownStartAge}
+          onChange={(v) => patch({ retirement_age: v })}
         />
         <FormSelect
           label="Retirement state"
           value={retirementState}
           options={STATE_OPTIONS}
-          onChange={(e) => setRetirementState(e.target.value)}
+          onChange={(e) =>
+            patch({ retirement_state: e.target.value === "none" ? null : e.target.value })
+          }
         />
         <CurrencyInput
           ref={(el) => {
@@ -294,7 +290,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
           min={0}
           error={errors.rothBalance}
           helper="Existing Roth IRA/401(k) balance"
-          onChange={setRothBalance}
+          onChange={(v) => patch({ roth_balance: v })}
         />
       </div>
 
@@ -312,7 +308,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
             error={errors.customStateRate}
             helper="Flat state income tax rate"
             tooltip="Enter your state's approximate income tax rate. This is applied as a flat rate to your taxable income."
-            onChange={setCustomStateRate}
+            onChange={(v) => patch({ custom_state_rate_pct: v })}
           />
         </div>
       )}
@@ -324,7 +320,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
           decimalScale={1}
           helper="Annual income growth assumption"
           tooltip="How much you expect your salary to grow each year before inflation. Most people use 2-4%. Higher growth means more taxable income later, making early conversions more valuable."
-          onChange={setIncomeGrowthRate}
+          onChange={(v) => patch({ income_growth_rate_pct: v })}
         />
         <CurrencyInput
           ref={(el) => {
@@ -336,7 +332,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
           min={0}
           error={errors.retirementSpending}
           helper="Leave blank to use the 4% rule"
-          onChange={(val) => setRetirementSpending(val || null)}
+          onChange={(val) => patch({ retirement_spending: val || null })}
         />
       </div>
 
@@ -345,7 +341,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
         {showTimeline && (
           <IncomeTimelineEditor
             timeline={timeline}
-            onChange={setTimeline}
+            onChange={(next) => patch({ timeline: next })}
             onReset={hasCustomizations ? handleResetTimeline : undefined}
             description="Projected from your inputs above. Adjust any year to reflect expected changes: job transitions, time off, or anything else on the horizon."
             defaultState={state !== "none" ? state : undefined}
@@ -378,7 +374,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
               value={planningHorizonAge ?? ""}
               min={1}
               error={errors.yearsInRetirement}
-              onChange={setPlanningHorizonAge}
+              onChange={(v) => patch({ planning_horizon_age: v })}
             />
             <NumericField
               label="Investment return (%)"
@@ -386,7 +382,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
               decimalScale={1}
               helper="Expected annual return"
               tooltip="Expected annual portfolio return before inflation and fees. Stock-heavy: 7-8%. Balanced: 5-6%. Bond-heavy: 3-4%."
-              onChange={setGrowthRate}
+              onChange={(v) => patch({ investment_return_pct: v })}
             />
             <NumericField
               label="Discount rate (%)"
@@ -394,7 +390,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
               decimalScale={1}
               helper="Time value of money"
               tooltip="The extra return you'd need to accept a dollar next year instead of today. Think of it as your opportunity cost. Roughly match it to your expected investment return. The default of 5% works well for most people."
-              onChange={setDiscountRate}
+              onChange={(v) => patch({ discount_rate_pct: v })}
             />
           </div>
         </CollapsibleContent>
@@ -403,7 +399,11 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
       {/* ACA marketplace coverage */}
       <div className="flex flex-col gap-default">
         <div className="flex items-center gap-3">
-          <Switch id="aca-toggle" checked={includeAca} onCheckedChange={setIncludeAca} />
+          <Switch
+            id="aca-toggle"
+            checked={includeAca}
+            onCheckedChange={(v) => patch({ include_aca: v })}
+          />
           <Label htmlFor="aca-toggle" className="cursor-pointer text-body text-text-primary">
             I buy health insurance on the ACA marketplace
           </Label>
@@ -423,7 +423,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
               min={1}
               error={errors.householdSize}
               helper="People in your tax household"
-              onChange={setHouseholdSize}
+              onChange={(v) => patch({ household_size: v })}
             />
             <CurrencyInput
               ref={(el) => {
@@ -435,7 +435,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
               min={0}
               error={errors.monthlySlcspPremium}
               helper="2nd-lowest Silver plan on healthcare.gov"
-              onChange={(val) => setMonthlySlcspPremium(val || 620)}
+              onChange={(val) => patch({ monthly_slcsp_premium: val || 620 })}
             />
             <NumericField
               label="Employer coverage resumes"
@@ -444,7 +444,7 @@ export function InputForm({ onSubmit, loading, loadingLabel }: InputFormProps) {
               min={CURRENT_YEAR}
               max={CURRENT_YEAR + 40}
               helper="Year you get employer insurance back (optional)"
-              onChange={setEmployerCoverageYear}
+              onChange={(v) => patch({ employer_coverage_year: v })}
             />
           </div>
         )}

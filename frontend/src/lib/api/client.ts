@@ -23,13 +23,6 @@ export const apiClient = {
     return request("/api/demo");
   },
 
-  chat(input: { message: string; context: Record<string, unknown> }) {
-    return request("/api/chat", {
-      method: "POST",
-      body: JSON.stringify(input),
-    });
-  },
-
   submitEmail(email: string) {
     return request("/api/email", {
       method: "POST",

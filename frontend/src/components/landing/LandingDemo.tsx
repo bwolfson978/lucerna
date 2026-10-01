@@ -110,7 +110,7 @@ export function LandingDemo() {
                   : "The optimized schedule converts through her lowest-tax years, before RMDs take the choice away."}
               </p>
               <Link href="/demo" className="link-arrow mt-2">
-                View full analysis <span aria-hidden="true">&rarr;</span>
+                See how Margaret talked it through <span aria-hidden="true">&rarr;</span>
               </Link>
             </div>
             <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border">

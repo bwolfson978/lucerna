@@ -1,6 +1,6 @@
 # Lucerna: Conversational Agent Execution Plan
 
-**Status:** Draft, decisions below agreed
+**Status:** Implemented (see Implementation Notes at the end)
 **Last updated:** October 1, 2026
 **Supersedes:** M1 plan WS4 (AI Conversation Layer). WS4 tasks 4.1 to 4.7 are folded into the workstreams below.
 
@@ -28,7 +28,7 @@ Underneath, this is an agent harness: one agent loop with a system prompt and a 
 | A12 | Conversation state | Stateless backend for M1: the client sends history and scenario draft each turn | No database dependency; revisit with saved scenarios |
 | A13 | Fallback | When the rate limit is hit or the model API is unavailable, the page switches to the form with the draft intact | The product never dead-ends |
 | A14 | Legal framing | "The analysis shows" / "based on your inputs", never "you should"; scenario analysis, not advice | Legal requirement, unchanged from M1 |
-| A15 | Demo (`/demo`) | Opens to a sample conversation: Alex gives all his details in one message, the agent captures them, runs the optimizer and returns results in the chat. The visitor can then ask follow-ups live | Shows the real experience with zero effort from the visitor |
+| A15 | Demo (`/demo`) | Opens to a sample conversation: Margaret (the current demo persona) gives all her details in one message, the agent captures them, runs the optimizer and returns results in the chat. The visitor can then ask follow-ups live | Shows the real experience with zero effort from the visitor |
 | A16 | Demo opening exchange | Produced by the real agent and engine, cached server-side keyed by prompt version + engine version + demo scenario; replayed with streaming animation. Follow-ups are live | Same output as a live run, but instant, consistent and free under Reddit-scale traffic. Regenerates automatically when the prompt or engine changes |
 | A17 | Landing CTAs | Primary: "Talk through your numbers" (to `/calculator`, conversation mode). Secondary: "See an example" (to `/demo`) | Reflects conversation-first |
 | A18 | Launch limits | 20 user messages per conversation, 60 per IP per day, plus a global daily spend cap. Hitting any limit triggers the form fallback (A13). Demo follow-ups count toward the same limits; the cached opening exchange does not | Intake alone takes ~4 to 6 messages, so the M1 figure of 10 to 15 would leave too little room for questions. Spend cap protects against traffic spikes |
@@ -61,16 +61,16 @@ Run your numbers.
   [ Message box, pinned to bottom ]
 ```
 
-- **Mobile:** the conversation is the page. The message box is pinned to the bottom and respects the safe area, the Safari toolbar and the on-screen keyboard (`visualViewport`). The floating "How it works" button is hidden in conversation mode; the assistant answers those questions and can link to methodology sections.
+- **Mobile:** the conversation is the page. The message box is pinned to the bottom and respects the safe area, the Safari toolbar and the on-screen keyboard (`visualViewport`). The assistant answers "how it works" questions from the methodology content.
 - **Desktop:** the conversation sits in a centered reading column (`max-w-content`). The methodology sidebar keeps working as today.
 - **Mode memory:** returning visitors get the mode they last used (localStorage, wrapped in try/catch).
 
 ### Demo (`/demo`)
 
-- Opens in conversation mode with a short intro line ("Here's how a conversation works, using an example: Alex, 38, a software engineer who just left a job for a startup").
-- Alex's first message gives everything at once: age, filing status, IRA balance, the three-year income timeline ($35K, $30K, $150K) and retirement plans.
+- Opens in conversation mode with a short intro about Margaret, 63, a retired nurse with $1.4M in a traditional 401(k).
+- Margaret's first message gives everything at once: age, filing status, balances, income now, Social Security from 2030, spending and when she starts drawing on the 401(k). Her second message confirms the summary.
 - The agent's reply plays back with streaming animation: it confirms the captured values in a `scenario_summary` card (shown as already confirmed), then a `result_headline`, a `bracket_fill` chart, a short plain-English explanation of why conversions land in years 1 and 2, and suggestion chips.
-- The composer is live. Follow-ups ("What if Alex's startup income is $80K in year 3?") run the real agent against Alex's scenario.
+- The composer is live. Follow-ups ("What if we only spend $70,000 a year?") run the real agent against Margaret's scenario.
 - A banner after the first exchange: "Ready to try yours?" linking to `/calculator`.
 - `IncomeMilestonesTable` and the current demo layout are retired; "See full results" covers that detail.
 
@@ -154,7 +154,7 @@ Schemas are generated from the Pydantic models. A test fails if any tool schema 
 - A1.2: `update_scenario` with field-level validation and "still missing" reporting
 - A1.3: `optimize_scenario`, `compare_scenarios`, `get_tax_brackets`
 - A1.4: `explain_methodology`: methodology content as structured sections shared with the frontend methodology page (single source)
-- A1.5: Tests: schema parity with engine types, each tool against the Alex demo scenario
+- A1.5: Tests: schema parity with engine types, each tool against a realistic scenario
 
 ### WSA2: Agent harness (~19 hours)
 - A2.1: Agent loop with tool execution, turn and tool-call caps
@@ -222,3 +222,20 @@ WSA1 and WSA3 can start in parallel.
 ## Open Questions
 
 None at the moment. Former open questions are resolved in A15 to A19.
+
+---
+
+## Implementation Notes
+
+Built on branch `claude/agent-execution-plan`.
+
+- **Model:** `AGENT_MODEL` (default `claude-sonnet-5-5`, per the project's Sonnet decision) at `AGENT_EFFORT` (default `medium`), with server-side refusal fallback (`fallbacks: "default"`) and prompt caching. Requires `ANTHROPIC_API_KEY` on the backend.
+- **History:** the browser stores the API-format history exactly as returned and sends it back; the backend only appends. The scenario the user edits in the form reaches the model as a `<scenario_state>` block on their next message, so the system prompt never changes mid-conversation.
+- **Results:** full `OptimizationResult`s stream to the browser in `result` events; the model only sees a compact summary plus the reasoning trace.
+- **Demo:** `GET /api/agent/demo` runs Margaret's two messages through the real loop once per cache key (prompt, tools, engine source, model, script) and caches the result in memory and `AGENT_CACHE_DIR`. Without model access it builds the same exchange from the tools with fixed wording, so the demo always works and its history supports live follow-ups.
+- **Limits:** `AGENT_MESSAGES_PER_CONVERSATION` (20), `AGENT_MESSAGES_PER_IP_PER_DAY` (60), `AGENT_DAILY_SPEND_USD` (50), in process memory. MCP: `MCP_REQUESTS_PER_IP_PER_DAY` (300).
+- **Offline development:** `AGENT_OFFLINE=1` swaps the model for a rule-based stand-in that drives the real loop and tools. The Playwright suite uses it.
+- **Evals:** `backend/evals/` holds 33 scripted conversations and a runner with deterministic checks (framing, em dashes, numbers grounded in tool results, confirm before running, expected tools and cards) that also reports cost per conversation. They have not been run against the live model yet.
+- **Not done:** OAuth for MCP (waits on Clerk, PR #126), connector directory listings, and rich MCP UI rendering.
+
+See `docs/agent-and-mcp.md` for setup.

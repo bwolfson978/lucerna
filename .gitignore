@@ -37,3 +37,6 @@ Thumbs.db
 
 # Agent demo conversation cache
 backend/.cache/
+
+# Agent eval reports
+backend/evals/results/

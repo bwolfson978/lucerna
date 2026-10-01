@@ -57,17 +57,17 @@ class ScenarioDraft(BaseModel):
     )
     custom_state_rate_pct: float | None = Field(default=None, ge=0, le=20)
     current_income: float | None = Field(default=None, ge=0)
-    income_growth_rate_pct: float = 3
+    income_growth_rate_pct: float | None = 3
     traditional_balance: float | None = Field(default=None, ge=0)
     roth_balance: float | None = Field(default=None, ge=0)
     retirement_age: int | None = Field(default=None, ge=1, le=120)
     retirement_spending: float | None = Field(default=None, ge=0)
-    planning_horizon_age: int = Field(default=90, ge=50, le=120)
-    investment_return_pct: float = 7
-    discount_rate_pct: float = 5
+    planning_horizon_age: int | None = Field(default=90, ge=50, le=120)
+    investment_return_pct: float | None = 7
+    discount_rate_pct: float | None = 5
     include_aca: bool = False
-    household_size: int = Field(default=1, ge=1)
-    monthly_slcsp_premium: float = Field(default=620, ge=0)
+    household_size: int | None = Field(default=1, ge=1)
+    monthly_slcsp_premium: float | None = Field(default=620, ge=0)
     employer_coverage_year: int | None = None
     timeline: list[PlanYear] = Field(default_factory=list)
 
@@ -115,7 +115,7 @@ def sync_timeline(draft: ScenarioDraft, previous: ScenarioDraft | None, start_ye
         draft.age,
         draft.retirement_age,
         draft.current_income,
-        draft.income_growth_rate_pct,
+        draft.income_growth_rate_pct or 0,
         start_year,
     )
     draft.timeline = merge_timeline(fresh, draft.timeline) if draft.timeline else fresh
@@ -154,8 +154,8 @@ def build_scenario_input(draft: ScenarioDraft) -> ScenarioInput:
         )
     healthcare = (
         HealthcareInput(
-            household_size=draft.household_size,
-            monthly_slcsp_premium=draft.monthly_slcsp_premium,
+            household_size=_or(draft.household_size, 1),
+            monthly_slcsp_premium=draft.monthly_slcsp_premium or 620,
             has_employer_coverage_after=draft.employer_coverage_year,
         )
         if draft.include_aca
@@ -173,10 +173,10 @@ def build_scenario_input(draft: ScenarioDraft) -> ScenarioInput:
         traditional_ira_balance=draft.traditional_balance,
         roth_ira_balance=draft.roth_balance or 0,
         drawdown_start_age=draft.retirement_age,
-        planning_horizon_age=draft.planning_horizon_age,
+        planning_horizon_age=_or(draft.planning_horizon_age, 90),
         default_drawdown=draft.retirement_spending or None,
-        annual_growth_rate=draft.investment_return_pct / 100,
-        discount_rate=draft.discount_rate_pct / 100,
+        annual_growth_rate=_or(draft.investment_return_pct, 7) / 100,
+        discount_rate=_or(draft.discount_rate_pct, 5) / 100,
         healthcare=healthcare,
         state=draft.state,
         retirement_state=retirement_state,
@@ -191,6 +191,11 @@ def build_scenario_input(draft: ScenarioDraft) -> ScenarioInput:
 def draft_hash(draft: ScenarioDraft) -> str:
     payload = json.dumps(draft.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(payload.encode()).hexdigest()[:12]
+
+
+def _or(value, default):
+    """JavaScript ``??``: fall back only when the value is missing."""
+    return default if value is None else value
 
 
 def _js_round(value: float) -> float:

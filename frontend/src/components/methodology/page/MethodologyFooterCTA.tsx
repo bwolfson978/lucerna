@@ -17,10 +17,10 @@ export function MethodologyFooterCTA() {
         </p>
         <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
           <Link href="/demo" className="btn-paper">
-            See demo
+            See an example
           </Link>
           <Link href="/calculator" className="btn-outline-paper">
-            Run your own scenario
+            Talk through your numbers
           </Link>
         </div>
       </div>

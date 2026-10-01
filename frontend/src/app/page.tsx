@@ -43,10 +43,10 @@ export default function Home() {
               </Reveal>
               <Reveal delay={3} className="mt-8 flex flex-col gap-3.5 sm:flex-row sm:flex-wrap">
                 <Link href="/calculator" className="btn-dark">
-                  Run your own scenario
+                  Talk through your numbers
                 </Link>
                 <Link href="/demo" className="btn-ghost">
-                  See the demo
+                  See an example
                 </Link>
               </Reveal>
               <Reveal
@@ -181,10 +181,10 @@ export default function Home() {
             </p>
             <div className="relative mt-9 flex flex-col justify-center gap-3.5 sm:flex-row">
               <Link href="/calculator" className="btn-paper">
-                Run your own scenario
+                Talk through your numbers
               </Link>
               <Link href="/demo" className="btn-outline-paper">
-                See the demo
+                See an example
               </Link>
             </div>
           </Reveal>

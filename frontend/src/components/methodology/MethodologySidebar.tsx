@@ -15,7 +15,8 @@ interface MethodologySidebarProps {
 }
 
 export function MethodologySidebar({ result, mobile }: MethodologySidebarProps) {
-  const { isOpen, activeSection, activeTrigger, closeSidebar } = useMethodology();
+  const { isOpen, activeSection, activeTrigger, activeQuestion, closeSidebar, askAbout } =
+    useMethodology();
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
   const sections = getSections(result);
@@ -78,6 +79,32 @@ export function MethodologySidebar({ result, mobile }: MethodologySidebarProps) 
           </svg>
           Jumped to: {getSectionLabel(activeSection)}
         </div>
+      )}
+
+      {/* Hand the question to the assistant */}
+      {askAbout && activeSection && (
+        <button
+          type="button"
+          onClick={() => {
+            const question =
+              activeQuestion ?? `How does "${getSectionLabel(activeSection)}" apply to my results?`;
+            closeSidebar();
+            askAbout(question);
+          }}
+          className="mb-4 flex w-full items-center justify-between gap-3 rounded-[14px] border border-pine-mid/25 bg-white px-4 py-3 text-left text-sm font-medium text-pine transition-colors duration-200 hover:border-pine-mid"
+        >
+          <span>Ask about this in the conversation</span>
+          <svg
+            className="h-4 w-4 shrink-0"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            aria-hidden="true"
+          >
+            <path d="M6 4l4 4-4 4" />
+          </svg>
+        </button>
       )}
 
       {/* Accordion sections */}
