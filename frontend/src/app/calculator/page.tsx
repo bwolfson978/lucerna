@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { Suspense, useState, useRef, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import posthog from "posthog-js";
 import { useUser, useAuth, SignInButton } from "@clerk/nextjs";
@@ -21,6 +21,14 @@ import { GlowButton } from "@/components/common/GlowButton";
 import type { SaveBannerState } from "@/components/common/SaveResultsBanner";
 
 export default function CalculatorPage() {
+  return (
+    <Suspense>
+      <CalculatorContent />
+    </Suspense>
+  );
+}
+
+function CalculatorContent() {
   const [result, setResult] = useState<OptimizationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
