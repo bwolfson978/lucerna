@@ -28,6 +28,11 @@ Underneath, this is an agent harness: one agent loop with a system prompt and a 
 | A12 | Conversation state | Stateless backend for M1: the client sends history and scenario draft each turn | No database dependency; revisit with saved scenarios |
 | A13 | Fallback | When the rate limit is hit or the model API is unavailable, the page switches to the form with the draft intact | The product never dead-ends |
 | A14 | Legal framing | "The analysis shows" / "based on your inputs", never "you should"; scenario analysis, not advice | Legal requirement, unchanged from M1 |
+| A15 | Demo (`/demo`) | Opens to a sample conversation: Alex gives all his details in one message, the agent captures them, runs the optimizer and returns results in the chat. The visitor can then ask follow-ups live | Shows the real experience with zero effort from the visitor |
+| A16 | Demo opening exchange | Produced by the real agent and engine, cached server-side keyed by prompt version + engine version + demo scenario; replayed with streaming animation. Follow-ups are live | Same output as a live run, but instant, consistent and free under Reddit-scale traffic. Regenerates automatically when the prompt or engine changes |
+| A17 | Landing CTAs | Primary: "Talk through your numbers" (to `/calculator`, conversation mode). Secondary: "See an example" (to `/demo`) | Reflects conversation-first |
+| A18 | Launch limits | 20 user messages per conversation, 60 per IP per day, plus a global daily spend cap. Hitting any limit triggers the form fallback (A13). Demo follow-ups count toward the same limits; the cached opening exchange does not | Intake alone takes ~4 to 6 messages, so the M1 figure of 10 to 15 would leave too little room for questions. Spend cap protects against traffic spikes |
+| A19 | Conversation persistence | sessionStorage for M1: survives reloads and back navigation in the same tab; "Start over" clears it. Nothing stored server-side | Avoids losing a conversation to an accidental reload without adding stored financial data to the privacy policy. Server-side history comes with saved scenarios |
 
 ---
 
@@ -59,6 +64,15 @@ Run your numbers.
 - **Mobile:** the conversation is the page. The message box is pinned to the bottom and respects the safe area, the Safari toolbar and the on-screen keyboard (`visualViewport`). The floating "How it works" button is hidden in conversation mode; the assistant answers those questions and can link to methodology sections.
 - **Desktop:** the conversation sits in a centered reading column (`max-w-content`). The methodology sidebar keeps working as today.
 - **Mode memory:** returning visitors get the mode they last used (localStorage, wrapped in try/catch).
+
+### Demo (`/demo`)
+
+- Opens in conversation mode with a short intro line ("Here's how a conversation works, using an example: Alex, 38, a software engineer who just left a job for a startup").
+- Alex's first message gives everything at once: age, filing status, IRA balance, the three-year income timeline ($35K, $30K, $150K) and retirement plans.
+- The agent's reply plays back with streaming animation: it confirms the captured values in a `scenario_summary` card (shown as already confirmed), then a `result_headline`, a `bracket_fill` chart, a short plain-English explanation of why conversions land in years 1 and 2, and suggestion chips.
+- The composer is live. Follow-ups ("What if Alex's startup income is $80K in year 3?") run the real agent against Alex's scenario.
+- A banner after the first exchange: "Ready to try yours?" linking to `/calculator`.
+- `IncomeMilestonesTable` and the current demo layout are retired; "See full results" covers that detail.
 
 ### Results in the conversation
 
@@ -142,26 +156,31 @@ Schemas are generated from the Pydantic models. A test fails if any tool schema 
 - A1.4: `explain_methodology`: methodology content as structured sections shared with the frontend methodology page (single source)
 - A1.5: Tests: schema parity with engine types, each tool against the Alex demo scenario
 
-### WSA2: Agent harness (~16 hours)
+### WSA2: Agent harness (~19 hours)
 - A2.1: Agent loop with tool execution, turn and tool-call caps
 - A2.2: `POST /api/agent` SSE endpoint (text deltas, tool events, display parts, errors)
 - A2.3: Modular system prompt (sections above)
 - A2.4: Rate limiting and graceful limit/fallback responses
-- A2.5: Tests with a mocked SDK: tool dispatch, limit handling, stream format
+- A2.5: Demo opening exchange: generate with the real agent, cache keyed by prompt version + engine version + scenario, serve via `GET /api/agent/demo`
+- A2.6: Global daily spend cap and per-IP daily limit (A18)
+- A2.7: Tests with a mocked SDK: tool dispatch, limit handling, stream format
 
 ### WSA3: Shared scenario state (~8 hours)
 - A3.1: `ScenarioDraft` store (reducer + context) with partial values and validation
 - A3.2: Refactor `InputForm` to read and write the shared store (today it holds ~15 local `useState` values)
 - A3.3: Tests: values entered in either mode survive mode switches
 
-### WSA4: Conversation UI (~24 hours)
+### WSA4: Conversation UI (~30 hours)
 - A4.1: Mode toggle on `/calculator`, conversation as default, remembered mode
 - A4.2: Thread and composer: streaming, pinned composer, mobile keyboard and safe-area handling
 - A4.3: SSE client in `lib/api/`
 - A4.4: Message part renderers: `scenario_summary` (editable), `result_headline`, `suggestions`
 - A4.5: Compact chart parts: `bracket_fill`, `balance_comparison`, `scenario_compare`
 - A4.6: Opening message and starter chips ("I just left my job", "I'm retiring early", "Explain Roth conversions")
-- A4.7: Design pass against `docs/design-aesthetic.md`; cross-device QA
+- A4.7: `/demo` conversation: replay of the cached opening exchange, live follow-ups, "Ready to try yours?" banner
+- A4.8: Landing page CTA copy and links (A17)
+- A4.9: sessionStorage persistence and "Start over"
+- A4.10: Design pass against `docs/design-aesthetic.md`; cross-device QA
 
 ### WSA5: Full results pathway (~6 hours)
 - A5.1: View switch to `ResultsView` with history entry and Back to conversation bar
@@ -182,7 +201,7 @@ Schemas are generated from the Pydantic models. A test fails if any tool schema 
 ### WSA8: Analytics (~3 hours)
 - A8.1: PostHog events: mode shown, mode switched, message sent, scenario confirmed, results shown in chat, full results opened, what-if run, limit reached, fallback to form
 
-**Total:** ~87 hours (~109 with 25% buffer), replacing WS4's 26 hours.
+**Total:** ~96 hours (~120 with 25% buffer), replacing WS4's 26 hours.
 
 ---
 
@@ -202,7 +221,4 @@ WSA1 and WSA3 can start in parallel.
 
 ## Open Questions
 
-- Does `/demo` (Alex) open in conversation mode with Alex's scenario preloaded, or keep its current layout with the conversation below?
-- Should the landing page CTA copy change to reflect conversation-first ("Talk through your numbers")?
-- Per-session limit for launch, and whether unlimited conversation is part of the paid tier (brief: "unlimited AI conversation")
-- Conversation persistence across reloads (sessionStorage for M1, server-side with saved scenarios later)
+None at the moment. Former open questions are resolved in A15 to A19.
