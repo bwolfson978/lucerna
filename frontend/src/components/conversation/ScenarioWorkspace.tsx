@@ -169,7 +169,18 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
     onFallback: handleFallback,
     surface: variant,
   });
-  const { state, send, replay, reset, loadResult, addResult } = conversation;
+  const { state, send: sendMessage, replay, reset, loadResult, addResult } = conversation;
+
+  // Everything the person sends from this page goes through here, so the thread can
+  // bring their message to the top (a demo replay adds messages without it).
+  const [followKey, setFollowKey] = useState(0);
+  const send = useCallback(
+    (text: string) => {
+      setFollowKey((k) => k + 1);
+      return sendMessage(text);
+    },
+    [sendMessage]
+  );
 
   // Demo: replay Margaret's conversation unless this tab already has one.
   const [demo, setDemo] = useState<DemoConversation | null>(null);
@@ -463,6 +474,8 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
         )}
         <ConversationThread
           state={state}
+          followKey={followKey}
+          followOnRestore={!isDemo}
           intro={
             isDemo ? (
               <DemoIntro error={demoError} onRetry={() => void startDemo(false)} />
@@ -479,6 +492,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
           <DemoCta
             onRestart={() => {
               reset();
+              setFollowKey(0);
               void startDemo(!reducedMotion);
             }}
           />
@@ -488,6 +502,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
             type="button"
             onClick={() => {
               reset();
+              setFollowKey(0);
               posthog.capture("conversation_reset");
             }}
             className="self-start text-body-sm text-text-tertiary underline decoration-border underline-offset-4 hover:text-text-primary"
@@ -571,7 +586,9 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
         <main
           className={cn(
             "flex flex-col px-default sm:px-7",
-            chatShell ? "min-h-[calc(100dvh-69px)] pt-section-lg" : "py-section-lg"
+            chatShell
+              ? "min-h-[calc(100dvh-69px)] pt-section sm:pt-section-lg"
+              : "py-section sm:py-section-lg"
           )}
         >
           <div
@@ -581,7 +598,11 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
             )}
           >
             {!openStored && (
-              <div className={cn(chatShell && "lg:sticky lg:top-[116px] lg:self-start")}>
+              <div
+                className={cn(
+                  chatShell && "[overflow-anchor:none] lg:sticky lg:top-[116px] lg:self-start"
+                )}
+              >
                 <PageIntro
                   isDemo={isDemo}
                   mode={mode}
@@ -606,9 +627,9 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
               disabled={state.streaming || (isDemo && !replayDone)}
               placeholder={
                 isDemo
-                  ? "Ask a follow-up about Margaret's results"
+                  ? "Ask about Margaret's results"
                   : state.messages.length === 0
-                    ? "Describe your situation in a sentence or two"
+                    ? "Describe your situation"
                     : undefined
               }
             />
@@ -652,7 +673,8 @@ function PageIntro({
         <h1 className="display-heading text-display">
           Run <em>your numbers.</em>
         </h1>
-        <p className="max-w-[620px] text-body leading-relaxed text-text-secondary">
+        {/* On phones the heading and the assistant's opening line say enough. */}
+        <p className="hidden max-w-[620px] text-body leading-relaxed text-text-secondary lg:block">
           {mode === "conversation"
             ? "Talk through your situation and the optimizer will find the Roth conversion schedule that maximizes your after-tax wealth."
             : "Enter your details and the optimizer will find the Roth conversion schedule that maximizes your after-tax wealth."}

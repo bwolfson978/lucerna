@@ -59,7 +59,7 @@ export function Composer({
             rows={1}
             value={value}
             maxLength={2000}
-            placeholder={placeholder ?? "Ask a question or describe your situation"}
+            placeholder={placeholder ?? "Ask a follow-up question"}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={(e) => {
               // Enter sends on devices with a hardware keyboard; Shift+Enter adds a line.
@@ -78,8 +78,8 @@ export function Composer({
             disabled={disabled || value.trim() === ""}
             aria-label="Send"
             className={cn(
-              "flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-pine-deep text-[#f5f2ea] transition-all duration-200",
-              "hover:bg-pine disabled:cursor-not-allowed disabled:opacity-40"
+              "flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-pine-deep text-[#f5f2ea] transition-colors duration-200",
+              "hover:bg-pine disabled:cursor-not-allowed disabled:bg-paper-deep disabled:text-text-tertiary"
             )}
           >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
@@ -94,7 +94,7 @@ export function Composer({
           </button>
         </form>
         <p className="mt-1.5 text-center text-[11.5px] text-text-tertiary">
-          Educational scenario analysis based on your inputs, not financial advice.
+          Educational scenario analysis, not financial advice.
         </p>
       </div>
     </div>

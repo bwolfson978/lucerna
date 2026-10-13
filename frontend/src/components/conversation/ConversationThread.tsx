@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import type { UiMessage, UiPart } from "@/lib/agent/types";
+import { cn } from "@/lib/utils";
 import type { ConversationState } from "@/lib/agent/conversation";
 import { Markdown } from "./Markdown";
+import { usePrefersReducedMotion } from "@/hooks/useInView";
 import { McpAppFrame } from "./parts/McpAppFrame";
 import { PartBoundary } from "./parts/PartBoundary";
 import { ScenarioSummaryCard } from "./parts/ScenarioSummaryCard";
@@ -30,57 +32,98 @@ function activeSummaryKey(messages: UiMessage[]): string | null {
 export function ConversationThread({
   state,
   intro,
+  followKey = 0,
+  followOnRestore = false,
 }: {
   state: ConversationState;
   /** Shown above the messages (the assistant's opening line). */
   intro?: ReactNode;
+  /**
+   * Bumped for each message the person sends from this page. The new message scrolls
+   * to the top with room below it for the reply, as in a chat app. Messages added any
+   * other way (a demo replay) leave the scroll position alone.
+   */
+  followKey?: number;
+  /** Bring the last message into view when a saved conversation is restored. */
+  followOnRestore?: boolean;
 }) {
   const { messages, streaming, status } = state;
   const activeSummary = activeSummaryKey(messages);
   const lastUserRef = useRef<HTMLDivElement | null>(null);
   const userCount = messages.filter((m) => m.role === "user").length;
   const prevCount = useRef(userCount);
+  const prevFollow = useRef(followKey);
+  const reducedMotion = usePrefersReducedMotion();
 
-  // When the user sends a message, bring it to the top so the reply reads below it.
   useEffect(() => {
-    if (userCount > prevCount.current && lastUserRef.current) {
-      lastUserRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    const added = userCount > prevCount.current;
+    const sent = added && followKey !== prevFollow.current;
+    const restored = added && !sent && prevCount.current === 0 && followOnRestore;
     prevCount.current = userCount;
-  }, [userCount]);
+    prevFollow.current = followKey;
+    if (!(sent || restored) || !lastUserRef.current) return;
+    lastUserRef.current.scrollIntoView({
+      behavior: sent && !reducedMotion ? "smooth" : "auto",
+      block: "start",
+    });
+  }, [userCount, followKey, followOnRestore, reducedMotion]);
 
   const lastUserIndex = messages.map((m) => m.role).lastIndexOf("user");
+  // The turn just sent fills the screen, so its question can sit at the top while the
+  // reply arrives below it instead of behind the message box.
+  const spaceLastTurn = followKey > 0 && lastUserIndex >= 0;
+
+  // Scroll anchoring keeps the newest question still while the reply grows below it and
+  // cards above it change. Everything else is opted out, so the browser can't anchor to
+  // a part of the reply and jump the page as it arrives.
+  const noAnchor = spaceLastTurn ? "[overflow-anchor:none]" : undefined;
+
+  const renderMessage = (message: UiMessage, index: number) => {
+    if (message.role === "user") {
+      const text = message.parts[0]?.kind === "text" ? message.parts[0].text : "";
+      const isLastUser = index === lastUserIndex;
+      return (
+        <div
+          key={message.id}
+          ref={isLastUser ? lastUserRef : undefined}
+          className={cn("flex scroll-mt-24 justify-end", !isLastUser && noAnchor)}
+        >
+          <div className="max-w-[85%] whitespace-pre-wrap rounded-[20px] rounded-br-md bg-pine-deep px-4 py-2.5 text-[15.5px] leading-relaxed text-[#f5f2ea]">
+            {text}
+          </div>
+        </div>
+      );
+    }
+    const isLast = index === messages.length - 1;
+    return (
+      <AssistantMessage
+        key={message.id}
+        message={message}
+        isLast={isLast}
+        streaming={streaming && isLast}
+        status={isLast ? status : null}
+        activeSummary={activeSummary}
+        className={noAnchor}
+      />
+    );
+  };
 
   return (
     <div className="flex flex-col gap-comfortable" aria-live="polite" aria-busy={streaming}>
-      {intro}
-      {messages.map((message, index) => {
-        if (message.role === "user") {
-          const text = message.parts[0]?.kind === "text" ? message.parts[0].text : "";
-          return (
-            <div
-              key={message.id}
-              ref={index === lastUserIndex ? lastUserRef : undefined}
-              className="flex scroll-mt-24 justify-end"
-            >
-              <div className="max-w-[85%] whitespace-pre-wrap rounded-[20px] rounded-br-md bg-pine-deep px-4 py-2.5 text-[15.5px] leading-relaxed text-[#f5f2ea]">
-                {text}
-              </div>
-            </div>
-          );
-        }
-        const isLast = index === messages.length - 1;
-        return (
-          <AssistantMessage
-            key={message.id}
-            message={message}
-            isLast={isLast}
-            streaming={streaming && isLast}
-            status={isLast ? status : null}
-            activeSummary={activeSummary}
-          />
-        );
-      })}
+      <div className={cn("empty:hidden", noAnchor)}>{intro}</div>
+      {spaceLastTurn ? (
+        <>
+          {messages.slice(0, lastUserIndex).map((m, i) => renderMessage(m, i))}
+          <div
+            className="flex min-h-[calc(100dvh-12rem)] flex-col gap-comfortable"
+            data-testid="latest-turn"
+          >
+            {messages.slice(lastUserIndex).map((m, i) => renderMessage(m, lastUserIndex + i))}
+          </div>
+        </>
+      ) : (
+        messages.map(renderMessage)
+      )}
     </div>
   );
 }
@@ -91,16 +134,18 @@ function AssistantMessage({
   streaming,
   status,
   activeSummary,
+  className,
 }: {
   message: UiMessage;
   isLast: boolean;
   streaming: boolean;
   status: string | null;
   activeSummary: string | null;
+  className?: string;
 }) {
   const showThinking = streaming && (message.parts.length === 0 || status);
   return (
-    <div className="flex flex-col gap-default" data-testid="assistant-message">
+    <div className={cn("flex flex-col gap-default", className)} data-testid="assistant-message">
       {suggestionsLast(message.parts).map(({ part, i }) => (
         <PartBoundary key={i} kind={part.kind}>
           <PartView
