@@ -712,8 +712,9 @@ function DemoIntro({ error, onRetry }: { error: boolean; onRetry: () => void }) 
 
 function DemoCta({ onRestart }: { onRestart: () => void }) {
   return (
-    <div className="dark-wash relative flex flex-col gap-default overflow-hidden rounded-[26px] bg-pine-deep p-comfortable sm:flex-row sm:items-center sm:justify-between sm:p-section">
-      <div className="flex flex-col gap-1">
+    <div className="relative flex flex-col gap-default overflow-hidden rounded-[26px] bg-pine-deep p-comfortable sm:flex-row sm:items-center sm:justify-between sm:p-section">
+      <div className="dark-wash" />
+      <div className="relative flex flex-col gap-1">
         <h2 className="font-serif text-[24px] font-semibold leading-tight text-white">
           Ready to try yours?
         </h2>
@@ -721,7 +722,7 @@ function DemoCta({ onRestart }: { onRestart: () => void }) {
           Tell the assistant about your situation and see your own schedule.
         </p>
       </div>
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="relative flex flex-col gap-2 sm:flex-row">
         <Link
           href="/calculator"
           className="btn-paper"
@@ -729,7 +730,7 @@ function DemoCta({ onRestart }: { onRestart: () => void }) {
             posthog.capture("cta_clicked", { cta: "try_yours", source: "demo_conversation" })
           }
         >
-          Talk through your numbers
+          Discuss your numbers
         </Link>
         <button type="button" className="btn-outline-paper" onClick={onRestart}>
           Replay example

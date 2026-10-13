@@ -43,7 +43,7 @@ export default function Home() {
               </Reveal>
               <Reveal delay={3} className="mt-8 flex flex-col gap-3.5 sm:flex-row sm:flex-wrap">
                 <Link href="/calculator" className="btn-dark">
-                  Talk through your numbers
+                  Discuss your numbers
                 </Link>
                 <Link href="/demo" className="btn-ghost">
                   See an example
@@ -181,7 +181,7 @@ export default function Home() {
             </p>
             <div className="relative mt-9 flex flex-col justify-center gap-3.5 sm:flex-row">
               <Link href="/calculator" className="btn-paper">
-                Talk through your numbers
+                Discuss your numbers
               </Link>
               <Link href="/demo" className="btn-outline-paper">
                 See an example

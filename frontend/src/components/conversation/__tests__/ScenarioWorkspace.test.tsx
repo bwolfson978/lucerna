@@ -289,7 +289,10 @@ describe("ScenarioWorkspace (demo)", () => {
     renderWorkspace("demo");
     expect(await screen.findByText("Margaret's window is open.")).toBeInTheDocument();
     expect(screen.getByText("Hi, I'm Margaret.")).toBeInTheDocument();
-    expect(screen.getByText("Ready to try yours?")).toBeInTheDocument();
+    const ctaBand = screen.getByText("Ready to try yours?").parentElement!.parentElement!;
+    // The wash is an absolute overlay; on the band itself it pulls the band out of flow.
+    expect(ctaBand).toHaveClass("bg-pine-deep");
+    expect(ctaBand).not.toHaveClass("dark-wash");
     expect(screen.queryByRole("radio", { name: "My numbers" })).not.toBeInTheDocument();
     expect(screen.getByLabelText("Message")).not.toBeDisabled();
   });
