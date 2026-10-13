@@ -100,6 +100,37 @@ it("renders the scenario summary read-only or editable", () => {
   expect(onEdit).toHaveBeenCalledWith({ age: 61 });
 });
 
+it("edits the state row in place with a pair of selects", () => {
+  const onEdit = vi.fn();
+  const onOpenForm = vi.fn();
+  render(<ScenarioSummary data={recorded} onEdit={onEdit} onOpenForm={onOpenForm} />);
+  fireEvent.click(screen.getByRole("button", { name: "California, then Arizona" }));
+  expect(onOpenForm).not.toHaveBeenCalled();
+
+  // A different retirement state stays put when today's state changes.
+  fireEvent.change(screen.getByLabelText("Now"), { target: { value: "TX" } });
+  expect(onEdit).toHaveBeenLastCalledWith({ state: "TX", retirement_state: "AZ" });
+  fireEvent.change(screen.getByLabelText("In retirement"), { target: { value: "none" } });
+  expect(onEdit).toHaveBeenLastCalledWith({ retirement_state: null });
+
+  fireEvent.click(screen.getByRole("button", { name: "Done" }));
+  expect(screen.queryByLabelText("Now")).not.toBeInTheDocument();
+});
+
+it("asks for a rate when the state is Other", () => {
+  const onEdit = vi.fn();
+  const data = {
+    ...recorded,
+    scenario: { ...recorded.scenario, state: "custom", retirement_state: null },
+  };
+  render(<ScenarioSummary data={data} onEdit={onEdit} />);
+  fireEvent.click(screen.getByRole("button", { name: "Other" }));
+  const rate = screen.getByLabelText("State tax rate (%)");
+  fireEvent.change(rate, { target: { value: "4.5" } });
+  fireEvent.blur(rate);
+  expect(onEdit).toHaveBeenLastCalledWith({ custom_state_rate_pct: 4.5 });
+});
+
 it("web MetricCard wraps the shared one", () => {
   render(<MetricCard label="Roth" value="$1" delta="+5%" deltaType="positive" />);
   const metric = screen.getByText("Roth").closest("[data-ui=metric-card]");

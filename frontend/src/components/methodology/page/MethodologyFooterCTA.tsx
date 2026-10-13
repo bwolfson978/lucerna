@@ -20,7 +20,7 @@ export function MethodologyFooterCTA() {
             See an example
           </Link>
           <Link href="/calculator" className="btn-outline-paper">
-            Talk through your numbers
+            Discuss your numbers
           </Link>
         </div>
       </div>

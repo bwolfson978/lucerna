@@ -9,7 +9,6 @@ import { PartBoundary } from "./parts/PartBoundary";
 import { ScenarioSummaryCard } from "./parts/ScenarioSummaryCard";
 import {
   BalanceComparisonCard,
-  BracketFillPart,
   ResultHeadlineCard,
   ScenarioCompareCard,
   SuggestionChips,
@@ -152,7 +151,8 @@ function PartView({
     case "result_headline":
       return <ResultHeadlineCard resultId={part.result_id} />;
     case "bracket_fill":
-      return <BracketFillPart resultId={part.result_id} />;
+      // Saved by earlier versions; the result card above already has this chart.
+      return null;
     case "balance_comparison":
       return <BalanceComparisonCard resultId={part.result_id} />;
     case "scenario_compare":

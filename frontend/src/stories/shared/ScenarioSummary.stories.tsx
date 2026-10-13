@@ -1,5 +1,6 @@
+import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
-import { ScenarioSummary } from "@lucerna/ui";
+import { ScenarioSummary, type ScenarioValues } from "@lucerna/ui";
 import { fn } from "storybook/test";
 import { recordedScenario } from "../fixtures";
 
@@ -37,4 +38,28 @@ export const RunDisabled: Story = {
     runDisabled: true,
     hint: "Add your age to run the analysis.",
   },
+};
+
+/** Edits apply to the card. Click State to change today's and the retirement state in place. */
+export const Interactive: Story = {
+  render: function Render(args) {
+    const [scenario, setScenario] = useState<ScenarioValues>(args.data.scenario);
+    return (
+      <ScenarioSummary
+        {...args}
+        data={{ ...args.data, scenario }}
+        onEdit={(patch) =>
+          // As the draft does: a new state alone also moves the retirement state.
+          setScenario((s) => ({
+            ...s,
+            ...("state" in patch && !("retirement_state" in patch)
+              ? { retirement_state: patch.state }
+              : {}),
+            ...patch,
+          }))
+        }
+      />
+    );
+  },
+  args: { onRun: fn() },
 };

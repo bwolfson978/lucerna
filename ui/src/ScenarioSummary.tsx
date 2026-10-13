@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { cn } from "./cn";
 import { formatCurrency } from "./format";
-import { FILING_STATUS_OPTIONS, filingStatusLabel, stateName } from "./options";
+import { FILING_STATUS_OPTIONS, STATE_OPTIONS, filingStatusLabel, stateName } from "./options";
 
 export type FilingStatus = "single" | "married_filing_jointly";
 
@@ -14,6 +14,7 @@ export interface ScenarioValues {
   filing_status?: FilingStatus | null;
   state?: string | null;
   retirement_state?: string | null;
+  custom_state_rate_pct?: number | null;
   current_income?: number | null;
   income_growth_rate_pct?: number | null;
   traditional_balance?: number | null;
@@ -51,7 +52,9 @@ interface Row {
   edit?: NumericKey;
   /** Filing status gets a select. */
   editFiling?: boolean;
-  /** Edits that need the full form (states, ACA, per-year income). */
+  /** State now and in retirement get a pair of selects. */
+  editState?: boolean;
+  /** Edits that need the full form (ACA, per-year income). */
   formOnly?: boolean;
 }
 
@@ -68,7 +71,12 @@ function buildRows(s: ScenarioValues): Row[] {
   const notSet = "Not set";
   const household = s.household_size ?? 1;
   return [
-    { key: "age", label: "Age", value: s.age != null ? String(s.age) : notSet, edit: "age" },
+    {
+      key: "age",
+      label: "Age",
+      value: s.age != null ? String(s.age) : notSet,
+      edit: "age",
+    },
     {
       key: "filing",
       label: "Filing status",
@@ -118,7 +126,7 @@ function buildRows(s: ScenarioValues): Row[] {
         s.retirement_state && s.retirement_state !== s.state
           ? `${stateName(s.state)}, then ${stateName(s.retirement_state)}`
           : stateName(s.state),
-      formOnly: true,
+      editState: true,
     },
     ...(s.include_aca
       ? [
@@ -151,7 +159,7 @@ interface ScenarioSummaryProps {
   badge?: string;
   /** Edit a value inline. Omit for a read-only summary. */
   onEdit?: (patch: Partial<ScenarioValues>) => void;
-  /** Open the full form, for values edited there (states, ACA). */
+  /** Open the full form, for values edited there (ACA). */
   onOpenForm?: () => void;
   /** Run the analysis. Omit to hide the footer. */
   onRun?: () => void;
@@ -255,7 +263,8 @@ function SummaryRow({
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState("");
 
-  const canEdit = !!onEdit && (row.edit || row.editFiling || (row.formOnly && onOpenForm));
+  const canEdit =
+    !!onEdit && (row.edit || row.editFiling || row.editState || (row.formOnly && onOpenForm));
 
   function startEdit() {
     if (!canEdit) return;
@@ -279,10 +288,17 @@ function SummaryRow({
   }
 
   return (
-    <div className="px-default sm:px-comfortable flex min-h-[44px] items-center justify-between gap-4 py-2">
+    <div
+      className={cn(
+        "px-default sm:px-comfortable flex min-h-[44px] items-center justify-between gap-4 py-2",
+        editing && row.editState && "bg-paper flex-wrap gap-y-2 pt-3 pb-3"
+      )}
+    >
       <dt className="text-body-sm text-text-secondary">{row.label}</dt>
-      <dd className="m-0 text-right">
-        {editing && row.editFiling ? (
+      <dd className={cn("m-0", editing && row.editState ? "basis-full text-left" : "text-right")}>
+        {editing && row.editState ? (
+          <StateEditor scenario={scenario} onEdit={onEdit} onDone={() => setEditing(false)} />
+        ) : editing && row.editFiling ? (
           <select
             autoFocus
             aria-label={row.label}
@@ -332,6 +348,109 @@ function SummaryRow({
           </span>
         )}
       </dd>
+    </div>
+  );
+}
+
+const FIELD_CLASS =
+  "border-border text-body-sm text-text-primary focus:border-pine focus:ring-pine-mid/15 min-h-[44px] focus:ring-2 focus:outline-none w-full rounded-[10px] border bg-white px-2";
+
+/** State now and in retirement, edited in place with the system's own select. */
+function StateEditor({
+  scenario,
+  onEdit,
+  onDone,
+}: {
+  scenario: ScenarioValues;
+  onEdit?: (patch: Partial<ScenarioValues>) => void;
+  onDone: () => void;
+}) {
+  const now = scenario.state ?? "none";
+  const retirement = scenario.retirement_state ?? now;
+  const [rate, setRate] = useState(
+    scenario.custom_state_rate_pct != null ? String(scenario.custom_state_rate_pct) : ""
+  );
+
+  function changeNow(value: string) {
+    const state = value === "none" ? null : value;
+    // A retirement state that differs from today's stays put; otherwise it follows,
+    // as it does in the form. Null retirement_state means "same as now".
+    onEdit?.(retirement !== now ? { state, retirement_state: retirement } : { state });
+  }
+
+  function commitRate() {
+    const parsed = rate.trim() === "" ? null : Number(rate.replace(/[%\s]/g, ""));
+    if (parsed === null || Number.isFinite(parsed)) onEdit?.({ custom_state_rate_pct: parsed });
+  }
+
+  return (
+    <div
+      className="flex flex-col gap-3"
+      data-ui="state-editor"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onDone();
+      }}
+    >
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <label className="flex flex-col gap-1.5">
+          <span className="text-caption text-text-secondary">Now</span>
+          <select
+            autoFocus
+            className={FIELD_CLASS}
+            value={now}
+            onChange={(e) => changeNow(e.target.value)}
+          >
+            {STATE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-caption text-text-secondary">In retirement</span>
+          <select
+            className={FIELD_CLASS}
+            value={retirement}
+            onChange={(e) =>
+              onEdit?.({
+                retirement_state: e.target.value === "none" ? null : e.target.value,
+              })
+            }
+          >
+            {STATE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+      {now === "custom" && (
+        <label className="flex flex-col gap-1.5 sm:w-1/2 sm:pr-1.5">
+          <span className="text-caption text-text-secondary">State tax rate (%)</span>
+          <input
+            inputMode="decimal"
+            className={cn(FIELD_CLASS, "font-data")}
+            value={rate}
+            placeholder="e.g. 5"
+            onChange={(e) => setRate(e.target.value)}
+            onBlur={commitRate}
+          />
+        </label>
+      )}
+      <div className="-mr-2 flex justify-end">
+        <button
+          type="button"
+          className="text-body-sm text-pine hover:bg-paper-deep min-h-[40px] rounded-full px-4 font-semibold"
+          onClick={() => {
+            if (now === "custom") commitRate();
+            onDone();
+          }}
+        >
+          Done
+        </button>
+      </div>
     </div>
   );
 }

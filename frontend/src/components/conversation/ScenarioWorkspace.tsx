@@ -10,15 +10,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import posthog from "posthog-js";
+import { AUTH_ENABLED, SignInButton, useAuth, useUser } from "@/lib/auth";
 import { Header } from "@/components/common/Header";
 import { PageFooter } from "@/components/common/PageFooter";
 import { InputForm } from "@/components/calculator/InputForm";
 import { ResultsView } from "@/components/results/ResultsView";
 import { MetricCardSkeleton, ChartSkeleton, TableSkeleton } from "@/components/common/Skeleton";
 import { Card } from "@/components/ui/card";
+import { GlowButton } from "@/components/common/GlowButton";
+import { SaveResultsBanner, type SaveBannerState } from "@/components/common/SaveResultsBanner";
 import { MethodologyProvider } from "@/components/methodology/MethodologyContext";
 import { MethodologyLayout } from "@/components/methodology/MethodologyLayout";
 import { apiClient } from "@/lib/api/client";
+import { createScenariosApi } from "@/lib/api/scenarios";
 import { fetchDemoConversation } from "@/lib/agent/client";
 import { loadConversation, latestResultId } from "@/lib/agent/conversation";
 import type { AgentErrorCode, DemoConversation } from "@/lib/agent/types";
@@ -314,6 +318,18 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
   const [formLoading, setFormLoading] = useState(false);
   const formResultsRef = useRef<HTMLDivElement>(null);
 
+  // Signed-in form runs are saved to "My scenarios"; signed-out ones get a prompt.
+  const { isLoaded, isSignedIn } = useUser();
+  const { getToken } = useAuth();
+  const [bannerState, setBannerState] = useState<SaveBannerState>("prompt");
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+  const showBanner =
+    AUTH_ENABLED &&
+    !isDemo &&
+    isLoaded &&
+    !bannerDismissed &&
+    (!isSignedIn || bannerState === "saving" || bannerState === "saved");
+
   useEffect(() => {
     if (formLoading && formResultsRef.current) {
       formResultsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -331,14 +347,39 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
     });
     try {
       const data = await apiClient.optimize(input as unknown as Record<string, unknown>);
-      setFormResult(data as OptimizationResult);
+      const optimized = data as OptimizationResult;
+      setFormResult(optimized);
       posthog.capture("scenario_completed");
+      setBannerState("prompt");
+      if (isSignedIn && !isDemo) {
+        setBannerDismissed(false);
+        setBannerState("saving");
+        createScenariosApi(getToken)
+          .save(input, optimized)
+          .then(() => setBannerState("saved"))
+          .catch(() => setBannerState("prompt"));
+      }
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Optimization failed");
     } finally {
       setFormLoading(false);
     }
   }
+
+  // A saved scenario from "My scenarios" (?saved=<id>) re-runs in the form.
+  const savedOpened = useRef(false);
+  useEffect(() => {
+    if (isDemo || savedOpened.current || !isLoaded || !isSignedIn) return;
+    const savedId = new URLSearchParams(window.location.search).get("saved");
+    if (!savedId) return;
+    savedOpened.current = true;
+    changeMode("form");
+    createScenariosApi(getToken)
+      .get(savedId)
+      .then((detail) => handleFormSubmit(detail.inputs))
+      .catch(() => setFormError("That saved scenario couldn't be loaded."));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDemo, isLoaded, isSignedIn]);
 
   // ------------------------------------------------------------- rendering
   const contextValue: ConversationContextValue = useMemo(
@@ -503,7 +544,21 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
               </button>
             </Card>
           )}
-          {formResult && <ResultsView result={formResult} />}
+          {formResult && (
+            <div className="flex flex-col gap-default">
+              <SaveResultsBanner
+                show={showBanner}
+                state={bannerState}
+                onDismiss={() => setBannerDismissed(true)}
+                signInButton={
+                  <SignInButton>
+                    <GlowButton size="sm">Sign in to save</GlowButton>
+                  </SignInButton>
+                }
+              />
+              <ResultsView result={formResult} />
+            </div>
+          )}
         </div>
       </>
     );
@@ -657,8 +712,9 @@ function DemoIntro({ error, onRetry }: { error: boolean; onRetry: () => void }) 
 
 function DemoCta({ onRestart }: { onRestart: () => void }) {
   return (
-    <div className="dark-wash relative flex flex-col gap-default overflow-hidden rounded-[26px] bg-pine-deep p-comfortable sm:flex-row sm:items-center sm:justify-between sm:p-section">
-      <div className="flex flex-col gap-1">
+    <div className="relative flex flex-col gap-default overflow-hidden rounded-[26px] bg-pine-deep p-comfortable sm:flex-row sm:items-center sm:justify-between sm:p-section">
+      <div className="dark-wash" />
+      <div className="relative flex flex-col gap-1">
         <h2 className="font-serif text-[24px] font-semibold leading-tight text-white">
           Ready to try yours?
         </h2>
@@ -666,7 +722,7 @@ function DemoCta({ onRestart }: { onRestart: () => void }) {
           Tell the assistant about your situation and see your own schedule.
         </p>
       </div>
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="relative flex flex-col gap-2 sm:flex-row">
         <Link
           href="/calculator"
           className="btn-paper"
@@ -674,7 +730,7 @@ function DemoCta({ onRestart }: { onRestart: () => void }) {
             posthog.capture("cta_clicked", { cta: "try_yours", source: "demo_conversation" })
           }
         >
-          Talk through your numbers
+          Discuss your numbers
         </Link>
         <button type="button" className="btn-outline-paper" onClick={onRestart}>
           Replay example

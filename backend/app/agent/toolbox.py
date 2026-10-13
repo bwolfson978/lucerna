@@ -59,8 +59,8 @@ SHOW_TOOL = {
     "name": "show",
     "description": (
         "Display something in the conversation: the scenario summary for the user to confirm "
-        "(after record_scenario reports nothing missing), a bracket-fill chart or balance "
-        "comparison for a result, or tappable follow-up questions. Numbers in these displays "
+        "(after record_scenario reports nothing missing), a balance comparison for a "
+        "result, or tappable follow-up questions. Numbers in these displays "
         "come from the engine. Displays appear in the order you produce them, so write your "
         "answer to the user as text first, in the same response, then call show. A display "
         "never replaces the written answer."
