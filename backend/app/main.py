@@ -3,9 +3,11 @@ import os
 import secrets
 import threading
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Response, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -99,6 +101,15 @@ app.include_router(mcp_apps_sandbox_router)
 
 # Remote MCP server (streamable HTTP) for Claude, ChatGPT and other MCP clients.
 app.router.routes.append(build_mcp_route())
+
+
+FAVICON = Path(__file__).parent / "static" / "favicon.ico"
+
+
+# Clients that show the MCP server's domain (connector lists, browser tabs) look here.
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse(FAVICON, media_type="image/x-icon")
 
 
 @app.get("/health")

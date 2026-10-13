@@ -22,7 +22,7 @@ from typing import Annotated, Any
 import anyio
 from mcp.server.fastmcp import Context, FastMCP
 from mcp.server.transport_security import TransportSecuritySettings
-from mcp.types import CallToolResult, TextContent, ToolAnnotations
+from mcp.types import CallToolResult, Icon, TextContent, ToolAnnotations
 from pydantic import Field
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -111,10 +111,19 @@ def _tool_ui(resource_uri: str) -> dict:
     return {"ui": {"resourceUri": resource_uri, "visibility": ["model", "app"]}}
 
 
+WEBSITE_URL = "https://rothconversionsoptimizer.com"
+
+# Shown next to the server name in connector lists. Served by the web app (frontend/public).
+ICONS = [
+    Icon(src=f"{WEBSITE_URL}/logo.svg", mimeType="image/svg+xml", sizes=["any"]),
+    Icon(src=f"{WEBSITE_URL}/icon-512.png", mimeType="image/png", sizes=["512x512"]),
+]
+
 mcp = FastMCP(
     name="Roth Conversions Optimizer",
     instructions=INSTRUCTIONS,
-    website_url="https://rothconversionsoptimizer.com",
+    website_url=WEBSITE_URL,
+    icons=ICONS,
     stateless_http=True,
     json_response=True,
     log_level="WARNING",

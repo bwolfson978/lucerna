@@ -17,6 +17,14 @@ export const metadata: Metadata = {
       "Roth conversion planning. Find the low-tax window before required minimum distributions begin and build a year-by-year conversion schedule.",
     type: "website",
   },
+  // Bracket-steps mark. Sources live in frontend/public; logo.svg is the large version.
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 // Paper & Pine (docs/design-aesthetic.md) for Clerk's sign-in modal.
