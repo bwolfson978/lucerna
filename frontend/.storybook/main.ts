@@ -1,4 +1,4 @@
-import path from "path";
+import { fileURLToPath } from "node:url";
 import type { StorybookConfig } from "@storybook/nextjs";
 
 const config: StorybookConfig = {
@@ -14,7 +14,7 @@ const config: StorybookConfig = {
     config.resolve = config.resolve ?? {};
     config.resolve.alias = {
       ...config.resolve.alias,
-      "@clerk/nextjs": path.resolve(__dirname, "../src/test/clerk-mock.tsx"),
+      "@clerk/nextjs": fileURLToPath(new URL("../src/test/clerk-mock.tsx", import.meta.url)),
     };
     return config;
   },
