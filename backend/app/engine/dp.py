@@ -82,11 +82,16 @@ from dataclasses import dataclass
 import numpy as np
 
 from app.engine.aca import vectorized_subsidy_loss
-from app.engine.constants import RETIREMENT_SPENDING_RATE, round_to_resolution
+from app.engine.constants import round_to_resolution
 from app.engine.irmaa import (
     IRMAA_LOOKBACK_YEARS,
     MEDICARE_START_AGE,
     vectorized_irmaa_surcharge_loss,
+)
+from app.engine.retirement import (
+    account_spending,
+    post_timeline_start,
+    vectorized_withdrawal_tax,
 )
 from app.engine.rmd import calculate_rmd, rmd_start_age, vectorized_rmd
 from app.engine.state_tax import (
@@ -144,47 +149,27 @@ def _compute_retirement_values(
     """
     g = scenario.annual_growth_rate
     d = scenario.discount_rate
-    years_until_drawdown = max(0, scenario.drawdown_start_age - scenario.age)
 
-    # Phase 3 age tracking fix: phase3_start accounts for the fact that the
-    # timeline may end before drawdown begins (growth-only gap years).
-    phase3_start = max(n_timeline_years, years_until_drawdown)
-    n_retirement = scenario.planning_horizon_age - scenario.age - phase3_start
+    # phase3_start accounts for the fact that the timeline may end before
+    # drawdown begins (growth-only gap years). Same rules as calculate_npv.
+    phase3_start = post_timeline_start(scenario)
+    last_year = scenario.planning_horizon_age - scenario.age
 
-    # Determine spending
-    spending = scenario.default_drawdown
-    if spending is None:
-        total = trad_balances + roth_balances
-        spending_arr = total * RETIREMENT_SPENDING_RATE
-    else:
-        spending_arr = np.full_like(trad_balances, spending)
+    spending_arr = account_spending(scenario, trad_balances + roth_balances)
 
     trad = trad_balances.copy()
     roth = roth_balances.copy()
     npv = np.zeros_like(trad)
 
-    # Resolve retirement state for distributions and liquidation
-    ret_state = scenario.retirement_state or scenario.state
-
     # RMD parameters
     owner_rmd_start = rmd_start_age(scenario.age)
 
-    for year_offset in range(1, n_retirement + 1):
-        year = phase3_start + year_offset
-
-        # IRS RMD uses Dec 31 of the prior year — save balance before growth
-        pre_growth_trad = trad.copy()
-
-        # Grow at start of year
-        trad *= 1 + g
-        roth *= 1 + g
-
-        # Determine age in this retirement year
+    for year in range(phase3_start, last_year + 1):
         owner_age = scenario.age + year
 
-        # Calculate RMD (mandatory minimum withdrawal from traditional)
+        # RMD on the start-of-year balance (IRS uses Dec 31 of the prior year)
         if owner_age >= owner_rmd_start:
-            rmd = vectorized_rmd(pre_growth_trad, owner_age)
+            rmd = vectorized_rmd(trad, owner_age)
         else:
             rmd = np.zeros_like(trad)
 
@@ -193,12 +178,7 @@ def _compute_retirement_values(
         distribution = np.minimum(distribution, trad)  # can't exceed balance
         trad -= distribution
 
-        tax_on_dist = vectorized_federal_tax(distribution, scenario.filing_status)
-        if ret_state:
-            tax_on_dist = tax_on_dist + vectorized_state_tax(
-                distribution, ret_state, scenario.filing_status, scenario.custom_state_rate
-            )
-        after_tax = distribution - tax_on_dist
+        after_tax = distribution - vectorized_withdrawal_tax(scenario, distribution)
 
         # Shortfall from Roth (tax-free)
         shortfall = spending_arr - distribution
@@ -209,16 +189,15 @@ def _compute_retirement_values(
         discount_factor = (1 + d) ** (-year)
         npv += after_tax * discount_factor
 
-    # Terminal liquidation
-    liquidation_year = phase3_start + n_retirement + 1
-    discount_factor = (1 + d) ** (-liquidation_year)
+        # Grow at end of year
+        trad *= 1 + g
+        roth *= 1 + g
 
-    tax_on_liq = vectorized_federal_tax(np.maximum(0.0, trad), scenario.filing_status)
-    if ret_state:
-        tax_on_liq = tax_on_liq + vectorized_state_tax(
-            np.maximum(0.0, trad), ret_state, scenario.filing_status, scenario.custom_state_rate
-        )
-    npv += (np.maximum(0.0, trad) - tax_on_liq) * discount_factor
+    # Terminal liquidation
+    discount_factor = (1 + d) ** (-(last_year + 1))
+
+    final_trad = np.maximum(0.0, trad)
+    npv += (final_trad - vectorized_withdrawal_tax(scenario, final_trad)) * discount_factor
     npv += np.maximum(0.0, roth) * discount_factor
 
     return npv
