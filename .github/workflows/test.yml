@@ -72,6 +72,67 @@ jobs:
         run: npm run format:check
       - run: npm run test:run
 
+  storybook:
+    # Build the component catalog so a broken story fails the PR, and publish it as a
+    # preview link on the PR when the Storybook Vercel project is set up (see
+    # docs/storybook.md). Without that setup the build still runs and is uploaded.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+      - run: npm run build-storybook -- --quiet
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: storybook
+          path: frontend/storybook-static
+          retention-days: 7
+
+      - name: Publish preview
+        id: publish
+        if: github.event_name == 'pull_request' && vars.VERCEL_STORYBOOK_PROJECT_ID != ''
+        env:
+          VERCEL_ORG_ID: ${{ vars.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_STORYBOOK_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          # Fork PRs get no secrets; skip rather than fail.
+          if [ -z "$VERCEL_TOKEN" ]; then echo "No VERCEL_TOKEN, skipping"; exit 0; fi
+          url=$(npx --yes vercel@latest deploy storybook-static --yes --token="$VERCEL_TOKEN")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Link preview on the PR
+        if: steps.publish.outputs.url != ''
+        uses: actions/github-script@v7
+        env:
+          URL: ${{ steps.publish.outputs.url }}
+        with:
+          script: |
+            const marker = '<!-- storybook-preview -->';
+            const body = `${marker}\n**Storybook preview:** ${process.env.URL}\n\nComponent catalog for \`${context.payload.pull_request.head.sha.slice(0, 7)}\`. Shared cards are under *Shared cards*.`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+            const existing = comments.find((c) => c.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
   ui-drift:
     # MCP App Views end to end, against the offline stand-in model: shared cards (ui/)
     # look the same natively and as Views, the scenario View renders, and a View's
