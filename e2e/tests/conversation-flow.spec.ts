@@ -47,7 +47,7 @@ test.describe('Conversation flow', () => {
     await expect(summary.last()).toBeVisible({ timeout: 20000 })
 
     // The form holds what the conversation captured.
-    await page.getByRole('radio', { name: 'Fill in a form' }).click()
+    await page.getByRole('radio', { name: 'Enter my numbers' }).click()
     await expect(page.getByLabel('Age', { exact: true })).toHaveValue('52')
     await expect(page.getByLabel('Retirement age', { exact: true })).toHaveValue('58')
 

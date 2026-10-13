@@ -6,7 +6,7 @@ export type WorkspaceMode = "conversation" | "form";
 
 const OPTIONS: { value: WorkspaceMode; label: string }[] = [
   { value: "conversation", label: "Talk it through" },
-  { value: "form", label: "Fill in a form" },
+  { value: "form", label: "Enter my numbers" },
 ];
 
 export function ModeToggle({

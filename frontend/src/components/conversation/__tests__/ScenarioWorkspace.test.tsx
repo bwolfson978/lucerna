@@ -146,7 +146,7 @@ describe("ScenarioWorkspace (calculator)", () => {
     await waitFor(() => expect(screen.getByTestId("result-headline")).toBeInTheDocument());
 
     // The form shows what the conversation captured.
-    fireEvent.click(screen.getByRole("radio", { name: "Fill in a form" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Enter my numbers" }));
     expect(screen.getByLabelText("Age")).toHaveValue("52");
   });
 
@@ -164,7 +164,7 @@ describe("ScenarioWorkspace (calculator)", () => {
     expect(
       await screen.findByText(/Everything you told it is filled in below/)
     ).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Fill in a form" })).toHaveAttribute(
+    expect(screen.getByRole("radio", { name: "Enter my numbers" })).toHaveAttribute(
       "aria-checked",
       "true"
     );
@@ -293,7 +293,7 @@ describe("ScenarioWorkspace (demo)", () => {
     expect(await screen.findByText("Margaret's window is open.")).toBeInTheDocument();
     expect(screen.getByText("Hi, I'm Margaret.")).toBeInTheDocument();
     expect(screen.getByText("Ready to try yours?")).toBeInTheDocument();
-    expect(screen.queryByRole("radio", { name: "Fill in a form" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "Enter my numbers" })).not.toBeInTheDocument();
     expect(screen.getByLabelText("Message")).not.toBeDisabled();
   });
 });
