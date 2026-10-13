@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from app.engine.constants import RETIREMENT_SPENDING_RATE, round_to_resolution
+from app.engine.constants import round_to_resolution
+from app.engine.retirement import retirement_taxable_income
 from app.engine.rmd import calculate_rmd, rmd_start_age
 from app.engine.state_tax import get_state_marginal_rate
 from app.engine.tax import BRACKETS, STANDARD_DEDUCTION, get_marginal_rate
@@ -17,15 +18,11 @@ def _estimate_retirement_rate(scenario: ScenarioInput) -> float:
     balances where the 4% rule produces very low spending, uses at minimum
     the 22% bracket as a reasonable threshold.
     """
-    spending = scenario.default_drawdown
-    if spending is None:
-        total_balance = scenario.traditional_ira_balance + scenario.roth_ira_balance
-        # Estimate retirement spending: balance grows to retirement, then 4% rule
-        years_to_retire = max(0, scenario.drawdown_start_age - scenario.age)
-        future_balance = total_balance * (1 + scenario.annual_growth_rate) ** max(
-            1, years_to_retire
-        )
-        spending = future_balance * RETIREMENT_SPENDING_RATE
+    # Balance grows to retirement, then the post-timeline spending rules apply
+    total_balance = scenario.traditional_ira_balance + scenario.roth_ira_balance
+    years_to_retire = max(0, scenario.drawdown_start_age - scenario.age)
+    future_balance = total_balance * (1 + scenario.annual_growth_rate) ** max(1, years_to_retire)
+    spending = retirement_taxable_income(scenario, future_balance)
     rate = get_marginal_rate(spending, scenario.filing_status)
 
     # Add retirement state marginal rate if applicable

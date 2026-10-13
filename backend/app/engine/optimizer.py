@@ -4,7 +4,6 @@ from scipy.optimize import minimize
 from app.engine.aca import calculate_aca_subsidy, find_subsidy_cliff_income
 from app.engine.constants import (
     IMPROVEMENT_THRESHOLD,
-    RETIREMENT_SPENDING_RATE,
     round_to_resolution,
 )
 from app.engine.heuristic import greedy_bracket_fill
@@ -16,6 +15,7 @@ from app.engine.irmaa import (
     irmaa_surcharge_loss,
     irmaa_tier_index,
 )
+from app.engine.retirement import account_spending, post_timeline_start, withdrawal_tax
 from app.engine.rmd import calculate_rmd, rmd_start_age
 from app.engine.state_tax import calculate_state_tax, resolve_state_for_year
 from app.engine.tax import analyze_bracket_fill, calculate_federal_tax, get_marginal_rate
@@ -86,7 +86,6 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
     aca_years = _aca_coverage_years(scenario)
     irmaa_exposed = _irmaa_exposed_years(scenario)
     hc = scenario.healthcare
-    ret_state = scenario.retirement_state or scenario.state
     owner_rmd_start = rmd_start_age(scenario.age)
 
     # ── Unified timeline loop ────────────────────────────────────────────────
@@ -178,8 +177,7 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
         roth_balance *= 1 + g
 
     # ── Post-timeline fallback ───────────────────────────────────────────────
-    years_until_drawdown = max(0, scenario.drawdown_start_age - scenario.age)
-    phase3_start = max(n_years, years_until_drawdown)
+    phase3_start = post_timeline_start(scenario)
 
     # Grow across any gap between end-of-timeline and phase3_start
     extra_growth = phase3_start - n_years
@@ -187,31 +185,21 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
         trad_balance *= (1 + g) ** extra_growth
         roth_balance *= (1 + g) ** extra_growth
 
-    spending = scenario.default_drawdown
-    if spending is None:
-        spending = (trad_balance + roth_balance) * RETIREMENT_SPENDING_RATE
+    spending = account_spending(scenario, trad_balance + roth_balance)
 
     total_plan_years = scenario.planning_horizon_age - scenario.age
 
-    for year_offset in range(1, total_plan_years - phase3_start + 1):
-        year = phase3_start + year_offset
+    # Same order as a timeline year: RMD and withdrawal on the start-of-year
+    # balance, then growth.
+    for year in range(phase3_start, total_plan_years + 1):
         owner_age = scenario.age + year
 
-        pre_growth_trad = trad_balance
-        trad_balance *= 1 + g
-        roth_balance *= 1 + g
-
-        rmd = calculate_rmd(pre_growth_trad, owner_age) if owner_age >= owner_rmd_start else 0.0
+        rmd = calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
         distribution = max(rmd, min(spending, trad_balance))
         distribution = min(distribution, trad_balance)
         trad_balance -= distribution
 
-        tax_on_dist = calculate_federal_tax(distribution, filing_status)
-        if ret_state:
-            tax_on_dist += calculate_state_tax(
-                distribution, ret_state, filing_status, scenario.custom_state_rate
-            )
-        after_tax_dist = distribution - tax_on_dist
+        after_tax_dist = distribution - withdrawal_tax(scenario, distribution)
 
         shortfall = spending - distribution
         if shortfall > 0:
@@ -222,17 +210,15 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
         discount_factor = (1 + d) ** (-year)
         npv += after_tax_dist * discount_factor
 
+        trad_balance *= 1 + g
+        roth_balance *= 1 + g
+
     # ── Terminal liquidation ─────────────────────────────────────────────────
     liquidation_year = total_plan_years + 1
     discount_factor = (1 + d) ** (-liquidation_year)
 
     if trad_balance > 0:
-        tax_on_liquidation = calculate_federal_tax(trad_balance, filing_status)
-        if ret_state:
-            tax_on_liquidation += calculate_state_tax(
-                trad_balance, ret_state, filing_status, scenario.custom_state_rate
-            )
-        npv += (trad_balance - tax_on_liquidation) * discount_factor
+        npv += (trad_balance - withdrawal_tax(scenario, trad_balance)) * discount_factor
 
     npv += roth_balance * discount_factor
 
@@ -744,46 +730,29 @@ def _build_rmd_projection(
         trad_balance *= 1 + g
         roth_balance *= 1 + g
 
-    # Post-timeline fallback
-    years_until_drawdown = max(0, scenario.drawdown_start_age - scenario.age)
-    phase3_start = max(n_years, years_until_drawdown)
+    # Post-timeline fallback (same rules as calculate_npv)
+    phase3_start = post_timeline_start(scenario)
 
     extra_growth = phase3_start - n_years
     if extra_growth > 0:
         trad_balance *= (1 + g) ** extra_growth
         roth_balance *= (1 + g) ** extra_growth
 
-    spending = scenario.default_drawdown
-    if spending is None:
-        spending = (trad_balance + roth_balance) * RETIREMENT_SPENDING_RATE
+    spending = account_spending(scenario, trad_balance + roth_balance)
 
     total_plan_years = scenario.planning_horizon_age - scenario.age
 
-    for year_offset in range(1, total_plan_years - phase3_start + 1):
-        year = phase3_start + year_offset
+    for year in range(phase3_start, total_plan_years + 1):
         owner_age = scenario.age + year
         calendar_year = first_year + year
+        start_trad = trad_balance
 
-        pre_growth_trad = trad_balance
-        trad_balance *= 1 + g
-        roth_balance *= 1 + g
-
-        rmd = calculate_rmd(pre_growth_trad, owner_age) if owner_age >= owner_rmd_start else 0.0
-
-        if rmd <= 0:
-            distribution = min(spending, trad_balance)
-        else:
-            distribution = max(rmd, min(spending, trad_balance))
-            distribution = min(distribution, trad_balance)
-
+        rmd = calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
+        distribution = max(rmd, min(spending, trad_balance))
+        distribution = min(distribution, trad_balance)
         trad_balance -= distribution
 
-        tax = calculate_federal_tax(distribution, filing_status)
-        if ret_state:
-            tax += calculate_state_tax(
-                distribution, ret_state, filing_status, scenario.custom_state_rate
-            )
-
+        tax = withdrawal_tax(scenario, distribution)
         eff_rate = tax / distribution if distribution > 0 else 0.0
 
         if rmd > 0:
@@ -791,7 +760,7 @@ def _build_rmd_projection(
                 RmdYearDetail(
                     year=calendar_year,
                     age=owner_age,
-                    trad_balance_start=round(pre_growth_trad, 2),
+                    trad_balance_start=round(start_trad, 2),
                     rmd_amount=round(rmd, 2),
                     actual_distribution=round(distribution, 2),
                     tax_on_distribution=round(tax, 2),
@@ -804,6 +773,9 @@ def _build_rmd_projection(
         if shortfall > 0:
             roth_draw = min(shortfall, roth_balance)
             roth_balance -= roth_draw
+
+        trad_balance *= 1 + g
+        roth_balance *= 1 + g
 
     if not yearly_detail:
         return None
@@ -1065,8 +1037,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         roth_balance *= 1 + g
 
     # Project to drawdown start
-    years_until_drawdown = max(0, scenario.drawdown_start_age - scenario.age)
-    phase3_start = max(n_years, years_until_drawdown)
+    phase3_start = post_timeline_start(scenario)
     extra_growth = phase3_start - n_years
     if extra_growth > 0:
         factor = (1 + g) ** extra_growth

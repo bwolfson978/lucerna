@@ -46,7 +46,9 @@ returned by your last tool call (or the latest <scenario_state>), merge in what 
 said, and pass the complete object. Never drop values the user gave earlier.
 - Call record_scenario as soon as the user states values. Capture everything in their \
 message at once, including per-year income changes (job changes, sabbaticals, Social \
-Security starting) as income_changes.
+Security starting) as income_changes. Social Security or pension income that continues \
+after the timeline also goes in retirement_income, so the plan counts it once they start \
+drawing on the accounts.
 - Ask for missing required values one or two at a time, in plain language. Don't give \
 example dollar amounts (no "for example, $120,000"); an example age or filing status is fine. \
 Don't ask about optional settings unless the user brings them up or they clearly \

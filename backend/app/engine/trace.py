@@ -6,9 +6,9 @@ from app.engine.constants import (
     LARGE_INCOME_VARIATION,
     LONG_RETIREMENT_YEARS,
     LOW_GROWTH_RATE,
-    RETIREMENT_SPENDING_RATE,
 )
 from app.engine.irmaa import IRMAA_LOOKBACK_YEARS, IRMAA_TIERS, MEDICARE_START_AGE
+from app.engine.retirement import retirement_taxable_income
 from app.engine.state_tax import resolve_state_for_year
 from app.engine.tax import get_marginal_rate
 from app.engine.tax_cost import (
@@ -215,7 +215,7 @@ def _benefit_of_current_bracket(
     years_to_retire = max(0, scenario.drawdown_start_age - scenario.age)
     future_value = total_conversion * (1 + scenario.annual_growth_rate) ** years_to_retire
     retirement_rate = get_marginal_rate(
-        scenario.default_drawdown or future_value * RETIREMENT_SPENDING_RATE,
+        retirement_taxable_income(scenario, future_value),
         scenario.filing_status,
     )
     future_tax_avoided = future_value * retirement_rate

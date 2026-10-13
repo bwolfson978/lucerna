@@ -62,6 +62,7 @@ class ScenarioDraft(BaseModel):
     roth_balance: float | None = Field(default=None, ge=0)
     retirement_age: int | None = Field(default=None, ge=1, le=120)
     retirement_spending: float | None = Field(default=None, ge=0)
+    retirement_income: float | None = Field(default=None, ge=0)
     planning_horizon_age: int | None = Field(default=90, ge=50, le=120)
     investment_return_pct: float | None = 7
     discount_rate_pct: float | None = 5
@@ -175,6 +176,7 @@ def build_scenario_input(draft: ScenarioDraft) -> ScenarioInput:
         drawdown_start_age=draft.retirement_age,
         planning_horizon_age=_or(draft.planning_horizon_age, 90),
         default_drawdown=draft.retirement_spending or None,
+        retirement_income=draft.retirement_income or 0,
         annual_growth_rate=_or(draft.investment_return_pct, 7) / 100,
         discount_rate=_or(draft.discount_rate_pct, 5) / 100,
         healthcare=healthcare,

@@ -66,7 +66,19 @@ class ScenarioUpdate(BaseModel):
     retirement_spending: float | None = Field(
         default=None,
         ge=0,
-        description="Yearly spending from these accounts in retirement, dollars. Omit to use the 4% rule.",
+        description=(
+            "Total yearly household spending in retirement, in dollars, including the part "
+            "Social Security and pensions pay for. Omit to use the 4% rule on the accounts."
+        ),
+    )
+    retirement_income: float | None = Field(
+        default=None,
+        ge=0,
+        description=(
+            "Yearly Social Security, pension and other income once they start drawing on these "
+            "accounts (from retirement_age, or after the last timeline year if later), in dollars. "
+            "It covers part of retirement_spending and is taxed before account withdrawals."
+        ),
     )
     state: str | None = Field(
         default=None,

@@ -21,6 +21,7 @@ export interface ScenarioValues {
   roth_balance?: number | null;
   retirement_age?: number | null;
   retirement_spending?: number | null;
+  retirement_income?: number | null;
   planning_horizon_age?: number | null;
   investment_return_pct?: number | null;
   discount_rate_pct?: number | null;
@@ -118,6 +119,12 @@ function buildRows(s: ScenarioValues): Row[] {
       label: "Retirement spending",
       value: s.retirement_spending ? `${formatCurrency(s.retirement_spending)} a year` : "4% rule",
       edit: "retirement_spending",
+    },
+    {
+      key: "retirement_income",
+      label: "Social Security and pensions",
+      value: s.retirement_income ? `${formatCurrency(s.retirement_income)} a year` : "None",
+      edit: "retirement_income",
     },
     {
       key: "state",

@@ -126,3 +126,8 @@ def test_shared_parity_fixture_matches_reference():
         assert scenario == case["scenario"], case["name"]
     for case in data["missing"]:
         assert missing_fields(ScenarioDraft(**case["draft"])) == case["missing"], case["name"]
+
+
+def test_build_passes_retirement_income():
+    assert build_scenario_input(complete(retirement_income=36_000)).retirement_income == 36_000
+    assert build_scenario_input(complete()).retirement_income == 0

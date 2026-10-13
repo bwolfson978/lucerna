@@ -22,6 +22,20 @@ type Story = StoryObj<typeof ScenarioSummary>;
 
 export const ReadOnly: Story = {};
 
+/** Social Security and pensions recorded for the years after the timeline. */
+export const WithRetirementIncome: Story = {
+  args: {
+    data: {
+      ...recordedScenario,
+      scenario: {
+        ...recordedScenario.scenario,
+        retirement_spending: 95000,
+        retirement_income: 60000,
+      },
+    },
+  },
+};
+
 export const StillNeedsInputs: Story = {
   args: { missing: ["age", "retirement_age"] },
 };
