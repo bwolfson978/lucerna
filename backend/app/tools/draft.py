@@ -14,6 +14,7 @@ import datetime
 import hashlib
 import json
 import math
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -33,15 +34,37 @@ REQUIRED_FIELDS: tuple[str, ...] = (
 )
 
 # Inputs that regenerate the income timeline when they change (matches the form).
-_TIMELINE_BASE_FIELDS = ("age", "retirement_age", "current_income", "income_growth_rate_pct")
+_TIMELINE_BASE_FIELDS = (
+    "age",
+    "retirement_age",
+    "current_income",
+    "income_growth_rate_pct",
+    "current_income_end_age",
+    "planning_horizon_age",
+    "income_sources",
+)
 
-# Age the timeline runs to for people who have already stopped working.
-_RETIRED_PLAN_UNTIL_AGE = 73
-_RETIRED_MAX_YEARS = 10
+DEFAULT_PLANNING_HORIZON_AGE = 90
 
 
 def current_year() -> int:
     return datetime.date.today().year
+
+
+IncomeKind = Literal["social_security", "pension", "other"]
+
+
+class IncomeSource(BaseModel):
+    """A stream of income across a range of ages, such as Social Security or a pension."""
+
+    kind: IncomeKind = "other"
+    owner: Literal["you", "spouse"] = "you"
+    label: str | None = Field(default=None, max_length=40)
+    amount: float = Field(ge=0, description="Yearly amount in dollars")
+    start_age: int = Field(ge=0, le=120, description="The user's age in the first year")
+    end_age: int | None = Field(
+        default=None, ge=0, le=120, description="The user's age in the last year. Null = plan end."
+    )
 
 
 class ScenarioDraft(BaseModel):
@@ -57,6 +80,7 @@ class ScenarioDraft(BaseModel):
     )
     custom_state_rate_pct: float | None = Field(default=None, ge=0, le=20)
     current_income: float | None = Field(default=None, ge=0)
+    current_income_end_age: int | None = Field(default=None, ge=0, le=120)
     income_growth_rate_pct: float | None = 3
     traditional_balance: float | None = Field(default=None, ge=0)
     roth_balance: float | None = Field(default=None, ge=0)
@@ -69,26 +93,62 @@ class ScenarioDraft(BaseModel):
     household_size: int | None = Field(default=1, ge=1)
     monthly_slcsp_premium: float | None = Field(default=620, ge=0)
     employer_coverage_year: int | None = None
+    income_sources: list[IncomeSource] = Field(default_factory=list)
     timeline: list[PlanYear] = Field(default_factory=list)
 
 
 def generate_timeline(
-    age: int, retirement_age: int, base_income: float, growth_pct: float, start_year: int
+    age: int,
+    retirement_age: int,
+    base_income: float,
+    growth_pct: float,
+    start_year: int,
+    planning_horizon_age: int = DEFAULT_PLANNING_HORIZON_AGE,
+    sources: list[IncomeSource] | None = None,
+    base_end_age: int | None = None,
 ) -> list[PlanYear]:
-    """Project income from today to retirement (port of ``generateTimeline``)."""
-    years_to_retirement = retirement_age - age
-    length = (
-        years_to_retirement
-        if years_to_retirement > 0
-        else max(1, min(_RETIRED_MAX_YEARS, _RETIRED_PLAN_UNTIL_AGE - age))
+    """Project income from today through the plan's last year (port of ``generateTimeline``).
+
+    Current income (growing at ``growth_pct``) runs until ``base_end_age``: by default the
+    year before retirement, or the whole plan for someone already retired. Each income
+    source adds its amount for the ages it covers.
+    """
+    length = max(1, planning_horizon_age - age + 1)
+    if base_end_age is None:
+        base_end_age = retirement_age - 1 if retirement_age > age else planning_horizon_age
+    rows = []
+    for i in range(length):
+        year_age = age + i
+        income = base_income * (1 + growth_pct / 100) ** i if year_age <= base_end_age else 0.0
+        for src in sources or []:
+            end = planning_horizon_age if src.end_age is None else src.end_age
+            if src.start_age <= year_age <= end:
+                income += src.amount
+        rows.append(PlanYear(year=start_year + i, gross_income=_js_round(income)))
+    return rows
+
+
+_KIND_LABELS = {"social_security": "Social Security", "pension": "Pension", "other": "Other income"}
+
+
+def source_label(src: IncomeSource) -> str:
+    """Display name, e.g. "Social Security (spouse)"."""
+    name = src.label or _KIND_LABELS[src.kind]
+    return f"{name} (spouse)" if src.owner == "spouse" else name
+
+
+def projected_timeline(draft: ScenarioDraft, start_year: int) -> list[PlanYear]:
+    """The timeline a complete draft projects before any per-year edits."""
+    return generate_timeline(
+        draft.age,
+        draft.retirement_age,
+        draft.current_income,
+        draft.income_growth_rate_pct or 0,
+        start_year,
+        _or(draft.planning_horizon_age, DEFAULT_PLANNING_HORIZON_AGE),
+        draft.income_sources,
+        draft.current_income_end_age,
     )
-    return [
-        PlanYear(
-            year=start_year + i,
-            gross_income=_js_round(base_income * (1 + growth_pct / 100) ** i),
-        )
-        for i in range(length)
-    ]
 
 
 def merge_timeline(fresh: list[PlanYear], existing: list[PlanYear]) -> list[PlanYear]:
@@ -111,13 +171,7 @@ def sync_timeline(draft: ScenarioDraft, previous: ScenarioDraft | None, start_ye
     ):
         draft.timeline = []
         return
-    fresh = generate_timeline(
-        draft.age,
-        draft.retirement_age,
-        draft.current_income,
-        draft.income_growth_rate_pct or 0,
-        start_year,
-    )
+    fresh = projected_timeline(draft, start_year)
     draft.timeline = merge_timeline(fresh, draft.timeline) if draft.timeline else fresh
 
 
@@ -141,6 +195,9 @@ def validation_errors(draft: ScenarioDraft) -> list[str]:
         errors.append("timeline is empty")
     if any(row.gross_income < 0 for row in draft.timeline):
         errors.append("timeline income cannot be negative")
+    for src in draft.income_sources:
+        if src.end_age is not None and src.end_age < src.start_age:
+            errors.append(f"income source '{source_label(src)}' ends before it starts")
     return errors
 
 
@@ -173,7 +230,7 @@ def build_scenario_input(draft: ScenarioDraft) -> ScenarioInput:
         traditional_ira_balance=draft.traditional_balance,
         roth_ira_balance=draft.roth_balance or 0,
         drawdown_start_age=draft.retirement_age,
-        planning_horizon_age=_or(draft.planning_horizon_age, 90),
+        planning_horizon_age=_or(draft.planning_horizon_age, DEFAULT_PLANNING_HORIZON_AGE),
         default_drawdown=draft.retirement_spending or None,
         annual_growth_rate=_or(draft.investment_return_pct, 7) / 100,
         discount_rate=_or(draft.discount_rate_pct, 5) / 100,

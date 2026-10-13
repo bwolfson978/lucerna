@@ -2,9 +2,11 @@ import { describe, it, expect } from "vitest";
 import { generateTimeline, mergeTimeline } from "../timeline";
 
 describe("generateTimeline", () => {
-  it("generates correct number of years until retirement", () => {
+  it("runs through the plan end with income until retirement", () => {
     const timeline = generateTimeline(35, 65, 100_000, 3);
-    expect(timeline).toHaveLength(30);
+    expect(timeline).toHaveLength(56);
+    expect(timeline[29].gross_income).toBeGreaterThan(0);
+    expect(timeline[30].gross_income).toBe(0);
   });
 
   it("first year income matches base income", () => {
@@ -19,7 +21,7 @@ describe("generateTimeline", () => {
   });
 
   it("handles zero growth rate", () => {
-    const timeline = generateTimeline(40, 45, 80_000, 0);
+    const timeline = generateTimeline(40, 45, 80_000, 0, 2026, { planningHorizonAge: 44 });
     expect(timeline).toHaveLength(5);
     for (const year of timeline) {
       expect(year.gross_income).toBe(80_000);
@@ -28,9 +30,23 @@ describe("generateTimeline", () => {
 
   it("handles already-retired (retAge <= currentAge)", () => {
     const timeline = generateTimeline(67, 65, 50_000, 0);
-    // Should generate at least 1 year, up to 73 - currentAge
-    expect(timeline.length).toBeGreaterThanOrEqual(1);
-    expect(timeline.length).toBeLessThanOrEqual(10);
+    // Through the default plan end at 90, with income for life
+    expect(timeline).toHaveLength(24);
+    expect(timeline.every((y) => y.gross_income === 50_000)).toBe(true);
+  });
+
+  it("adds sources over their age range and stops current income at baseEndAge", () => {
+    const timeline = generateTimeline(63, 73, 20_000, 0, 2026, {
+      planningHorizonAge: 70,
+      baseEndAge: 64,
+      sources: [
+        { kind: "social_security", owner: "you", amount: 40_000, start_age: 67 },
+        { kind: "pension", owner: "spouse", amount: 10_000, start_age: 65, end_age: 66 },
+      ],
+    });
+    expect(timeline.map((y) => y.gross_income)).toEqual([
+      20_000, 20_000, 10_000, 10_000, 40_000, 40_000, 40_000, 40_000,
+    ]);
   });
 
   it("assigns sequential years starting from current year", () => {

@@ -45,8 +45,13 @@ accounts (retirement_age). Everything else has a sensible default.
 returned by your last tool call (or the latest <scenario_state>), merge in what the user just \
 said, and pass the complete object. Never drop values the user gave earlier.
 - Call record_scenario as soon as the user states values. Capture everything in their \
-message at once, including per-year income changes (job changes, sabbaticals, Social \
-Security starting) as income_changes.
+message at once. Income that lasts (Social Security, pensions, rental income, annuities) goes \
+in income_sources, one entry per person and source, with the user's age when it starts. If \
+current income stops before retirement_age (for example it ends when Social Security \
+starts), set current_income_end_age. Use income_changes only for one-off years such as a \
+sabbatical or a bonus.
+- retirement_spending is total household spending. Income in those years covers part of it \
+and the accounts cover the rest, so don't subtract Social Security from it yourself.
 - Ask for missing required values one or two at a time, in plain language. Don't give \
 example dollar amounts (no "for example, $120,000"); an example age or filing status is fine. \
 Don't ask about optional settings unless the user brings them up or they clearly \

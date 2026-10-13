@@ -76,7 +76,8 @@ export function MethodologyPageClient() {
       {
         assumption: "Retirement spending",
         value: "4% rule",
-        rationale: "4% of total balance at retirement, unless specified",
+        rationale:
+          "Total household spending, with accounts covering what income doesn't. 4% of total balance at retirement if not specified",
       },
       {
         assumption: "State taxes",
@@ -373,10 +374,11 @@ export function MethodologyPageClient() {
 
                 <SubHeading>What is not modeled</SubHeading>
                 <P>
-                  Social Security benefits and income are not modeled. IRMAA surcharges are factored
-                  into the optimization but are not a direct user input. The net investment income
-                  tax (NIIT) is also not included. Inflation adjustments to future tax brackets are
-                  not modeled: the analysis uses current-year brackets throughout.
+                  Social Security is counted as fully taxable income, though only up to 85% of it is
+                  taxed in reality, so tax in those years is somewhat overstated. IRMAA surcharges
+                  are factored into the optimization but are not a direct user input. The net
+                  investment income tax (NIIT) is also not included. Inflation adjustments to future
+                  tax brackets are not modeled: the analysis uses current-year brackets throughout.
                 </P>
 
                 <SubHeading>Important disclaimer</SubHeading>

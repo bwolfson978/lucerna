@@ -82,7 +82,7 @@ def test_income_change_outside_timeline_is_an_error():
     with pytest.raises(core.ToolError, match="outside the timeline"):
         core.apply_update(
             ready_draft(),
-            ScenarioUpdate(income_changes=[{"year": 2040, "gross_income": 1, "note": "x"}]),
+            ScenarioUpdate(income_changes=[{"year": 2100, "gross_income": 1, "note": "x"}]),
             2026,
         )
 

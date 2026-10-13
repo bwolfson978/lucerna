@@ -15,7 +15,13 @@ from app.engine.irmaa import (
     irmaa_surcharge_loss,
     irmaa_tier_index,
 )
-from app.engine.retirement import account_spending, post_timeline_start, withdrawal_tax
+from app.engine.retirement import (
+    account_spending,
+    draw_beyond_rmd,
+    post_timeline_start,
+    resolve_drawdowns,
+    withdrawal_tax,
+)
 from app.engine.rmd import calculate_rmd, rmd_start_age
 from app.engine.state_tax import calculate_state_tax, resolve_state_for_year
 from app.engine.tax import analyze_bracket_fill, calculate_federal_tax, get_marginal_rate
@@ -46,7 +52,10 @@ def _aca_coverage_years(scenario: ScenarioInput) -> set[int]:
     if hc is None:
         return set()
 
-    timeline_years = {y.year for y in scenario.timeline}
+    # Medicare replaces marketplace coverage at 65
+    timeline_years = {
+        y.year for t, y in enumerate(scenario.timeline) if scenario.age + t < MEDICARE_START_AGE
+    }
 
     if hc.aca_coverage_years is not None:
         return set(hc.aca_coverage_years) & timeline_years
@@ -145,9 +154,9 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
         trad_balance -= conversion
         roth_balance += conversion
 
-        # Per-year drawdown (if set in this PlanYear)
-        if entry.drawdown is not None and entry.drawdown > 0:
-            drawdown_needed = entry.drawdown
+        # Per-year drawdown (if set in this PlanYear). The RMD counts toward it.
+        drawdown_needed = draw_beyond_rmd(entry.drawdown, rmd)
+        if drawdown_needed > 0:
             drawdown_base = effective_income + conversion
 
             trad_draw = min(drawdown_needed, trad_balance)
@@ -552,8 +561,7 @@ def _build_year_detail(
         actual_conv = min(conversion, available_for_conv)
         trad_balance -= rmd
         trad_balance -= actual_conv
-        if entry.drawdown is not None and entry.drawdown > 0:
-            trad_balance -= min(float(entry.drawdown), trad_balance)
+        trad_balance -= min(draw_beyond_rmd(entry.drawdown, rmd), trad_balance)
         trad_balance *= 1 + scenario.annual_growth_rate
 
     return yearly_detail, yearly_bracket_fill, total_tax, aca_details
@@ -604,8 +612,7 @@ def _build_irmaa_projection(
 
         trad_balance -= rmd
         trad_balance -= actual_conv
-        if entry.drawdown is not None and entry.drawdown > 0:
-            trad_balance -= min(float(entry.drawdown), trad_balance)
+        trad_balance -= min(draw_beyond_rmd(entry.drawdown, rmd), trad_balance)
         trad_balance *= 1 + g
 
     if not yearly_detail:
@@ -693,18 +700,24 @@ def _build_rmd_projection(
         rmd = calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
         rmd = min(rmd, trad_balance)
 
+        available_for_conv = max(0.0, trad_balance - rmd)
+        actual_conv = min(max(0.0, conversions[t]), available_for_conv)
+        need = draw_beyond_rmd(entry.drawdown, rmd)
+        trad_draw = min(need, available_for_conv - actual_conv)
+
         if rmd > 0:
+            # The RMD plus any spending drawn on top of it, taxed on top of income
             income = entry.gross_income
-            tax = calculate_federal_tax(income + rmd, filing_status) - calculate_federal_tax(
-                income, filing_status
+            distribution = rmd + trad_draw
+            tax = calculate_federal_tax(income + distribution, filing_status) - (
+                calculate_federal_tax(income, filing_status)
             )
             if ret_state:
                 tax += calculate_state_tax(
-                    income + rmd, ret_state, filing_status, scenario.custom_state_rate
+                    income + distribution, ret_state, filing_status, scenario.custom_state_rate
                 ) - calculate_state_tax(
                     income, ret_state, filing_status, scenario.custom_state_rate
                 )
-            eff_rate = tax / rmd
 
             yearly_detail.append(
                 RmdYearDetail(
@@ -712,21 +725,16 @@ def _build_rmd_projection(
                     age=owner_age,
                     trad_balance_start=round(trad_balance, 2),
                     rmd_amount=round(rmd, 2),
-                    actual_distribution=round(rmd, 2),
+                    actual_distribution=round(distribution, 2),
                     tax_on_distribution=round(tax, 2),
-                    effective_rate=round(eff_rate, 4),
+                    effective_rate=round(tax / distribution, 4),
                 )
             )
             total_rmd_taxes += tax
 
-        available_for_conv = max(0.0, trad_balance - rmd)
-        actual_conv = min(max(0.0, conversions[t]), available_for_conv)
-        trad_balance -= rmd
-        trad_balance -= actual_conv
+        trad_balance -= rmd + actual_conv + trad_draw
         roth_balance += actual_conv
-        if entry.drawdown is not None and entry.drawdown > 0:
-            draw = min(float(entry.drawdown), trad_balance)
-            trad_balance -= draw
+        roth_balance -= min(need - trad_draw, roth_balance)
         trad_balance *= 1 + g
         roth_balance *= 1 + g
 
@@ -948,6 +956,8 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
     from app.engine.curve_strategy import generate_conversion_curve
     from app.engine.dp import dp_optimize
 
+    original = scenario
+    scenario = resolve_drawdowns(scenario)
     n_years = len(scenario.timeline)
     max_balance = scenario.traditional_ira_balance
 
@@ -1005,11 +1015,17 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
     g = scenario.annual_growth_rate
     owner_rmd_start = rmd_start_age(scenario.age)
 
+    # Balances when drawdowns begin ("at retirement"), or after the timeline if later.
+    drawdown_offset = scenario.drawdown_start_age - scenario.age
+    at_retirement: tuple[float, float] | None = None
+
     for t in range(n_years):
         entry = scenario.timeline[t]
         income = entry.gross_income
         owner_age = scenario.age + t
         c_t = final_conversions[t]
+        if t == drawdown_offset and t > 0:
+            at_retirement = (trad_balance, roth_balance)
 
         rmd = calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
         rmd = min(rmd, trad_balance)
@@ -1030,9 +1046,10 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         trad_balance -= rmd
         trad_balance -= actual_conv
         roth_balance += actual_conv
-        if entry.drawdown is not None and entry.drawdown > 0:
-            draw = min(float(entry.drawdown), trad_balance)
-            trad_balance -= draw
+        need = draw_beyond_rmd(entry.drawdown, rmd)
+        trad_draw = min(need, trad_balance)
+        trad_balance -= trad_draw
+        roth_balance -= min(need - trad_draw, roth_balance)
         trad_balance *= 1 + g
         roth_balance *= 1 + g
 
@@ -1043,6 +1060,8 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         factor = (1 + g) ** extra_growth
         trad_balance *= factor
         roth_balance *= factor
+    if at_retirement is not None:
+        trad_balance, roth_balance = at_retirement
 
     overall_eff_rate = total_tax / total_conversion if total_conversion > 0 else 0.0
 
@@ -1122,5 +1141,5 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         rmd_projection_no_conversion=rmd_projection_no_conv,
         irmaa_projection=irmaa_projection,
         irmaa_projection_no_conversion=irmaa_projection_no_conv,
-        input=scenario,
+        input=original,
     )

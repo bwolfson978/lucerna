@@ -10,6 +10,7 @@ export {
   formatSavings,
   formatTableCurrency,
 } from "./format";
+export { incomeSourceAges, incomeSourceLabel, type IncomeKind, type IncomeSource } from "./income";
 export { FILING_STATUS_OPTIONS, STATE_OPTIONS, filingStatusLabel, stateName } from "./options";
 export { usePrefersReducedMotion } from "./charts/primitives";
 export { useContainerWidth, useScrollFade, useViewportHeight } from "./charts/hooks";

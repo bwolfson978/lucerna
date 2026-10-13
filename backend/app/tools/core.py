@@ -23,8 +23,8 @@ from app.tools.draft import (
     ScenarioDraft,
     build_scenario_input,
     draft_hash,
-    generate_timeline,
     missing_fields,
+    projected_timeline,
     sync_timeline,
     validation_errors,
 )
@@ -62,10 +62,7 @@ def apply_update(draft: ScenarioDraft, update: ScenarioUpdate, start_year: int) 
     if fields.get("retirement_spending") == 0:
         fields["retirement_spending"] = None
 
-    for key, value in fields.items():
-        setattr(new, key, value)
-
-    new = ScenarioDraft.model_validate(new.model_dump())
+    new = ScenarioDraft.model_validate({**new.model_dump(), **fields})
     sync_timeline(new, draft, start_year)
 
     for change in sorted(update.income_changes or [], key=lambda c: c.year):
@@ -104,7 +101,7 @@ def _apply_income_change(timeline: list[PlanYear], change) -> list[PlanYear]:
     if not first <= change.year <= last:
         raise ToolError(
             f"Year {change.year} is outside the timeline ({first} to {last}). The timeline runs "
-            "from this year until retirement_age; adjust retirement_age if the plan extends further."
+            "from this year until planning_horizon_age."
         )
     return [
         PlanYear(
@@ -128,18 +125,11 @@ def scenario_from_draft(draft: ScenarioDraft, start_year: int) -> dict:
     """The stateless scenario for a draft: its values plus any year that differs from the
     projection. ``draft_from_scenario`` turns it back into the same timeline."""
     scenario = draft.model_dump(mode="json", exclude={"timeline"}, exclude_none=True)
+    if not scenario.get("income_sources"):
+        scenario.pop("income_sources", None)
     projected: dict[int, float] = {}
     if draft.age is not None and draft.retirement_age is not None and draft.current_income:
-        projected = {
-            row.year: row.gross_income
-            for row in generate_timeline(
-                draft.age,
-                draft.retirement_age,
-                draft.current_income,
-                draft.income_growth_rate_pct or 0,
-                start_year,
-            )
-        }
+        projected = {row.year: row.gross_income for row in projected_timeline(draft, start_year)}
     changes = []
     for row in draft.timeline:
         if row.notes or row.state is not None or projected.get(row.year) != row.gross_income:

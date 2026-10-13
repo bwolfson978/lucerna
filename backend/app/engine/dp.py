@@ -90,6 +90,7 @@ from app.engine.irmaa import (
 )
 from app.engine.retirement import (
     account_spending,
+    draw_beyond_rmd,
     post_timeline_start,
     vectorized_withdrawal_tax,
 )
@@ -113,7 +114,10 @@ def _aca_coverage_years(scenario: ScenarioInput) -> set[int]:
     if hc is None:
         return set()
 
-    timeline_years = {y.year for y in scenario.timeline}
+    # Medicare replaces marketplace coverage at 65
+    timeline_years = {
+        y.year for t, y in enumerate(scenario.timeline) if scenario.age + t < MEDICARE_START_AGE
+    }
 
     if hc.aca_coverage_years is not None:
         return set(hc.aca_coverage_years) & timeline_years
@@ -223,11 +227,12 @@ def _simulate_no_conversion_trajectory(scenario: ScenarioInput) -> float:
     roth = float(scenario.roth_ira_balance)
     for t, entry in enumerate(scenario.timeline):
         owner_age = scenario.age + t
+        rmd = 0.0
         if owner_age >= owner_rmd_start:
             rmd = min(calculate_rmd(trad, owner_age), trad)
             trad -= rmd
-        if entry.drawdown is not None and entry.drawdown > 0:
-            d_amt = float(entry.drawdown)
+        d_amt = draw_beyond_rmd(entry.drawdown, rmd)
+        if d_amt > 0:
             trad_draw = min(d_amt, trad)
             trad -= trad_draw
             roth -= min(d_amt - trad_draw, roth)
@@ -429,7 +434,7 @@ def _dp_backward(
             # State transition: after RMD + conversion + drawdown, then grow
             avail_after_conv = available_for_conv - conv_options  # shape (n_opts,)
             if drawdown_t > 0:
-                draw_from_trad = np.minimum(drawdown_t, avail_after_conv)
+                draw_from_trad = np.minimum(max(0.0, drawdown_t - rmd_i), avail_after_conv)
                 next_trad = (avail_after_conv - draw_from_trad) * (1 + g)
             else:
                 next_trad = avail_after_conv * (1 + g)
@@ -510,7 +515,7 @@ def _forward_pass(
 
         # State transition: after conversion + drawdown, then grow
         balance_after_conv = available_for_conv - conversion
-        drawdown_t = float(entry.drawdown) if entry.drawdown is not None else 0.0
+        drawdown_t = draw_beyond_rmd(entry.drawdown, rmd_t)
         if drawdown_t > 0:
             balance_after_conv -= min(drawdown_t, balance_after_conv)
 
@@ -520,6 +525,41 @@ def _forward_pass(
 
 
 # ── 2D DP: exact (trad, roth) state tracking ────────────────────────────────
+
+
+def _withdrawal_value(
+    scenario: ScenarioInput,
+    income: float,
+    rmd: float,
+    conv_options: np.ndarray,
+    draw_from_trad: np.ndarray | None,
+    need: float,
+    state: str | None,
+) -> np.ndarray:
+    """After-tax value of a year's RMD and spending draws, per conversion option.
+
+    Mirrors calculate_npv: the RMD is taxed on top of income, the traditional
+    draw on top of income + RMD + conversion, and the Roth draw is tax-free.
+    """
+    fs = scenario.filing_status
+    rate = scenario.custom_state_rate
+
+    def tax(x):
+        out = vectorized_federal_tax(x, fs)
+        if state:
+            out = out + vectorized_state_tax(x, state, fs, rate)
+        return out
+
+    value = np.zeros_like(conv_options, dtype=float)
+    if rmd > 0:
+        base = np.array([income, income + rmd])
+        t_lo, t_hi = tax(base)
+        value += rmd - (t_hi - t_lo)
+    if need > 0 and draw_from_trad is not None:
+        base = income + rmd + conv_options
+        value += draw_from_trad - (tax(base + draw_from_trad) - tax(base))
+        value += need - draw_from_trad  # Roth covers the rest, tax-free
+    return value
 
 
 def _compute_retirement_values_2d(
@@ -736,13 +776,15 @@ def _dp_backward_2d(
             n_opts = max(1, min(n_opts, i + 1))
             conv_options = extended_trad[:n_opts]  # (n_opts,)
 
-            # Trad state transition
+            # Trad state transition. The RMD counts toward the year's spending.
             avail_after_conv = available_for_conv - conv_options  # (n_opts,)
-            if drawdown_t > 0:
-                draw_from_trad = np.minimum(drawdown_t, avail_after_conv)
-                roth_draw = np.maximum(0.0, drawdown_t - draw_from_trad)  # (n_opts,)
+            need_i = max(0.0, drawdown_t - rmd_i)
+            if need_i > 0:
+                draw_from_trad = np.minimum(need_i, avail_after_conv)
+                roth_draw = need_i - draw_from_trad  # (n_opts,)
                 next_trad = (avail_after_conv - draw_from_trad) * (1 + g)
             else:
+                draw_from_trad = None
                 next_trad = avail_after_conv * (1 + g)  # (n_opts,)
 
             # Conversion cost (same as _dp_backward)
@@ -774,6 +816,13 @@ def _dp_backward_2d(
             else:
                 cost_opts = cost_row[:n_opts]
 
+            # After-tax value of this year's withdrawals (RMD and spending draws),
+            # as calculate_npv counts them
+            if rmd_i > 0 or need_i > 0:
+                cost_opts = cost_opts - discount_factor * _withdrawal_value(
+                    scenario, income_t, rmd_i, conv_options, draw_from_trad, need_i, yr_state
+                )
+
             # Bilinear interpolation of future_ref at (next_trad[k], next_roth[k,j])
 
             # Trad axis: searchsorted on non-uniform grid → (n_opts,)
@@ -798,14 +847,16 @@ def _dp_backward_2d(
                 future_hi_t - future_lo_t
             )  # (n_opts, G_R)
 
-            # Roth axis: use precomputed slices when drawdown_t == 0,
+            # Roth axis: use precomputed slices when nothing is drawn,
             # otherwise compute per-state from roth_draw
-            if drawdown_t == 0:
+            if need_i == 0 and roth_lo_pre is not None:
                 roth_lo = roth_lo_pre[:n_opts]  # (n_opts, G_R) — zero-copy slice
                 frac_r = frac_r_pre[:n_opts]  # (n_opts, G_R)
                 roth_hi = roth_hi_pre[:n_opts]  # (n_opts, G_R)
             else:
-                delta_k = (conv_options - roth_draw) * (1 + g)  # (n_opts,)
+                delta_k = conv_options * (1 + g)  # (n_opts,)
+                if need_i > 0:
+                    delta_k = delta_k - roth_draw * (1 + g)
                 next_roth = np.clip(
                     delta_k[:, np.newaxis] + scaled_roth[np.newaxis, :],
                     0.0,
@@ -874,7 +925,7 @@ def _forward_pass_2d(
 
         # Exact state transitions
         balance_after_conv = available_for_conv - conversion
-        drawdown_t = float(entry.drawdown) if entry.drawdown is not None else 0.0
+        drawdown_t = draw_beyond_rmd(entry.drawdown, rmd_t)
         if drawdown_t > 0:
             draw_from_trad = min(drawdown_t, balance_after_conv)
             roth_draw = max(0.0, drawdown_t - draw_from_trad)
@@ -1193,7 +1244,7 @@ def _dp_backward_3d(
             # State transition: conversion + drawdown, then grow.
             avail_after_conv = available_for_conv - conv_options  # shape (n_opts,)
             if drawdown_t > 0:
-                draw_from_trad = np.minimum(drawdown_t, avail_after_conv)
+                draw_from_trad = np.minimum(max(0.0, drawdown_t - rmd_i), avail_after_conv)
                 remaining_bal = (avail_after_conv - draw_from_trad) * (1 + g)
             else:
                 remaining_bal = avail_after_conv * (1 + g)
@@ -1319,7 +1370,7 @@ def _forward_pass_3d(
             if owner_age >= owner_rmd_start:
                 rmd_t = min(calculate_rmd(current_balance, owner_age), current_balance)
             after_rmd = max(0.0, current_balance - rmd_t)
-            drawdown_t = float(entry.drawdown) if entry.drawdown is not None else 0.0
+            drawdown_t = draw_beyond_rmd(entry.drawdown, rmd_t)
             after_draw = max(0.0, after_rmd - min(drawdown_t, after_rmd))
             current_balance = after_draw * (1 + g)
             continue
@@ -1357,7 +1408,7 @@ def _forward_pass_3d(
 
         # State transition: after conversion + drawdown, then grow
         balance_after_conv = available_for_conv - conversion
-        drawdown_t = float(entry.drawdown) if entry.drawdown is not None else 0.0
+        drawdown_t = draw_beyond_rmd(entry.drawdown, rmd_t)
         if drawdown_t > 0:
             balance_after_conv -= min(drawdown_t, balance_after_conv)
         current_balance = balance_after_conv * (1 + g)
