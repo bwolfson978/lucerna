@@ -8,6 +8,7 @@ import {
   loadConversation,
   saveConversation,
   userMessageCount,
+  wordChunks,
   type ConversationState,
 } from "../conversation";
 import type { AgentEvent } from "../types";
@@ -159,4 +160,22 @@ describe("session persistence", () => {
     });
     return conversationReducer(state, { type: "event", event: { type: "done", messages: [] } });
   }
+});
+
+describe("wordChunks", () => {
+  it("keeps the whitespace a model delta starts with", () => {
+    // Recorded deltas look like this: the space or newline comes first.
+    for (const delta of [
+      " stops there.",
+      "\n- 2026 and 2027",
+      " in",
+      "  a  b  ",
+      "\n\n",
+      "",
+      "word",
+    ]) {
+      expect(wordChunks(delta).join("")).toBe(delta);
+    }
+    expect(wordChunks(" stops there.")).toEqual([" stops ", "there."]);
+  });
 });

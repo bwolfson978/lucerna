@@ -1,5 +1,10 @@
 import { Fragment, type ReactNode } from "react";
 
+const BULLET = /^\s*[-*•]\s+/;
+const NUMBERED = /^\s*\d+[.)]\s+/;
+
+type Run = { kind: "ul" | "ol" | "p"; lines: string[] };
+
 /**
  * Minimal markdown for assistant messages: paragraphs, bullet and numbered
  * lists, **bold** and *italic*. Builds React elements directly (no HTML
@@ -7,42 +12,65 @@ import { Fragment, type ReactNode } from "react";
  */
 export function Markdown({ text }: { text: string }) {
   const blocks = text.replace(/\r\n/g, "\n").split(/\n{2,}/);
+  let key = 0;
   return (
     <>
-      {blocks.map((block, i) => {
-        const lines = block.split("\n").filter((l) => l.trim() !== "");
-        if (lines.length === 0) return null;
-        if (lines.every((l) => /^\s*[-*•]\s+/.test(l))) {
+      {blocks.flatMap((block) =>
+        runs(block).map((run) => {
+          if (run.kind === "ul") {
+            return (
+              <ul key={key++} className="ml-5 list-disc space-y-1 marker:text-sage">
+                {run.lines.map((l, j) => (
+                  <li key={j}>{inline(l.replace(BULLET, ""))}</li>
+                ))}
+              </ul>
+            );
+          }
+          if (run.kind === "ol") {
+            return (
+              <ol key={key++} className="ml-5 list-decimal space-y-1 marker:text-text-tertiary">
+                {run.lines.map((l, j) => (
+                  <li key={j}>{inline(l.replace(NUMBERED, ""))}</li>
+                ))}
+              </ol>
+            );
+          }
           return (
-            <ul key={i} className="ml-5 list-disc space-y-1 marker:text-sage">
-              {lines.map((l, j) => (
-                <li key={j}>{inline(l.replace(/^\s*[-*•]\s+/, ""))}</li>
+            <p key={key++}>
+              {run.lines.map((l, j) => (
+                <Fragment key={j}>
+                  {j > 0 && <br />}
+                  {inline(l.replace(/^#{1,6}\s+/, ""))}
+                </Fragment>
               ))}
-            </ul>
+            </p>
           );
-        }
-        if (lines.every((l) => /^\s*\d+[.)]\s+/.test(l))) {
-          return (
-            <ol key={i} className="ml-5 list-decimal space-y-1 marker:text-text-tertiary">
-              {lines.map((l, j) => (
-                <li key={j}>{inline(l.replace(/^\s*\d+[.)]\s+/, ""))}</li>
-              ))}
-            </ol>
-          );
-        }
-        return (
-          <p key={i}>
-            {lines.map((l, j) => (
-              <Fragment key={j}>
-                {j > 0 && <br />}
-                {inline(l.replace(/^#{1,6}\s+/, ""))}
-              </Fragment>
-            ))}
-          </p>
-        );
-      })}
+        })
+      )}
     </>
   );
+}
+
+/**
+ * Split one block into paragraph and list runs. The model often puts a lead-in
+ * sentence and its list in the same block ("Here is the schedule:\n- 2026 ..."),
+ * so a block is not all one kind. An indented line after a list item continues it.
+ */
+function runs(block: string): Run[] {
+  const out: Run[] = [];
+  for (const line of block.split("\n")) {
+    if (line.trim() === "") continue;
+    const kind = BULLET.test(line) ? "ul" : NUMBERED.test(line) ? "ol" : "p";
+    const prev = out[out.length - 1];
+    if (kind === "p" && prev && prev.kind !== "p" && /^\s+\S/.test(line)) {
+      prev.lines[prev.lines.length - 1] += ` ${line.trim()}`;
+    } else if (prev?.kind === kind) {
+      prev.lines.push(line);
+    } else {
+      out.push({ kind, lines: [line] });
+    }
+  }
+  return out;
 }
 
 function inline(text: string): ReactNode[] {
