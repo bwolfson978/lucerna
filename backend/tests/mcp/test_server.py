@@ -42,8 +42,11 @@ async def test_lists_tools_and_resources():
             "compare_roth_scenarios",
             "get_tax_brackets",
             "explain_methodology",
+            "save_scenario",
+            "list_saved_scenarios",
+            "open_saved_scenario",
         }
-        assert all(t.annotations.readOnlyHint for t in tools)
+        assert all(t.annotations.readOnlyHint for t in tools if t.name != "save_scenario")
         uris = {str(r.uri) for r in (await session.list_resources()).resources}
         assert "methodology://rmds" in uris
         resource = await session.read_resource("methodology://irmaa")
@@ -186,6 +189,19 @@ async def test_http_endpoint_client_and_analysis_limits(monkeypatch):
         assert wrong.isError
         internal = await call("analyze_roth_conversions", args, {server.INTERNAL_HEADER: "s3cret"})
         assert not internal.isError
+
+        # Signed in: the token reaches the account tools as the user.
+        monkeypatch.setenv("MCP_AUTH_ISSUER", "https://clerk.example.com")
+        monkeypatch.setattr(server.mcp_auth, "verify_access_token", lambda token: "user_9")
+        seen = []
+
+        async def list_for(user_id):
+            seen.append(user_id)
+            return []
+
+        monkeypatch.setattr(server.saved_store, "list_for", list_for)
+        listed = await call("list_saved_scenarios", {}, {"authorization": "Bearer t0ken"})
+        assert listed.structuredContent["scenarios"] == [] and seen == ["user_9"]
 
 
 async def test_compare_counts_only_fresh_runs(monkeypatch):
