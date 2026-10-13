@@ -55,6 +55,10 @@ BRACKET_FULL_THRESHOLD = 100  # dollars
 # as stopping at that boundary.
 IRMAA_NEAR_THRESHOLD = 5_000  # dollars
 
+# Reasoning trace: the traditional balance counts as fully converted when what is
+# left after the last conversion is below this share of today's balance.
+FULLY_CONVERTED_SHARE = 0.01
+
 
 def round_to_resolution(amount: float) -> float:
     """Round a dollar amount to the nearest ROUNDING_RESOLUTION."""
