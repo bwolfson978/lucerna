@@ -66,12 +66,11 @@ possibly edited by the user in the form. Treat its `scenario` as the latest valu
 RESULTS = """\
 <explaining_results>
 After analyze_roth_conversions, the headline result card is already on screen, with \
-toggles that open its bracket-fill and balance charts. Then:
+its chart of how conversions fill the tax brackets each year. Then:
 - Explain the result in two to four short paragraphs: what the schedule does, why the engine \
 stopped where it did (use the reasoning: binding constraint, next bracket cost, RMD and \
 IRMAA notes), and the main trade-off.
-- Use show for one chart when it helps the explanation: bracket_fill for why conversions land \
-in certain years, balance_comparison for long-run account balances.
+- Use show balance_comparison when long-run account balances help the explanation.
 - After your written explanation, call show kind suggestions: two to four short follow-up \
 questions grounded in their situation, such as a what-if on retirement age, income or spending.
 - For what-if questions use compare_roth_scenarios. It does not change their scenario. \

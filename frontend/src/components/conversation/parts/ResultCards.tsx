@@ -11,18 +11,11 @@ import { useEffect, useState } from "react";
 import posthog from "posthog-js";
 import {
   BalanceComparison,
-  BracketFillChart,
   ResultCard,
   ScenarioCompareCard as SharedScenarioCompareCard,
 } from "@lucerna/ui";
 import type { StoredResult } from "@/lib/agent/types";
-import {
-  balanceData,
-  bracketFillData,
-  compareData,
-  resultCardData,
-  resultDetails,
-} from "@/lib/results/viewData";
+import { balanceData, compareData, resultCardData, resultDetails } from "@/lib/results/viewData";
 import { useConversationContext } from "../ConversationContext";
 
 /** Look up a result, recomputing it if it was dropped from session storage. */
@@ -66,13 +59,6 @@ export function ResultHeadlineCard({ resultId }: { resultId: string }) {
       />
     </div>
   );
-}
-
-export function BracketFillPart({ resultId }: { resultId: string }) {
-  const stored = useStoredResult(resultId);
-  if (!stored) return null;
-  if (!stored.result) return <Pending />;
-  return <BracketFillChart data={bracketFillData(stored.result)} />;
 }
 
 export function BalanceComparisonCard({ resultId }: { resultId: string }) {
