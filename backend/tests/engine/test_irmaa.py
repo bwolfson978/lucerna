@@ -17,10 +17,10 @@ class TestIrmaaTierIndex:
         assert irmaa_tier_index(150_000, FilingStatus.MFJ) == 0
 
     def test_mfj_at_first_threshold(self):
-        assert irmaa_tier_index(206_000, FilingStatus.MFJ) == 0
+        assert irmaa_tier_index(218_000, FilingStatus.MFJ) == 0
 
     def test_mfj_just_above_first_threshold(self):
-        assert irmaa_tier_index(206_001, FilingStatus.MFJ) == 1
+        assert irmaa_tier_index(218_001, FilingStatus.MFJ) == 1
 
     def test_mfj_second_tier(self):
         assert irmaa_tier_index(280_000, FilingStatus.MFJ) == 2
@@ -32,7 +32,7 @@ class TestIrmaaTierIndex:
         assert irmaa_tier_index(80_000, FilingStatus.SINGLE) == 0
 
     def test_single_at_first_threshold(self):
-        assert irmaa_tier_index(103_000, FilingStatus.SINGLE) == 0
+        assert irmaa_tier_index(109_000, FilingStatus.SINGLE) == 0
 
     def test_single_first_tier(self):
         assert irmaa_tier_index(115_000, FilingStatus.SINGLE) == 1
@@ -75,12 +75,12 @@ class TestCalculateIrmaa:
 
 class TestIrmaaSurchargeLoss:
     def test_no_tier_crossing_zero_cost(self):
-        # $150K base, $40K conversion = $190K total — still under $206K threshold
+        # $150K base, $40K conversion = $190K total — still under $218K threshold
         cost = irmaa_surcharge_loss(150_000, 40_000, FilingStatus.MFJ)
         assert cost == 0.0
 
     def test_tier_crossing_has_cost(self):
-        # $180K base, $50K conversion = $230K total — crosses $206K threshold
+        # $180K base, $50K conversion = $230K total — crosses $218K threshold
         cost = irmaa_surcharge_loss(180_000, 50_000, FilingStatus.MFJ)
         per_person = IRMAA_TIERS[1]["annual_per_person"]
         assert cost == per_person * 2
@@ -95,9 +95,9 @@ class TestIrmaaSurchargeLoss:
         assert cost == 0.0
 
     def test_crossing_multiple_tiers(self):
-        # $190K base, $200K conversion = $390K total — crosses into tier 4 for MFJ ($386K-$750K)
+        # $190K base, $200K conversion = $390K total — crosses into tier 3 for MFJ ($342K-$410K)
         cost = irmaa_surcharge_loss(190_000, 200_000, FilingStatus.MFJ)
-        expected = IRMAA_TIERS[4]["annual_per_person"] * 2  # tier 4 (0-indexed)
+        expected = IRMAA_TIERS[3]["annual_per_person"] * 2  # tier 3 (0-indexed)
         assert cost == expected
 
 
@@ -107,7 +107,7 @@ class TestVectorizedIrmaaSurchargeLoss:
 
         conversions = np.array([10_000.0, 20_000.0, 30_000.0])
         result = vectorized_irmaa_surcharge_loss(100_000, conversions, FilingStatus.MFJ)
-        # 100K + 30K = 130K, still under 206K threshold
+        # 100K + 30K = 130K, still under 218K threshold
         assert all(r == 0.0 for r in result)
 
     def test_matches_scalar_function(self):
@@ -123,11 +123,11 @@ class TestVectorizedIrmaaSurchargeLoss:
     def test_step_function_shape(self):
         import numpy as np
 
-        # Fine grid straddling the $206K threshold
+        # Fine grid straddling the $218K threshold
         base = 200_000
         conversions = np.linspace(0, 20_000, 100)
         result = vectorized_irmaa_surcharge_loss(base, conversions, FilingStatus.MFJ)
-        # Should be 0 for small conversions, then jump at the $6K threshold
+        # Should be 0 for small conversions, then jump at the $18K threshold
         assert result[0] == 0.0
         assert result[-1] > 0.0
 
@@ -230,7 +230,7 @@ class TestIrmaaIntegration:
             drawdown_start_age=73,
             planning_horizon_age=93,
         )
-        conversions = [250_000.0]  # Crosses $206K MFJ threshold (20K + 250K = 270K)
+        conversions = [250_000.0]  # Crosses $218K MFJ threshold (20K + 250K = 270K)
         proj = _build_irmaa_projection(scenario, conversions)
 
         assert proj is not None
@@ -252,7 +252,7 @@ class TestIrmaaIntegration:
             drawdown_start_age=73,
             planning_horizon_age=93,
         )
-        # Small conversion: 20K + 50K = 70K, well below $206K MFJ threshold
+        # Small conversion: 20K + 50K = 70K, well below $218K MFJ threshold
         conversions = [50_000.0]
         proj = _build_irmaa_projection(scenario, conversions)
         assert proj is None

@@ -16,6 +16,7 @@ __all__ = [
     "LOW_GROWTH_RATE",
     "LONG_RETIREMENT_YEARS",
     "BRACKET_FULL_THRESHOLD",
+    "IRMAA_NEAR_THRESHOLD",
     "round_to_resolution",
 ]
 
@@ -49,6 +50,10 @@ LONG_RETIREMENT_YEARS = 30
 # Bracket fill analysis: consider a bracket "fully filled" when remaining
 # capacity is below this threshold.
 BRACKET_FULL_THRESHOLD = 100  # dollars
+
+# Reasoning trace: income within this much below an IRMAA tier boundary counts
+# as stopping at that boundary.
+IRMAA_NEAR_THRESHOLD = 5_000  # dollars
 
 
 def round_to_resolution(amount: float) -> float:

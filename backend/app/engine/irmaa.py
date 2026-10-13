@@ -4,7 +4,7 @@ IRMAA adds surcharges to Medicare Part B and Part D premiums when MAGI
 exceeds income thresholds. Critically, IRMAA uses MAGI from 2 years prior
 to the surcharge year (a Roth conversion in 2026 affects 2028 Medicare costs).
 
-Source: 2024 Medicare IRMAA brackets (CMS). Thresholds adjust annually for
+Source: 2026 Medicare IRMAA brackets (CMS). Thresholds adjust annually for
 inflation; these values are used as the planning baseline.
 """
 
@@ -27,20 +27,26 @@ __all__ = [
 MEDICARE_START_AGE = 65
 IRMAA_LOOKBACK_YEARS = 2
 
-# Annual IRMAA surcharge per PERSON for Part B (2024 values).
-# Tier 0 = no surcharge (below first threshold).
+# Annual IRMAA surcharge per PERSON for Part B + Part D (2026 values).
+# Monthly Part B surcharge above the $202.90 standard premium plus the Part D
+# surcharge, times 12. Tier 0 = no surcharge (below first threshold).
 # For MFJ the total household cost is 2x per-person (both spouses on Medicare).
 IRMAA_TIERS: list[dict] = [
-    {"tier": 0, "mfj_max": 206_000, "single_max": 103_000, "annual_per_person": 0.0},
-    {"tier": 1, "mfj_max": 258_000, "single_max": 129_000, "annual_per_person": 1_678.0},
-    {"tier": 2, "mfj_max": 322_000, "single_max": 161_000, "annual_per_person": 4_193.0},
-    {"tier": 3, "mfj_max": 386_000, "single_max": 193_000, "annual_per_person": 6_708.0},
-    {"tier": 4, "mfj_max": 750_000, "single_max": 500_000, "annual_per_person": 9_223.0},
+    {"tier": 0, "mfj_max": 218_000, "single_max": 109_000, "annual_per_person": 0.0},
+    # $81.20 + $14.50
+    {"tier": 1, "mfj_max": 274_000, "single_max": 137_000, "annual_per_person": 1_148.40},
+    # $202.90 + $37.50
+    {"tier": 2, "mfj_max": 342_000, "single_max": 171_000, "annual_per_person": 2_884.80},
+    # $324.60 + $60.40
+    {"tier": 3, "mfj_max": 410_000, "single_max": 205_000, "annual_per_person": 4_620.00},
+    # $446.30 + $83.30
+    {"tier": 4, "mfj_max": 750_000, "single_max": 500_000, "annual_per_person": 6_355.20},
+    # $487.00 + $91.00
     {
         "tier": 5,
         "mfj_max": float("inf"),
         "single_max": float("inf"),
-        "annual_per_person": 10_063.0,
+        "annual_per_person": 6_936.00,
     },
 ]
 
@@ -63,7 +69,7 @@ def calculate_irmaa(magi: float, filing_status: FilingStatus) -> float:
     """Annual IRMAA household surcharge for a given MAGI.
 
     Returns the total annual surcharge for the household (both spouses for MFJ,
-    one person for SINGLE). Part B only.
+    one person for SINGLE). Part B and Part D.
     """
     idx = irmaa_tier_index(magi, filing_status)
     return IRMAA_TIERS[idx]["annual_per_person"] * _PERSONS[filing_status]

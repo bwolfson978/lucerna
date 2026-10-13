@@ -1,12 +1,14 @@
 from app.engine.constants import (
     BRACKET_FULL_THRESHOLD,
     HIGH_GROWTH_RATE,
+    IRMAA_NEAR_THRESHOLD,
     LARGE_BALANCE_THRESHOLD,
     LARGE_INCOME_VARIATION,
     LONG_RETIREMENT_YEARS,
     LOW_GROWTH_RATE,
     RETIREMENT_SPENDING_RATE,
 )
+from app.engine.irmaa import IRMAA_LOOKBACK_YEARS, IRMAA_TIERS, MEDICARE_START_AGE
 from app.engine.state_tax import resolve_state_for_year
 from app.engine.tax import get_marginal_rate
 from app.engine.tax_cost import (
@@ -16,6 +18,7 @@ from app.engine.tax_cost import (
 from app.engine.types import (
     AcaSubsidyDetail,
     BracketFillResult,
+    FilingStatus,
     NPVCurvePoint,
     ReasoningTrace,
     ScenarioInput,
@@ -28,11 +31,16 @@ def generate_reasoning_trace(
     bracket_fill: list[list[BracketFillResult]],
     npv_curve: list[NPVCurvePoint],
     aca_details: list[AcaSubsidyDetail] | None = None,
+    lifetime_savings: float | None = None,
 ) -> ReasoningTrace:
     """Generate a structured reasoning trace for the AI explanation layer.
 
     Analyzes the optimization result and produces a human-readable explanation
     of why the optimal conversion amounts are what they are.
+
+    ``lifetime_savings`` is the plan's headline savings (NPV of the schedule
+    minus NPV of not converting). Pass it so the summary quotes the same number
+    as the headline; ``npv_curve`` only tests year-one conversions.
     """
     n_years = len(optimal_conversions)
 
@@ -57,9 +65,12 @@ def generate_reasoning_trace(
     avg_marginal = sum(marginal_rates) / len(marginal_rates) if marginal_rates else 0.0
 
     # NPV benefit
-    npv_at_zero = npv_curve[0].npv if npv_curve else 0.0
-    npv_at_optimal = max((p.npv for p in npv_curve), default=0.0)
-    marginal_benefit = npv_at_optimal - npv_at_zero
+    if lifetime_savings is not None:
+        marginal_benefit = lifetime_savings
+    else:
+        npv_at_zero = npv_curve[0].npv if npv_curve else 0.0
+        npv_at_optimal = max((p.npv for p in npv_curve), default=0.0)
+        marginal_benefit = npv_at_optimal - npv_at_zero
 
     # Cost/benefit of brackets
     cost_of_next = _cost_of_next_bracket(scenario, optimal_conversions)
@@ -96,26 +107,53 @@ def _find_binding_constraint(
     conversions: list[float],
     bracket_fill: list[list[BracketFillResult]],
 ) -> str:
-    """Determine what's limiting the optimal conversion amount."""
+    """Determine what's limiting the optimal conversion amount.
+
+    Looks at where each year's conversion stops: at a bracket edge, just under
+    a Medicare surcharge (IRMAA) threshold, or partway into a bracket where
+    converting more costs more than it saves. Reports the most common reason.
+    """
     total = sum(conversions)
     if total >= scenario.traditional_ira_balance * 0.95:
         return "Traditional IRA balance fully converted"
 
-    # Check if conversions are filling to a specific bracket boundary
-    bracket_labels = []
-    for fills in bracket_fill:
-        for fill in fills:
-            if fill.filled_by_conversion > 0 and fill.remaining_capacity < BRACKET_FULL_THRESHOLD:
-                bracket_labels.append(f"{fill.bracket_rate:.0%}")
+    reasons = []
+    for t, fills in enumerate(bracket_fill):
+        if t >= len(conversions) or conversions[t] <= 0:
+            continue
+        top = next((f for f in reversed(fills) if f.filled_by_conversion > 0), None)
+        if top is None:
+            continue
+        rate = f"{top.bracket_rate:.0%}"
+        magi = scenario.timeline[t].gross_income + conversions[t]
+        if _just_under_irmaa_threshold(scenario, t, magi):
+            reasons.append("Just under the Medicare surcharge (IRMAA) threshold")
+        elif top.remaining_capacity < BRACKET_FULL_THRESHOLD:
+            reasons.append(f"Top of {rate} bracket")
+        else:
+            reasons.append(f"Partway into {rate} bracket")
 
-    if bracket_labels:
-        most_common = max(set(bracket_labels), key=bracket_labels.count)
-        years_hitting = sum(1 for label in bracket_labels if label == most_common)
-        if years_hitting == 1:
-            return f"Top of {most_common} bracket"
-        return f"Top of {most_common} bracket in {years_hitting} years"
+    if not reasons:
+        return "Marginal cost exceeds marginal benefit of additional conversion"
 
-    return "Marginal cost exceeds marginal benefit of additional conversion"
+    most_common = max(dict.fromkeys(reasons), key=reasons.count)
+    years = reasons.count(most_common)
+    label = most_common if years == 1 else f"{most_common} in {years} years"
+    if most_common.startswith("Partway"):
+        label += ": converting more costs more than it saves"
+    return label
+
+
+def _just_under_irmaa_threshold(scenario: ScenarioInput, t: int, magi: float) -> bool:
+    """Whether year t's income lands just below an IRMAA tier boundary it is exposed to."""
+    if scenario.age + t < MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS:
+        return False
+    key = "mfj_max" if scenario.filing_status == FilingStatus.MFJ else "single_max"
+    return any(
+        0 <= tier[key] - magi <= IRMAA_NEAR_THRESHOLD
+        for tier in IRMAA_TIERS
+        if tier[key] != float("inf")
+    )
 
 
 def _cost_of_next_bracket(

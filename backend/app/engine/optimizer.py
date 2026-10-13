@@ -10,6 +10,7 @@ from app.engine.constants import (
 from app.engine.heuristic import greedy_bracket_fill
 from app.engine.irmaa import (
     IRMAA_LOOKBACK_YEARS,
+    IRMAA_TIERS,
     MEDICARE_START_AGE,
     calculate_irmaa,
     irmaa_surcharge_loss,
@@ -894,8 +895,9 @@ def _build_irmaa_summary(
 
     if with_conversion and with_conversion.total_irmaa_cost > 0:
         summary["explanation"] = (
-            f"Medicare surcharges (IRMAA) are triggered when income exceeds $206,000 (MFJ) "
-            f"or $103,000 (single). The recommended conversions are projected to incur "
+            f"Medicare surcharges (IRMAA) are triggered when income exceeds "
+            f"${IRMAA_TIERS[0]['mfj_max']:,.0f} (MFJ) "
+            f"or ${IRMAA_TIERS[0]['single_max']:,.0f} (single). The recommended conversions are projected to incur "
             f"${with_conversion.total_irmaa_cost:,.0f} in total IRMAA surcharges, "
             f"factored into the optimization."
         )
@@ -1096,6 +1098,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         yearly_bracket_fill,
         npv_curve,
         aca_details=aca_details,
+        lifetime_savings=npv_at_optimal - npv_at_zero,
     )
 
     result_unconstrained_npv = None
