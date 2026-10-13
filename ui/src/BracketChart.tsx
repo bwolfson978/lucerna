@@ -118,6 +118,8 @@ const BAR_GAP_MOBILE = 6;
 const MIN_BAR_WIDTH_MOBILE = 16;
 /** Below this column width, years print as '26. */
 const SHORT_YEAR_COL_WIDTH = 34;
+/** Below this column width, values under the bars drop the $ ("126K") so neighbors don't touch. */
+const COMPACT_VALUE_COL_WIDTH = 46;
 const MIN_DESKTOP_CHART_HEIGHT = 320;
 const MAX_DESKTOP_CHART_HEIGHT = 480;
 const MOBILE_CHART_HEIGHT = 260;
@@ -247,6 +249,7 @@ export function BracketChart({
   } = layout;
   const colWidth = barWidth + gap;
   const shortYears = colWidth < SHORT_YEAR_COL_WIDTH;
+  const compactValues = colWidth < COMPACT_VALUE_COL_WIDTH;
 
   // Notify parent of bar slot width for table column alignment
   useEffect(() => {
@@ -564,7 +567,7 @@ export function BracketChart({
                         key={yearData.year}
                         className={cn(
                           "flex h-7 items-center justify-center whitespace-nowrap",
-                          shortYears ? "text-[11px] tracking-[-0.02em]" : "text-data-xs",
+                          compactValues ? "text-[11px] tracking-[-0.02em]" : "text-data-xs",
                           !value
                             ? "text-text-tertiary font-normal"
                             : row.strong
@@ -579,8 +582,7 @@ export function BracketChart({
                           ...dataFontStyle,
                         }}
                       >
-                        {/* Narrow columns drop the dollar sign so neighbors don't touch. */}
-                        {shortYears ? text.replace("$", "") : text}
+                        {compactValues ? text.replace("$", "") : text}
                       </div>
                     );
                   })}

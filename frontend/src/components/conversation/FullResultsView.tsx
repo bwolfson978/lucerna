@@ -23,6 +23,7 @@ export function FullResultsView({ stored, onBack, onApply }: FullResultsViewProp
         <button
           type="button"
           onClick={onBack}
+          aria-label="Back to conversation"
           className="link-arrow -ml-1 min-h-[44px] text-[15px]"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -34,7 +35,9 @@ export function FullResultsView({ stored, onBack, onApply }: FullResultsViewProp
               strokeLinejoin="round"
             />
           </svg>
-          Back to conversation
+          {/* Short on phones so it stays on one line beside "Apply to my scenario". */}
+          <span className="sm:hidden">Back</span>
+          <span className="hidden sm:inline">Back to conversation</span>
         </button>
         {isWhatIf && onApply && (
           <button

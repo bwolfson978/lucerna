@@ -60,9 +60,12 @@ export function Header() {
               </Link>
             )}
             <HowItWorksButton />
-            <Link href="/calculator" className="btn-dark min-h-[40px] px-6 py-2.5 text-[14.5px]">
-              Run your scenario
-            </Link>
+            {/* Not on the calculator itself, where it would link to the page you're on. */}
+            {pathname !== "/calculator" && (
+              <Link href="/calculator" className="btn-dark min-h-[40px] px-6 py-2.5 text-[14.5px]">
+                Run your scenario
+              </Link>
+            )}
           </nav>
 
           {/* Mobile controls */}
