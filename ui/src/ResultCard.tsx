@@ -1,6 +1,6 @@
 "use client";
 
-import { BracketFillChart, type BracketFillData } from "./BracketFillChart";
+import { BracketFillChart, isBracketFillData, type BracketFillData } from "./BracketFillChart";
 import { ConversionStrip, type ConversionYear } from "./ConversionStrip";
 import { formatCompactCurrency, formatSavings } from "./format";
 import { Stat } from "./Stat";
@@ -40,7 +40,7 @@ export interface ResultDetails {
 
 export function isResultDetails(value: unknown): value is ResultDetails {
   const v = value as ResultDetails | undefined;
-  return !!v && typeof v === "object" && Array.isArray(v.bracket_fill?.years);
+  return !!v && typeof v === "object" && isBracketFillData(v.bracket_fill);
 }
 
 interface ResultCardProps {
@@ -75,7 +75,7 @@ export function ResultCard({ data, details, onOpenFullResults }: ResultCardProps
         <Stat label="Tax cost" value={formatCompactCurrency(data.total_tax_on_conversions)} />
         <Stat label="Years" value={String(data.years_with_conversions)} />
       </div>
-      {details?.bracket_fill ? (
+      {isBracketFillData(details?.bracket_fill) ? (
         <BracketFillChart data={details.bracket_fill} framed={false} />
       ) : (
         <ConversionStrip schedule={data.schedule_by_year} />

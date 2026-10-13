@@ -3,6 +3,7 @@ import {
   BalanceComparison,
   BracketFillChart,
   ResultCard,
+  isResultDetails,
   ScenarioCompareCard,
   ScenarioSummary,
   type ResultCardData,
@@ -11,6 +12,7 @@ import {
   type ScenarioSummaryData,
 } from "@lucerna/ui";
 import fixture from "../../../../../shared/fixtures/view-data.json";
+import previous from "../../../../../shared/fixtures/view-data-previous.json";
 import { balanceData } from "@/lib/results/viewData";
 import { MetricCard } from "../MetricCard";
 
@@ -41,6 +43,24 @@ it("shows the tax bracket chart in the result card", () => {
   expect(screen.getAllByText(/^0%/).length).toBeGreaterThan(0);
   expect(screen.getByText("Added tax from conversion")).toBeInTheDocument();
   expect(screen.getByText("Remaining space in tax bracket")).toBeInTheDocument();
+});
+
+it("renders the previous release's tool output without the chart instead of crashing", () => {
+  // A newer frontend can meet an older server (deploys roll out separately) or a
+  // conversation saved before the change. The card must degrade, not throw.
+  const old = previous.analyze_roth_conversions;
+  expect(isResultDetails(old.view_meta)).toBe(false);
+  render(
+    <ResultCard
+      data={old.structured_content as unknown as ResultCardData}
+      details={old.view_meta as unknown as ResultDetails}
+    />
+  );
+  expect(screen.getByText("Estimated lifetime tax savings")).toBeInTheDocument();
+  expect(screen.queryByRole("img", { name: /against the tax brackets/ })).not.toBeInTheDocument();
+  expect(screen.getAllByRole("img", { name: /converted$/ })).toHaveLength(
+    old.structured_content.schedule_by_year.length
+  );
 });
 
 it("renders the standalone charts with their own titles", () => {

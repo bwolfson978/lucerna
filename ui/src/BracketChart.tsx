@@ -89,13 +89,13 @@ interface BracketChartProps {
 // Prepends a 0% standard-deduction zone so bars represent gross income/conversion
 // and bracket lines sit at the correct gross-dollar positions.
 function buildGrossBrackets(
-  raw: TaxBracket[],
+  raw: TaxBracket[] | undefined,
   deduction: number
 ): { rate: number; min: number; max: number }[] {
   const result: { rate: number; min: number; max: number }[] = [
     { rate: 0, min: 0, max: deduction },
   ];
-  for (const b of raw) {
+  for (const b of raw ?? []) {
     const taxableMax = b.max === null ? b.min + 500000 : b.max;
     result.push({ rate: b.rate, min: deduction + b.min, max: deduction + taxableMax });
   }

@@ -5,6 +5,7 @@ import type { UiMessage, UiPart } from "@/lib/agent/types";
 import type { ConversationState } from "@/lib/agent/conversation";
 import { Markdown } from "./Markdown";
 import { McpAppFrame } from "./parts/McpAppFrame";
+import { PartBoundary } from "./parts/PartBoundary";
 import { ScenarioSummaryCard } from "./parts/ScenarioSummaryCard";
 import {
   BalanceComparisonCard,
@@ -102,12 +103,13 @@ function AssistantMessage({
   return (
     <div className="flex flex-col gap-default" data-testid="assistant-message">
       {suggestionsLast(message.parts).map(({ part, i }) => (
-        <PartView
-          key={i}
-          part={part}
-          active={activeSummary === `${message.id}:${i}`}
-          interactive={isLast && !streaming}
-        />
+        <PartBoundary key={i} kind={part.kind}>
+          <PartView
+            part={part}
+            active={activeSummary === `${message.id}:${i}`}
+            interactive={isLast && !streaming}
+          />
+        </PartBoundary>
       ))}
       {showThinking && (
         <div className="flex items-center gap-2 text-body-sm text-text-tertiary" role="status">

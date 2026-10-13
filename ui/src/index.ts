@@ -29,7 +29,7 @@ export {
   type BracketChartYear,
   type TaxBracket,
 } from "./BracketChart";
-export { BracketFillChart, type BracketFillData } from "./BracketFillChart";
+export { BracketFillChart, isBracketFillData, type BracketFillData } from "./BracketFillChart";
 export { BalanceComparison, BalanceLines, type BalanceComparisonData } from "./BalanceComparison";
 export {
   CompareBars,
