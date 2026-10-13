@@ -25,14 +25,19 @@ from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import CallToolResult, Icon, TextContent, ToolAnnotations
 from pydantic import Field
 from starlette.requests import Request
-from starlette.responses import JSONResponse
 from starlette.routing import Route
 
-from app.agent.limits import UsageLimiter
 from app.engine.types import FilingStatus, OptimizationResult, ScenarioInput
+from app.mcp.limits import (
+    AnalysisLimiter,
+    LimitReached,
+    client_ip,
+    current_caller,
+    next_reset,
+)
 from app.tools import core
 from app.tools.draft import ScenarioDraft, current_year
-from app.tools.links import full_results_url
+from app.tools.links import full_results_url, site_url
 from app.tools.models import MethodologyTopic, ScenarioUpdate
 from app.tools.views import VIEW_META_KEY, result_view
 
@@ -184,6 +189,51 @@ def _ready_or_error(draft: ScenarioDraft) -> CallToolResult | None:
     )
 
 
+_analysis_limiter = AnalysisLimiter()
+
+_LIMIT_MESSAGES = {
+    "daily_limit": (
+        "This connection has used today's {limit} free analyses. The limit resets at "
+        "{reset}. Until then the user can run this scenario on the website at "
+        "full_results_url, which has no daily limit."
+    ),
+    "capacity": (
+        "The optimizer has reached its daily capacity for anonymous use. It resets at "
+        "{reset}. Until then the user can run this scenario on the website at "
+        "full_results_url."
+    ),
+    "busy": (
+        "The optimizer is busy with other analyses right now. Try again in a minute, or "
+        "the user can run this scenario on the website at full_results_url."
+    ),
+}
+
+
+def _limit_error(err: LimitReached, draft: ScenarioDraft) -> CallToolResult:
+    reset = next_reset()
+    message = _LIMIT_MESSAGES[err.code].format(limit=err.limit, reset=reset.strftime("%H:%M UTC"))
+    scenario = core.scenario_from_draft(draft, current_year())
+    url = full_results_url(scenario, core.result_id_for(core.scenario_input(draft)))
+    return _error(
+        message,
+        limit_reached=err.code,
+        resets_at=reset.isoformat() if err.code != "busy" else None,
+        full_results_url=url,
+        website=site_url(),
+    )
+
+
+async def _run_drafts(
+    drafts: list[ScenarioDraft],
+) -> list[tuple[ScenarioInput, OptimizationResult]]:
+    """Run each draft through the optimizer. Only results not already cached count
+    against the caller's limits (LimitReached when one is hit)."""
+    inputs = [core.scenario_input(d) for d in drafts]
+    fresh = {core.scenario_key(i) for i in inputs if not core.is_cached(i)}
+    async with _analysis_limiter.admit(current_caller.get(), len(fresh)):
+        return [(i, await anyio.to_thread.run_sync(core.run_optimization, i)) for i in inputs]
+
+
 @mcp.tool(
     title="Record a scenario",
     annotations=_READ_ONLY,
@@ -229,9 +279,11 @@ async def analyze_roth_conversions(
         draft = core.draft_from_scenario(scenario, current_year())
         if incomplete := _ready_or_error(draft):
             return incomplete
-        scenario_input, result = await anyio.to_thread.run_sync(core.run_draft, draft)
+        [(scenario_input, result)] = await _run_drafts([draft])
     except core.ToolError as err:
         return _error(str(err))
+    except LimitReached as err:
+        return _limit_error(err, draft)
     result_id = core.result_id_for(scenario_input)
     summary = core.summarize_result(result, result_id)
     summary["scenario"] = core.scenario_from_draft(draft, current_year())
@@ -271,10 +323,13 @@ async def compare_roth_scenarios(
         if incomplete := _ready_or_error(base_draft):
             return incomplete
         variant_draft = core.apply_update(base_draft, changes, year)
-        base_input, base = await anyio.to_thread.run_sync(core.run_draft, base_draft)
-        variant_input, variant = await anyio.to_thread.run_sync(core.run_draft, variant_draft)
+        (base_input, base), (variant_input, variant) = await _run_drafts(
+            [base_draft, variant_draft]
+        )
     except core.ToolError as err:
         return _error(str(err))
+    except LimitReached as err:
+        return _limit_error(err, variant_draft)
     base_id, variant_id = core.result_id_for(base_input), core.result_id_for(variant_input)
     comparison = core.compare_results(base, variant, base_id, variant_id, label)
     comparison["what_if_scenario"] = core.scenario_from_draft(variant_draft, year)
@@ -375,15 +430,12 @@ _register_views()
 
 
 # --------------------------------------------------------------------------
-# ASGI app with a per-IP daily request limit
+# ASGI app that records the caller for the analysis limits
 # --------------------------------------------------------------------------
-
-_mcp_limiter = UsageLimiter()
-
 
 # The web app's own agent can reach this server over HTTP (AGENT_MCP_URL). Its calls
 # all come from the backend's IP and are already limited per user at /api/agent, so
-# they carry a shared secret and skip this per-IP limit.
+# they carry a shared secret and skip the per-caller limits.
 INTERNAL_HEADER = "x-lucerna-internal"
 
 
@@ -396,37 +448,22 @@ def _is_internal(request: Request) -> bool:
     return bool(token) and hmac.compare_digest(request.headers.get(INTERNAL_HEADER, ""), token)
 
 
-def _requests_per_ip_per_day() -> int:
-    try:
-        return int(os.environ.get("MCP_REQUESTS_PER_IP_PER_DAY", 300))
-    except ValueError:
-        return 300
+class _IdentifyCaller:
+    """Records who is calling, for the analysis limits in app.mcp.limits."""
 
-
-class _RateLimited:
     def __init__(self, app):
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] == "http" and scope.get("method") == "POST":
+        caller = None
+        if scope["type"] == "http":
             request = Request(scope)
-            if _is_internal(request):
-                await self.app(scope, receive, send)
-                return
-            forwarded = request.headers.get("x-forwarded-for", "")
-            ip = (
-                forwarded.split(",")[0].strip()
-                if forwarded
-                else (request.client.host if request.client else "unknown")
-            )
-            if not _mcp_limiter.count_request(ip, _requests_per_ip_per_day()):
-                response = JSONResponse(
-                    {"error": "Daily request limit reached. Try again tomorrow."},
-                    status_code=429,
-                )
-                await response(scope, receive, send)
-                return
-        await self.app(scope, receive, send)
+            caller = None if _is_internal(request) else f"ip:{client_ip(request)}"
+        token = current_caller.set(caller)
+        try:
+            await self.app(scope, receive, send)
+        finally:
+            current_caller.reset(token)
 
 
 def build_route() -> Route:
@@ -435,5 +472,7 @@ def build_route() -> Route:
     The session manager must run in the host app's lifespan.
     """
     return Route(
-        "/mcp", endpoint=_RateLimited(mcp.streamable_http_app()), methods=["GET", "POST", "DELETE"]
+        "/mcp",
+        endpoint=_IdentifyCaller(mcp.streamable_http_app()),
+        methods=["GET", "POST", "DELETE"],
     )

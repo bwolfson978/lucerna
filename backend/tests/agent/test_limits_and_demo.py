@@ -29,12 +29,6 @@ def test_limits_reset_each_day():
     assert limiter.check("a", 0) is None
 
 
-def test_count_request():
-    limiter = UsageLimiter(LimitConfig(5, 5, 1.0))
-    assert limiter.count_request("ip", 1) is True
-    assert limiter.count_request("ip", 1) is False
-
-
 def test_estimate_cost():
     usage = {"input_tokens": 1_000_000, "output_tokens": 100_000, "cache_read_input_tokens": 0}
     assert estimate_cost("claude-sonnet-5-5", usage) == 2.0 + 1.0

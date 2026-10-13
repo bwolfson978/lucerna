@@ -90,10 +90,14 @@ Chart series the model doesn't need (yearly income, required withdrawals, conver
 | `AGENT_MESSAGES_PER_IP_PER_DAY` | `60` | Agent messages per client IP per day. |
 | `AGENT_DAILY_SPEND_USD` | `50` | Estimated model spend per day before the assistant pauses. |
 | `AGENT_CACHE_DIR` | `backend/.cache` | Where the generated demo conversation is cached. |
-| `MCP_REQUESTS_PER_IP_PER_DAY` | `300` | MCP requests per client IP per day. |
+| `MCP_ANALYSES_PER_IP_PER_DAY` | `25` | Fresh analyses (optimizer runs that aren't cached) per anonymous caller per day, keyed by client IP. Other tool calls and cached results are free. |
+| `MCP_ANALYSES_PER_USER_PER_DAY` | `100` | The same, for signed-in callers (once MCP sign-in lands). |
+| `MCP_ANONYMOUS_ANALYSES_PER_DAY` | `3000` | Fresh analyses per day across all anonymous callers. Signed-in callers don't count toward it. |
+| `MCP_MAX_CONCURRENT_ANALYSES` | `2` | Optimizer runs in progress at once from MCP tools. |
+| `MCP_ANALYSIS_QUEUE_SECONDS` | `10` | How long a run waits for a free slot before the tool answers "busy". |
 | `AGENT_MCP_URL` | unset | When set (e.g. `http://localhost:8000/mcp`), the web assistant reaches its tools over streamable HTTP instead of in process. The E2E suite uses it. **Production: leave it unset** (in process, no network hop). If you do set it, also set `MCP_INTERNAL_TOKEN`. |
 | `SITE_URL` | `https://rothconversionsoptimizer.com` | Website that `full_results_url` links point to. |
-| `MCP_INTERNAL_TOKEN` | unset | Shared secret the web assistant sends (`x-lucerna-internal` header) when it calls `/mcp` over HTTP, so its calls skip the per-IP MCP limit. Its users are already limited at `/api/agent`. Without it, `AGENT_MCP_URL` logs a warning and the backend's own calls use up its IP's daily allowance. |
+| `MCP_INTERNAL_TOKEN` | unset | Shared secret the web assistant sends (`x-lucerna-internal` header) when it calls `/mcp` over HTTP, so its calls skip the per-caller analysis limits. Its users are already limited at `/api/agent`. Without it, `AGENT_MCP_URL` logs a warning and the backend's own calls use up its IP's daily allowance. |
 | `AGENT_OFFLINE` | unset | `1` replaces the model with a rule-based stand-in (development and E2E only). |
 
 Limits are kept in process memory, which fits the single Railway instance. Move them to Redis or Postgres before scaling out.
@@ -141,7 +145,9 @@ Reports land in `backend/evals/results/` (git-ignored). Run the live set after a
 
 ## Connecting the MCP server
 
-The server speaks MCP over streamable HTTP at `https://<backend-host>/mcp`, with no login yet (rate-limited per IP).
+The server speaks MCP over streamable HTTP at `https://<backend-host>/mcp`, with no login yet.
+
+**Limits** (`app/mcp/limits.py`): only fresh optimizer runs count, so building a scenario, brackets, methodology and re-running a cached result are free. Limits are per caller per day (UTC), with an anonymous ceiling across everyone and a cap on runs in progress. Claude's requests arrive from a pool of Anthropic addresses, so for Claude users the per-IP allowance is shared; the ceiling and the concurrency cap do most of the protecting there. A refused analysis returns a tool error with `limit_reached` (`daily_limit`, `capacity` or `busy`), `resets_at`, and a `full_results_url` so the user can run the scenario on the website instead. View buttons in the web app (`/api/mcp-apps/tools/call`) count against the browser's IP the same way.
 
 - **Claude:** add a custom connector and enter the `/mcp` URL. In a conversation, enable the connector and ask a Roth conversion question.
 - **ChatGPT:** with developer mode enabled, create a connector pointing at the same URL.

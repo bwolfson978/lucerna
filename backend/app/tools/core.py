@@ -214,6 +214,10 @@ class _ResultCache:
         self._data: OrderedDict[str, OptimizationResult] = OrderedDict()
         self._lock = threading.Lock()
 
+    def has(self, scenario: ScenarioInput) -> bool:
+        with self._lock:
+            return scenario_key(scenario) in self._data
+
     def get_or_compute(self, scenario: ScenarioInput) -> OptimizationResult:
         key = scenario_key(scenario)
         with self._lock:
@@ -235,11 +239,20 @@ def run_optimization(scenario: ScenarioInput) -> OptimizationResult:
     return _results.get_or_compute(scenario)
 
 
-def run_draft(draft: ScenarioDraft) -> tuple[ScenarioInput, OptimizationResult]:
+def is_cached(scenario: ScenarioInput) -> bool:
+    """True when the result is already computed, so running it again is free."""
+    return _results.has(scenario)
+
+
+def scenario_input(draft: ScenarioDraft) -> ScenarioInput:
     try:
-        scenario = build_scenario_input(draft)
+        return build_scenario_input(draft)
     except ValueError as err:
         raise ToolError(str(err)) from err
+
+
+def run_draft(draft: ScenarioDraft) -> tuple[ScenarioInput, OptimizationResult]:
+    scenario = scenario_input(draft)
     return scenario, run_optimization(scenario)
 
 
