@@ -87,6 +87,12 @@ const FALLBACK_NOTICE: Record<string, string> = {
     "The assistant is unavailable right now. Everything you told it is filled in below, so you can keep going with the form.",
 };
 
+// Desktop chat layout: a fixed-width rail for the intro beside the conversation, filling the
+// same frame as the header. The composer's input row is offset by rail + gap to line up, and
+// the rail sticks one section-lg (48px) below the 68px header.
+const RAIL_GRID = "lg:grid lg:grid-cols-[288px_minmax(0,1fr)] lg:gap-16";
+const RAIL_OFFSET = "lg:pl-[352px]";
+
 export function ScenarioWorkspace({ variant }: { variant: Variant }) {
   const keys = KEYS[variant];
   const isDemo = variant === "demo";
@@ -489,17 +495,6 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
             Start over
           </button>
         )}
-        <Composer
-          onSend={(text) => void send(text)}
-          disabled={state.streaming || (isDemo && !replayDone)}
-          placeholder={
-            isDemo
-              ? "Ask a follow-up about Margaret's results"
-              : state.messages.length === 0
-                ? "Describe your situation in a sentence or two"
-                : undefined
-          }
-        />
       </>
     );
   } else {
@@ -564,32 +559,62 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
     );
   }
 
+  // Talking it through is a chat shell: the intro sits in a left rail on desktop, the
+  // message box stays pinned to the bottom of the screen, and the footer steps aside
+  // so only the conversation scrolls. 69px is the header plus its bottom border.
+  const chatShell = conversationLive && !openStored;
+
   return (
     <MethodologyProvider askAbout={askAbout}>
       <Header />
       <MethodologyLayout result={sidebarResult}>
-        <main className="px-default py-section-lg md:px-page">
+        <main
+          className={cn(
+            "flex flex-col px-default sm:px-7",
+            chatShell ? "min-h-[calc(100dvh-69px)] pt-section-lg" : "py-section-lg"
+          )}
+        >
           <div
             className={cn(
-              "mx-auto flex flex-col gap-section",
-              conversationLive && !openStored ? "max-w-[760px]" : "max-w-content"
+              "mx-auto flex w-full flex-col gap-section",
+              chatShell ? cn("max-w-wide flex-1 pb-section", RAIL_GRID) : "max-w-content"
             )}
           >
             {!openStored && (
-              <PageIntro
-                isDemo={isDemo}
-                mode={mode}
-                onModeChange={(next) => {
-                  setFallbackNotice(null);
-                  changeMode(next);
-                  window.scrollTo({ top: 0 });
-                }}
-              />
+              <div className={cn(chatShell && "lg:sticky lg:top-[116px] lg:self-start")}>
+                <PageIntro
+                  isDemo={isDemo}
+                  mode={mode}
+                  onModeChange={(next) => {
+                    setFallbackNotice(null);
+                    changeMode(next);
+                    window.scrollTo({ top: 0 });
+                  }}
+                />
+              </div>
             )}
-            <ConversationContext.Provider value={contextValue}>{body}</ConversationContext.Provider>
+            <div className="flex min-w-0 flex-col gap-section">
+              <ConversationContext.Provider value={contextValue}>
+                {body}
+              </ConversationContext.Provider>
+            </div>
           </div>
+          {chatShell && (
+            <Composer
+              innerClassName={cn("max-w-wide", RAIL_OFFSET)}
+              onSend={(text) => void send(text)}
+              disabled={state.streaming || (isDemo && !replayDone)}
+              placeholder={
+                isDemo
+                  ? "Ask a follow-up about Margaret's results"
+                  : state.messages.length === 0
+                    ? "Describe your situation in a sentence or two"
+                    : undefined
+              }
+            />
+          )}
         </main>
-        <PageFooter />
+        {!chatShell && <PageFooter />}
       </MethodologyLayout>
     </MethodologyProvider>
   );

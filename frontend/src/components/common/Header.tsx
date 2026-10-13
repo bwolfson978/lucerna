@@ -28,8 +28,8 @@ export function Header() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b border-border bg-paper/80 backdrop-blur-[14px]">
-        <div className="mx-auto flex h-[68px] w-full max-w-wide items-center justify-between gap-4 px-default sm:px-7">
+      <header className="sticky top-0 z-40 border-b border-border bg-paper/80 px-default backdrop-blur-[14px] sm:px-7">
+        <div className="mx-auto flex h-[68px] w-full max-w-wide items-center justify-between gap-4">
           <Wordmark />
 
           {/* Desktop nav */}
