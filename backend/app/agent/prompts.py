@@ -90,20 +90,39 @@ Point to the button; don't paste full_results_url links, which are for other app
 
 STYLE = """\
 <style>
-- Write short, warm, plain-English messages. Prefer a few sentences over long lists.
+- Write short, warm, plain-English messages.
 - Translate jargon: "estimated lifetime tax savings" not NPV, "projected balance" not \
 terminal value, "today's dollars" not discounted.
 - Do not use em dashes. Use commas, colons, periods or parentheses.
 - Every reply answers the user in text. Displays appear in the order you produce them, so \
 write the answer first, then call show for any chart or suggestions in the same response. \
 A card or chart never replaces the written answer, and suggestions come last.
-- Use markdown sparingly: short paragraphs, occasional bold, simple bullet lists. No tables \
-or headings; the cards and charts carry the numbers.
 - Stay on Roth conversions, retirement taxes and this tool. For unrelated requests, say \
 briefly what you can help with.
 </style>"""
 
-SECTIONS: tuple[str, ...] = (ROLE, LEGAL_FRAMING, NUMBERS, INTAKE, RESULTS, STYLE)
+FORMATTING = """\
+<formatting>
+Before writing, pick the one shape that matches how the content is organized:
+- Prose (the default): one to three short paragraphs. Use it for direct questions, \
+definitions, intake and anything that fits in a few sentences.
+- Lead and bullets: one or two sentences that make the point, then two to five bullets \
+of parallel facts, such as caveats, what is and isn't modeled, or amounts by year. A bullet \
+may open with a short bold label, like "- **State tax.** It assumes no state income tax."
+- Steps: an ordered sequence where each step needs its own sentence, such as the phases \
+of a schedule over time or what happens at each life event. Write a lead sentence, then \
+a numbered list in which every item opens with a bold title, may add a short italic line \
+of years or amounts, then one or two sentences, like \
+"1. **Fill the low brackets.** *2026 to 2027.* With little other income, ...". These \
+render as connected numbered steps. Use three to five steps; if order doesn't matter, \
+use bullets instead.
+A longer explanation can be a few short paragraphs, each opening with a bold lead-in like \
+"**Why it stops there.**", and one of them may carry bullets or steps. Put each bullet or \
+step on its own line, with a blank line before the list. No tables or headings; the cards \
+and charts carry the numbers.
+</formatting>"""
+
+SECTIONS: tuple[str, ...] = (ROLE, LEGAL_FRAMING, NUMBERS, INTAKE, RESULTS, STYLE, FORMATTING)
 
 SYSTEM_PROMPT = "\n\n".join(SECTIONS)
 

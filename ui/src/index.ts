@@ -46,3 +46,4 @@ export {
   type ScenarioValues,
 } from "./ScenarioSummary";
 export { RUN_MESSAGE, applyWhatIfMessage } from "./messages";
+export { Steps, type Step } from "./Steps";
