@@ -12,6 +12,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from prometheus_fastapi_instrumentator import Instrumentator
 
+from app import error_tracking
 from app.mcp.server import build_route as build_mcp_route
 from app.mcp.server import mcp as mcp_server
 from app.origins import ORIGIN_REGEX, allowed_origins
@@ -41,9 +42,11 @@ async def lifespan(app: FastAPI):
         yield
     demo_task.cancel()
     await close_db()
+    error_tracking.shutdown()
 
 
 app = FastAPI(title="Lucerna API", lifespan=lifespan)
+error_tracking.register(app)
 
 Instrumentator(excluded_handlers=["/health", "/metrics"]).instrument(app)
 
