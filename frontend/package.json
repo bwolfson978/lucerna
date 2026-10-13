@@ -17,6 +17,7 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.9.14",
     "@modelcontextprotocol/client": "^2.2.0",
     "@modelcontextprotocol/ext-apps": "^2.0.3",
     "@radix-ui/react-collapsible": "^1.1.12",

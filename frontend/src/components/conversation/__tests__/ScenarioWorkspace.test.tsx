@@ -5,10 +5,13 @@ import { sampleOptimizationResult } from "@/test/fixtures/optimization-result";
 import type { AgentEvent } from "@/lib/agent/types";
 import { EMPTY_DRAFT, type ScenarioDraft } from "@/lib/scenario/draft";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AccountContext } from "@/lib/auth/account";
+import { testAccount } from "@/test/account";
 import { ScenarioWorkspace } from "../ScenarioWorkspace";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/calculator" }));
 vi.mock("posthog-js", () => ({ default: { capture: vi.fn() } }));
+vi.mock("@clerk/nextjs", () => ({ UserButton: () => <div data-testid="user-button" /> }));
 
 const API = "http://localhost:8000/api/agent";
 
@@ -295,5 +298,104 @@ describe("ScenarioWorkspace (demo)", () => {
     expect(screen.getByText("Ready to try yours?")).toBeInTheDocument();
     expect(screen.queryByRole("radio", { name: "Fill in a form" })).not.toBeInTheDocument();
     expect(screen.getByLabelText("Message")).not.toBeDisabled();
+  });
+});
+
+describe("ScenarioWorkspace (accounts)", () => {
+  const SAVED_API = "http://localhost:8000/api/saved-scenarios";
+
+  function renderSignedIn(account = testAccount()) {
+    return render(
+      <AccountContext.Provider value={account}>
+        <TooltipProvider>
+          <ScenarioWorkspace variant="calculator" />
+        </TooltipProvider>
+      </AccountContext.Provider>
+    );
+  }
+
+  it("has no save button without accounts", () => {
+    sessionStorage.setItem("lucerna:draft:v1", JSON.stringify(DRAFT));
+    mockAgent();
+    renderWorkspace("calculator");
+    expect(screen.queryByRole("button", { name: "Save scenario" })).not.toBeInTheDocument();
+  });
+
+  it("saves the scenario from the conversation", async () => {
+    sessionStorage.setItem("lucerna:draft:v1", JSON.stringify(DRAFT));
+    let saved: unknown = null;
+    server.use(
+      http.post(SAVED_API, async ({ request }) => {
+        saved = await request.json();
+        return HttpResponse.json({ scenario_id: "abc", name: "Plan A" }, { status: 201 });
+      })
+    );
+    mockAgent();
+    renderSignedIn();
+    fireEvent.click(await screen.findByRole("button", { name: "Save scenario" }));
+    const status = (await screen.findByText("Plan A")).closest("p")!;
+    expect(within(status).getByRole("link", { name: "My scenarios" })).toHaveAttribute(
+      "href",
+      "/scenarios"
+    );
+    expect((saved as { draft: ScenarioDraft }).draft.age).toBe(52);
+  });
+
+  it("opens a saved scenario from its link", async () => {
+    window.history.replaceState(null, "", "/calculator?saved=abc");
+    server.use(
+      http.get(`${SAVED_API}/abc`, () =>
+        HttpResponse.json({ scenario_id: "abc", name: "Plan A", draft: DRAFT })
+      )
+    );
+    mockAgent();
+    renderSignedIn();
+    expect(await screen.findByText(/Opened “Plan A”/)).toBeInTheDocument();
+    expect(window.location.search).toBe("");
+    expect(JSON.parse(sessionStorage.getItem("lucerna:draft:v1")!).age).toBe(52);
+  });
+
+  it("asks to sign in to open a saved scenario", async () => {
+    window.history.replaceState(null, "", "/calculator?saved=abc");
+    mockAgent();
+    const account = testAccount({ signedIn: false, userId: null });
+    renderSignedIn(account);
+    const notice = await screen.findByText("Sign in to open your saved scenario.");
+    fireEvent.click(within(notice.parentElement!).getByRole("button", { name: "Sign in" }));
+    expect(account.openSignIn).toHaveBeenCalled();
+  });
+
+  it("offers sign-in when the assistant can't save", async () => {
+    sessionStorage.setItem("lucerna:draft:v1", JSON.stringify(DRAFT));
+    server.use(
+      http.post(API, () =>
+        sse([
+          { type: "part", part: { kind: "sign_in" } },
+          { type: "text_delta", text: "Sign in with the button to save it." },
+          { type: "done", messages: [] },
+        ])
+      )
+    );
+    const account = testAccount({ signedIn: false, userId: null });
+    renderSignedIn(account);
+    await sendMessage("Save this");
+    fireEvent.click(await screen.findByRole("button", { name: "Sign in and save" }));
+    expect(account.openSignIn).toHaveBeenCalled();
+    expect(sessionStorage.getItem("lucerna:save-after-sign-in")).toBe("1");
+  });
+
+  it("shows where the assistant saved it", async () => {
+    server.use(
+      http.post(API, () =>
+        sse([
+          { type: "saved", scenario: { scenario_id: "abc", name: "Plan A" } },
+          { type: "text_delta", text: "Saved." },
+          { type: "done", messages: [] },
+        ])
+      )
+    );
+    renderSignedIn();
+    await sendMessage("Save this as Plan A");
+    expect(await screen.findByText("Plan A")).toBeInTheDocument();
   });
 });

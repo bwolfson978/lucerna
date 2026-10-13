@@ -33,6 +33,10 @@ import {
 } from "@/lib/scenario/draft";
 import { CURRENT_YEAR } from "@/lib/utils/constants";
 import { useConversation } from "@/hooks/useConversation";
+import { useSaveScenario } from "@/hooks/useSaveScenario";
+import { useAccount } from "@/lib/auth/account";
+import { SavedScenarioError, savedScenarios } from "@/lib/api/savedScenarios";
+import { SaveScenarioButton } from "@/components/saved/SaveScenarioButton";
 import { usePrefersReducedMotion } from "@/hooks/useInView";
 import { cn } from "@/lib/utils";
 import { ConversationContext, type ConversationContextValue } from "./ConversationContext";
@@ -284,6 +288,45 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
       .catch(() => setLinkStatus("error"));
   }, [isDemo, keys.conversation, updateDraft, addResult]);
 
+  // ------------------------------------------------------ saved scenarios
+  const account = useAccount();
+  const { status: saveStatus, save: saveScenario } = useSaveScenario(draft, variant);
+
+  // /calculator?saved=<id> (from "My scenarios") fills in a saved scenario's values.
+  const [savedNotice, setSavedNotice] = useState<{ text: string; signIn?: boolean } | null>(null);
+  const savedOpened = useRef(false);
+  useEffect(() => {
+    if (isDemo || savedOpened.current || !account.loaded) return;
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("saved");
+    if (!id) return;
+    if (account.enabled && !account.signedIn) {
+      setSavedNotice({ text: "Sign in to open your saved scenario.", signIn: true });
+      return; // signing in reloads this page with the same address
+    }
+    savedOpened.current = true;
+    params.delete("saved");
+    const rest = params.toString();
+    window.history.replaceState(null, "", window.location.pathname + (rest ? `?${rest}` : ""));
+    savedScenarios
+      .get(id)
+      .then((opened) => {
+        updateDraft(normalizeDraft(opened.draft));
+        setSavedNotice({
+          text: `Opened “${opened.name}”. Check the values, then run it or ask about it.`,
+        });
+        posthog.capture("saved_scenario_opened");
+      })
+      .catch((err) =>
+        setSavedNotice({
+          text:
+            err instanceof SavedScenarioError && err.code === "not_found"
+              ? "That saved scenario wasn't found."
+              : "That saved scenario couldn't be opened. Try again from My scenarios.",
+        })
+      );
+  }, [isDemo, account.loaded, account.enabled, account.signedIn, updateDraft]);
+
   const applyWhatIf = useCallback(
     (id: string) => {
       const variantDraft = state.results[id]?.draft;
@@ -352,6 +395,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
       applyWhatIf: isDemo ? undefined : applyWhatIf,
       openForm: isDemo ? undefined : () => changeMode("form"),
       ensureResult,
+      saveScenario: isDemo ? undefined : saveScenario,
     }),
     [
       state.results,
@@ -364,6 +408,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
       applyWhatIf,
       changeMode,
       ensureResult,
+      saveScenario,
     ]
   );
 
@@ -387,6 +432,25 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
   const conversationLive = isDemo || mode === "conversation";
   const replayDone = !isDemo || state.apiMessages.length > 0;
 
+  const canSave = !isDemo && account.enabled && draftHasValues;
+  const savedNoticeView = savedNotice && (
+    <div
+      role="status"
+      className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-border bg-paper-warm px-4 py-3 text-body-sm text-text-secondary"
+    >
+      <span>{savedNotice.text}</span>
+      {savedNotice.signIn && (
+        <button
+          type="button"
+          onClick={account.openSignIn}
+          className="font-medium text-pine underline decoration-border underline-offset-4 hover:decoration-pine"
+        >
+          Sign in
+        </button>
+      )}
+    </div>
+  );
+
   let body: ReactNode;
   if (linkStatus === "loading") {
     body = (
@@ -405,6 +469,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
   } else if (conversationLive) {
     body = (
       <>
+        {savedNoticeView}
         {linkStatus === "error" && (
           <div
             role="alert"
@@ -436,17 +501,22 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
             }}
           />
         )}
-        {!isDemo && state.messages.length > 0 && !state.streaming && (
-          <button
-            type="button"
-            onClick={() => {
-              reset();
-              posthog.capture("conversation_reset");
-            }}
-            className="self-start text-body-sm text-text-tertiary underline decoration-border underline-offset-4 hover:text-text-primary"
-          >
-            Start over
-          </button>
+        {!isDemo && !state.streaming && (state.messages.length > 0 || canSave) && (
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+            {canSave && <SaveScenarioButton status={saveStatus} onSave={saveScenario} />}
+            {state.messages.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  reset();
+                  posthog.capture("conversation_reset");
+                }}
+                className="text-body-sm text-text-tertiary underline decoration-border underline-offset-4 hover:text-text-primary"
+              >
+                Start over
+              </button>
+            )}
+          </div>
         )}
         <Composer
           onSend={(text) => void send(text)}
@@ -464,6 +534,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
   } else {
     body = (
       <>
+        {savedNoticeView}
         {fallbackNotice && (
           <div
             role="status"
@@ -505,6 +576,9 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
           )}
           {formResult && <ResultsView result={formResult} />}
         </div>
+        {canSave && !formLoading && (
+          <SaveScenarioButton status={saveStatus} onSave={saveScenario} />
+        )}
       </>
     );
   }

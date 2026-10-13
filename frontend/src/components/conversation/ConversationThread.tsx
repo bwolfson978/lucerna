@@ -6,6 +6,7 @@ import type { ConversationState } from "@/lib/agent/conversation";
 import { Markdown } from "./Markdown";
 import { McpAppFrame } from "./parts/McpAppFrame";
 import { ScenarioSummaryCard } from "./parts/ScenarioSummaryCard";
+import { SavedNotice, SignInToSaveCard } from "./parts/AccountParts";
 import {
   BalanceComparisonCard,
   BracketFillPart,
@@ -172,6 +173,10 @@ function PartView({
       );
     case "suggestions":
       return interactive ? <SuggestionChips suggestions={part.suggestions} /> : null;
+    case "sign_in":
+      return interactive ? <SignInToSaveCard /> : null;
+    case "saved":
+      return <SavedNotice name={part.name} />;
     case "notice":
       return (
         <div

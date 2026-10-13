@@ -1,3 +1,4 @@
+import { authHeaders } from "@/lib/auth/token";
 import type { ScenarioDraft } from "@/lib/scenario/draft";
 import type { AgentEvent, DemoConversation } from "./types";
 
@@ -47,7 +48,11 @@ export async function streamAgent(
   try {
     const res = await fetch(`${API_BASE}/api/agent`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+        ...(await authHeaders()),
+      },
       body: JSON.stringify(body),
       signal,
     });

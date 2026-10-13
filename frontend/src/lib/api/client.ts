@@ -1,3 +1,4 @@
+import { authHeaders } from "@/lib/auth/token";
 import type { ScenarioDraft } from "@/lib/scenario/draft";
 import type { OptimizationResult } from "@/lib/types";
 
@@ -12,8 +13,8 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json" },
     ...options,
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
   });
   if (!res.ok) {
     throw new Error(`API error: ${res.status} ${res.statusText}`);

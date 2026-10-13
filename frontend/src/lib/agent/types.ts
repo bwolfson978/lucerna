@@ -9,6 +9,8 @@ export type AgentPart =
   | { kind: "balance_comparison"; result_id: string }
   | { kind: "scenario_compare"; result_id: string; base_result_id: string; label: string }
   | { kind: "suggestions"; suggestions: string[] }
+  /** Saving needs an account: offer sign-in, then save. */
+  | { kind: "sign_in" }
   | {
       /** A tool result rendered by the MCP server's own View (MCP Apps). */
       kind: "mcp_app";
@@ -47,12 +49,14 @@ export type AgentEvent =
       draft?: ScenarioDraft;
     }
   | { type: "part"; part: AgentPart }
+  | { type: "saved"; scenario: { scenario_id: string; name: string } }
   | { type: "error"; code: AgentErrorCode; message: string }
   | { type: "done"; messages: unknown[] };
 
 export type UiPart =
   | { kind: "text"; text: string }
   | AgentPart
+  | { kind: "saved"; scenario_id: string; name: string }
   | { kind: "notice"; code: AgentErrorCode; message: string };
 
 export interface UiMessage {

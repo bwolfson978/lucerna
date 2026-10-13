@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { HowItWorksButton } from "@/components/methodology/HowItWorksButton";
 import { Wordmark } from "@/components/common/Wordmark";
+import { AccountNav, MobileAccountNav } from "@/components/auth/AccountNav";
 
 const NAV_LINKS = [
   { href: "/demo", label: "Demo" },
@@ -46,6 +47,7 @@ export function Header() {
               </Link>
             ))}
             <HowItWorksButton />
+            <AccountNav active={pathname === "/scenarios"} />
             <Link href="/calculator" className="btn-dark min-h-[40px] px-6 py-2.5 text-[14.5px]">
               Run your scenario
             </Link>
@@ -106,6 +108,10 @@ export function Header() {
                 {link.label}
               </Link>
             ))}
+            <MobileAccountNav
+              onLinkClick={() => handleNavClick("/scenarios")}
+              onClose={() => setMobileMenuOpen(false)}
+            />
             <Link
               href="/calculator"
               onClick={() => handleNavClick("/calculator")}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 import { TaxConfigProvider } from "@/lib/tax/TaxConfigProvider";
 import "./globals.css";
 
@@ -29,9 +30,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <TaxConfigProvider>
-          <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
-        </TaxConfigProvider>
+        <AuthProvider>
+          <TaxConfigProvider>
+            <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
+          </TaxConfigProvider>
+        </AuthProvider>
         <Analytics />
         <SpeedInsights />
       </body>

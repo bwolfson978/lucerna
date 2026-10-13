@@ -116,6 +116,15 @@ function applyEvent(state: ConversationState, event: AgentEvent): ConversationSt
         breakText: true,
         messages: updateLastAssistant(state.messages, (parts) => [...parts, event.part]),
       };
+    case "saved":
+      return {
+        ...state,
+        breakText: true,
+        messages: updateLastAssistant(state.messages, (parts) => [
+          ...parts,
+          { kind: "saved", scenario_id: event.scenario.scenario_id, name: event.scenario.name },
+        ]),
+      };
     case "error":
       return {
         ...state,

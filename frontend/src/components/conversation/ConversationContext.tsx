@@ -20,6 +20,8 @@ export interface ConversationContextValue {
   openForm?: () => void;
   /** Recompute a result that was dropped from session storage. */
   ensureResult: (resultId: string) => void;
+  /** Save the scenario to the visitor's account (signing in first if needed). */
+  saveScenario?: () => void;
 }
 
 export const ConversationContext = createContext<ConversationContextValue | null>(null);

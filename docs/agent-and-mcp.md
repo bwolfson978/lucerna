@@ -90,10 +90,18 @@ Chart series the model doesn't need (bracket fill, balances) travel in the tool 
 | `AGENT_MESSAGES_PER_IP_PER_DAY` | `60` | Agent messages per client IP per day. |
 | `AGENT_DAILY_SPEND_USD` | `50` | Estimated model spend per day before the assistant pauses. |
 | `AGENT_CACHE_DIR` | `backend/.cache` | Where the generated demo conversation is cached. |
-| `MCP_REQUESTS_PER_IP_PER_DAY` | `300` | MCP requests per client IP per day. |
+| `MCP_REQUESTS_PER_IP_PER_DAY` | `300` | MCP requests per client IP per day (when sign-in is off). |
+| `MCP_REQUESTS_PER_USER_PER_DAY` | `300` | MCP requests per signed-in user per day. |
+| `CLERK_SECRET_KEY` | unset | Turns on accounts: web session tokens are verified, saved scenarios work. |
+| `CLERK_ISSUER_URL` | unset | Clerk's Frontend API URL. With `CLERK_SECRET_KEY`, `/mcp` requires sign-in through Clerk's OAuth server. |
+| `CLERK_JWT_KEY` | unset | Optional PEM public key to verify session tokens without fetching Clerk's JWKS. |
+| `MCP_RESOURCE_URL` | from the request | Public URL of `/mcp`, named in the OAuth metadata. Set it if the backend sits behind a proxy that rewrites the host. |
+| `MCP_OAUTH_SCOPES` | `profile email` | Scopes advertised to MCP clients. Must be ones Clerk allows for dynamically registered clients. |
+| `DATABASE_URL` | unset | Postgres for saved scenarios. Migrations in `backend/migrations/` run on startup. Without it, saving reports unavailable. |
+| `SAVED_SCENARIOS_STORE` | unset | `memory` keeps saved scenarios in process memory (local development without Postgres). |
 | `AGENT_MCP_URL` | unset | When set (e.g. `http://localhost:8000/mcp`), the web assistant reaches its tools over streamable HTTP instead of in process. The E2E suite uses it. **Production: leave it unset** (in process, no network hop). If you do set it, also set `MCP_INTERNAL_TOKEN`. |
 | `SITE_URL` | `https://rothconversionsoptimizer.com` | Website that `full_results_url` links point to. |
-| `MCP_INTERNAL_TOKEN` | unset | Shared secret the web assistant sends (`x-lucerna-internal` header) when it calls `/mcp` over HTTP, so its calls skip the per-IP MCP limit. Its users are already limited at `/api/agent`. Without it, `AGENT_MCP_URL` logs a warning and the backend's own calls use up its IP's daily allowance. |
+| `MCP_INTERNAL_TOKEN` | unset | Shared secret the web assistant sends (`x-lucerna-internal` header) when it calls `/mcp` over HTTP, so its calls skip sign-in and the MCP limit, and name the signed-in web user in `x-lucerna-user` (trusted only with the secret). Its users are already limited at `/api/agent`. Without it, `AGENT_MCP_URL` logs a warning and the backend's own calls use up its IP's daily allowance. |
 | `AGENT_OFFLINE` | unset | `1` replaces the model with a rule-based stand-in (development and E2E only). |
 
 Limits are kept in process memory, which fits the single Railway instance. Move them to Redis or Postgres before scaling out.
@@ -122,7 +130,8 @@ E2E (uses the offline stand-in automatically): `cd e2e && npx playwright test`.
 | `tool_start` | `name`, `status` | Status line ("Running the optimizer") |
 | `draft` | `draft`, `missing` | Updates the shared scenario (form and summary card) |
 | `result` | `result_id`, `label`, `result`, `draft?` | Stores a full engine result for cards and the full results view |
-| `part` | `part` | Renders a card: `scenario_summary`, `result_headline`, `bracket_fill`, `balance_comparison`, `scenario_compare`, `suggestions` |
+| `part` | `part` | Renders a card: `scenario_summary`, `result_headline`, `bracket_fill`, `balance_comparison`, `scenario_compare`, `suggestions`, `sign_in` (saving needs an account) |
+| `saved` | `scenario` (`scenario_id`, `name`) | "Saved as …" with a link to My scenarios |
 | `error` | `code`, `message` | Notice; `unavailable` and limit codes switch to the form |
 | `done` | `messages` | API-format turns to append to the stored history |
 
@@ -141,12 +150,25 @@ Reports land in `backend/evals/results/` (git-ignored). Run the live set after a
 
 ## Connecting the MCP server
 
-The server speaks MCP over streamable HTTP at `https://<backend-host>/mcp`, with no login yet (rate-limited per IP).
+The server speaks MCP over streamable HTTP at `https://<backend-host>/mcp`.
 
-- **Claude:** add a custom connector and enter the `/mcp` URL. In a conversation, enable the connector and ask a Roth conversion question.
+- **Claude:** add a custom connector and enter the `/mcp` URL. Claude signs the user in (Google, through Clerk) the first time. In a conversation, enable the connector and ask a Roth conversion question.
 - **ChatGPT:** with developer mode enabled, create a connector pointing at the same URL.
 - **Any MCP client:** configure a remote (streamable HTTP) server with the URL. Inspect it with `npx @modelcontextprotocol/inspector`.
 
-Tools are read-only and stateless: each call carries the full scenario, and each result returns the normalized `scenario` for the next call. A typical flow is `record_scenario` until nothing is missing, confirm with the user, then `analyze_roth_conversions`, then `compare_roth_scenarios` for what-ifs. Missing required inputs come back as a tool error with a `missing_required` list so the client's model asks the user instead of guessing.
+Analysis tools are read-only and stateless: each call carries the full scenario, and each result returns the normalized `scenario` for the next call. A typical flow is `record_scenario` until nothing is missing, confirm with the user, then `analyze_roth_conversions`, then `compare_roth_scenarios` for what-ifs. Missing required inputs come back as a tool error with a `missing_required` list so the client's model asks the user instead of guessing.
 
-Next steps: OAuth once Clerk auth lands (PR #126), per-user limits, and submission to the Claude connector directory and the ChatGPT app directory.
+The user's account adds `save_scenario` (the only tool that writes, and only to their own saved scenarios), `list_saved_scenarios` and `open_saved_scenario`. Saved scenarios are the same ones the website's My scenarios page shows. Signed out (the web assistant without an account), they return a `sign_in_required` error.
+
+## Sign-in (OAuth)
+
+Clerk is the OAuth authorization server; `/mcp` is the resource server. It's on when `CLERK_SECRET_KEY` and `CLERK_ISSUER_URL` are set (otherwise `/mcp` is open and limited per IP).
+
+1. A request without a valid token gets `401` with `WWW-Authenticate: Bearer resource_metadata="https://<host>/.well-known/oauth-protected-resource/mcp"`.
+2. That document (RFC 9728, `app/mcp/oauth.py`) names Clerk in `authorization_servers`. Clients on the 2025-03-26 spec instead read `/.well-known/oauth-authorization-server` here, passed through from Clerk.
+3. The client registers with Clerk (Client ID Metadata Document, or dynamic client registration), sends the user to Clerk's sign-in (the site's `/sign-in` page, Google), and gets an access token.
+4. Each `/mcp` request's token is checked with Clerk's Backend API (`app/auth/clerk.py`, cached 60 seconds), and tools act for that user (`app/auth/identity.py`).
+
+Clerk dashboard settings this needs: OAuth applications with dynamic client registration and Client ID Metadata Documents turned on; sign-in and sign-up URLs pointing at the site's `/sign-in` and `/sign-up`. See `docs/planning/Lucerna_Accounts_Execution_Plan.md` (Needs Barry) for the full setup.
+
+Next steps: submission to the Claude connector directory and the ChatGPT app directory.

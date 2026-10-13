@@ -142,7 +142,7 @@ Schemas are generated from the Pydantic models. A test fails if any tool schema 
 
 - Official Python MCP SDK, streamable HTTP, mounted at `/mcp` in the FastAPI app.
 - Tools map 1:1 to the tool layer; methodology content exposed as resources; a short server instruction carries the legal framing.
-- M1: no login, per-IP rate limit. After Clerk auth (PR #126) lands: OAuth for connectors, per-user limits.
+- M1: no login, per-IP rate limit. Accounts (see `Lucerna_Accounts_Execution_Plan.md`) add OAuth for connectors and per-user limits.
 - Distribution after launch: Claude connector directory, ChatGPT app.
 
 ---
@@ -238,6 +238,6 @@ Built on branch `claude/agent-execution-plan`.
 - **Offline development:** `AGENT_OFFLINE=1` swaps the model for a rule-based stand-in that drives the real loop and tools. The Playwright suite uses it.
 - **Evals:** `backend/evals/` holds 33 scripted conversations and a runner with deterministic checks (framing, em dashes, numbers grounded in tool results, scenario defaults or the user's words, a written reply on every turn, confirm before running, expected tools and cards) that also reports cost per conversation. First live run (2026-10-01): 19/33, then 30/33 after the fixes from that run (confirm first even when asked to skip, no example dollar amounts, a written answer before any card). Two of the remaining three were checks that were too strict (since loosened); the third is an occasional sum the agent works out itself.
 - **MCP Apps:** the scenario summary, result card (with bracket and balance charts) and what-if comparison are MCP App Views owned by the server (`ui://roth-conversions/*.html`), built from shared components in `ui/` that the web app also renders natively. The web app is a spec-compliant host (sandbox proxy on a separate origin, `AppBridge`); it shows its own editable scenario card instead of that View. See `docs/agent-and-mcp.md`.
-- **Not done:** OAuth for MCP (waits on Clerk, PR #126), connector directory listings, and rich MCP UI rendering.
+- **Not done:** connector directory listings and rich MCP UI rendering. OAuth for MCP moved to `Lucerna_Accounts_Execution_Plan.md`.
 
 See `docs/agent-and-mcp.md` for setup.
