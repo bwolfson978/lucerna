@@ -1,4 +1,5 @@
-import { test, expect, type Locator, type Page } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
+import { test, expect, watchPageErrors } from '../fixtures/test'
 
 // Cards are shared components (ui/) rendered two ways: natively by the web app, and by
 // the MCP server's Views inside sandboxed iframes (preact/compat, Tailwind compiled
@@ -65,7 +66,7 @@ async function showBrackets(card: Locator) {
   await expect(card.locator('[data-ui=bracket-fill]')).toBeVisible()
 }
 
-test('native and MCP App renders of the shared cards match', async ({ page, browser }) => {
+test('native and MCP App renders of the shared cards match', async ({ page, browser, pageErrors }) => {
   test.setTimeout(120000)
 
   // MCP App renders: the Views, two iframes deep (sandbox proxy, then the View).
@@ -81,6 +82,7 @@ test('native and MCP App renders of the shared cards match', async ({ page, brow
   // Native renders: block the sandbox so Views never load and the host keeps its native
   // fallbacks, which are the same components fed the same tool results.
   const context = await browser.newContext({ viewport: page.viewportSize()! })
+  watchPageErrors(context, pageErrors)
   const nativePage = await context.newPage()
   await nativePage.route('**/mcp-apps/sandbox**', (route) => route.abort())
   await converse(nativePage)

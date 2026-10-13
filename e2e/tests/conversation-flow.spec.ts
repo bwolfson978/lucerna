@@ -1,4 +1,5 @@
-import { test, expect, type Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
+import { test, expect } from '../fixtures/test'
 
 // A tool result rendered by the MCP server's own View (MCP Apps), mounted by the host
 // in a sandbox proxy (outer iframe) that loads the View (inner iframe).
