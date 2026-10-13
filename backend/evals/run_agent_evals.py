@@ -14,7 +14,7 @@ Checks on every assistant reply:
     (a bare user number under 1,000 may mean thousands: "about 90" grounds $90,000)
   - analyze_roth_conversions only runs after a scenario summary was shown
 Plus the case's own expectations (tools called or not, cards shown, final draft
-values, reply content). Results are written to evals/results/.
+values, reply content and shape). Results are written to evals/results/.
 """
 
 from __future__ import annotations
@@ -48,6 +48,20 @@ _DECLINING = re.compile(
     r"\b(?:what|whether|if)\s+you should\b",
     re.I,
 )
+
+
+_BULLET = re.compile(r"^\s*[-*•]\s+", re.M)
+_NUMBERED = re.compile(r"^\s*\d+[.)]\s+(\*\*)?", re.M)
+
+
+def reply_shape(text: str) -> str:
+    """The visual shape a reply renders as: steps, bullets or prose (see <formatting>)."""
+    numbered = _NUMBERED.findall(text)
+    if len(numbered) >= 2 and all(numbered):
+        return "steps"
+    if _BULLET.search(text) or numbered:
+        return "bullets"
+    return "prose"
 
 
 def gives_advice(text: str) -> bool:
@@ -216,6 +230,9 @@ def check(case: dict, turns: list[TurnRecord], draft: ScenarioDraft) -> list[str
     for phrase in expect.get("reply_must_not_contain", []):
         if phrase.lower() in final.text.lower():
             failures.append(f"last reply contains '{phrase}'")
+    shape = expect.get("reply_shape")
+    if shape and reply_shape(final.text) != shape:
+        failures.append(f"last reply is {reply_shape(final.text)}, expected {shape}")
     if expect.get("reply_is_question") and "?" not in final.text:
         failures.append("expected a clarifying question")
     for key, value in expect.get("final_draft", {}).items():

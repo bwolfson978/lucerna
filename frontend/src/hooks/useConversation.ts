@@ -10,6 +10,7 @@ import {
   conversationReducer,
   loadConversation,
   saveConversation,
+  wordChunks,
   type ConversationState,
 } from "@/lib/agent/conversation";
 import {
@@ -145,7 +146,7 @@ export function useConversation({
         for (const event of exchange.events) {
           if (!live()) return;
           if (event.type === "text_delta" && animate) {
-            for (const chunk of event.text.match(/\S+\s*/g) ?? [event.text]) {
+            for (const chunk of wordChunks(event.text)) {
               if (!live()) return;
               handleEvent({ type: "text_delta", text: chunk });
               await sleep(16);

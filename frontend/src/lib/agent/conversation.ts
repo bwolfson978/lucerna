@@ -136,6 +136,16 @@ function applyEvent(state: ConversationState, event: AgentEvent): ConversationSt
 }
 
 /** Number of messages the user has sent in this conversation. */
+/**
+ * Split a text delta into word-sized chunks for the replay animation. Model
+ * deltas often start with the space or newline before a word (" stops",
+ * "\n- 2026"), so leading whitespace rides with the first word and joining
+ * the chunks gives back the original text exactly.
+ */
+export function wordChunks(text: string): string[] {
+  return text.match(/\s*\S+\s*/g) ?? [text];
+}
+
 export function userMessageCount(state: ConversationState): number {
   return state.messages.filter((m) => m.role === "user").length;
 }

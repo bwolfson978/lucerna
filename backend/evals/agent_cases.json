@@ -74,6 +74,12 @@
       "expect": {"reply_mentions_any": ["income", "bracket", "RMD", "required minimum"]}
     },
     {
+      "id": "walk-through-years",
+      "category": "explanation",
+      "turns": ["I'm 63, married, living on $20,000 a year, $1.4 million in a traditional 401(k), drawing from it at 73.", "Run it.", "Walk me through what happens over the years."],
+      "expect": {"reply_shape": "steps"}
+    },
+    {
       "id": "what-if-retirement-age",
       "category": "what-if",
       "turns": ["I'm 52, married, $90,000 income, $600,000 traditional 401(k), retiring at 60.", "Run the numbers.", "What if I retire at 58 instead?"],
@@ -113,7 +119,7 @@
       "id": "methodology-assumptions",
       "category": "methodology",
       "turns": ["What assumptions does the analysis make?"],
-      "expect": {"tools_called": ["explain_methodology"], "reply_mentions_any": ["7%", "5%", "growth", "discount"]}
+      "expect": {"tools_called": ["explain_methodology"], "reply_mentions_any": ["7%", "5%", "growth", "discount"], "reply_shape": "bullets"}
     },
     {
       "id": "methodology-rmd",
@@ -137,7 +143,7 @@
       "id": "concept-what-is-conversion",
       "category": "methodology",
       "turns": ["What is a Roth conversion?"],
-      "expect": {"reply_mentions_any": ["tax", "Roth"]}
+      "expect": {"reply_mentions_any": ["tax", "Roth"], "reply_shape": "prose"}
     },
     {
       "id": "tax-brackets-question",
