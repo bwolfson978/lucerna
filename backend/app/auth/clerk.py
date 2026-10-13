@@ -1,5 +1,7 @@
 """Clerk JWT verification — extracts clerk_user_id from Bearer tokens."""
 
+import os
+
 import jwt
 from fastapi import HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -8,13 +10,20 @@ from jwt import PyJWKClient
 _bearer = HTTPBearer(auto_error=False)
 _jwks_client: PyJWKClient | None = None
 
-_CLERK_JWKS_URL = "https://api.clerk.com/v1/jwks"
-
 
 def _get_jwks_client() -> PyJWKClient:
+    """Public keys of this app's Clerk instance. CLERK_JWKS_URL is the instance's
+    Frontend API JWKS, e.g. https://<app>.clerk.accounts.dev/.well-known/jwks.json
+    (api.clerk.com/v1/jwks needs the secret key, so it can't be used unauthenticated)."""
     global _jwks_client
     if _jwks_client is None:
-        _jwks_client = PyJWKClient(_CLERK_JWKS_URL, cache_keys=True)
+        jwks_url = os.environ.get("CLERK_JWKS_URL")
+        if not jwks_url:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Sign-in is not configured",
+            )
+        _jwks_client = PyJWKClient(jwks_url, cache_keys=True)
     return _jwks_client
 
 

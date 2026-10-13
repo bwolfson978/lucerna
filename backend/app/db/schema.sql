@@ -1,5 +1,5 @@
--- Run once against the Railway PostgreSQL database to set up the schema.
--- Usage: psql $DATABASE_URL -f scripts/create_tables.sql
+-- Scenario storage schema. init_db() applies it on every startup, so every
+-- statement must be idempotent (IF NOT EXISTS).
 
 CREATE TABLE IF NOT EXISTS scenarios (
   id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),

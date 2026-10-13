@@ -2,10 +2,13 @@
 
 import json
 import os
+from pathlib import Path
 
 import asyncpg
 
 _pool: asyncpg.Pool | None = None
+
+_SCHEMA = Path(__file__).with_name("schema.sql")
 
 
 async def init_db() -> None:
@@ -29,6 +32,8 @@ async def init_db() -> None:
         max_size=10,
         init=_init_conn,
     )
+    async with _pool.acquire() as conn:
+        await conn.execute(_SCHEMA.read_text())
 
 
 async def close_db() -> None:
