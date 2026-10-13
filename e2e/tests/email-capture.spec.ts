@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/test'
 
 test.describe('Email capture', () => {
   test('submits email and shows confirmation', async ({ page }) => {

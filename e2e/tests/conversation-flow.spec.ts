@@ -1,4 +1,5 @@
-import { test, expect, type Page } from '@playwright/test'
+import type { Page } from '@playwright/test'
+import { test, expect } from '../fixtures/test'
 
 // A tool result rendered by the MCP server's own View (MCP Apps), mounted by the host
 // in a sandbox proxy (outer iframe) that loads the View (inner iframe).
@@ -25,9 +26,8 @@ test.describe('Conversation flow', () => {
     const headline = view(page, 0).locator('[data-ui=result-card]')
     await expect(headline).toBeVisible({ timeout: 30000 })
     await expect(headline.getByText(/\$\d/).first()).toBeVisible()
-    // The card's chart panels open in place.
-    await headline.getByRole('button', { name: 'Tax brackets by year' }).click()
-    await expect(headline.getByRole('img', { name: /colored by tax bracket/ })).toBeVisible()
+    // The card shows how the conversions fill the tax brackets.
+    await expect(headline.getByRole('img', { name: /against the tax brackets/ })).toBeVisible()
 
     await page.getByLabel('Message').fill('What if I retire at 58?')
     await page.getByRole('button', { name: 'Send' }).click()

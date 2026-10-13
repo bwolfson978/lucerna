@@ -52,7 +52,7 @@ The same View renders in Claude, ChatGPT or any MCP Apps host with no changes. "
 
 Cards that appear both in MCP App Views and natively in the web app are defined once, in `ui/`:
 
-- `ui/src/`: display-only React components (`ResultCard`, `ConversionStrip`, `BracketFillChart`, `BalanceComparison`, `ScenarioCompareCard`, `ScenarioSummary`, `MetricCard`), plus chart colors, form options and formatters the web app re-exports. Plain data and callbacks in; no app context, data fetching, analytics or Next imports.
+- `ui/src/`: display-only React components (`ResultCard`, `ConversionStrip`, `BracketChart` (the tax bracket chart, also used by the results page), `BracketFillChart`, `BalanceComparison`, `ScenarioCompareCard`, `ScenarioSummary`, `MetricCard`), plus chart colors, form options and formatters the web app re-exports. Plain data and callbacks in; no app context, data fetching, analytics or Next imports.
 - `ui/tailwind/preset.js` and `ui/styles/tokens.css`: the Paper & Pine theme, CSS variables and component classes (`card-recommended`, `eyebrow`, `metric-*`, `btn-*`). The web app's `tailwind.config.ts` and `globals.css` pull them in.
 
 `ui/` is source-only with no `node_modules`; each consumer resolves its `react` import:
@@ -64,7 +64,7 @@ Cards that appear both in MCP App Views and natively in the web app are defined 
 
 **Data contract.** Views render the tool's `structuredContent` and View `_meta`; native cards render the same shapes, built from full engine results by `frontend/src/lib/results/viewData.ts`. `shared/fixtures/view-data.json` holds one real call of each tool with a View (regenerate with `python -m scripts.generate_view_fixtures` from `backend/`). Backend and frontend tests check both sides against it.
 
-**Drift check.** `e2e/tests/ui-drift.spec.ts` runs a conversation to a result and a what-if, renders both cards (with the bracket chart open) as Views inside the sandbox iframes and natively (the host's fallback, shown while a View loads or if it fails), then compares computed styles and sizes of each part. Any visual difference fails CI. `e2e/tests/scenario-view.spec.ts` mounts the `record_scenario` View, which the web app doesn't show on its own.
+**Drift check.** `e2e/tests/ui-drift.spec.ts` runs a conversation to a result and a what-if, renders both cards (the result card with its bracket chart) as Views inside the sandbox iframes and natively (the host's fallback, shown while a View loads or if it fails), then compares computed styles and sizes of each part. Any visual difference fails CI. `e2e/tests/scenario-view.spec.ts` mounts the `record_scenario` View, which the web app doesn't show on its own.
 
 **Deploying.** The frontend imports files outside its directory, so the Vercel project must keep "Include files outside the root directory in the Build Step" enabled (the default).
 
@@ -73,10 +73,10 @@ Cards that appear both in MCP App Views and natively in the web app are defined 
 | Tool | View | Shared component (ui/) | Web app |
 |---|---|---|---|
 | `record_scenario` | `scenario-summary.html` | `ScenarioSummary` | Not mounted: the host shows its own editable card (same component, wired to the live draft and form) via `show` |
-| `analyze_roth_conversions` | `result-card.html` | `ResultCard` with `BracketFillChart` and `BalanceComparison` panels | Mounted |
+| `analyze_roth_conversions` | `result-card.html` | `ResultCard` with `BracketFillChart`: the results page's `BracketChart` at the optimal schedule | Mounted |
 | `compare_roth_scenarios` | `scenario-compare.html` | `ScenarioCompareCard` | Mounted |
 
-Chart series the model doesn't need (bracket fill, balances) travel in the tool result's `_meta["lucerna/view"]` (`backend/app/tools/views.py`), which hosts pass to Views but not to the model. Buttons that act for the user ("Run the numbers", "Apply to my scenario") send a chat message with `ui/message` (`ui/src/messages.ts`); the prompts and MCP server instructions tell the model how to handle them, so every host behaves the same. The `show` tool still renders the bracket and balance charts natively when the model wants one on its own, with the same components. `get_tax_brackets` and `explain_methodology` return reference text and have no View; suggestion chips are web-only.
+Chart series the model doesn't need (yearly income, required withdrawals, conversions and added tax, plus the brackets and standard deduction) travel in the tool result's `_meta["lucerna/view"]` (`backend/app/tools/views.py`), which hosts pass to Views but not to the model. Buttons that act for the user ("Run the numbers", "Apply to my scenario") send a chat message with `ui/message` (`ui/src/messages.ts`); the prompts and MCP server instructions tell the model how to handle them, so every host behaves the same. The `show` tool still renders the bracket and balance charts natively when the model wants one on its own, with the same components. `get_tax_brackets` and `explain_methodology` return reference text and have no View; suggestion chips are web-only.
 
 ## Configuration (backend)
 
@@ -110,7 +110,7 @@ cd backend && ANTHROPIC_API_KEY=... uvicorn app.main:app --reload --port 8000
 cd frontend && npm run dev
 ```
 
-E2E (uses the offline stand-in automatically): `cd e2e && npx playwright test`.
+E2E (uses the offline stand-in automatically): `cd e2e && npx playwright test`. Specs import `test` and `expect` from `e2e/fixtures/test.ts`, which fails any test whose pages (iframes included) throw an uncaught error; `e2e/tests/page-errors.spec.ts` enforces the import.
 
 ## Agent stream protocol
 

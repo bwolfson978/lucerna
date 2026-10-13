@@ -1,0 +1,291 @@
+{
+  "_comment": "Tool output from the previous release (master at 990ef7a), as a production server sends it while a newer frontend is live. The current cards must render it without throwing (frontend SharedCards tests). Refresh from the released fixture when the payload changes again.",
+  "analyze_roth_conversions": {
+    "structured_content": {
+      "result_id": "r_c38d94c790",
+      "estimated_lifetime_tax_savings_todays_dollars": 86301,
+      "total_conversion": 454300,
+      "total_tax_on_conversions": 129709,
+      "average_tax_rate_on_conversions": 0.2855,
+      "years_with_conversions": 3,
+      "schedule_by_year": [
+        {
+          "year": 2026,
+          "income": 120000,
+          "conversion": 149600,
+          "tax_on_conversion": 45562,
+          "marginal_bracket": "24%"
+        },
+        {
+          "year": 2027,
+          "income": 60000,
+          "conversion": 182800,
+          "tax_on_conversion": 46781,
+          "marginal_bracket": "22%"
+        },
+        {
+          "year": 2028,
+          "income": 127308,
+          "conversion": 121900,
+          "tax_on_conversion": 37366,
+          "marginal_bracket": "24%"
+        }
+      ],
+      "balances_at_retirement": {
+        "traditional": 579552,
+        "roth": 584239
+      },
+      "alternatives": [
+        {
+          "label": "No conversion",
+          "total_conversion": 0,
+          "estimated_lifetime_tax_savings": 0
+        },
+        {
+          "label": "Highest estimated savings",
+          "total_conversion": 454300,
+          "estimated_lifetime_tax_savings": 86301
+        },
+        {
+          "label": "Full conversion (year 1)",
+          "total_conversion": 900000,
+          "estimated_lifetime_tax_savings": -131144
+        }
+      ],
+      "reasoning": {
+        "binding_constraint": "Top of 12% bracket in 3 years",
+        "marginal_tax_rate_at_optimal": 0.3263,
+        "cost_of_next_bracket": {
+          "bracket_rate": 0.33299999999999996,
+          "additional_tax": 983.0,
+          "net_effect": "Converting $1,000 more would cost $983 in additional tax at the 33% rate"
+        },
+        "benefit_of_current_bracket": {
+          "bracket_rate": 0.2855,
+          "tax_paid": 129708.76,
+          "future_tax_avoided": 55653.7
+        },
+        "summary_points": {
+          "what_to_convert": "Convert $149,600 in 2026, $182,800 in 2027, $121,900 in 2028",
+          "why_this_amount": "Fills lower tax brackets during low-income years without pushing into expensive higher brackets",
+          "how_much_you_save": "Estimated $63,459 in lifetime tax savings (in today's dollars)",
+          "key_tradeoff": "Pay tax now at lower rates to avoid higher rates on forced withdrawals in retirement. Converting more enters higher brackets where the cost exceeds the benefit."
+        },
+        "sensitivity_notes": [
+          "Moderate growth assumption (7%) \u2014 result changes modestly with \u00b12% variation",
+          "Large income variation across years creates significant conversion opportunities in low-income years",
+          "Long retirement horizon amplifies the tax-free growth benefit of Roth conversions",
+          "RMDs begin at age 75 (15 years from now) \u2014 converting before then reduces forced taxable withdrawals in retirement",
+          "State income tax adds approximately 9.3% marginal cost to conversions \u2014 combined federal + state rates are used in optimization"
+        ],
+        "rmd_summary": {
+          "rmd_start_age": 75,
+          "total_rmd_taxes_no_conversion": 174134.01,
+          "peak_rmd_no_conversion": 160188.23,
+          "peak_rmd_year_no_conversion": 2056,
+          "total_rmd_taxes_with_conversion": 29583.27,
+          "peak_rmd_with_conversion": 20430.53,
+          "rmd_tax_savings": 144550.74,
+          "peak_rmd_reduction": 139757.7,
+          "explanation": "Converting now reduces your future Required Minimum Distributions. Without conversion, RMDs starting at age 75 would peak at $160,188/year. With the recommended conversions, peak RMDs drop to $20,431/year, saving an estimated $144,551 in total RMD taxes over retirement."
+        }
+      },
+      "assumptions": {
+        "investment_return": 0.07,
+        "discount_rate": 0.05,
+        "planning_horizon_age": 90,
+        "retirement_spending": "4% rule",
+        "state": "CA",
+        "retirement_state": "AZ"
+      },
+      "scenario": {
+        "age": 60,
+        "filing_status": "married_filing_jointly",
+        "state": "CA",
+        "retirement_state": "AZ",
+        "current_income": 120000.0,
+        "income_growth_rate_pct": 3.0,
+        "traditional_balance": 900000.0,
+        "roth_balance": 50000.0,
+        "retirement_age": 63,
+        "planning_horizon_age": 90,
+        "investment_return_pct": 7.0,
+        "discount_rate_pct": 5.0,
+        "include_aca": false,
+        "household_size": 1,
+        "monthly_slcsp_premium": 620.0,
+        "income_changes": [
+          {
+            "year": 2027,
+            "gross_income": 60000.0,
+            "note": "Sabbatical"
+          }
+        ]
+      },
+      "full_results_url": "https://rothconversionsoptimizer.com/calculator?view=results&result=r_c38d94c790&scenario=eyJhZ2UiOjYwLCJjdXJyZW50X2luY29tZSI6MTIwMDAwLjAsImRpc2NvdW50X3JhdGVfcGN0Ijo1LjAsImZpbGluZ19zdGF0dXMiOiJtYXJyaWVkX2ZpbGluZ19qb2ludGx5IiwiaG91c2Vob2xkX3NpemUiOjEsImluY2x1ZGVfYWNhIjpmYWxzZSwiaW5jb21lX2NoYW5nZXMiOlt7Imdyb3NzX2luY29tZSI6NjAwMDAuMCwibm90ZSI6IlNhYmJhdGljYWwiLCJ5ZWFyIjoyMDI3fV0sImluY29tZV9ncm93dGhfcmF0ZV9wY3QiOjMuMCwiaW52ZXN0bWVudF9yZXR1cm5fcGN0Ijo3LjAsIm1vbnRobHlfc2xjc3BfcHJlbWl1bSI6NjIwLjAsInBsYW5uaW5nX2hvcml6b25fYWdlIjo5MCwicmV0aXJlbWVudF9hZ2UiOjYzLCJyZXRpcmVtZW50X3N0YXRlIjoiQVoiLCJyb3RoX2JhbGFuY2UiOjUwMDAwLjAsInN0YXRlIjoiQ0EiLCJ0cmFkaXRpb25hbF9iYWxhbmNlIjo5MDAwMDAuMH0"
+    },
+    "view_meta": {
+      "bracket_fill": {
+        "years": [
+          {
+            "year": 2026,
+            "income": 87800,
+            "conversion": 149600,
+            "segments": [
+              {
+                "rate": 0.12,
+                "amount": 13000
+              },
+              {
+                "rate": 0.22,
+                "amount": 110600
+              },
+              {
+                "rate": 0.24,
+                "amount": 26000
+              }
+            ]
+          },
+          {
+            "year": 2027,
+            "income": 27800,
+            "conversion": 182800,
+            "segments": [
+              {
+                "rate": 0.12,
+                "amount": 73000
+              },
+              {
+                "rate": 0.22,
+                "amount": 109800
+              }
+            ]
+          },
+          {
+            "year": 2028,
+            "income": 95108,
+            "conversion": 121900,
+            "segments": [
+              {
+                "rate": 0.12,
+                "amount": 5692
+              },
+              {
+                "rate": 0.22,
+                "amount": 110600
+              },
+              {
+                "rate": 0.24,
+                "amount": 5608
+              }
+            ]
+          }
+        ]
+      },
+      "balances": {
+        "roth_at_retirement": 584239,
+        "peak_rmd_with": 20431,
+        "peak_rmd_without": 160188,
+        "after_tax_wealth_change": 86301,
+        "points": [
+          {
+            "age": 75,
+            "year": 2041,
+            "with": 485118,
+            "without": 1585928
+          },
+          {
+            "age": 76,
+            "year": 2042,
+            "with": 472524,
+            "without": 1632475
+          },
+          {
+            "age": 77,
+            "year": 2043,
+            "with": 459050,
+            "without": 1677867
+          },
+          {
+            "age": 78,
+            "year": 2044,
+            "with": 444631,
+            "without": 1722049
+          },
+          {
+            "age": 79,
+            "year": 2045,
+            "with": 429204,
+            "without": 1764317
+          },
+          {
+            "age": 80,
+            "year": 2046,
+            "with": 412697,
+            "without": 1804202
+          },
+          {
+            "age": 81,
+            "year": 2047,
+            "with": 395034,
+            "without": 1841180
+          },
+          {
+            "age": 82,
+            "year": 2048,
+            "with": 376134,
+            "without": 1875156
+          },
+          {
+            "age": 83,
+            "year": 2049,
+            "with": 355912,
+            "without": 1905057
+          },
+          {
+            "age": 84,
+            "year": 2050,
+            "with": 334274,
+            "without": 1930781
+          },
+          {
+            "age": 85,
+            "year": 2051,
+            "with": 311122,
+            "without": 1951008
+          },
+          {
+            "age": 86,
+            "year": 2052,
+            "with": 286349,
+            "without": 1965641
+          },
+          {
+            "age": 87,
+            "year": 2053,
+            "with": 259842,
+            "without": 1973917
+          },
+          {
+            "age": 88,
+            "year": 2054,
+            "with": 231479,
+            "without": 1975014
+          },
+          {
+            "age": 89,
+            "year": 2055,
+            "with": 201131,
+            "without": 1969103
+          },
+          {
+            "age": 90,
+            "year": 2056,
+            "with": 168658,
+            "without": 1954296
+          }
+        ]
+      }
+    }
+  }
+}

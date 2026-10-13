@@ -3,6 +3,7 @@ import {
   BalanceComparison,
   BracketFillChart,
   ResultCard,
+  isResultDetails,
   ScenarioCompareCard,
   ScenarioSummary,
   type ResultCardData,
@@ -11,6 +12,8 @@ import {
   type ScenarioSummaryData,
 } from "@lucerna/ui";
 import fixture from "../../../../../shared/fixtures/view-data.json";
+import previous from "../../../../../shared/fixtures/view-data-previous.json";
+import { balanceData } from "@/lib/results/viewData";
 import { MetricCard } from "../MetricCard";
 
 const card = fixture.analyze_roth_conversions.structured_content as unknown as ResultCardData;
@@ -30,23 +33,41 @@ it("renders the result card from tool output", () => {
   expect(open).toHaveBeenCalled();
 });
 
-it("opens the result card's chart panels", () => {
+it("shows the tax bracket chart in the result card", () => {
   render(<ResultCard data={card} details={details} />);
   expect(screen.queryByRole("button", { name: "See full results" })).not.toBeInTheDocument();
-  const brackets = screen.getByRole("button", { name: "Tax brackets by year" });
-  fireEvent.click(brackets);
-  expect(brackets).toHaveAttribute("aria-expanded", "true");
-  expect(screen.getByRole("img", { name: /colored by tax bracket/ })).toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Balances over time" }));
-  expect(screen.queryByRole("img", { name: /colored by tax bracket/ })).not.toBeInTheDocument();
-  expect(screen.getByText("Roth at retirement")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /Balances over time/ })).not.toBeInTheDocument();
+  // The results page's chart: bracket lines, the 0% standard deduction band and the
+  // added tax row.
+  expect(screen.getByRole("img", { name: /against the tax brackets/ })).toBeInTheDocument();
+  expect(screen.getAllByText(/^0%/).length).toBeGreaterThan(0);
+  expect(screen.getByText("Added tax from conversion")).toBeInTheDocument();
+  expect(screen.getByText("Remaining space in tax bracket")).toBeInTheDocument();
+});
+
+it("renders the previous release's tool output without the chart instead of crashing", () => {
+  // A newer frontend can meet an older server (deploys roll out separately) or a
+  // conversation saved before the change. The card must degrade, not throw.
+  const old = previous.analyze_roth_conversions;
+  expect(isResultDetails(old.view_meta)).toBe(false);
+  render(
+    <ResultCard
+      data={old.structured_content as unknown as ResultCardData}
+      details={old.view_meta as unknown as ResultDetails}
+    />
+  );
+  expect(screen.getByText("Estimated lifetime tax savings")).toBeInTheDocument();
+  expect(screen.queryByRole("img", { name: /against the tax brackets/ })).not.toBeInTheDocument();
+  expect(screen.getAllByRole("img", { name: /converted$/ })).toHaveLength(
+    old.structured_content.schedule_by_year.length
+  );
 });
 
 it("renders the standalone charts with their own titles", () => {
   render(
     <>
       <BracketFillChart data={details.bracket_fill!} />
-      <BalanceComparison data={details.balances!} />
+      <BalanceComparison data={balanceData(fixture.analyze_roth_conversions.result as never)} />
     </>
   );
   expect(screen.getByText("How conversions fill your tax brackets")).toBeInTheDocument();

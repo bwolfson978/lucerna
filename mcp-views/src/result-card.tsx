@@ -1,6 +1,6 @@
 /**
  * Result card View for `analyze_roth_conversions` (MCP Apps): the shared ResultCard
- * (ui/) with its bracket and balance charts, from the tool's structuredContent and
+ * (ui/) with its tax bracket chart, from the tool's structuredContent and
  * View `_meta`. "See full results" asks the host to open the result's
  * `full_results_url`, which carries the scenario so the website can rebuild it.
  */

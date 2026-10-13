@@ -78,8 +78,8 @@ VIEWS = [
         "result-card.html",
         "result_card",
         "Roth conversion result",
-        "Estimated lifetime tax savings, the conversion schedule, and charts of bracket "
-        "filling and balances for an analysis.",
+        "Estimated lifetime tax savings and a chart of how the conversions fill the tax "
+        "brackets each year.",
     ),
     (
         SCENARIO_SUMMARY_URI,

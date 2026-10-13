@@ -110,7 +110,7 @@ lucerna/
 ├── shared/fixtures/       # Cross-language fixtures (scenario draft, View data)
 ├── e2e/                   # Playwright E2E tests (spans both services)
 │   ├── playwright.config.ts
-│   ├── fixtures/
+│   ├── fixtures/          # test.ts: the `test` every spec imports (fails on uncaught page errors)
 │   └── tests/
 ├── docs/
 │   ├── design-aesthetic.md    # Visual language, colors, typography, components

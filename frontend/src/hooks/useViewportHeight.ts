@@ -1,16 +1,2 @@
-import { useState, useEffect } from "react";
-
-export function useViewportHeight(): number | undefined {
-  const [height, setHeight] = useState<number>();
-
-  useEffect(() => {
-    function update() {
-      setHeight(window.innerHeight);
-    }
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
-  return height;
-}
+// Lives in the shared UI package so the bracket chart can use it in MCP App Views too.
+export { useViewportHeight } from "@lucerna/ui";
