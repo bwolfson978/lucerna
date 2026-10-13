@@ -146,6 +146,49 @@ def scenario_from_draft(draft: ScenarioDraft, start_year: int) -> dict:
     return scenario
 
 
+def scenario_from_input(inputs: ScenarioInput, start_year: int) -> dict:
+    """An approximate stateless scenario for engine input saved on the website, which
+    keeps only the engine's form of it. Years before ``start_year`` are dropped and the
+    income growth rate is read off the first two years."""
+    timeline = inputs.timeline
+    first = timeline[0].gross_income
+    growth = 0.0
+    if len(timeline) > 1 and first > 0:
+        growth = round((timeline[1].gross_income / first - 1) * 100, 1)
+    healthcare = inputs.healthcare
+    draft = ScenarioDraft(
+        age=inputs.age + max(0, start_year - timeline[0].year),
+        filing_status=inputs.filing_status,
+        state=inputs.state,
+        retirement_state=inputs.retirement_state,
+        custom_state_rate_pct=(
+            inputs.custom_state_rate * 100 if inputs.custom_state_rate is not None else None
+        ),
+        current_income=first,
+        income_growth_rate_pct=max(-10.0, min(20.0, growth)),
+        traditional_balance=inputs.traditional_ira_balance,
+        roth_balance=inputs.roth_ira_balance,
+        retirement_age=inputs.drawdown_start_age,
+        retirement_spending=inputs.default_drawdown,
+        planning_horizon_age=inputs.planning_horizon_age,
+        investment_return_pct=round(inputs.annual_growth_rate * 100, 2),
+        discount_rate_pct=round(inputs.discount_rate * 100, 2),
+        include_aca=healthcare is not None,
+        household_size=healthcare.household_size if healthcare else 1,
+        monthly_slcsp_premium=healthcare.monthly_slcsp_premium if healthcare else 620,
+        employer_coverage_year=healthcare.has_employer_coverage_after if healthcare else None,
+        timeline=[row for row in timeline if row.year >= start_year],
+    )
+    scenario = scenario_from_draft(draft, start_year)
+    if "income_changes" in scenario:
+        # Keep the per-year incomes only if they still fit this year's timeline.
+        try:
+            draft_from_scenario(ScenarioUpdate.model_validate(scenario), start_year)
+        except (ToolError, ValueError):
+            del scenario["income_changes"]
+    return scenario
+
+
 def draft_from_scenario(scenario: ScenarioUpdate, start_year: int) -> ScenarioDraft:
     return apply_update(ScenarioDraft(), scenario, start_year)
 
@@ -204,6 +247,10 @@ class _ResultCache:
         self._data: OrderedDict[str, OptimizationResult] = OrderedDict()
         self._lock = threading.Lock()
 
+    def has(self, scenario: ScenarioInput) -> bool:
+        with self._lock:
+            return scenario_key(scenario) in self._data
+
     def get_or_compute(self, scenario: ScenarioInput) -> OptimizationResult:
         key = scenario_key(scenario)
         with self._lock:
@@ -225,11 +272,20 @@ def run_optimization(scenario: ScenarioInput) -> OptimizationResult:
     return _results.get_or_compute(scenario)
 
 
-def run_draft(draft: ScenarioDraft) -> tuple[ScenarioInput, OptimizationResult]:
+def is_cached(scenario: ScenarioInput) -> bool:
+    """True when the result is already computed, so running it again is free."""
+    return _results.has(scenario)
+
+
+def scenario_input(draft: ScenarioDraft) -> ScenarioInput:
     try:
-        scenario = build_scenario_input(draft)
+        return build_scenario_input(draft)
     except ValueError as err:
         raise ToolError(str(err)) from err
+
+
+def run_draft(draft: ScenarioDraft) -> tuple[ScenarioInput, OptimizationResult]:
+    scenario = scenario_input(draft)
     return scenario, run_optimization(scenario)
 
 

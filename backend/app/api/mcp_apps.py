@@ -23,8 +23,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 
 from app.agent.toolbox import open_toolbox
-from app.api.agent import client_ip
-from app.mcp import server as mcp_server
+from app.mcp.limits import client_ip, current_caller
 from app.origins import is_allowed_origin
 
 router = APIRouter()
@@ -56,15 +55,18 @@ async def read_view(uri: str = Query(min_length=6, max_length=300)):
 
 @router.post("/mcp-apps/tools/call")
 async def call_from_view(body: AppToolCall, request: Request):
-    limit = mcp_server._requests_per_ip_per_day()
-    if not mcp_server._mcp_limiter.count_request(client_ip(request), limit):
-        raise HTTPException(status_code=429, detail="Daily request limit reached.")
+    # A View's button runs the same tools as a model would, under the same analysis
+    # limits, keyed by the browser's address.
     denied: str | None = None
-    async with open_toolbox() as toolbox:
-        try:
-            result = await toolbox.call_from_app(body.name, body.arguments)
-        except PermissionError as err:
-            denied = str(err)
+    caller = current_caller.set(f"ip:{client_ip(request)}")
+    try:
+        async with open_toolbox() as toolbox:
+            try:
+                result = await toolbox.call_from_app(body.name, body.arguments)
+            except PermissionError as err:
+                denied = str(err)
+    finally:
+        current_caller.reset(caller)
     if denied is not None:
         raise HTTPException(status_code=403, detail=denied)
     return result

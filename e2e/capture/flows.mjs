@@ -53,6 +53,21 @@ export const flows = {
     },
   },
 
+  'signed-out-links': {
+    title: 'Saved-scenario links while signed out',
+    paths: ['frontend/src/app/my-scenarios/', 'frontend/src/components/common/SignInRequired'],
+    async run(page, shot) {
+      // Local runs have no Clerk key, so every visitor is signed out (the sign-in
+      // button itself needs Clerk and is not drawn).
+      await page.goto('/my-scenarios')
+      await page.waitForLoadState('networkidle')
+      await shot('my-scenarios', 'Opening My Scenarios while signed out')
+      await page.goto('/calculator?saved=00000000-0000-0000-0000-000000000000')
+      await page.waitForLoadState('networkidle')
+      await shot('saved-link', 'Opening a saved-scenario link while signed out')
+    },
+  },
+
   'calculator-form': {
     title: 'Calculator form',
     paths: ['frontend/src/app/calculator/', 'frontend/src/components/calculator/', 'frontend/src/components/ui/'],

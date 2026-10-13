@@ -18,6 +18,7 @@ import json
 import os
 from pathlib import Path
 from typing import Annotated, Any
+from urllib.parse import urlencode
 
 import anyio
 from mcp.server.fastmcp import Context, FastMCP
@@ -28,11 +29,20 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
-from app.agent.limits import UsageLimiter
+from app.db import scenarios as saved_store
 from app.engine.types import FilingStatus, OptimizationResult, ScenarioInput
+from app.mcp import auth as mcp_auth
+from app.mcp.limits import (
+    AnalysisLimiter,
+    LimitReached,
+    client_ip,
+    current_caller,
+    is_signed_in,
+    next_reset,
+)
 from app.tools import core
 from app.tools.draft import ScenarioDraft, current_year
-from app.tools.links import full_results_url
+from app.tools.links import full_results_url, site_url
 from app.tools.models import MethodologyTopic, ScenarioUpdate
 from app.tools.views import VIEW_META_KEY, result_view
 
@@ -50,7 +60,10 @@ numbers as a table. A card button may send "Looks right. Run the numbers." (run 
 analysis) or ask to use a what-if as the scenario (call record_scenario with that \
 comparison's what_if_scenario). Results include full_results_url, a link to the full \
 interactive analysis of that scenario on the website; share it when the user wants more \
-detail."""
+detail. Users can keep scenarios in a free account: call save_scenario when they ask to \
+save one (the first call asks them to sign in), and list_saved_scenarios and \
+open_saved_scenario to pick one up later. Saving is optional: mention it at most once, \
+after an analysis, and never ask them to sign in for anything else."""
 
 UI_META_KEY = "lucerna/ui"
 RESULTS_META_KEY = "lucerna/results"
@@ -107,8 +120,16 @@ def _view_meta() -> dict:
     return {"ui": {"csp": VIEW_CSP, "prefersBorder": False}}
 
 
+# ChatGPT reads each tool's auth needs from securitySchemes (other clients ignore it).
+_NO_AUTH = {"securitySchemes": [{"type": "noauth"}]}
+
+
+def _account_meta() -> dict:
+    return {"securitySchemes": [{"type": "oauth2", "scopes": mcp_auth.auth_scopes()}]}
+
+
 def _tool_ui(resource_uri: str) -> dict:
-    return {"ui": {"resourceUri": resource_uri, "visibility": ["model", "app"]}}
+    return {"ui": {"resourceUri": resource_uri, "visibility": ["model", "app"]}, **_NO_AUTH}
 
 
 WEBSITE_URL = "https://rothconversionsoptimizer.com"
@@ -184,6 +205,60 @@ def _ready_or_error(draft: ScenarioDraft) -> CallToolResult | None:
     )
 
 
+_analysis_limiter = AnalysisLimiter()
+
+_LIMIT_MESSAGES = {
+    "daily_limit": (
+        "This connection has used today's {limit} free analyses. The limit resets at "
+        "{reset}. Until then the user can run this scenario on the website at "
+        "full_results_url, which has no daily limit."
+    ),
+    "capacity": (
+        "The optimizer has reached its daily capacity for anonymous use. It resets at "
+        "{reset}. Until then the user can run this scenario on the website at "
+        "full_results_url."
+    ),
+    "busy": (
+        "The optimizer is busy with other analyses right now. Try again in a minute, or "
+        "the user can run this scenario on the website at full_results_url."
+    ),
+}
+
+
+_SIGN_IN_NOTE = " Signing in to Roth Conversions Optimizer raises the daily limit."
+
+
+def _limit_error(err: LimitReached, draft: ScenarioDraft) -> CallToolResult:
+    reset = next_reset()
+    message = _LIMIT_MESSAGES[err.code].format(limit=err.limit, reset=reset.strftime("%H:%M UTC"))
+    if (
+        err.code == "daily_limit"
+        and mcp_auth.auth_issuer()
+        and not is_signed_in(current_caller.get())
+    ):
+        message += _SIGN_IN_NOTE
+    scenario = core.scenario_from_draft(draft, current_year())
+    url = full_results_url(scenario, core.result_id_for(core.scenario_input(draft)))
+    return _error(
+        message,
+        limit_reached=err.code,
+        resets_at=reset.isoformat() if err.code != "busy" else None,
+        full_results_url=url,
+        website=site_url(),
+    )
+
+
+async def _run_drafts(
+    drafts: list[ScenarioDraft],
+) -> list[tuple[ScenarioInput, OptimizationResult]]:
+    """Run each draft through the optimizer. Only results not already cached count
+    against the caller's limits (LimitReached when one is hit)."""
+    inputs = [core.scenario_input(d) for d in drafts]
+    fresh = {core.scenario_key(i) for i in inputs if not core.is_cached(i)}
+    async with _analysis_limiter.admit(current_caller.get(), len(fresh)):
+        return [(i, await anyio.to_thread.run_sync(core.run_optimization, i)) for i in inputs]
+
+
 @mcp.tool(
     title="Record a scenario",
     annotations=_READ_ONLY,
@@ -229,9 +304,11 @@ async def analyze_roth_conversions(
         draft = core.draft_from_scenario(scenario, current_year())
         if incomplete := _ready_or_error(draft):
             return incomplete
-        scenario_input, result = await anyio.to_thread.run_sync(core.run_draft, draft)
+        [(scenario_input, result)] = await _run_drafts([draft])
     except core.ToolError as err:
         return _error(str(err))
+    except LimitReached as err:
+        return _limit_error(err, draft)
     result_id = core.result_id_for(scenario_input)
     summary = core.summarize_result(result, result_id)
     summary["scenario"] = core.scenario_from_draft(draft, current_year())
@@ -271,10 +348,13 @@ async def compare_roth_scenarios(
         if incomplete := _ready_or_error(base_draft):
             return incomplete
         variant_draft = core.apply_update(base_draft, changes, year)
-        base_input, base = await anyio.to_thread.run_sync(core.run_draft, base_draft)
-        variant_input, variant = await anyio.to_thread.run_sync(core.run_draft, variant_draft)
+        (base_input, base), (variant_input, variant) = await _run_drafts(
+            [base_draft, variant_draft]
+        )
     except core.ToolError as err:
         return _error(str(err))
+    except LimitReached as err:
+        return _limit_error(err, variant_draft)
     base_id, variant_id = core.result_id_for(base_input), core.result_id_for(variant_input)
     comparison = core.compare_results(base, variant, base_id, variant_id, label)
     comparison["what_if_scenario"] = core.scenario_from_draft(variant_draft, year)
@@ -297,6 +377,7 @@ async def compare_roth_scenarios(
 @mcp.tool(
     title="Get tax brackets",
     annotations=_READ_ONLY,
+    meta=_NO_AUTH,
     description="2026 federal (and optionally state) income tax brackets and standard deductions.",
 )
 async def get_tax_brackets(
@@ -312,6 +393,7 @@ async def get_tax_brackets(
 @mcp.tool(
     title="Explain the methodology",
     annotations=_READ_ONLY,
+    meta=_NO_AUTH,
     description=(
         "How the optimizer works and the concepts behind it: the savings number, bracket "
         "filling, the conversion trade-off, multi-year allocation, assumptions and limits, "
@@ -328,6 +410,179 @@ async def explain_methodology(topic: MethodologyTopic) -> CallToolResult:
             "shown_to_user": False,
         }
     )
+
+
+# --------------------------------------------------------------------------
+# Account tools: saved scenarios, shared with "My scenarios" on the website.
+# Calls without a valid token never get here over HTTP (see _IdentifyCaller); the
+# check below covers in-process callers and gives ChatGPT its linking hint.
+# --------------------------------------------------------------------------
+
+_ACCOUNT = ToolAnnotations(readOnlyHint=True, openWorldHint=False, idempotentHint=True)
+_SAVE = ToolAnnotations(
+    readOnlyHint=False, destructiveHint=False, openWorldHint=False, idempotentHint=False
+)
+
+
+def _signed_in_user() -> str | None:
+    caller = current_caller.get()
+    return caller.removeprefix("user:") if is_signed_in(caller) else None
+
+
+def _sign_in_required() -> CallToolResult:
+    if mcp_auth.auth_issuer() is None:
+        return _error(
+            "Saving scenarios from a chat isn't available yet. The user can save it on the "
+            "website from full_results_url.",
+            website=site_url(),
+        )
+    result = _error("The user needs to sign in to Roth Conversions Optimizer first.")
+    result.meta = {
+        "mcp/www_authenticate": [
+            'Bearer error="invalid_token", error_description="Sign in to use saved scenarios"'
+        ]
+    }
+    return result
+
+
+def _storage_unavailable() -> CallToolResult:
+    return _error("Saved scenarios are unavailable right now. Try again later.")
+
+
+def _saved_url(saved_id: str) -> str:
+    return f"{site_url()}/calculator?{urlencode({'saved': saved_id})}"
+
+
+@mcp.tool(
+    title="Save a scenario",
+    annotations=_SAVE,
+    meta=_account_meta(),
+    description=(
+        "Save a complete scenario and its analysis to the user's Roth Conversions Optimizer "
+        "account, so they can reopen it later in a chat or on the website (My scenarios). "
+        "Only call when the user asks to save or keep it. Needs the user to sign in; the "
+        "first call asks them to."
+    ),
+)
+async def save_scenario(
+    scenario: ScenarioArg,
+    name: Annotated[
+        str | None,
+        Field(max_length=80, description="Optional name, e.g. 'Retire at 60, stay in Ohio'"),
+    ] = None,
+) -> CallToolResult:
+    user_id = _signed_in_user()
+    if user_id is None:
+        return _sign_in_required()
+    year = current_year()
+    try:
+        draft = core.draft_from_scenario(scenario, year)
+        if incomplete := _ready_or_error(draft):
+            return incomplete
+        [(scenario_input, result)] = await _run_drafts([draft])
+    except core.ToolError as err:
+        return _error(str(err))
+    except LimitReached as err:
+        return _limit_error(err, draft)
+    try:
+        saved_id, saved_name = await saved_store.save(
+            user_id,
+            scenario_input,
+            result.model_dump(mode="json"),
+            name=name.strip() if name and name.strip() else None,
+            scenario=core.scenario_from_draft(draft, year),
+        )
+    except saved_store.StorageUnavailable:
+        return _storage_unavailable()
+    return _result(
+        {
+            "saved_id": saved_id,
+            "name": saved_name,
+            "estimated_lifetime_tax_savings_todays_dollars": round(
+                result.estimated_lifetime_tax_savings
+            ),
+            "open_url": _saved_url(saved_id),
+            "my_scenarios_url": f"{site_url()}/my-scenarios",
+        }
+    )
+
+
+@mcp.tool(
+    title="List saved scenarios",
+    annotations=_ACCOUNT,
+    meta=_account_meta(),
+    description=(
+        "List the scenarios the user saved to their account (from a chat or the website), "
+        "newest first, with each one's estimated lifetime tax savings when it was saved. "
+        "Needs the user to sign in."
+    ),
+)
+async def list_saved_scenarios() -> CallToolResult:
+    user_id = _signed_in_user()
+    if user_id is None:
+        return _sign_in_required()
+    try:
+        rows = await saved_store.list_for(user_id)
+    except saved_store.StorageUnavailable:
+        return _storage_unavailable()
+    return _result(
+        {
+            "scenarios": [
+                {
+                    "saved_id": row.id,
+                    "name": row.name,
+                    "saved_on": row.created_at.date().isoformat(),
+                    "estimated_lifetime_tax_savings_todays_dollars": round(row.estimated_savings),
+                    "open_url": _saved_url(row.id),
+                }
+                for row in rows
+            ],
+            "my_scenarios_url": f"{site_url()}/my-scenarios",
+        }
+    )
+
+
+@mcp.tool(
+    title="Open a saved scenario",
+    annotations=_ACCOUNT,
+    meta=_account_meta(),
+    description=(
+        "Load one of the user's saved scenarios as a `scenario` to pass to the other tools, "
+        "to pick up where they left off. Confirm the values with the user (ages and "
+        "balances may have changed since it was saved) before analyzing it again. Needs the "
+        "user to sign in."
+    ),
+)
+async def open_saved_scenario(
+    saved_id: Annotated[str, Field(description="saved_id from list_saved_scenarios")],
+) -> CallToolResult:
+    user_id = _signed_in_user()
+    if user_id is None:
+        return _sign_in_required()
+    try:
+        saved = await saved_store.get(user_id, saved_id)
+    except saved_store.StorageUnavailable:
+        return _storage_unavailable()
+    if saved is None:
+        return _error("No saved scenario with that saved_id. Call list_saved_scenarios.")
+    approximate = saved.scenario is None
+    scenario = saved.scenario or core.scenario_from_input(saved.inputs, current_year())
+    data = {
+        "saved_id": saved.id,
+        "name": saved.name,
+        "saved_on": saved.created_at.date().isoformat(),
+        "estimated_lifetime_tax_savings_when_saved": round(
+            float(saved.result.get("estimated_lifetime_tax_savings") or 0)
+        ),
+        "scenario": scenario,
+        "open_url": _saved_url(saved.id),
+    }
+    if approximate:
+        data["note"] = (
+            "Saved on the website, so this scenario is rebuilt from the saved analysis and "
+            "may differ in detail. open_url reopens the exact saved version."
+        )
+    return _result(data)
 
 
 def _register_resources() -> None:
@@ -375,15 +630,12 @@ _register_views()
 
 
 # --------------------------------------------------------------------------
-# ASGI app with a per-IP daily request limit
+# ASGI app: who is calling, and the sign-in gate for account tools
 # --------------------------------------------------------------------------
-
-_mcp_limiter = UsageLimiter()
-
 
 # The web app's own agent can reach this server over HTTP (AGENT_MCP_URL). Its calls
 # all come from the backend's IP and are already limited per user at /api/agent, so
-# they carry a shared secret and skip this per-IP limit.
+# they carry a shared secret and skip the per-caller limits.
 INTERNAL_HEADER = "x-lucerna-internal"
 
 
@@ -396,37 +648,75 @@ def _is_internal(request: Request) -> bool:
     return bool(token) and hmac.compare_digest(request.headers.get(INTERNAL_HEADER, ""), token)
 
 
-def _requests_per_ip_per_day() -> int:
-    try:
-        return int(os.environ.get("MCP_REQUESTS_PER_IP_PER_DAY", 300))
-    except ValueError:
-        return 300
+async def _read_body(receive) -> bytes:
+    chunks = []
+    while True:
+        message = await receive()
+        if message["type"] != "http.request":
+            break
+        chunks.append(message.get("body", b""))
+        if not message.get("more_body"):
+            break
+    return b"".join(chunks)
 
 
-class _RateLimited:
+def _replay(body: bytes, receive):
+    sent = False
+
+    async def replay():
+        nonlocal sent
+        if not sent:
+            sent = True
+            return {"type": "http.request", "body": body, "more_body": False}
+        return await receive()
+
+    return replay
+
+
+class _IdentifyCaller:
+    """Records who is calling (for the analysis limits in app.mcp.limits) and asks for
+    sign-in when an account tool is called without a valid token.
+
+    The challenge must be an HTTP 401 sent before the MCP SDK runs: a tool result is
+    always wrapped in a 200, and clients only start sign-in on the 401.
+    """
+
     def __init__(self, app):
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] == "http" and scope.get("method") == "POST":
+        caller = None
+        if scope["type"] == "http":
             request = Request(scope)
-            if _is_internal(request):
-                await self.app(scope, receive, send)
-                return
-            forwarded = request.headers.get("x-forwarded-for", "")
-            ip = (
-                forwarded.split(",")[0].strip()
-                if forwarded
-                else (request.client.host if request.client else "unknown")
-            )
-            if not _mcp_limiter.count_request(ip, _requests_per_ip_per_day()):
-                response = JSONResponse(
-                    {"error": "Daily request limit reached. Try again tomorrow."},
-                    status_code=429,
-                )
-                await response(scope, receive, send)
-                return
-        await self.app(scope, receive, send)
+            user_id = None
+            token = mcp_auth.bearer_token(request)
+            if token and mcp_auth.auth_issuer():
+                user_id = await anyio.to_thread.run_sync(mcp_auth.verify_access_token, token)
+            if user_id:
+                caller = f"user:{user_id}"
+            elif not _is_internal(request):
+                caller = f"ip:{client_ip(request)}"
+            if scope.get("method") == "POST" and not user_id and mcp_auth.auth_issuer():
+                body = await _read_body(receive)
+                receive = _replay(body, receive)
+                try:
+                    message = json.loads(body or b"null")
+                except ValueError:
+                    message = None
+                if mcp_auth.calls_account_tool(message):
+                    challenge = mcp_auth.www_authenticate(request, invalid_token=bool(token))
+                    response = JSONResponse(
+                        {"error": "invalid_token", "error_description": "Sign in to continue"},
+                        status_code=401,
+                        headers={"WWW-Authenticate": challenge},
+                    )
+                    await response(scope, receive, send)
+                    return
+        reset = current_caller.set(caller)
+        try:
+            await self.app(scope, receive, send)
+        finally:
+            current_caller.reset(reset)
 
 
 def build_route() -> Route:
@@ -435,5 +725,7 @@ def build_route() -> Route:
     The session manager must run in the host app's lifespan.
     """
     return Route(
-        "/mcp", endpoint=_RateLimited(mcp.streamable_http_app()), methods=["GET", "POST", "DELETE"]
+        "/mcp",
+        endpoint=_IdentifyCaller(mcp.streamable_http_app()),
+        methods=["GET", "POST", "DELETE"],
     )

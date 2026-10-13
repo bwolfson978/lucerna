@@ -12,6 +12,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from prometheus_fastapi_instrumentator import Instrumentator
 
+from app import error_tracking
+from app.mcp.auth import router as mcp_auth_router
 from app.mcp.server import build_route as build_mcp_route
 from app.mcp.server import mcp as mcp_server
 from app.origins import ORIGIN_REGEX, allowed_origins
@@ -41,9 +43,11 @@ async def lifespan(app: FastAPI):
         yield
     demo_task.cancel()
     await close_db()
+    error_tracking.shutdown()
 
 
 app = FastAPI(title="Lucerna API", lifespan=lifespan)
+error_tracking.register(app)
 
 Instrumentator(excluded_handlers=["/health", "/metrics"]).instrument(app)
 
@@ -99,7 +103,9 @@ app.include_router(mcp_apps_router, prefix="/api")
 app.include_router(scenario_links_router, prefix="/api")
 app.include_router(mcp_apps_sandbox_router)
 
-# Remote MCP server (streamable HTTP) for Claude, ChatGPT and other MCP clients.
+# Remote MCP server (streamable HTTP) for Claude, ChatGPT and other MCP clients, and the
+# OAuth discovery documents its sign-in uses.
+app.include_router(mcp_auth_router)
 app.router.routes.append(build_mcp_route())
 
 

@@ -27,6 +27,7 @@ import re
 from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager
 
+from app import error_tracking
 from app.agent.model import Final, ModelClient, ModelUnavailable, TextDelta, ToolStart
 from app.agent.prompts import SYSTEM_PROMPT
 from app.agent.toolbox import STATUS, McpToolbox, ToolContext, open_toolbox
@@ -147,8 +148,9 @@ async def run_turn(
                     on_usage=on_usage,
                 ):
                     await queue.put(event)
-        except Exception:
+        except Exception as exc:
             logger.exception("Agent turn failed")
+            error_tracking.capture_exception(exc, source="agent_turn")
             await queue.put(_error("unavailable"))
             await queue.put({"type": "done", "messages": []})
         finally:

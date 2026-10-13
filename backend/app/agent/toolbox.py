@@ -33,6 +33,7 @@ from mcp.shared.exceptions import McpError
 from mcp.types import CallToolResult
 from pydantic import ValidationError
 
+from app.mcp.auth import ACCOUNT_TOOLS
 from app.mcp.server import APP_MIME_TYPE, RESULTS_META_KEY, UI_META_KEY
 from app.tools import core
 from app.tools.draft import ScenarioDraft
@@ -111,6 +112,9 @@ class McpToolbox:
         listed = await self._session.list_tools()
         self.definitions = []
         for tool in listed.tools:
+            # The website saves scenarios itself; account tools are for other clients.
+            if tool.name in ACCOUNT_TOOLS:
+                continue
             meta = tool.meta or {}
             ui = meta.get("ui") if isinstance(meta.get("ui"), dict) else {}
             self._visibility[tool.name] = list(ui.get("visibility") or ["model", "app"])
