@@ -1,50 +1,74 @@
 "use client";
 
-import type { BracketFillResult } from "@/lib/types";
-import { formatPercent, formatCurrency, formatAxisCurrency } from "@/lib/utils/formatting";
-import { BRACKET_COLORS, CHART_COLORS } from "@/lib/utils/constants";
-import { DATA_FONT_FAMILY } from "@/lib/utils/constants";
-import { useRef, useMemo, useState, useCallback, useEffect, type RefObject } from "react";
-import { useContainerWidth } from "@/hooks/useContainerWidth";
-import { useScrollFade } from "@/hooks/useScrollFade";
-import { useViewportHeight } from "@/hooks/useViewportHeight";
-import { useTaxConfig, type TaxBracket } from "@/lib/tax/TaxConfigProvider";
+import {
+  useRef,
+  useMemo,
+  useState,
+  useCallback,
+  useEffect,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+  type RefObject,
+} from "react";
+import { BRACKET_COLORS, CHART_COLORS } from "./colors";
+import { formatAxisCurrency, formatCurrency, formatTableCurrency } from "./format";
+import { useContainerWidth, useScrollFade, useViewportHeight } from "./charts/hooks";
 
-interface ChartTooltip {
-  x: number;
-  y: number;
-  year: number;
-  age: number;
-  bracketFill: BracketFillResult[];
-  rmdAmount?: number;
-  conversion?: number;
-  income?: number;
+/**
+ * The tax bracket chart: each year's income, required withdrawal and Roth conversion
+ * stacked against the federal brackets, with the space left in each bracket. One
+ * component for the results page, the conversation's result card and the MCP App View.
+ * Plain data in; the brackets and standard deduction come from the caller.
+ */
+
+/** A federal bracket in taxable income; `max` is null for the top bracket. */
+export interface TaxBracket {
+  min: number;
+  max: number | null;
+  rate: number;
 }
 
-interface YearData {
+export interface BracketChartYear {
   year: number;
-  age: number;
-  bracketFill: BracketFillResult[];
+  age?: number;
+  /** Gross income other than the conversion and any required withdrawal. */
+  income?: number;
   rmdAmount?: number;
   conversion?: number;
-  income?: number;
+}
+
+export interface BracketChartLayout {
+  leftOffset: number;
+  rightOffset: number;
+  verticalLabelWidth: number;
+  axisLabelStart: number;
+}
+
+interface ChartTooltip extends BracketChartYear {
+  x: number;
+  y: number;
+}
+
+type YearData = BracketChartYear;
+
+const DATA_FONT_FAMILY = "'Inter', system-ui";
+const dataFontStyle = { fontFamily: DATA_FONT_FAMILY, fontVariantNumeric: "tabular-nums" } as const;
+
+function formatPercent(decimal: number): string {
+  return `${Math.round(decimal * 100)}%`;
 }
 
 interface BracketChartProps {
   years: YearData[];
-  filingStatus: "single" | "married_filing_jointly";
+  /** Federal brackets for the filing status, in taxable income. */
+  brackets: TaxBracket[];
+  /** Standard deduction for the filing status, drawn as the 0% band. */
+  standardDeduction: number;
+  /** Added tax from the conversion each year, shown as a row under the bars. */
+  addedTax?: (number | null | undefined)[];
   scrollRef?: RefObject<HTMLDivElement | null>;
   onBarWidthChange?: (barWidth: number) => void;
-  onLayoutChange?: (layout: {
-    leftOffset: number;
-    rightOffset: number;
-    verticalLabelWidth: number;
-    axisLabelStart: number;
-  }) => void;
-  /** Content rendered below the chart SVG inside the shared scroll container */
-  children?: React.ReactNode;
-  /** Content rendered below the left axis (fixed, for row labels) */
-  leftBottomContent?: React.ReactNode;
+  onLayoutChange?: (layout: BracketChartLayout) => void;
   /** Hide the built-in series legend (when rendered externally) */
   hideLegend?: boolean;
   /**
@@ -54,6 +78,11 @@ interface BracketChartProps {
    * "jump" that occurs when per-year gross crosses a bracket boundary.
    */
   stableMaxGrossAmount?: number;
+  /**
+   * Keep the minimum desktop height instead of growing with the window. On for cards:
+   * inside an MCP App View the window is the iframe, so its height is not the page's.
+   */
+  fixedHeight?: boolean;
 }
 
 // Build gross-scale bracket boundaries from tax config.
@@ -105,27 +134,23 @@ function niceInterval(range: number, targetTicks: number): number {
 
 export function BracketChart({
   years,
-  filingStatus,
+  brackets,
+  standardDeduction,
+  addedTax,
   scrollRef: externalScrollRef,
   onBarWidthChange,
   onLayoutChange,
-  children,
-  leftBottomContent,
   hideLegend,
   stableMaxGrossAmount,
+  fixedHeight = false,
 }: BracketChartProps) {
   const internalScrollRef = useRef<HTMLDivElement>(null);
   const scrollRef = externalScrollRef || internalScrollRef;
   const fadeRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const taxConfig = useTaxConfig();
-  const standardDeduction = useMemo(
-    () => taxConfig.standard_deduction[filingStatus],
-    [taxConfig, filingStatus]
-  );
   const grossBrackets = useMemo(
-    () => buildGrossBrackets(taxConfig.brackets[filingStatus], standardDeduction),
-    [taxConfig, filingStatus, standardDeduction]
+    () => buildGrossBrackets(brackets, standardDeduction),
+    [brackets, standardDeduction]
   );
   const [tooltip, setTooltip] = useState<ChartTooltip | null>(null);
   const [isEngaged, setIsEngaged] = useState(false);
@@ -154,7 +179,7 @@ export function BracketChart({
     let chartHeight: number;
     if (isMobile) {
       chartHeight = MOBILE_CHART_HEIGHT;
-    } else if (viewportHeight !== undefined) {
+    } else if (!fixedHeight && viewportHeight !== undefined) {
       // Use ~45% of viewport height, clamped between min/max
       const desired = Math.round(viewportHeight * 0.45);
       chartHeight = Math.max(MIN_DESKTOP_CHART_HEIGHT, Math.min(desired, MAX_DESKTOP_CHART_HEIGHT));
@@ -196,7 +221,7 @@ export function BracketChart({
       totalBarWidth,
       barsFit,
     };
-  }, [containerWidth, viewportHeight, years.length]);
+  }, [containerWidth, viewportHeight, fixedHeight, years.length]);
 
   const { isMobile, chartHeight, leftAxisWidth, rightAxisWidth, barWidth, totalBarWidth, barsFit } =
     layout;
@@ -221,7 +246,7 @@ export function BracketChart({
 
   // Tooltip handler: only show if chart is already engaged
   const handleBarInteraction = useCallback(
-    (e: React.MouseEvent | React.PointerEvent, yearData: YearData) => {
+    (e: ReactMouseEvent | ReactPointerEvent, yearData: YearData) => {
       if (!isEngaged) return;
       const container = containerRef.current;
       if (!container) return;
@@ -231,7 +256,6 @@ export function BracketChart({
         y: e.clientY - rect.top,
         year: yearData.year,
         age: yearData.age,
-        bracketFill: yearData.bracketFill,
         rmdAmount: yearData.rmdAmount,
         conversion: yearData.conversion,
         income: yearData.income,
@@ -306,10 +330,10 @@ export function BracketChart({
   );
 
   return (
-    <div className="flex flex-col gap-default">
+    <div className="gap-default flex flex-col">
       {/* Legend */}
       {!hideLegend && (
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-body-sm text-text-secondary">
+        <div className="text-body-sm text-text-secondary flex flex-wrap items-center gap-x-5 gap-y-2">
           <span className="flex items-center gap-1.5">
             <span className="h-3 w-3 rounded" style={{ backgroundColor: CHART_COLORS.income }} />
             Other income
@@ -328,7 +352,7 @@ export function BracketChart({
             Roth Conversion
           </span>
           <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded border border-border bg-bg-hover" />
+            <span className="border-border bg-bg-hover h-3 w-3 rounded border" />
             Remaining space in tax bracket
           </span>
         </div>
@@ -350,7 +374,7 @@ export function BracketChart({
             style={{ width: VERTICAL_LABEL_WIDTH, height: chartHeight }}
           >
             <span
-              className="text-caption uppercase tracking-wider text-text-tertiary"
+              className="text-caption text-text-tertiary tracking-wider uppercase"
               style={{
                 writingMode: "vertical-rl",
                 transform: "rotate(180deg)",
@@ -390,7 +414,13 @@ export function BracketChart({
               );
             })}
           </svg>
-          {leftBottomContent}
+          {addedTax && (
+            <div className="border-border flex flex-col border-r">
+              <div className="text-data-xs text-text-tertiary flex h-8 items-center justify-end px-1 text-right leading-tight font-medium">
+                Added tax from conversion
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Scrollable bar area */}
@@ -398,7 +428,7 @@ export function BracketChart({
           {/* Scroll hint pill — shown until first scroll */}
           {!barsFit && !hasScrolled && (
             <div className="animate-fade-out-delayed pointer-events-none absolute inset-0 z-10 flex items-center justify-end pr-3">
-              <div className="flex items-center gap-1 rounded-full bg-card/80 px-2.5 py-1 text-data-xs text-accent/70 backdrop-blur-sm">
+              <div className="bg-card/80 text-data-xs text-accent/70 flex items-center gap-1 rounded-full px-2.5 py-1 backdrop-blur-sm">
                 <span>Scroll</span>
                 <svg
                   width="12"
@@ -423,7 +453,13 @@ export function BracketChart({
             className={!barsFit ? "bracket-chart-scroll overflow-x-auto pb-2" : ""}
           >
             <div style={!barsFit ? { width: Math.max(totalBarWidth, 200) } : undefined}>
-              <svg width="100%" height={chartHeight} className="block">
+              <svg
+                width="100%"
+                height={chartHeight}
+                className="block"
+                role="img"
+                aria-label="Income and Roth conversions by year, against the tax brackets"
+              >
                 <defs>
                   <linearGradient id="barFadeGrad" x1="0" y1="1" x2="0" y2="0">
                     <stop offset="0%" stopColor="white" stopOpacity="0.85" />
@@ -502,7 +538,24 @@ export function BracketChart({
                   );
                 })}
               </svg>
-              {children}
+              {addedTax && (
+                <div className="flex">
+                  {years.map((yearData, i) => {
+                    const colWidth = barWidth + BAR_GAP;
+                    const maxChars = Math.max(4, Math.floor((colWidth - 8) / 6.5));
+                    const tax = addedTax[i];
+                    return (
+                      <div
+                        key={yearData.year}
+                        className="text-data-xs text-text-primary flex h-8 items-center justify-center px-1"
+                        style={{ width: colWidth, minWidth: colWidth, ...dataFontStyle }}
+                      >
+                        {tax != null ? formatTableCurrency(tax, maxChars) : "-"}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -549,7 +602,7 @@ export function BracketChart({
             style={{ width: VERTICAL_LABEL_WIDTH, height: chartHeight }}
           >
             <span
-              className="text-caption uppercase tracking-wider text-text-tertiary"
+              className="text-caption text-text-tertiary tracking-wider uppercase"
               style={{
                 writingMode: "vertical-rl",
                 fontFamily: "'Inter', system-ui",
@@ -570,7 +623,7 @@ export function BracketChart({
             }}
           >
             <div
-              className="min-w-[180px] rounded-[12px] border border-glass-border px-4 py-3 text-body-sm"
+              className="border-glass-border text-body-sm min-w-[180px] rounded-[12px] border px-4 py-3"
               style={{
                 background: "rgba(255, 255, 255, 0.97)",
                 backdropFilter: "blur(20px)",
@@ -578,9 +631,11 @@ export function BracketChart({
                 boxShadow: "0 12px 40px rgba(11, 29, 21, 0.18)",
               }}
             >
-              <div className="mb-2 font-semibold text-text-primary">
-                {tooltip.year}{" "}
-                <span className="font-normal text-text-tertiary">(age {tooltip.age})</span>
+              <div className="text-text-primary mb-2 font-semibold">
+                {tooltip.year}
+                {tooltip.age != null && (
+                  <span className="text-text-tertiary font-normal"> (age {tooltip.age})</span>
+                )}
               </div>
               {(() => {
                 const baseIncome = tooltip.income ?? 0;
@@ -598,7 +653,7 @@ export function BracketChart({
                           />
                           <span className="text-text-secondary">Other income</span>
                         </span>
-                        <span className="font-medium text-text-primary">
+                        <span className="text-text-primary font-medium">
                           {formatCurrency(baseIncome)}
                         </span>
                       </div>
@@ -612,7 +667,7 @@ export function BracketChart({
                           />
                           <span className="text-text-secondary">Required withdrawal</span>
                         </span>
-                        <span className="font-medium text-text-primary">{formatCurrency(rmd)}</span>
+                        <span className="text-text-primary font-medium">{formatCurrency(rmd)}</span>
                       </div>
                     )}
                     {conversion > 0 && (
@@ -624,12 +679,12 @@ export function BracketChart({
                           />
                           <span className="text-text-secondary">Conversion</span>
                         </span>
-                        <span className="font-medium text-text-primary">
+                        <span className="text-text-primary font-medium">
                           {formatCurrency(conversion)}
                         </span>
                       </div>
                     )}
-                    <div className="mt-1 flex justify-between border-t border-glass-border pt-1.5 text-caption font-medium text-text-primary">
+                    <div className="border-glass-border text-caption text-text-primary mt-1 flex justify-between border-t pt-1.5 font-medium">
                       <span>Total</span>
                       <span>{formatCurrency(grandTotal)}</span>
                     </div>
@@ -653,7 +708,7 @@ interface BracketBarProps {
   barWidth: number;
   chartHeight: number;
   bottomPadding: number;
-  onHover: (e: React.MouseEvent | React.PointerEvent, yearData: YearData) => void;
+  onHover: (e: ReactMouseEvent | ReactPointerEvent, yearData: YearData) => void;
   onLeave: () => void;
   maskIndex: number;
 }

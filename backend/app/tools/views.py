@@ -9,16 +9,22 @@ shared/fixtures/view-data.json keeps the two in step.
 
 from __future__ import annotations
 
-from app.engine.tax import BRACKETS
+from app.engine.tax import BRACKETS, STANDARD_DEDUCTION
 from app.engine.types import OptimizationResult
 
 VIEW_META_KEY = "lucerna/view"
 
 
 def bracket_fill_view(result: OptimizationResult) -> dict:
-    """Per year: other taxable income, the conversion, and the brackets it fills. Also the
-    bracket schedule (taxable income, ``max`` None for the top bracket) for the
-    chart's bracket lines and remaining space."""
+    """The tax bracket chart (ui/src/BracketChart.tsx) as the results page draws it at the
+    optimal schedule: per year, gross income, required withdrawal, conversion and the
+    tax the conversion adds, plus the brackets (taxable income, ``max`` None for the top
+    one) and standard deduction for the filing status."""
+    rmd_by_year = (
+        {d.year: d.rmd_amount for d in result.rmd_projection.yearly_detail}
+        if result.rmd_projection
+        else {}
+    )
     years = []
     for i, plan_year in enumerate(result.input.timeline):
         fill = result.yearly_bracket_fill[i] if i < len(result.yearly_bracket_fill) else []
@@ -26,24 +32,27 @@ def bracket_fill_view(result: OptimizationResult) -> dict:
         years.append(
             {
                 "year": plan_year.year,
-                "income": round(sum(b.filled_by_income for b in fill)),
+                "age": result.input.age + i,
+                "income": round(plan_year.gross_income),
+                "rmd": round(rmd_by_year.get(plan_year.year, 0)),
                 "conversion": round(conversion),
-                "segments": [
-                    {"rate": b.bracket_rate, "amount": round(b.filled_by_conversion)}
-                    for b in fill
-                    if b.filled_by_conversion > 0.5
-                ],
+                "tax": round(sum(b.bracket_rate * b.filled_by_conversion for b in fill)),
             }
         )
+    filing_status = result.input.filing_status
     brackets = [
         {
             "rate": b["rate"],
             "min": round(b["min"]),
             "max": None if b["max"] == float("inf") else round(b["max"]),
         }
-        for b in BRACKETS[result.input.filing_status]
+        for b in BRACKETS[filing_status]
     ]
-    return {"years": years, "brackets": brackets}
+    return {
+        "years": years,
+        "brackets": brackets,
+        "standard_deduction": round(STANDARD_DEDUCTION[filing_status]),
+    }
 
 
 def result_view(result: OptimizationResult) -> dict:

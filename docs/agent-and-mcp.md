@@ -52,7 +52,7 @@ The same View renders in Claude, ChatGPT or any MCP Apps host with no changes. "
 
 Cards that appear both in MCP App Views and natively in the web app are defined once, in `ui/`:
 
-- `ui/src/`: display-only React components (`ResultCard`, `ConversionStrip`, `BracketFillChart`, `BalanceComparison`, `ScenarioCompareCard`, `ScenarioSummary`, `MetricCard`), plus chart colors, form options and formatters the web app re-exports. Plain data and callbacks in; no app context, data fetching, analytics or Next imports.
+- `ui/src/`: display-only React components (`ResultCard`, `ConversionStrip`, `BracketChart` (the tax bracket chart, also used by the results page), `BracketFillChart`, `BalanceComparison`, `ScenarioCompareCard`, `ScenarioSummary`, `MetricCard`), plus chart colors, form options and formatters the web app re-exports. Plain data and callbacks in; no app context, data fetching, analytics or Next imports.
 - `ui/tailwind/preset.js` and `ui/styles/tokens.css`: the Paper & Pine theme, CSS variables and component classes (`card-recommended`, `eyebrow`, `metric-*`, `btn-*`). The web app's `tailwind.config.ts` and `globals.css` pull them in.
 
 `ui/` is source-only with no `node_modules`; each consumer resolves its `react` import:
@@ -73,10 +73,10 @@ Cards that appear both in MCP App Views and natively in the web app are defined 
 | Tool | View | Shared component (ui/) | Web app |
 |---|---|---|---|
 | `record_scenario` | `scenario-summary.html` | `ScenarioSummary` | Not mounted: the host shows its own editable card (same component, wired to the live draft and form) via `show` |
-| `analyze_roth_conversions` | `result-card.html` | `ResultCard` with `BracketFillChart` (other income and conversions against the bracket lines) | Mounted |
+| `analyze_roth_conversions` | `result-card.html` | `ResultCard` with `BracketFillChart`: the results page's `BracketChart` at the optimal schedule | Mounted |
 | `compare_roth_scenarios` | `scenario-compare.html` | `ScenarioCompareCard` | Mounted |
 
-Chart series the model doesn't need (bracket fill and the bracket schedule) travel in the tool result's `_meta["lucerna/view"]` (`backend/app/tools/views.py`), which hosts pass to Views but not to the model. Buttons that act for the user ("Run the numbers", "Apply to my scenario") send a chat message with `ui/message` (`ui/src/messages.ts`); the prompts and MCP server instructions tell the model how to handle them, so every host behaves the same. The `show` tool still renders the bracket and balance charts natively when the model wants one on its own, with the same components. `get_tax_brackets` and `explain_methodology` return reference text and have no View; suggestion chips are web-only.
+Chart series the model doesn't need (yearly income, required withdrawals, conversions and added tax, plus the brackets and standard deduction) travel in the tool result's `_meta["lucerna/view"]` (`backend/app/tools/views.py`), which hosts pass to Views but not to the model. Buttons that act for the user ("Run the numbers", "Apply to my scenario") send a chat message with `ui/message` (`ui/src/messages.ts`); the prompts and MCP server instructions tell the model how to handle them, so every host behaves the same. The `show` tool still renders the bracket and balance charts natively when the model wants one on its own, with the same components. `get_tax_brackets` and `explain_methodology` return reference text and have no View; suggestion chips are web-only.
 
 ## Configuration (backend)
 

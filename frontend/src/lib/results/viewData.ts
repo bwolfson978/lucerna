@@ -39,23 +39,29 @@ export function resultCardData(resultId: string, result: OptimizationResult): Re
 }
 
 export function bracketFillData(result: OptimizationResult): BracketFillData {
+  const rmdByYear = new Map(
+    (result.rmd_projection?.yearly_detail ?? []).map((d) => [d.year, d.rmd_amount])
+  );
+  const tax = getFallbackTaxConfig();
+  const status = result.input.filing_status;
   return {
     years: result.input.timeline.map((plan, i) => {
       const fill = result.yearly_bracket_fill[i] ?? [];
       return {
         year: plan.year,
-        income: round(fill.reduce((sum, b) => sum + b.filled_by_income, 0)),
+        age: result.input.age + i,
+        income: round(plan.gross_income),
+        rmd: round(rmdByYear.get(plan.year) ?? 0),
         conversion: round(result.yearly_conversions[i] ?? 0),
-        segments: fill
-          .filter((b) => b.filled_by_conversion > 0.5)
-          .map((b) => ({ rate: b.bracket_rate, amount: round(b.filled_by_conversion) })),
+        tax: round(fill.reduce((sum, b) => sum + b.bracket_rate * b.filled_by_conversion, 0)),
       };
     }),
-    brackets: getFallbackTaxConfig().brackets[result.input.filing_status].map((b) => ({
+    brackets: tax.brackets[status].map((b) => ({
       rate: b.rate,
       min: round(b.min),
       max: b.max == null ? null : round(b.max),
     })),
+    standard_deduction: round(tax.standard_deduction[status]),
   };
 }
 

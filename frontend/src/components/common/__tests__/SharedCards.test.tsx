@@ -34,15 +34,13 @@ it("renders the result card from tool output", () => {
 it("shows the tax bracket chart in the result card", () => {
   render(<ResultCard data={card} details={details} />);
   expect(screen.queryByRole("button", { name: "See full results" })).not.toBeInTheDocument();
-  expect(screen.getByRole("img", { name: /against the tax brackets/ })).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /Balances over time/ })).not.toBeInTheDocument();
-  // Bracket lines carry their rates, and each year's bar explains itself on focus.
-  expect(screen.getByText("12%")).toBeInTheDocument();
-  const bars = screen.getAllByRole("img", { name: /: converted / });
-  expect(bars).toHaveLength(details.bracket_fill!.years.length);
-  const first = details.bracket_fill!.years.findIndex((y) => y.conversion > 0);
-  fireEvent.focus(bars[first]);
-  expect(screen.getByRole("status")).toHaveTextContent("tax on the conversion");
+  // The results page's chart: bracket lines, the 0% standard deduction band and the
+  // added tax row.
+  expect(screen.getByRole("img", { name: /against the tax brackets/ })).toBeInTheDocument();
+  expect(screen.getAllByText(/^0%/).length).toBeGreaterThan(0);
+  expect(screen.getByText("Added tax from conversion")).toBeInTheDocument();
+  expect(screen.getByText("Remaining space in tax bracket")).toBeInTheDocument();
 });
 
 it("renders the standalone charts with their own titles", () => {

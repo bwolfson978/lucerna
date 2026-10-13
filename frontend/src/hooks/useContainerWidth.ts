@@ -1,18 +1,2 @@
-import { useState, useEffect, type RefObject } from "react";
-
-export function useContainerWidth(ref: RefObject<HTMLElement | null>): number | undefined {
-  const [width, setWidth] = useState<number>();
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    const observer = new ResizeObserver(([entry]) => {
-      setWidth(entry.contentBoxSize[0].inlineSize);
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [ref]);
-
-  return width;
-}
+// Lives in the shared UI package so the bracket chart can use it in MCP App Views too.
+export { useContainerWidth } from "@lucerna/ui";
