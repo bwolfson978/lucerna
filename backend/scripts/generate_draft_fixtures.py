@@ -39,7 +39,6 @@ BUILD_CASES: list[tuple[str, dict]] = [
             roth_balance=40000,
             retirement_age=60,
             retirement_spending=80000,
-            retirement_income=36000,
             state="CA",
             retirement_state="TX",
             planning_horizon_age=95,

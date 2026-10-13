@@ -60,12 +60,12 @@
       "missing_required": [],
       "problems": [],
       "ready_to_run": true,
-      "draft_hash": "89d62980a132"
+      "draft_hash": "950192be345e"
     }
   },
   "analyze_roth_conversions": {
     "structured_content": {
-      "result_id": "r_fd5df82cb2",
+      "result_id": "r_c38d94c790",
       "estimated_lifetime_tax_savings_todays_dollars": 107584,
       "total_conversion": 416100,
       "total_tax_on_conversions": 117120,
@@ -158,7 +158,6 @@
         "discount_rate": 0.05,
         "planning_horizon_age": 90,
         "retirement_spending": "4% rule",
-        "retirement_income": 0.0,
         "state": "CA",
         "retirement_state": "AZ"
       },
@@ -186,7 +185,7 @@
           }
         ]
       },
-      "full_results_url": "https://rothconversionsoptimizer.com/calculator?view=results&result=r_fd5df82cb2&scenario=eyJhZ2UiOjYwLCJjdXJyZW50X2luY29tZSI6MTIwMDAwLjAsImRpc2NvdW50X3JhdGVfcGN0Ijo1LjAsImZpbGluZ19zdGF0dXMiOiJtYXJyaWVkX2ZpbGluZ19qb2ludGx5IiwiaG91c2Vob2xkX3NpemUiOjEsImluY2x1ZGVfYWNhIjpmYWxzZSwiaW5jb21lX2NoYW5nZXMiOlt7Imdyb3NzX2luY29tZSI6NjAwMDAuMCwibm90ZSI6IlNhYmJhdGljYWwiLCJ5ZWFyIjoyMDI3fV0sImluY29tZV9ncm93dGhfcmF0ZV9wY3QiOjMuMCwiaW52ZXN0bWVudF9yZXR1cm5fcGN0Ijo3LjAsIm1vbnRobHlfc2xjc3BfcHJlbWl1bSI6NjIwLjAsInBsYW5uaW5nX2hvcml6b25fYWdlIjo5MCwicmV0aXJlbWVudF9hZ2UiOjYzLCJyZXRpcmVtZW50X3N0YXRlIjoiQVoiLCJyb3RoX2JhbGFuY2UiOjUwMDAwLjAsInN0YXRlIjoiQ0EiLCJ0cmFkaXRpb25hbF9iYWxhbmNlIjo5MDAwMDAuMH0"
+      "full_results_url": "https://rothconversionsoptimizer.com/calculator?view=results&result=r_c38d94c790&scenario=eyJhZ2UiOjYwLCJjdXJyZW50X2luY29tZSI6MTIwMDAwLjAsImRpc2NvdW50X3JhdGVfcGN0Ijo1LjAsImZpbGluZ19zdGF0dXMiOiJtYXJyaWVkX2ZpbGluZ19qb2ludGx5IiwiaG91c2Vob2xkX3NpemUiOjEsImluY2x1ZGVfYWNhIjpmYWxzZSwiaW5jb21lX2NoYW5nZXMiOlt7Imdyb3NzX2luY29tZSI6NjAwMDAuMCwibm90ZSI6IlNhYmJhdGljYWwiLCJ5ZWFyIjoyMDI3fV0sImluY29tZV9ncm93dGhfcmF0ZV9wY3QiOjMuMCwiaW52ZXN0bWVudF9yZXR1cm5fcGN0Ijo3LjAsIm1vbnRobHlfc2xjc3BfcHJlbWl1bSI6NjIwLjAsInBsYW5uaW5nX2hvcml6b25fYWdlIjo5MCwicmV0aXJlbWVudF9hZ2UiOjYzLCJyZXRpcmVtZW50X3N0YXRlIjoiQVoiLCJyb3RoX2JhbGFuY2UiOjUwMDAwLjAsInN0YXRlIjoiQ0EiLCJ0cmFkaXRpb25hbF9iYWxhbmNlIjo5MDAwMDAuMH0"
     },
     "view_meta": {
       "bracket_fill": {
@@ -256,7 +255,7 @@
         "standard_deduction": 32200
       }
     },
-    "result_id": "r_fd5df82cb2",
+    "result_id": "r_c38d94c790",
     "result": {
       "yearly_conversions": [
         123600.0,
@@ -891,7 +890,6 @@
         "roth_ira_balance": 50000.0,
         "drawdown_start_age": 63,
         "default_drawdown": null,
-        "retirement_income": 0.0,
         "planning_horizon_age": 90,
         "annual_growth_rate": 0.07,
         "discount_rate": 0.05,
@@ -910,8 +908,8 @@
     "label": "Retire at 62",
     "structured_content": {
       "label": "Retire at 62",
-      "base_result_id": "r_fd5df82cb2",
-      "variant_result_id": "r_683f2a416c",
+      "base_result_id": "r_c38d94c790",
+      "variant_result_id": "r_13658c29a7",
       "estimated_lifetime_tax_savings": {
         "current": 107584,
         "what_if": 103266,
@@ -972,7 +970,7 @@
           }
         ]
       },
-      "what_if_full_results_url": "https://rothconversionsoptimizer.com/calculator?view=results&result=r_683f2a416c&scenario=eyJhZ2UiOjYwLCJjdXJyZW50X2luY29tZSI6MTIwMDAwLjAsImRpc2NvdW50X3JhdGVfcGN0Ijo1LjAsImZpbGluZ19zdGF0dXMiOiJtYXJyaWVkX2ZpbGluZ19qb2ludGx5IiwiaG91c2Vob2xkX3NpemUiOjEsImluY2x1ZGVfYWNhIjpmYWxzZSwiaW5jb21lX2NoYW5nZXMiOlt7Imdyb3NzX2luY29tZSI6NjAwMDAuMCwibm90ZSI6IlNhYmJhdGljYWwiLCJ5ZWFyIjoyMDI3fV0sImluY29tZV9ncm93dGhfcmF0ZV9wY3QiOjMuMCwiaW52ZXN0bWVudF9yZXR1cm5fcGN0Ijo3LjAsIm1vbnRobHlfc2xjc3BfcHJlbWl1bSI6NjIwLjAsInBsYW5uaW5nX2hvcml6b25fYWdlIjo5MCwicmV0aXJlbWVudF9hZ2UiOjYyLCJyZXRpcmVtZW50X3N0YXRlIjoiQVoiLCJyb3RoX2JhbGFuY2UiOjUwMDAwLjAsInN0YXRlIjoiQ0EiLCJ0cmFkaXRpb25hbF9iYWxhbmNlIjo5MDAwMDAuMH0&label=Retire+at+62"
+      "what_if_full_results_url": "https://rothconversionsoptimizer.com/calculator?view=results&result=r_13658c29a7&scenario=eyJhZ2UiOjYwLCJjdXJyZW50X2luY29tZSI6MTIwMDAwLjAsImRpc2NvdW50X3JhdGVfcGN0Ijo1LjAsImZpbGluZ19zdGF0dXMiOiJtYXJyaWVkX2ZpbGluZ19qb2ludGx5IiwiaG91c2Vob2xkX3NpemUiOjEsImluY2x1ZGVfYWNhIjpmYWxzZSwiaW5jb21lX2NoYW5nZXMiOlt7Imdyb3NzX2luY29tZSI6NjAwMDAuMCwibm90ZSI6IlNhYmJhdGljYWwiLCJ5ZWFyIjoyMDI3fV0sImluY29tZV9ncm93dGhfcmF0ZV9wY3QiOjMuMCwiaW52ZXN0bWVudF9yZXR1cm5fcGN0Ijo3LjAsIm1vbnRobHlfc2xjc3BfcHJlbWl1bSI6NjIwLjAsInBsYW5uaW5nX2hvcml6b25fYWdlIjo5MCwicmV0aXJlbWVudF9hZ2UiOjYyLCJyZXRpcmVtZW50X3N0YXRlIjoiQVoiLCJyb3RoX2JhbGFuY2UiOjUwMDAwLjAsInN0YXRlIjoiQ0EiLCJ0cmFkaXRpb25hbF9iYWxhbmNlIjo5MDAwMDAuMH0&label=Retire+at+62"
     },
     "base_result": {
       "yearly_conversions": [
@@ -1608,7 +1606,6 @@
         "roth_ira_balance": 50000.0,
         "drawdown_start_age": 63,
         "default_drawdown": null,
-        "retirement_income": 0.0,
         "planning_horizon_age": 90,
         "annual_growth_rate": 0.07,
         "discount_rate": 0.05,
@@ -2193,7 +2190,6 @@
         "roth_ira_balance": 50000.0,
         "drawdown_start_age": 62,
         "default_drawdown": null,
-        "retirement_income": 0.0,
         "planning_horizon_age": 90,
         "annual_growth_rate": 0.07,
         "discount_rate": 0.05,

@@ -59,9 +59,8 @@ def apply_update(draft: ScenarioDraft, update: ScenarioUpdate, start_year: int) 
     if "state" in fields and "retirement_state" not in fields:
         # Matches the form: choosing a state also sets the retirement state.
         fields["retirement_state"] = fields["state"]
-    for key in ("retirement_spending", "retirement_income"):
-        if fields.get(key) == 0:
-            fields[key] = None
+    if fields.get("retirement_spending") == 0:
+        fields["retirement_spending"] = None
 
     for key, value in fields.items():
         setattr(new, key, value)
@@ -293,7 +292,6 @@ def summarize_result(result: OptimizationResult, result_id: str) -> dict:
             "discount_rate": result.input.discount_rate,
             "planning_horizon_age": result.input.planning_horizon_age,
             "retirement_spending": result.input.default_drawdown or "4% rule",
-            "retirement_income": result.input.retirement_income,
             "state": result.input.state or "federal only",
             "retirement_state": result.input.retirement_state
             or result.input.state

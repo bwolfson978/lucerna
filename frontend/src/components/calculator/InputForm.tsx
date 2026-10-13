@@ -42,7 +42,6 @@ const FIELD_ORDER = [
   "customStateRate",
   "rothBalance",
   "retirementSpending",
-  "retirementIncome",
   "timeline",
   "yearsInRetirement",
   "householdSize",
@@ -96,7 +95,6 @@ export function InputForm({
     retirement_age: drawdownStartAge,
     income_growth_rate_pct: incomeGrowthRate,
     retirement_spending: retirementSpending,
-    retirement_income: retirementIncome,
     planning_horizon_age: planningHorizonAge,
     investment_return_pct: growthRate,
     discount_rate_pct: discountRate,
@@ -334,20 +332,7 @@ export function InputForm({
           min={0}
           error={errors.retirementSpending}
           helper="Leave blank to use the 4% rule"
-          tooltip="Everything you expect to spend each year, including what Social Security or a pension pays for. Your accounts cover the rest."
           onChange={(val) => patch({ retirement_spending: val || null })}
-        />
-        <CurrencyInput
-          ref={(el) => {
-            fieldRefs.current.retirementIncome = el;
-          }}
-          label="Social Security and pensions"
-          value={retirementIncome || ""}
-          placeholder="Optional"
-          min={0}
-          helper="Yearly, once withdrawals begin"
-          tooltip="Social Security, pensions and other income you expect each year after your income timeline ends. It is taxed before your account withdrawals, so it affects the tax rate on those withdrawals."
-          onChange={(val) => patch({ retirement_income: val || null })}
         />
       </div>
 

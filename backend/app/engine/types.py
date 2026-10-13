@@ -122,18 +122,7 @@ class ScenarioInput(BaseModel):
     default_drawdown: float | None = Field(
         default=None,
         ge=0,
-        description=(
-            "Annual household spending in the post-timeline fallback. The accounts fund "
-            "whatever retirement_income doesn't cover. Defaults to the 4% rule on the accounts."
-        ),
-    )
-    retirement_income: float = Field(
-        default=0,
-        ge=0,
-        description=(
-            "Yearly Social Security, pension or other taxable income after the timeline ends. "
-            "It covers part of default_drawdown, and account withdrawals are taxed on top of it."
-        ),
+        description="Annual drawdown from accounts in post-timeline fallback. Defaults to 4% rule.",
     )
     planning_horizon_age: int = Field(
         default=90,

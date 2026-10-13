@@ -3,9 +3,7 @@
 After the timeline ends (or at ``drawdown_start_age`` if that is later), the
 engine funds spending from the accounts until ``planning_horizon_age``. Each
 year runs in the same order as a timeline year: RMD and withdrawal on the
-start-of-year balance, then growth. Social Security and pensions
-(``retirement_income``) cover part of the spending and are taxed first, so
-account withdrawals stack on top of them.
+start-of-year balance, then growth.
 """
 
 import numpy as np
@@ -23,51 +21,35 @@ def post_timeline_start(scenario: ScenarioInput) -> int:
 
 
 def account_spending(scenario: ScenarioInput, account_balance):
-    """Yearly amount the accounts must fund after the timeline.
+    """Yearly amount the accounts fund after the timeline.
 
-    With explicit spending, Social Security and pensions cover their share
-    first. Without it, the 4% rule applies to the account balance at the start
-    of the phase (a withdrawal rate, so other income doesn't reduce it).
-    Accepts a float or a numpy array of balances.
+    Explicit spending if set, otherwise the 4% rule on the account balance at
+    the start of the phase. Accepts a float or a numpy array of balances.
     """
     if scenario.default_drawdown is None:
         return account_balance * RETIREMENT_SPENDING_RATE
-    need = max(0.0, scenario.default_drawdown - scenario.retirement_income)
     if isinstance(account_balance, np.ndarray):
-        return np.full_like(account_balance, need)
-    return need
+        return np.full_like(account_balance, scenario.default_drawdown)
+    return scenario.default_drawdown
 
 
 def withdrawal_tax(scenario: ScenarioInput, amount: float) -> float:
-    """Tax on an account withdrawal stacked on top of retirement income."""
-    other = scenario.retirement_income
-    fs = scenario.filing_status
-    tax = calculate_federal_tax(other + amount, fs) - calculate_federal_tax(other, fs)
+    """Federal and retirement-state tax on an account withdrawal."""
+    tax = calculate_federal_tax(amount, scenario.filing_status)
     state = scenario.retirement_state or scenario.state
     if state:
-        rate = scenario.custom_state_rate
-        tax += calculate_state_tax(other + amount, state, fs, rate) - calculate_state_tax(
-            other, state, fs, rate
+        tax += calculate_state_tax(
+            amount, state, scenario.filing_status, scenario.custom_state_rate
         )
     return tax
 
 
 def vectorized_withdrawal_tax(scenario: ScenarioInput, amounts: np.ndarray) -> np.ndarray:
     """Vectorized ``withdrawal_tax``."""
-    other = scenario.retirement_income
-    fs = scenario.filing_status
-    tax = vectorized_federal_tax(other + amounts, fs) - calculate_federal_tax(other, fs)
+    tax = vectorized_federal_tax(amounts, scenario.filing_status)
     state = scenario.retirement_state or scenario.state
     if state:
-        rate = scenario.custom_state_rate
-        tax = (
-            tax
-            + vectorized_state_tax(other + amounts, state, fs, rate)
-            - calculate_state_tax(other, state, fs, rate)
+        tax = tax + vectorized_state_tax(
+            amounts, state, scenario.filing_status, scenario.custom_state_rate
         )
     return tax
-
-
-def retirement_taxable_income(scenario: ScenarioInput, account_balance: float) -> float:
-    """Rough taxable income in a typical retirement year, for marginal rate estimates."""
-    return scenario.retirement_income + account_spending(scenario, account_balance)

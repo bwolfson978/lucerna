@@ -91,7 +91,7 @@
         },
         {
           "heading": "What's not included",
-          "text": "Social Security and pensions count as fully taxable income, both in your income timeline and as the yearly amount you enter for after it ends. In reality at most 85% of Social Security is taxed, so retirement taxes may be slightly overstated. After the timeline, that yearly amount stays the same every year. IRMAA surcharges are factored in during optimization but are not a direct user input. These omissions could shift the optimal amount depending on your situation."
+          "text": "Social Security benefits and income are not modeled. IRMAA surcharges are factored in during optimization but are not a direct user input. These omissions could shift the optimal amount depending on your situation."
         }
       ]
     },

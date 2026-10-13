@@ -33,7 +33,6 @@ export interface ScenarioInput {
   roth_ira_balance?: number;
   drawdown_start_age?: number; // was retirement_age
   default_drawdown?: number | null; // was annual_retirement_spending
-  retirement_income?: number; // Social Security and pensions after the timeline
   planning_horizon_age?: number; // was years_in_retirement (now absolute age)
   annual_growth_rate?: number;
   discount_rate?: number;

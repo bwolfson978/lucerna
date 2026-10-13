@@ -65,7 +65,6 @@ _SCRIPTED_SCENARIO = ScenarioUpdate(
     roth_balance=52_000,
     retirement_age=73,
     retirement_spending=95_000,
-    retirement_income=60_000,
     planning_horizon_age=93,
     income_changes=[
         {"year": 2030, "gross_income": 46_000, "note": "Social Security starts"},
