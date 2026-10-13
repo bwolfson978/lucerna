@@ -63,3 +63,8 @@ export const Interactive: Story = {
   },
   args: { onRun: fn() },
 };
+
+/** A summary already run, further up the conversation: one line until opened. */
+export const Collapsed: Story = {
+  args: { badge: "Confirmed", collapsible: true },
+};

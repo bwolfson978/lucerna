@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import type { UiMessage, UiPart } from "@/lib/agent/types";
 import { cn } from "@/lib/utils";
 import type { ConversationState } from "@/lib/agent/conversation";
@@ -15,6 +15,9 @@ import {
   ScenarioCompareCard,
   SuggestionChips,
 } from "./parts/ResultCards";
+
+/** Screen height the header, composer and margins take: what the latest turn needn't fill. */
+const TURN_ROOM = 192;
 
 /** Index of the summary card that can still be edited and run, if any. */
 function activeSummaryKey(messages: UiMessage[]): string | null {
@@ -70,8 +73,39 @@ export function ConversationThread({
 
   const lastUserIndex = messages.map((m) => m.role).lastIndexOf("user");
   // The turn just sent fills the screen, so its question can sit at the top while the
-  // reply arrives below it instead of behind the message box.
+  // reply arrives below it instead of behind the message box. A spacer after the last
+  // message makes up the difference; messages stay in one flat list so none of them
+  // remounts (and reloads its card) when the next turn starts.
   const spaceLastTurn = followKey > 0 && lastUserIndex >= 0;
+  const spacerRef = useRef<HTMLDivElement | null>(null);
+
+  // Sized directly (not through state) so it is in place before the scroll above runs.
+  useLayoutEffect(() => {
+    const el = spacerRef.current;
+    if (!el) return;
+    if (!spaceLastTurn) {
+      el.style.height = "0px";
+      return;
+    }
+    const measure = () => {
+      const question = lastUserRef.current;
+      if (!question) return;
+      // From the question's top to the end of the reply; the spacer tops it up to the
+      // screen height less the room the header and message box take.
+      const turn = el.getBoundingClientRect().top - question.getBoundingClientRect().top;
+      el.style.height = `${Math.max(0, Math.round(window.innerHeight - TURN_ROOM - turn))}px`;
+    };
+    measure();
+    const parent = el.parentElement;
+    if (!parent || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(parent);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [spaceLastTurn, lastUserIndex]);
 
   // Scroll anchoring keeps the newest question still while the reply grows below it and
   // cards above it change. Everything else is opted out, so the browser can't anchor to
@@ -111,19 +145,14 @@ export function ConversationThread({
   return (
     <div className="flex flex-col gap-comfortable" aria-live="polite" aria-busy={streaming}>
       <div className={cn("empty:hidden", noAnchor)}>{intro}</div>
-      {spaceLastTurn ? (
-        <>
-          {messages.slice(0, lastUserIndex).map((m, i) => renderMessage(m, i))}
-          <div
-            className="flex min-h-[calc(100dvh-12rem)] flex-col gap-comfortable"
-            data-testid="latest-turn"
-          >
-            {messages.slice(lastUserIndex).map((m, i) => renderMessage(m, lastUserIndex + i))}
-          </div>
-        </>
-      ) : (
-        messages.map(renderMessage)
-      )}
+      {messages.map(renderMessage)}
+      {/* Cancels the list gap above it, so it adds nothing when it has no height. */}
+      <div
+        ref={spacerRef}
+        aria-hidden="true"
+        className="-mt-comfortable h-0 [overflow-anchor:none]"
+        data-testid="turn-spacer"
+      />
     </div>
   );
 }

@@ -26,6 +26,9 @@ export function ScenarioSummaryCard({ snapshot, active }: ScenarioSummaryCardPro
   return (
     <div data-testid="scenario-summary">
       <ScenarioSummary
+        // Remounts when run, so it folds to its one-line recap as the results arrive.
+        key={active ? "active" : "run"}
+        collapsible={!active}
         data={summaryData(draft)}
         badge={active ? undefined : "Confirmed"}
         onEdit={editable ? (patch) => editDraft(patch as DraftPatch) : undefined}

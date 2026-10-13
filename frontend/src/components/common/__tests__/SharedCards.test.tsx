@@ -104,6 +104,21 @@ it("renders the scenario summary read-only or editable", () => {
   expect(onEdit).toHaveBeenCalledWith({ age: 61 });
 });
 
+it("folds a summary already run to a one-line recap", () => {
+  render(<ScenarioSummary data={recorded} badge="Confirmed" collapsible />);
+  const header = screen.getByRole("button", { name: /Your scenario/ });
+  expect(header).toHaveAttribute("aria-expanded", "false");
+  expect(screen.getByText("Confirmed")).toBeInTheDocument();
+  expect(screen.queryByText("California, then Arizona")).not.toBeInTheDocument();
+  expect(
+    screen.getByText(/^Age \d+ · .+ income · .+ traditional · drawing at \d+$/)
+  ).toBeInTheDocument();
+
+  fireEvent.click(header);
+  expect(header).toHaveAttribute("aria-expanded", "true");
+  expect(screen.getByText("California, then Arizona")).toBeInTheDocument();
+});
+
 it("folds default assumptions into one line until asked for", () => {
   const onEdit = vi.fn();
   render(<ScenarioSummary data={recorded} onEdit={onEdit} />);
