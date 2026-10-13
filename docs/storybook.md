@@ -33,22 +33,15 @@ contracts use, so the stories update when the fixtures are regenerated.
 - When you add or change a component in `ui/src/`, `components/ui/` or
   `components/common/`, add or update its stories in the same PR. Cover the states that
   matter: empty, loading, disabled, error, and older or partial data.
-- `src/stories/stories.test.tsx` renders every story in the frontend unit tests, and the
-  `storybook` CI job builds the catalog. A story broken by a prop or data change fails the PR.
+- `src/stories/stories.test.tsx` renders every story in the frontend unit tests, so a
+  story broken by a prop or data change fails the PR.
 
-## PR preview setup (one time)
+## PR previews
 
-The `storybook` job in `.github/workflows/test.yml` always builds the catalog and uploads
-it as a workflow artifact. To also publish a preview link on each PR:
+The `lucerna-storybook` Vercel project is connected to this repository. On every PR it
+runs `build-storybook` and adds a row to the Vercel bot's comment, next to the web app's
+preview. Click its **Preview** link to review the PR's components. A failed Storybook
+build shows up there as a failed deployment.
 
-1. In Vercel, create a project named `lucerna-storybook` in the same team as the web
-   app. Don't connect a Git repository. Set the framework preset to **Other** and leave
-   the build command empty (CI uploads the already-built static site).
-2. In GitHub, add the repository variable `VERCEL_STORYBOOK_PROJECT_ID` with that
-   project's ID (Settings, General, Project ID). The job reuses the existing
-   `VERCEL_ORG_ID` variable and `VERCEL_TOKEN` secret.
-3. Optional: under the project's Deployment Protection, decide who can open previews.
-   With Vercel Authentication on, reviewers need a Vercel account in the team.
-
-Until the variable is set the publish step is skipped. PRs from forks also skip it,
-since they get no secrets.
+Who can open the previews is set under the project's Deployment Protection in Vercel.
+With Vercel Authentication on, reviewers need to be in the Vercel team.
