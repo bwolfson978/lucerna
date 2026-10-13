@@ -25,3 +25,7 @@ CREATE TABLE IF NOT EXISTS scenarios (
 -- Index for "list my scenarios, newest first" — the only list query
 CREATE INDEX IF NOT EXISTS scenarios_user_date
   ON scenarios (clerk_user_id, created_at DESC);
+
+-- The MCP tools' `scenario` for scenarios saved from a chat (Claude, ChatGPT), so a
+-- later chat can pick it up exactly. NULL for scenarios saved on the website.
+ALTER TABLE scenarios ADD COLUMN IF NOT EXISTS scenario JSONB;
