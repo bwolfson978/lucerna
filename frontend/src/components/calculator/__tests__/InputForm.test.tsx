@@ -163,15 +163,15 @@ describe("InputForm", () => {
   it("generates correct number of timeline years from age and retirement age", () => {
     renderInputForm({ onSubmit });
     fillBasicInputs();
-    // Default age=35, retirement=65 → 30 years
-    expect(screen.getByTestId("timeline-count").textContent).toBe("30");
+    // Age 35 through the default plan end at 90 → 56 years
+    expect(screen.getByTestId("timeline-count").textContent).toBe("56");
   });
 
   it("shows description text on the timeline editor", () => {
     renderInputForm({ onSubmit });
     fillBasicInputs();
     expect(screen.getByTestId("timeline-description").textContent).toContain(
-      "Projected from your inputs above"
+      "Built from your income above"
     );
   });
 
@@ -216,7 +216,7 @@ describe("InputForm", () => {
     expect(onSubmit).toHaveBeenCalledTimes(1);
     const input = onSubmit.mock.calls[0][0];
     expect(input.timeline).toBeDefined();
-    expect(input.timeline.length).toBe(30);
+    expect(input.timeline.length).toBe(56);
     expect(input.timeline[0].gross_income).toBe(100000);
   });
 
@@ -377,9 +377,9 @@ describe("InputForm", () => {
       screen.queryByText("Retirement age must be greater than current age")
     ).not.toBeInTheDocument();
 
-    // Should generate a timeline (up to 8 years: 73 - 65)
+    // Should generate a timeline through the plan end (ages 65 to 90)
     expect(screen.getByTestId("timeline-editor")).toBeInTheDocument();
-    expect(Number(screen.getByTestId("timeline-count").textContent)).toBe(8);
+    expect(Number(screen.getByTestId("timeline-count").textContent)).toBe(26);
   });
 
   it("allows retirement age less than current age and submits", () => {
@@ -401,8 +401,8 @@ describe("InputForm", () => {
       target: { value: "500000" },
     });
 
-    // Should generate timeline (3 years: 73 - 70)
-    expect(Number(screen.getByTestId("timeline-count").textContent)).toBe(3);
+    // Should generate a timeline through the plan end (ages 70 to 90)
+    expect(Number(screen.getByTestId("timeline-count").textContent)).toBe(21);
 
     // Should submit successfully
     const form = screen.getByRole("button", { name: /run my scenario/i });
@@ -413,6 +413,46 @@ describe("InputForm", () => {
     expect(input.drawdown_start_age).toBe(65);
     expect(input.age).toBe(70);
     expect(input.filing_status).toBe("single");
-    expect(input.timeline.length).toBe(3);
+    expect(input.timeline.length).toBe(21);
+  });
+
+  describe("income sources", () => {
+    const yearAt = (age: number) => new Date().getFullYear() + age - 35;
+
+    it("adds Social Security to the timeline from its start age", () => {
+      renderInputForm({ onSubmit });
+      fillBasicInputs();
+      fireEvent.click(screen.getByRole("button", { name: "+ Social Security" }));
+      fireEvent.change(screen.getByLabelText("Yearly amount"), {
+        target: { value: "30000" },
+      });
+
+      expect(screen.getByTestId(`year-${yearAt(66)}`).textContent).toContain("0 -");
+      expect(screen.getByTestId(`year-${yearAt(67)}`).textContent).toContain("30000");
+
+      fireEvent.click(screen.getByRole("button", { name: /run my scenario/i }));
+      const input = onSubmit.mock.calls[0][0];
+      expect(input.timeline[67 - 35].gross_income).toBe(30000);
+    });
+
+    it("stops current income at the age given", () => {
+      renderInputForm({ onSubmit });
+      fillBasicInputs();
+      fireEvent.change(screen.getByLabelText("Current income ends at age"), {
+        target: { value: "40" },
+      });
+      expect(screen.getByTestId(`year-${yearAt(40)}`).textContent).not.toMatch(/^0 /);
+      expect(screen.getByTestId(`year-${yearAt(41)}`).textContent).toMatch(/^0 /);
+    });
+
+    it("blocks submit when a source ends before it starts", () => {
+      renderInputForm({ onSubmit });
+      fillBasicInputs();
+      fireEvent.click(screen.getByRole("button", { name: "+ Pension" }));
+      fireEvent.change(screen.getByLabelText("Ends at age"), { target: { value: "50" } });
+      fireEvent.click(screen.getByRole("button", { name: /run my scenario/i }));
+      expect(onSubmit).not.toHaveBeenCalled();
+      expect(screen.getByText("Ends before it starts")).toBeInTheDocument();
+    });
   });
 });

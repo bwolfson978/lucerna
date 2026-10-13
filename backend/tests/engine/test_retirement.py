@@ -7,7 +7,9 @@ from app.engine.dp import _compute_retirement_values
 from app.engine.optimizer import _build_rmd_projection, calculate_npv
 from app.engine.retirement import (
     account_spending,
+    draw_beyond_rmd,
     post_timeline_start,
+    resolve_drawdowns,
     vectorized_withdrawal_tax,
     withdrawal_tax,
 )
@@ -100,3 +102,53 @@ class TestWithdrawals:
         projection = _build_rmd_projection(_margaret(), [0.0] * 10)
         assert projection.yearly_detail[0].age == 75
         assert projection.yearly_detail[-1].age == 93
+
+
+class TestTimelineDrawdowns:
+    """Timeline years at or after the drawdown age fund spending from the accounts."""
+
+    def _full(self, **overrides) -> ScenarioInput:
+        incomes = [20_000] * 4 + [46_000] + [60_000] * 26  # ages 63 to 93
+        timeline = [PlanYear(year=2026 + i, gross_income=v) for i, v in enumerate(incomes)]
+        return _margaret(timeline=timeline, **overrides)
+
+    def test_spending_less_income_from_drawdown_age(self):
+        resolved = resolve_drawdowns(self._full())
+        draws = [row.drawdown for row in resolved.timeline]
+        assert draws[:10] == [None] * 10  # ages 63 to 72
+        assert draws[10:] == [35_000] * 21  # $95k spending less $60k Social Security
+
+    def test_income_above_spending_draws_nothing(self):
+        resolved = resolve_drawdowns(self._full(default_drawdown=50_000))
+        assert {row.drawdown for row in resolved.timeline[10:]} == {0}
+
+    def test_four_percent_rule_on_projected_balance(self):
+        s = self._full(default_drawdown=None)
+        projected = (s.traditional_ira_balance + s.roth_ira_balance) * (
+            1 + s.annual_growth_rate
+        ) ** 10
+        resolved = resolve_drawdowns(s)
+        assert resolved.timeline[10].drawdown == pytest.approx(projected * 0.04, abs=0.01)
+
+    def test_explicit_drawdowns_are_kept(self):
+        s = self._full()
+        s.timeline[12] = s.timeline[12].model_copy(update={"drawdown": 1_234})
+        assert resolve_drawdowns(s).timeline[12].drawdown == 1_234
+
+    def test_short_timeline_is_unchanged(self):
+        s = _margaret()
+        assert resolve_drawdowns(s) is s
+
+    def test_rmd_counts_toward_spending(self):
+        assert draw_beyond_rmd(35_000, 50_000) == 0
+        assert draw_beyond_rmd(35_000, 10_000) == 25_000
+        assert draw_beyond_rmd(None, 10_000) == 0
+
+    def test_full_timeline_optimizes_and_reports_all_years(self):
+        from app.engine.optimizer import optimize
+
+        result = optimize(self._full())
+        assert len(result.yearly_conversions) == 31
+        assert result.input.timeline[10].drawdown is None  # the caller's input is returned
+        assert len(result.timeline_chart) == 31
+        assert result.estimated_lifetime_tax_savings > 0

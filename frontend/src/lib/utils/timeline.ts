@@ -4,26 +4,50 @@
  */
 
 import type { PlanYear } from "@/lib/types";
+import { incomeSourceLabel, type IncomeKind, type IncomeSource } from "@lucerna/ui";
 import { CURRENT_YEAR } from "@/lib/utils/constants";
 
+export type { IncomeKind, IncomeSource };
+
+export const DEFAULT_PLANNING_HORIZON_AGE = 90;
+
+/** Display name, e.g. "Social Security (spouse)". */
+export const sourceLabel = incomeSourceLabel;
+
+export interface TimelineOptions {
+  planningHorizonAge?: number;
+  sources?: IncomeSource[];
+  /** Last age current income is earned. Default: the year before retirement, or for life. */
+  baseEndAge?: number | null;
+}
+
 /**
- * Generate an income timeline from base inputs.
- * For already-retired users (drawdownStartAge <= currentAge), plans until RMDs (age 73).
+ * Project income from today through the plan's last year.
+ * Current income (growing yearly) runs until `baseEndAge`; each income source adds its
+ * amount for the ages it covers. Port of backend/app/tools/draft.py `generate_timeline`.
  */
 export function generateTimeline(
   currentAge: number,
   drawdownStartAge: number,
   baseIncome: number,
   annualGrowthRate: number,
-  startYear: number = CURRENT_YEAR
+  startYear: number = CURRENT_YEAR,
+  options: TimelineOptions = {}
 ): PlanYear[] {
-  const yearsToRetirement = drawdownStartAge - currentAge;
-  const trajectoryLength =
-    yearsToRetirement > 0 ? yearsToRetirement : Math.max(1, Math.min(10, 73 - currentAge));
-  return Array.from({ length: trajectoryLength }, (_, i) => ({
-    year: startYear + i,
-    gross_income: Math.round(baseIncome * Math.pow(1 + annualGrowthRate / 100, i)),
-  }));
+  const horizon = options.planningHorizonAge ?? DEFAULT_PLANNING_HORIZON_AGE;
+  const sources = options.sources ?? [];
+  const baseEnd =
+    options.baseEndAge ?? (drawdownStartAge > currentAge ? drawdownStartAge - 1 : horizon);
+  const length = Math.max(1, horizon - currentAge + 1);
+  return Array.from({ length }, (_, i) => {
+    const age = currentAge + i;
+    let income = age <= baseEnd ? baseIncome * Math.pow(1 + annualGrowthRate / 100, i) : 0;
+    for (const src of sources) {
+      const end = src.end_age ?? horizon;
+      if (src.start_age <= age && age <= end) income += src.amount;
+    }
+    return { year: startYear + i, gross_income: Math.round(income) };
+  });
 }
 
 /**

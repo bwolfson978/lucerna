@@ -10,7 +10,15 @@
  */
 
 import type { FilingStatus, HealthcareInput, PlanYear, ScenarioInput } from "@/lib/types";
-import { generateTimeline, mergeTimeline } from "@/lib/utils/timeline";
+import {
+  DEFAULT_PLANNING_HORIZON_AGE,
+  generateTimeline,
+  mergeTimeline,
+  sourceLabel,
+  type IncomeSource,
+} from "@/lib/utils/timeline";
+
+export type { IncomeSource } from "@/lib/utils/timeline";
 
 export interface ScenarioDraft {
   age: number | null;
@@ -21,11 +29,14 @@ export interface ScenarioDraft {
   retirement_state: string | null;
   custom_state_rate_pct: number | null;
   current_income: number | null;
+  /** Last age current income is earned. Null: the year before retirement, or for life. */
+  current_income_end_age: number | null;
   income_growth_rate_pct: number | null;
   traditional_balance: number | null;
   roth_balance: number | null;
   /** Age withdrawals from retirement accounts begin. */
   retirement_age: number | null;
+  /** Total household spending once drawdowns start; accounts cover what income doesn't. */
   retirement_spending: number | null;
   planning_horizon_age: number | null;
   investment_return_pct: number | null;
@@ -34,6 +45,7 @@ export interface ScenarioDraft {
   household_size: number | null;
   monthly_slcsp_premium: number | null;
   employer_coverage_year: number | null;
+  income_sources: IncomeSource[];
   timeline: PlanYear[];
 }
 
@@ -46,6 +58,7 @@ export const EMPTY_DRAFT: ScenarioDraft = {
   retirement_state: null,
   custom_state_rate_pct: null,
   current_income: null,
+  current_income_end_age: null,
   income_growth_rate_pct: 3,
   traditional_balance: null,
   roth_balance: null,
@@ -58,6 +71,7 @@ export const EMPTY_DRAFT: ScenarioDraft = {
   household_size: 1,
   monthly_slcsp_premium: 620,
   employer_coverage_year: null,
+  income_sources: [],
   timeline: [],
 };
 
@@ -76,11 +90,19 @@ const TIMELINE_BASE_FIELDS = [
   "retirement_age",
   "current_income",
   "income_growth_rate_pct",
+  "current_income_end_age",
+  "planning_horizon_age",
+  "income_sources",
 ] as const;
 
 /** Fill in any fields missing from a draft that came from storage or the network. */
 export function normalizeDraft(value: Partial<ScenarioDraft> | null | undefined): ScenarioDraft {
-  return { ...EMPTY_DRAFT, ...(value ?? {}), timeline: value?.timeline ?? [] };
+  return {
+    ...EMPTY_DRAFT,
+    ...(value ?? {}),
+    income_sources: value?.income_sources ?? [],
+    timeline: value?.timeline ?? [],
+  };
 }
 
 /** Regenerate the timeline when the inputs it depends on changed (pinned rows survive). */
@@ -89,7 +111,13 @@ export function syncTimeline(
   previous: ScenarioDraft | null,
   startYear: number
 ): ScenarioDraft {
-  if (previous && TIMELINE_BASE_FIELDS.every((f) => draft[f] === previous[f])) return draft;
+  if (
+    previous &&
+    TIMELINE_BASE_FIELDS.every(
+      (f) => JSON.stringify(draft[f] ?? null) === JSON.stringify(previous[f] ?? null)
+    )
+  )
+    return draft;
   if (
     draft.age == null ||
     draft.retirement_age == null ||
@@ -98,17 +126,34 @@ export function syncTimeline(
   ) {
     return { ...draft, timeline: [] };
   }
-  const fresh = generateTimeline(
-    draft.age,
-    draft.retirement_age,
-    draft.current_income,
-    draft.income_growth_rate_pct ?? 0,
-    startYear
-  );
+  const fresh = projectedTimeline(draft, startYear);
   return {
     ...draft,
     timeline: draft.timeline.length === 0 ? fresh : mergeTimeline(fresh, draft.timeline),
   };
+}
+
+/** The timeline a complete draft projects before any per-year edits. */
+export function projectedTimeline(draft: ScenarioDraft, startYear: number): PlanYear[] {
+  return generateTimeline(
+    draft.age!,
+    draft.retirement_age!,
+    draft.current_income!,
+    draft.income_growth_rate_pct ?? 0,
+    startYear,
+    {
+      planningHorizonAge: draft.planning_horizon_age ?? DEFAULT_PLANNING_HORIZON_AGE,
+      sources: draft.income_sources,
+      baseEndAge: draft.current_income_end_age,
+    }
+  );
+}
+
+/** Problems with income sources that block a run. */
+export function incomeSourceErrors(draft: ScenarioDraft): string[] {
+  return draft.income_sources
+    .filter((src) => src.end_age != null && src.end_age < src.start_age)
+    .map((src) => `${sourceLabel(src)} ends before it starts`);
 }
 
 /** Apply a form edit. Choosing a state also sets the retirement state, as the form always has. */
@@ -139,7 +184,8 @@ export function isDraftReady(draft: ScenarioDraft): boolean {
   return (
     missingFields(draft).length === 0 &&
     draft.timeline.length > 0 &&
-    draft.timeline.every((y) => y.gross_income >= 0)
+    draft.timeline.every((y) => y.gross_income >= 0) &&
+    incomeSourceErrors(draft).length === 0
   );
 }
 
@@ -150,6 +196,7 @@ export function hasDraftValues(draft: ScenarioDraft): boolean {
     draft.roth_balance != null ||
     draft.state != null ||
     draft.retirement_spending != null ||
+    draft.income_sources.length > 0 ||
     draft.timeline.length > 0
   );
 }

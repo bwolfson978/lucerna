@@ -7,12 +7,14 @@ import pytest
 
 from app.engine.types import PlanYear
 from app.tools.draft import (
+    IncomeSource,
     ScenarioDraft,
     build_scenario_input,
     draft_hash,
     generate_timeline,
     merge_timeline,
     missing_fields,
+    source_label,
     sync_timeline,
     validation_errors,
 )
@@ -34,20 +36,57 @@ def complete(**overrides) -> ScenarioDraft:
     return draft
 
 
-def test_timeline_runs_until_retirement_with_growth():
-    rows = generate_timeline(45, 48, 100000, 3, 2026)
-    assert [r.year for r in rows] == [2026, 2027, 2028]
-    assert [r.gross_income for r in rows] == [100000, 103000, 106090]
+def test_timeline_runs_through_the_plan_with_income_until_retirement():
+    rows = generate_timeline(45, 48, 100000, 3, 2026, planning_horizon_age=50)
+    assert [r.year for r in rows] == [2026, 2027, 2028, 2029, 2030, 2031]
+    assert [r.gross_income for r in rows] == [100000, 103000, 106090, 0, 0, 0]
 
 
-def test_retired_timeline_runs_to_73_capped_at_ten_years():
-    assert len(generate_timeline(66, 60, 30000, 0, 2026)) == 7
-    assert len(generate_timeline(55, 50, 30000, 0, 2026)) == 10
-    assert len(generate_timeline(80, 60, 30000, 0, 2026)) == 1
+def test_retired_timeline_keeps_income_for_life():
+    rows = generate_timeline(66, 60, 30000, 0, 2026, planning_horizon_age=90)
+    assert len(rows) == 25
+    assert {r.gross_income for r in rows} == {30000}
+    assert len(generate_timeline(95, 60, 30000, 0, 2026, planning_horizon_age=90)) == 1
+
+
+def test_sources_add_to_income_over_their_age_range():
+    sources = [
+        IncomeSource(kind="social_security", amount=40000, start_age=67),
+        IncomeSource(kind="pension", owner="spouse", amount=10000, start_age=65, end_age=66),
+    ]
+    rows = generate_timeline(63, 73, 20000, 0, 2026, 70, sources, base_end_age=64)
+    assert [r.gross_income for r in rows] == [
+        20000,
+        20000,
+        10000,
+        10000,
+        40000,
+        40000,
+        40000,
+        40000,
+    ]
+
+
+def test_source_without_end_age_runs_to_plan_end():
+    sources = [IncomeSource(kind="other", label="Rental", amount=12000, start_age=50)]
+    rows = generate_timeline(48, 50, 50000, 0, 2026, 52, sources)
+    assert [r.gross_income for r in rows] == [50000, 50000, 12000, 12000, 12000]
+
+
+def test_source_ending_before_it_starts_is_an_error():
+    draft = complete(
+        income_sources=[IncomeSource(kind="pension", amount=1000, start_age=70, end_age=65)]
+    )
+    assert validation_errors(draft) == ["income source 'Pension' ends before it starts"]
+
+
+def test_source_label_names_spouse():
+    src = IncomeSource(kind="social_security", owner="spouse", amount=1, start_age=67)
+    assert source_label(src) == "Social Security (spouse)"
 
 
 def test_merge_keeps_rows_with_notes_or_state():
-    fresh = generate_timeline(45, 48, 100000, 0, 2026)
+    fresh = generate_timeline(45, 48, 100000, 0, 2026, planning_horizon_age=47)
     existing = [
         PlanYear(year=2026, gross_income=1),
         PlanYear(year=2027, gross_income=2, notes="Sabbatical"),

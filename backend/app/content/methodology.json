@@ -90,8 +90,12 @@
           "text": "How we convert future dollars to today's dollars. A moderate assumption that avoids overstating benefits."
         },
         {
+          "heading": "Income and spending in retirement",
+          "text": "Your income timeline runs through the age you plan to. Social Security, pensions and other income fill in the years they cover. Once you start drawing on your accounts, they cover whatever part of your spending that income doesn't, and required minimum distributions count toward it."
+        },
+        {
           "heading": "What's not included",
-          "text": "Social Security benefits and income are not modeled. IRMAA surcharges are factored in during optimization but are not a direct user input. These omissions could shift the optimal amount depending on your situation."
+          "text": "Social Security is counted as fully taxable income. In reality only up to 85% of it is taxed, so the tax on years with Social Security is somewhat overstated. IRMAA surcharges are factored in during optimization but are not a direct user input. These simplifications could shift the optimal amount depending on your situation."
         }
       ]
     },

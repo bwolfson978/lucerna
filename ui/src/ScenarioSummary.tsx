@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { cn } from "./cn";
 import { formatCurrency } from "./format";
+import { incomeSourceAges, incomeSourceLabel, type IncomeSource } from "./income";
 import { FILING_STATUS_OPTIONS, STATE_OPTIONS, filingStatusLabel, stateName } from "./options";
 
 export type FilingStatus = "single" | "married_filing_jointly";
@@ -16,6 +17,9 @@ export interface ScenarioValues {
   retirement_state?: string | null;
   custom_state_rate_pct?: number | null;
   current_income?: number | null;
+  /** Last age current income is earned. Unset: the year before retirement, or for life. */
+  current_income_end_age?: number | null;
+  income_sources?: IncomeSource[];
   income_growth_rate_pct?: number | null;
   traditional_balance?: number | null;
   roth_balance?: number | null;
@@ -54,7 +58,7 @@ interface Row {
   editFiling?: boolean;
   /** State now and in retirement get a pair of selects. */
   editState?: boolean;
-  /** Edits that need the full form (ACA, per-year income). */
+  /** Edits that need the full form (ACA, income sources, per-year income). */
   formOnly?: boolean;
 }
 
@@ -86,7 +90,12 @@ function buildRows(s: ScenarioValues): Row[] {
     {
       key: "income",
       label: "Income this year",
-      value: s.current_income != null ? formatCurrency(s.current_income) : notSet,
+      value:
+        s.current_income == null
+          ? notSet
+          : s.current_income_end_age != null
+            ? `${formatCurrency(s.current_income)} until ${s.current_income_end_age}`
+            : formatCurrency(s.current_income),
       edit: "current_income",
     },
     {
@@ -95,6 +104,12 @@ function buildRows(s: ScenarioValues): Row[] {
       value: `${s.income_growth_rate_pct ?? 0}% a year`,
       edit: "income_growth_rate_pct",
     },
+    ...(s.income_sources ?? []).map((src, i) => ({
+      key: `source-${i}`,
+      label: incomeSourceLabel(src),
+      value: `${formatCurrency(src.amount)} a year ${incomeSourceAges(src)}`,
+      formOnly: true,
+    })),
     {
       key: "traditional",
       label: "Traditional IRA/401(k)",
@@ -115,7 +130,7 @@ function buildRows(s: ScenarioValues): Row[] {
     },
     {
       key: "spending",
-      label: "Retirement spending",
+      label: "Household spending in retirement",
       value: s.retirement_spending ? `${formatCurrency(s.retirement_spending)} a year` : "4% rule",
       edit: "retirement_spending",
     },

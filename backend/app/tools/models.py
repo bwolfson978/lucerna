@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -26,6 +27,30 @@ class IncomeChange(BaseModel):
     )
 
 
+class IncomeSourceInput(BaseModel):
+    """Income that runs across a range of ages: Social Security, a pension, rental income."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    kind: Literal["social_security", "pension", "other"] = Field(
+        description="social_security, pension, or other (rental, annuity, part-time work)"
+    )
+    owner: Literal["you", "spouse"] = Field(
+        default="you", description="Whose income it is. Ages are always the user's age."
+    )
+    label: str | None = Field(
+        default=None, max_length=40, description="Short name for 'other' income, e.g. 'Rental'"
+    )
+    amount: float = Field(ge=0, description="Yearly amount in dollars (monthly x 12)")
+    start_age: int = Field(ge=0, le=120, description="The user's age in the year it starts")
+    end_age: int | None = Field(
+        default=None,
+        ge=0,
+        le=120,
+        description="The user's age in its last year. Omit if it lasts for life.",
+    )
+
+
 class ScenarioUpdate(BaseModel):
     """A Roth conversion scenario. Every field is optional; include only what the user stated
     (or what a previous tool result returned as `scenario`)."""
@@ -38,6 +63,16 @@ class ScenarioUpdate(BaseModel):
         default=None,
         gt=0,
         description="Gross household income this year, in dollars (wages, pensions, Social Security, etc.)",
+    )
+    current_income_end_age: int | None = Field(
+        default=None,
+        ge=0,
+        le=120,
+        description=(
+            "Their age in the last year current_income is earned, if it stops before "
+            "retirement_age (for example when Social Security replaces it). Default: the year "
+            "before retirement_age, or for life if already retired."
+        ),
     )
     traditional_balance: float | None = Field(
         default=None,
@@ -66,7 +101,19 @@ class ScenarioUpdate(BaseModel):
     retirement_spending: float | None = Field(
         default=None,
         ge=0,
-        description="Yearly spending from these accounts in retirement, dollars. Omit to use the 4% rule.",
+        description=(
+            "Total yearly household spending once they start drawing on the accounts, in "
+            "dollars. Income that year (Social Security, pensions) covers part of it and the "
+            "accounts cover the rest. Omit to use the 4% rule on the accounts."
+        ),
+    )
+    income_sources: list[IncomeSourceInput] | None = Field(
+        default=None,
+        description=(
+            "Income that runs across years: Social Security (one per person), pensions, rental "
+            "income, annuities. Pass the complete list; it replaces the previous one. Prefer "
+            "this over income_changes for anything lasting more than a year."
+        ),
     )
     state: str | None = Field(
         default=None,
@@ -109,9 +156,9 @@ class ScenarioUpdate(BaseModel):
     income_changes: list[IncomeChange] | None = Field(
         default=None,
         description=(
-            "Per-year income that differs from the projection: job changes, sabbaticals, "
-            "Social Security starting, part-time work. Years must fall inside the timeline "
-            "(this year until retirement_age) or directly extend it."
+            "One-off income for a single year that differs from the projection: a sabbatical, "
+            "a bonus, a year of part-time work. Years must fall inside the timeline (this year "
+            "until planning_horizon_age). Use income_sources for income that lasts."
         ),
     )
 

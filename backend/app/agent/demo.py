@@ -46,9 +46,9 @@ logger = logging.getLogger(__name__)
 DEMO_MESSAGES: tuple[str, ...] = (
     "Hi, I'm Margaret. I'm 63 and my husband and I file jointly. I retired last year after "
     "35 years as a nurse, and we're living off our brokerage account, so our income is only "
-    "about $20,000 a year right now. I have $1.4 million in a traditional 401(k) and $52,000 "
-    "in a Roth IRA. We'll start Social Security in 2030 at about $46,000 a year, about $58,000 "
-    "in 2031 once my husband claims, and about $60,000 a year after that. We plan to start "
+    "about $20,000 a year until Social Security starts. I have $1.4 million in a traditional "
+    "401(k) and $52,000 in a Roth IRA. I'll claim Social Security at 67, about $46,000 a year, "
+    "and my husband's adds about $14,000 a year starting the year after. We plan to start "
     "drawing on the 401(k) at 73, spend about $95,000 a year in retirement, and plan through "
     "age 93. How much should I convert to Roth, and when?",
     "That all looks right. Run the numbers.",
@@ -66,13 +66,10 @@ _SCRIPTED_SCENARIO = ScenarioUpdate(
     retirement_age=73,
     retirement_spending=95_000,
     planning_horizon_age=93,
-    income_changes=[
-        {"year": 2030, "gross_income": 46_000, "note": "Social Security starts"},
-        {"year": 2031, "gross_income": 58_000, "note": "Spouse claims Social Security"},
-        {"year": 2032, "gross_income": 60_000, "note": "Full Social Security"},
-        {"year": 2033, "gross_income": 60_000, "note": "Full Social Security"},
-        {"year": 2034, "gross_income": 60_000, "note": "Full Social Security"},
-        {"year": 2035, "gross_income": 60_000, "note": "Full Social Security"},
+    current_income_end_age=66,
+    income_sources=[
+        {"kind": "social_security", "owner": "you", "amount": 46_000, "start_age": 67},
+        {"kind": "social_security", "owner": "spouse", "amount": 14_000, "start_age": 68},
     ],
 )
 

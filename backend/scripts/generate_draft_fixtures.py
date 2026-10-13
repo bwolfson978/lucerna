@@ -59,7 +59,7 @@ BUILD_CASES: list[tuple[str, dict]] = [
         ),
     ),
     (
-        "already retired plans to 73",
+        "already retired keeps income for life",
         dict(
             age=66,
             filing_status="married_filing_jointly",
@@ -94,6 +94,33 @@ BUILD_CASES: list[tuple[str, dict]] = [
             income_growth_rate_pct=3,
             traditional_balance=10000,
             retirement_age=40,
+        ),
+    ),
+    (
+        "income sources replace current income",
+        dict(
+            age=63,
+            filing_status="married_filing_jointly",
+            current_income=20000,
+            income_growth_rate_pct=0,
+            current_income_end_age=66,
+            traditional_balance=1400000,
+            roth_balance=52000,
+            retirement_age=73,
+            retirement_spending=95000,
+            planning_horizon_age=93,
+            income_sources=[
+                {"kind": "social_security", "owner": "you", "amount": 46000, "start_age": 67},
+                {"kind": "social_security", "owner": "spouse", "amount": 14000, "start_age": 68},
+                {
+                    "kind": "pension",
+                    "owner": "you",
+                    "label": "Bridge",
+                    "amount": 5000.5,
+                    "start_age": 64,
+                    "end_age": 66,
+                },
+            ],
         ),
     ),
     (
