@@ -88,7 +88,7 @@ People can sign in with Google, save scenarios and come back to them. The same a
 6. "Save scenario" in the workspace (conversation, form and full results) when the draft is complete. Signed out: open sign-in, then save. Name defaults from the scenario ("Single, $210K IRA, retire at 62") and can be edited.
 7. `/scenarios`: list (name, last saved, key inputs), open, rename, delete. Mobile-first.
 8. Opening a saved scenario: `/calculator?saved=<id>` loads its draft into the workspace (form and conversation share it) with a notice.
-9. PostHog `identify` on sign-in, `reset` on sign-out (from PR #126).
+9. PostHog `identify` on sign-in with the Clerk user id as the person, and email and name as person properties (so a person can be found by email and their events filtered); `reset` on sign-out.
 10. Tests: account context, save button states, scenarios page, API client headers.
 
 ### W7. Docs, CI and cleanup
@@ -113,7 +113,7 @@ These are steps only an account owner can do. Each is marked with when it's need
 | B5 | Before deploying with auth on | **Add a Postgres database to the Railway project**, and reference its `DATABASE_URL` in the backend service's variables. Migrations run on startup. |
 | B6 | Deploy | **Set environment variables.** Railway (backend): `CLERK_SECRET_KEY`, `CLERK_ISSUER_URL` (the Frontend API URL), `MCP_RESOURCE_URL` (`https://<backend-host>/mcp`), `DATABASE_URL`. Vercel (frontend): `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, and `NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in`, `NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up`. In Clerk, set the sign-in and sign-up URLs (Paths) to the site's `/sign-in` and `/sign-up` so the OAuth flow uses the branded pages. |
 | B7 | After deploy | **End-to-end check from Claude:** Settings → Connectors → Add custom connector with `https://<backend-host>/mcp`, sign in with Google, then ask it to save a scenario and confirm it shows on `/scenarios`. Repeat in ChatGPT developer mode if wanted. I can't do this from the sandbox (it can't reach clerk.com or sign in to Google). |
-| B8 | Before launch | **Privacy policy and terms:** say that signed-in users' scenario inputs are stored, where, and how to delete them (the `/scenarios` page deletes; account deletion through Clerk's account menu). |
+| B8 | Before launch | **Privacy policy and terms:** say that signed-in users' scenario inputs are stored, where, and how to delete them, and that analytics (PostHog) are linked to their account, including their email (the `/scenarios` page deletes; account deletion through Clerk's account menu). |
 | B9 | When merging | **Close PR #126** as superseded (I can do it if you say so). |
 
 ---

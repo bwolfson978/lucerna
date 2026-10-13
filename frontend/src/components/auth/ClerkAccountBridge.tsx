@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
-import { useAuth, useClerk } from "@clerk/nextjs";
+import { useAuth, useClerk, useUser } from "@clerk/nextjs";
 import posthog from "posthog-js";
 import { AccountContext, type Account } from "@/lib/auth/account";
 import { setTokenGetter } from "@/lib/auth/token";
@@ -11,6 +11,9 @@ import { setTokenGetter } from "@/lib/auth/token";
 export function ClerkAccountBridge({ children }: { children: ReactNode }) {
   const { isLoaded, isSignedIn, userId, getToken } = useAuth();
   const clerk = useClerk();
+  const { user } = useUser();
+  const email = user?.primaryEmailAddress?.emailAddress ?? null;
+  const name = user?.fullName ?? null;
   const wasSignedIn = useRef(false);
 
   useEffect(() => {
@@ -21,14 +24,18 @@ export function ClerkAccountBridge({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isLoaded) return;
     if (isSignedIn && userId) {
-      // Anonymous events from this device join the person's history.
-      posthog.identify(userId);
+      // The Clerk user id is the PostHog person, so anonymous events from this device join
+      // their history. Email and name are person properties, to find someone in PostHog.
+      posthog.identify(userId, {
+        ...(email ? { email } : {}),
+        ...(name ? { name } : {}),
+      });
       wasSignedIn.current = true;
     } else if (wasSignedIn.current) {
       posthog.reset();
       wasSignedIn.current = false;
     }
-  }, [isLoaded, isSignedIn, userId]);
+  }, [isLoaded, isSignedIn, userId, email, name]);
 
   const value: Account = useMemo(
     () => ({
