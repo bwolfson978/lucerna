@@ -98,10 +98,7 @@ describe("ScenarioWorkspace (calculator)", () => {
   it("opens in conversation mode with an opening message and starters", () => {
     mockAgent();
     renderWorkspace("calculator");
-    expect(screen.getByRole("radio", { name: "Talk it through" })).toHaveAttribute(
-      "aria-checked",
-      "true"
-    );
+    expect(screen.getByRole("radio", { name: "Discuss" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByText(/Let's map out your situation/)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "I'm planning to retire early" })

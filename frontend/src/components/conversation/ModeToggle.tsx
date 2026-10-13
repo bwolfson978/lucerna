@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 export type WorkspaceMode = "conversation" | "form";
 
 const OPTIONS: { value: WorkspaceMode; label: string }[] = [
-  { value: "conversation", label: "Talk it through" },
+  { value: "conversation", label: "Discuss" },
   { value: "form", label: "My numbers" },
 ];
 

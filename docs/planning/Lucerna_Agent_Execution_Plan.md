@@ -16,7 +16,7 @@ Underneath, this is an agent harness: one agent loop with a system prompt and a 
 |----|----------|--------|-----------|
 | A1 | Primary experience | Conversation on the scenario screen (`/calculator`), with a toggle to the form | Matches the brief's "conversational onboarding instead of form-heavy UI" |
 | A2 | Default mode | Conversation, for everyone | Product bet; no A/B split at launch |
-| A3 | Mode labels | Plain English ("Talk it through" / "My numbers"), never "Agent" in the UI | Users are not technical; CLAUDE.md plain-English rule |
+| A3 | Mode labels | Plain English ("Discuss" / "My numbers"), never "Agent" in the UI | Users are not technical; CLAUDE.md plain-English rule |
 | A4 | Where results live | Mostly in the conversation: headline result, compact charts, what-if comparisons | Keeps the user in one flow |
 | A5 | Full results | "See full results" action opens today's `ResultsView` for the current scenario, with a way back to the conversation | Detail-oriented users keep the full analysis |
 | A6 | Shared scenario state | One `ScenarioInput` draft shared by conversation and form; switching modes never loses input | The form doubles as the way to check and fix what the assistant captured |
@@ -44,7 +44,7 @@ Underneath, this is an agent harness: one agent loop with a system prompt and a 
 YOUR SCENARIO
 Run your numbers.
 
-[ Talk it through | My numbers ]      <- toggle, conversation selected by default
+[ Discuss | My numbers ]      <- toggle, conversation selected by default
 
   Assistant: Let's map out your situation. How old are you, and
              are you filing single or jointly?

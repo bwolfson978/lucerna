@@ -13,7 +13,7 @@ const view = (page: Page, index: number) =>
 test.describe('Conversation flow', () => {
   test('describe, confirm, run, explore a what-if and open full results', async ({ page }) => {
     await page.goto('/calculator')
-    await expect(page.getByRole('radio', { name: 'Talk it through' })).toHaveAttribute('aria-checked', 'true')
+    await expect(page.getByRole('radio', { name: 'Discuss' })).toHaveAttribute('aria-checked', 'true')
 
     await page.getByLabel('Message').fill("I'm 52, married, income $90,000 a year, $600k in my 401k, I want to retire at 60")
     await page.getByRole('button', { name: 'Send' }).click()
