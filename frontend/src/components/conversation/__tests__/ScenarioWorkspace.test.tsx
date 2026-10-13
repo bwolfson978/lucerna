@@ -105,6 +105,17 @@ describe("ScenarioWorkspace (calculator)", () => {
     ).toBeInTheDocument();
   });
 
+  it("asks a signed-out visitor to sign in before opening a saved scenario", () => {
+    mockAgent();
+    window.history.replaceState(null, "", "/calculator?saved=abc");
+    renderWorkspace("calculator");
+    expect(screen.getByText("Sign in to open this saved scenario")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "My numbers" })).toHaveAttribute(
+      "aria-checked",
+      "true"
+    );
+  });
+
   it("gathers inputs, confirms, runs and opens full results", async () => {
     const sent: { message: string; draft: ScenarioDraft }[] = [];
     mockAgent(sent);

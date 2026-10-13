@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useAuth, useUser } from "@/lib/auth";
+import { SignInButton, useAuth, useUser } from "@/lib/auth";
 import { Header } from "@/components/common/Header";
+import { GlowButton } from "@/components/common/GlowButton";
+import { SignInRequired } from "@/components/common/SignInRequired";
 import { PageFooter } from "@/components/common/PageFooter";
 import { createScenariosApi } from "@/lib/api/scenarios";
 import type { SavedScenario } from "@/lib/types";
@@ -102,17 +103,9 @@ function ScenarioCard({
 export default function MyScenariosPage() {
   const { isLoaded, isSignedIn } = useUser();
   const { getToken } = useAuth();
-  const router = useRouter();
   const [scenarios, setScenarios] = useState<SavedScenario[]>([]);
   const [loadingList, setLoadingList] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-
-  // Redirect unauthenticated users to sign-in
-  useEffect(() => {
-    if (isLoaded && !isSignedIn) {
-      router.replace("/");
-    }
-  }, [isLoaded, isSignedIn, router]);
 
   const fetchScenarios = useCallback(async () => {
     setLoadingList(true);
@@ -147,7 +140,7 @@ export default function MyScenariosPage() {
     [getToken]
   );
 
-  if (!isLoaded || !isSignedIn) return null;
+  if (!isLoaded) return null;
 
   return (
     <>
@@ -165,7 +158,19 @@ export default function MyScenariosPage() {
             </p>
           </div>
 
-          {loadingList && (
+          {!isSignedIn && (
+            <SignInRequired
+              title="Sign in to see your saved scenarios"
+              description="Scenarios you save here or from a chat app are kept in your free account."
+              signInButton={
+                <SignInButton>
+                  <GlowButton size="sm">Sign in</GlowButton>
+                </SignInButton>
+              }
+            />
+          )}
+
+          {isSignedIn && loadingList && (
             <div className="flex flex-col gap-4">
               {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="card animate-pulse">
@@ -190,7 +195,7 @@ export default function MyScenariosPage() {
             </div>
           )}
 
-          {!loadingList && !loadError && scenarios.length === 0 && (
+          {isSignedIn && !loadingList && !loadError && scenarios.length === 0 && (
             <div className="card flex flex-col items-center gap-4 py-12 text-center">
               <span className="text-4xl">📊</span>
               <div className="flex flex-col gap-1">
@@ -206,7 +211,7 @@ export default function MyScenariosPage() {
             </div>
           )}
 
-          {!loadingList && !loadError && scenarios.length > 0 && (
+          {isSignedIn && !loadingList && !loadError && scenarios.length > 0 && (
             <div className="flex flex-col gap-4">
               {scenarios.map((scenario) => (
                 <ScenarioCard key={scenario.id} scenario={scenario} onDelete={handleDelete} />
