@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import posthog from "posthog-js";
-import { SignInButton, useAuth, useUser } from "@clerk/nextjs";
+import { AUTH_ENABLED, SignInButton, useAuth, useUser } from "@/lib/auth";
 import { Header } from "@/components/common/Header";
 import { PageFooter } from "@/components/common/PageFooter";
 import { InputForm } from "@/components/calculator/InputForm";
@@ -324,6 +324,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
   const [bannerState, setBannerState] = useState<SaveBannerState>("prompt");
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const showBanner =
+    AUTH_ENABLED &&
     !isDemo &&
     isLoaded &&
     !bannerDismissed &&
@@ -550,7 +551,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
                 state={bannerState}
                 onDismiss={() => setBannerDismissed(true)}
                 signInButton={
-                  <SignInButton mode="modal">
+                  <SignInButton>
                     <GlowButton size="sm">Sign in to save</GlowButton>
                   </SignInButton>
                 }

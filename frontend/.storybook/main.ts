@@ -1,4 +1,3 @@
-import { fileURLToPath } from "node:url";
 import type { StorybookConfig } from "@storybook/nextjs";
 
 const config: StorybookConfig = {
@@ -8,15 +7,6 @@ const config: StorybookConfig = {
   framework: {
     name: "@storybook/nextjs",
     options: {},
-  },
-  // Stories render signed out, without a ClerkProvider or Clerk keys.
-  webpackFinal: async (config) => {
-    config.resolve = config.resolve ?? {};
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      "@clerk/nextjs": fileURLToPath(new URL("../src/test/clerk-mock.tsx", import.meta.url)),
-    };
-    return config;
   },
 };
 

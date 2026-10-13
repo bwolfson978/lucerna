@@ -28,8 +28,6 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@lucerna/ui': path.resolve(__dirname, '../ui/src/index.ts'),
-      // Signed-out Clerk, so components render without a ClerkProvider.
-      '@clerk/nextjs': path.resolve(__dirname, './src/test/clerk-mock.tsx'),
     },
   },
 })
