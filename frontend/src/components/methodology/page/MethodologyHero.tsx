@@ -3,8 +3,6 @@
 export function MethodologyHero() {
   return (
     <div className="relative">
-      <div className="hero-wash -inset-x-[200px] -top-[120px]" />
-
       <div className="relative z-10 flex max-w-2xl flex-col gap-comfortable">
         <span className="eyebrow-pine">Methodology</span>
         <h1 className="display-heading text-display-xl">

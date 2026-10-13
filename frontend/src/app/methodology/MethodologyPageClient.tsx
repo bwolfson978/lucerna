@@ -36,7 +36,7 @@ const SECTION_IDS = TOC_ITEMS.map((item) => item.id);
 
 function P({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-body text-text-secondary" style={{ lineHeight: 1.8 }}>
+    <p className="max-w-[72ch] text-body text-text-secondary" style={{ lineHeight: 1.8 }}>
       {children}
     </p>
   );
@@ -90,20 +90,20 @@ export function MethodologyPageClient() {
   return (
     <>
       <Header />
-      <div className="flex">
-        {/* Desktop TOC sidebar */}
-        <div className="hidden shrink-0 pl-page pt-section-lg lg:block">
-          <TableOfContents items={TOC_ITEMS} activeId={activeId} />
-        </div>
+      {/* Mobile TOC (hidden on desktop where the sidebar shows instead) */}
+      <div className="lg:hidden">
+        <TableOfContents items={TOC_ITEMS} activeId={activeId} />
+      </div>
 
-        <main className="min-w-0 flex-1">
-          {/* Mobile TOC (hidden on desktop where the sidebar shows instead) */}
-          <div className="lg:hidden">
+      {/* The header's frame: contents on the left, the article beside it. */}
+      <div className="px-default sm:px-7">
+        <div className="mx-auto w-full max-w-wide lg:grid lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-16">
+          <div className="hidden pt-section-lg lg:block">
             <TableOfContents items={TOC_ITEMS} activeId={activeId} />
           </div>
 
-          <div className="px-default md:px-page">
-            <div className="mx-auto flex max-w-content flex-col gap-section-lg py-section-lg">
+          <main className="min-w-0">
+            <div className="flex flex-col gap-section-lg py-section sm:py-section-lg">
               {/* Hero */}
               <MethodologyHero />
 
@@ -387,12 +387,11 @@ export function MethodologyPageClient() {
               <div className="border-t border-border pt-section-lg">
                 <MethodologyFooterCTA />
               </div>
-
-              <PageFooter />
             </div>
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
+      <PageFooter />
     </>
   );
 }
