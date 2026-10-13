@@ -17,8 +17,9 @@ describe("IncomeTimelineEditor", () => {
     const onChange = vi.fn();
     render(<IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />);
     expect(screen.queryByText(/Enter your expected income/)).not.toBeInTheDocument();
-    expect(screen.getByText(/click to edit/)).toBeInTheDocument();
-    expect(screen.getByText(/3 yrs/)).toBeInTheDocument();
+    expect(screen.getByText("2026–2028 · 3 years")).toBeInTheDocument();
+    // Adding a year waits until the rows are open.
+    expect(screen.queryByText("+ Add year")).not.toBeInTheDocument();
     expect(screen.queryByText(/total/)).not.toBeInTheDocument();
   });
 
@@ -54,6 +55,7 @@ describe("IncomeTimelineEditor", () => {
   it("calls onChange with new year when + Add year is clicked", () => {
     const onChange = vi.fn();
     render(<IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} />);
+    expand();
 
     fireEvent.click(screen.getByText("+ Add year"));
 
@@ -72,6 +74,7 @@ describe("IncomeTimelineEditor", () => {
     }));
 
     render(<IncomeTimelineEditor timeline={maxTimeline} onChange={onChange} />);
+    expand();
 
     const addButton = screen.getByText("+ Add year");
     expect(addButton).toBeDisabled();
@@ -107,6 +110,7 @@ describe("IncomeTimelineEditor", () => {
     const onChange = vi.fn();
     const onReset = vi.fn();
     render(<IncomeTimelineEditor timeline={baseTimeline} onChange={onChange} onReset={onReset} />);
+    expand();
 
     const resetButton = screen.getByText("Reset");
     expect(resetButton).toBeInTheDocument();

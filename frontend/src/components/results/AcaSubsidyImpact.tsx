@@ -6,6 +6,7 @@ import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
 import { dataFontStyle } from "@/lib/utils/constants";
 import { Card } from "@/components/ui/card";
 import { InfoTrigger } from "@/components/methodology/InfoTrigger";
+import { cn } from "@/lib/utils";
 
 interface AcaSubsidyImpactProps {
   result: OptimizationResult;
@@ -34,37 +35,44 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
         />
       </div>
 
-      {/* Summary metrics */}
-      <Card className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-4">
+      {/* Summary metrics: with no subsidy lost, two numbers say it all. */}
+      <Card
+        className={cn(
+          "grid grid-cols-2 gap-x-3 gap-y-5",
+          hasImpact ? "sm:grid-cols-4" : "sm:grid-cols-3"
+        )}
+      >
+        {hasImpact ? (
+          <>
+            <Stat
+              label="Subsidy kept"
+              value={formatCurrency(details.reduce((s, d) => s + d.subsidy_with_conversion, 0))}
+              note="after conversions"
+            />
+            <Stat
+              label="Subsidy lost"
+              value={formatCurrency(totalSubsidyLost)}
+              tone="negative"
+              note={`across ${yearsWithLoss.length} year${yearsWithLoss.length > 1 ? "s" : ""}`}
+            />
+          </>
+        ) : (
+          <Stat
+            label="Subsidy"
+            value="Fully kept"
+            tone="positive"
+            note="conversions don't reduce it"
+          />
+        )}
         <Stat
-          label="Subsidy kept"
-          value={
-            hasImpact
-              ? formatCurrency(details.reduce((s, d) => s + d.subsidy_with_conversion, 0))
-              : "Full subsidy"
-          }
-          tone={hasImpact ? "default" : "positive"}
-          note={hasImpact ? "after conversions" : "conversions don't reduce it"}
-        />
-        <Stat
-          label="Subsidy reduced by"
-          value={formatCurrency(totalSubsidyLost)}
-          tone={hasImpact ? "negative" : "default"}
-          note={
-            hasImpact
-              ? `across ${yearsWithLoss.length} year${yearsWithLoss.length > 1 ? "s" : ""}`
-              : undefined
-          }
-        />
-        <Stat
-          label="True cost of conversions"
+          label="True cost"
           value={formatCurrency(acaSummary.total_combined_cost)}
-          note="federal tax + subsidy loss"
+          note="federal tax + subsidy lost"
         />
         <Stat
           label="Combined rate"
           value={formatPercent(acaSummary.effective_combined_rate)}
-          note="tax + subsidy per dollar converted"
+          note="per dollar converted"
         />
       </Card>
 

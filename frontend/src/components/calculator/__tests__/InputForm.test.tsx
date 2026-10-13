@@ -294,7 +294,7 @@ describe("InputForm", () => {
     renderInputForm({ onSubmit });
 
     // Tier 2 — industry-standard assumptions users don't need to know
-    const growth = screen.getByLabelText("Income growth rate (%)") as HTMLInputElement;
+    const growth = screen.getByLabelText("Yearly income growth") as HTMLInputElement;
     expect(growth.value).toBe("3");
   });
 
@@ -318,7 +318,7 @@ describe("InputForm", () => {
     // Tier 3 — optional
     expect(hasRequiredIndicator("Roth IRA/401(k) balance")).toBe(false);
     // Tier 2 — assumption with default
-    expect(hasRequiredIndicator("Income growth rate (%)")).toBe(false);
+    expect(hasRequiredIndicator("Yearly income growth")).toBe(false);
   });
 
   it("focuses first invalid field on submit failure", () => {
