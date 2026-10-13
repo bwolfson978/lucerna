@@ -21,6 +21,7 @@ Ask the user which workstream or task they're picking up.
 - **Progressive disclosure.** Simplicity first, complexity on demand. Headline results up front; detailed analysis available on scroll/click.
 - **One definition per card.** Cards shown both natively and in MCP App Views live in `ui/` (display-only React, shared Tailwind preset and tokens). The web app imports them; Views render them through preact/compat. Change the shared component, not a copy. See `docs/agent-and-mcp.md`.
 - **Storybook is the component catalog.** Adding or changing a component in `ui/src/`, `components/ui/` or `components/common/` means adding or updating its stories in the same PR. See `docs/storybook.md`.
+- **UI PRs show before and after.** A PR that changes `frontend/`, `ui/` or `mcp-views/` (or backend output the UI renders) carries side-by-side screenshots at desktop and phone width in its Before / After section. Use the `pr-evidence` skill; `run-lucerna` covers starting the app. Both live in `.claude/skills/`.
 - **Mobile-first.** All UI must be responsive from the start — many users arrive from Reddit on phones.
 
 ## Design aesthetic
@@ -111,8 +112,10 @@ lucerna/
 ├── shared/fixtures/       # Cross-language fixtures (scenario draft, View data)
 ├── e2e/                   # Playwright E2E tests (spans both services)
 │   ├── playwright.config.ts
+│   ├── capture/           # Before/after capture flows (pr-evidence skill)
 │   ├── fixtures/          # test.ts: the `test` every spec imports (fails on uncaught page errors)
 │   └── tests/
+├── .claude/skills/         # Repo skills: run-lucerna, pr-evidence
 ├── docs/
 │   ├── design-aesthetic.md    # Visual language, colors, typography, components
 │   ├── planning/              # Project brief, execution plans, input variables spec

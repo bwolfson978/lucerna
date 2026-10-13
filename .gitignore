@@ -21,8 +21,12 @@ storybook-static/
 *.swp
 *.swo
 
-# Claude Code
-.claude/
+# Claude Code: local state stays out; repo skills are shared
+.claude/*
+!.claude/skills/
+
+# Before/after captures (pr-evidence skill)
+.qa-runs/
 
 # OS
 .DS_Store
