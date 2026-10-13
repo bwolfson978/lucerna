@@ -675,7 +675,7 @@ function DemoCta({ onRestart }: { onRestart: () => void }) {
             posthog.capture("cta_clicked", { cta: "try_yours", source: "demo_conversation" })
           }
         >
-          Talk through your numbers
+          Discuss your numbers
         </Link>
         <button type="button" className="btn-outline-paper" onClick={onRestart}>
           Replay example

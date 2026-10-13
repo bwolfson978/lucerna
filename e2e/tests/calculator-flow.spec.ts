@@ -4,7 +4,7 @@ import { alexScenario } from '../fixtures/test-data'
 test.describe('Calculator form', () => {
   test('fills in the form and sees results', async ({ page }) => {
     await page.goto('/')
-    await page.getByRole('link', { name: 'Talk through your numbers' }).first().click()
+    await page.getByRole('link', { name: 'Discuss your numbers' }).first().click()
     await page.getByRole('radio', { name: 'Fill in a form' }).click()
 
     await page.getByLabel('Age', { exact: true }).fill(String(alexScenario.age))
