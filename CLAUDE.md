@@ -20,6 +20,7 @@ Ask the user which workstream or task they're picking up.
 - **Deterministic engine + AI explanation layer.** The optimization engine does the math and produces a structured reasoning trace. The AI translates that trace into natural language. The AI never computes financial results.
 - **Progressive disclosure.** Simplicity first, complexity on demand. Headline results up front; detailed analysis available on scroll/click.
 - **One definition per card.** Cards shown both natively and in MCP App Views live in `ui/` (display-only React, shared Tailwind preset and tokens). The web app imports them; Views render them through preact/compat. Change the shared component, not a copy. See `docs/agent-and-mcp.md`.
+- **Storybook is the component catalog.** Adding or changing a component in `ui/src/`, `components/ui/` or `components/common/` means adding or updating its stories in the same PR. See `docs/storybook.md`.
 - **Mobile-first.** All UI must be responsive from the start — many users arrive from Reddit on phones.
 
 ## Design aesthetic
