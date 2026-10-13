@@ -2,6 +2,9 @@
   "name": "lucerna-frontend",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -17,6 +20,7 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.4.2",
     "@modelcontextprotocol/client": "^2.2.0",
     "@modelcontextprotocol/ext-apps": "^2.0.3",
     "@radix-ui/react-collapsible": "^1.1.12",
