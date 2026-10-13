@@ -8,6 +8,7 @@
  */
 
 import { authHeaders } from "@/lib/auth/token";
+import { analyticsHeaders } from "@/lib/analytics/headers";
 import type { McpToolResult } from "@/lib/agent/types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -58,7 +59,11 @@ export async function callAppTool(
 ): Promise<McpToolResult> {
   const res = await fetch(`${API_BASE}/api/mcp-apps/tools/call`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+    headers: {
+      "Content-Type": "application/json",
+      ...(await authHeaders()),
+      ...analyticsHeaders(),
+    },
     body: JSON.stringify({ name, arguments: args ?? {} }),
   });
   if (!res.ok) {

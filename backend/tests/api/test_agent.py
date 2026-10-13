@@ -143,3 +143,23 @@ async def test_signed_in_users_have_their_own_daily_limit(async_client, clerk_en
     await async_client.post("/api/agent", json=body, headers=bearer("garbage"))
     assert seen[0] == "user:user_alice"
     assert not seen[1].startswith("user:") and not seen[2].startswith("user:")
+
+
+async def test_agent_passes_browser_ids_to_the_turn(async_client, monkeypatch):
+    from app.api import agent as agent_api
+
+    seen = {}
+
+    async def fake_turn(**kwargs):
+        seen.update(kwargs)
+        yield {"type": "done", "messages": []}
+
+    monkeypatch.setattr(agent_api, "run_turn", fake_turn)
+    monkeypatch.setattr(agent_api, "get_model_client", lambda: object())
+    await async_client.post(
+        "/api/agent",
+        json={"message": "hi", "messages": []},
+        headers={"x-posthog-distinct-id": "anon_1", "x-posthog-session-id": "s_1"},
+    )
+    assert seen["browser"] == {"anonymous_id": "anon_1", "session_id": "s_1"}
+    assert seen["user_id"] is None

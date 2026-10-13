@@ -119,3 +119,23 @@ def memory_store():
     set_store(store)
     yield store
     set_store(None)
+
+
+class AnalyticsRecorder:
+    """Stands in for the PostHog client: keeps captured events."""
+
+    def __init__(self):
+        self.events = []
+
+    def capture(self, event, *, distinct_id, properties):
+        self.events.append({"event": event, "distinct_id": distinct_id, **properties})
+
+
+@pytest.fixture
+def posthog():
+    from app import analytics
+
+    recorder = AnalyticsRecorder()
+    analytics.set_client(recorder)
+    yield recorder
+    analytics.set_client(None)

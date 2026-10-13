@@ -24,8 +24,9 @@ from pydantic import BaseModel, Field
 
 from app.agent.toolbox import open_toolbox
 from app.api.agent import client_ip
-from app.auth.identity import acting_as, optional_user
+from app.auth.identity import acting_as, browser_ids, optional_user
 from app.mcp import server as mcp_server
+from app.mcp.analytics import WEB_ASSISTANT
 from app.origins import is_allowed_origin
 
 router = APIRouter()
@@ -67,7 +68,7 @@ async def call_from_view(
     if not mcp_server._mcp_limiter.count_request(key, limit):
         raise HTTPException(status_code=429, detail="Daily request limit reached.")
     denied: str | None = None
-    with acting_as(user_id):
+    with acting_as(user_id, channel=WEB_ASSISTANT, **browser_ids(request.headers)):
         async with open_toolbox() as toolbox:
             try:
                 result = await toolbox.call_from_app(body.name, body.arguments)

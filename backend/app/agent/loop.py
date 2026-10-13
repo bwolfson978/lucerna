@@ -31,6 +31,7 @@ from app.agent.model import Final, ModelClient, ModelUnavailable, TextDelta, Too
 from app.agent.prompts import SYSTEM_PROMPT
 from app.agent.toolbox import STATUS, McpToolbox, ToolContext, open_toolbox
 from app.auth.identity import acting_as
+from app.mcp.analytics import WEB_ASSISTANT
 from app.tools import core
 from app.tools.draft import ScenarioDraft, current_year
 
@@ -128,18 +129,20 @@ async def run_turn(
     on_usage=None,
     toolbox_factory: ToolboxFactory = open_toolbox,
     user_id: str | None = None,
+    browser: dict[str, str] | None = None,
 ) -> AsyncIterator[dict]:
     """Run one user message through the agent. Yields UI events (see module docstring).
 
     The turn runs in a worker task that owns the MCP client session for its whole life;
     this generator only relays its events, so a disconnecting browser cancels cleanly.
-    Tool calls act for ``user_id`` (the signed-in web user), or signed out.
+    Tool calls act for ``user_id`` (the signed-in web user), or signed out. ``browser``
+    holds the browser's PostHog ids (``identity.browser_ids``) for analytics.
     """
     queue: asyncio.Queue[dict | None] = asyncio.Queue()
 
     async def worker() -> None:
         try:
-            with acting_as(user_id):
+            with acting_as(user_id, channel=WEB_ASSISTANT, **(browser or {})):
                 async with toolbox_factory() as toolbox:
                     async for event in _run_turn(
                         client=client,

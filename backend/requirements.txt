@@ -8,3 +8,4 @@ anthropic>=1.11,<2
 mcp>=1.28,<2  # 2.x renamed FastMCP and changed APIs
 asyncpg>=0.30,<1
 clerk-backend-api>=7,<8  # session and OAuth token verification
+posthog>=7,<8  # server-side analytics (MCP tool calls)

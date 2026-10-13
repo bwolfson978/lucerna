@@ -1,4 +1,5 @@
 import { authHeaders } from "@/lib/auth/token";
+import { analyticsHeaders } from "@/lib/analytics/headers";
 import type { ScenarioDraft } from "@/lib/scenario/draft";
 import type { AgentEvent, DemoConversation } from "./types";
 
@@ -52,6 +53,7 @@ export async function streamAgent(
         "Content-Type": "application/json",
         Accept: "text/event-stream",
         ...(await authHeaders()),
+        ...analyticsHeaders(),
       },
       body: JSON.stringify(body),
       signal,

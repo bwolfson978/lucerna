@@ -12,6 +12,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
+from dataclasses import dataclass
 from typing import Any
 
 from fastapi import Depends, HTTPException, status
@@ -19,26 +20,66 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.auth.clerk import AuthError, auth_enabled, verify_session_token
 
-# Where the /mcp guard records the verified user on the ASGI scope.
+# Where the /mcp guard records the verified user, and the full caller, on the ASGI scope.
 USER_SCOPE_KEY = "lucerna.user_id"
+CALLER_SCOPE_KEY = "lucerna.caller"
 
-_current_user: ContextVar[str | None] = ContextVar("lucerna_user_id", default=None)
+
+@dataclass(frozen=True)
+class Caller:
+    """Who a tool call is for and where it came from, for analytics.
+
+    Set only by trusted code: the /mcp guard (from a verified token or the web
+    assistant's internal secret) or the web app's own routes.
+    """
+
+    user_id: str | None = None
+    # The browser's PostHog distinct id and session id (web, signed out or not).
+    anonymous_id: str | None = None
+    session_id: str | None = None
+    # "web_assistant" for the site's own assistant; None means work it out from the client.
+    channel: str | None = None
+    # The OAuth client holding the access token (MCP clients).
+    oauth_client_id: str | None = None
+
+
+_SIGNED_OUT = Caller()
+_current: ContextVar[Caller | None] = ContextVar("lucerna_caller", default=None)
 
 _bearer = HTTPBearer(auto_error=False)
 
 
 @contextmanager
-def acting_as(user_id: str | None) -> Iterator[None]:
-    """Run the enclosed code (and tasks it starts) as ``user_id``."""
-    token = _current_user.set(user_id)
+def acting_as(user_id: str | None, **caller: Any) -> Iterator[None]:
+    """Run the enclosed code (and tasks it starts) as ``user_id``. Extra keyword
+    arguments fill in the rest of the ``Caller``."""
+    token = _current.set(Caller(user_id=user_id, **caller))
     try:
         yield
     finally:
-        _current_user.reset(token)
+        _current.reset(token)
+
+
+def current_caller() -> Caller:
+    return _current.get() or _SIGNED_OUT
 
 
 def current_user() -> str | None:
-    return _current_user.get()
+    return current_caller().user_id
+
+
+def browser_ids(headers: Any) -> dict[str, str]:
+    """The browser's PostHog distinct id and session id, sent by the website (the same
+    headers posthog-js uses for tracing). For analytics only, never for access."""
+    ids = {}
+    for key, header in (
+        ("anonymous_id", "x-posthog-distinct-id"),
+        ("session_id", "x-posthog-session-id"),
+    ):
+        value = (headers.get(header) or "").strip()
+        if value and len(value) <= 200 and value.isprintable():
+            ids[key] = value
+    return ids
 
 
 def user_for_tool(ctx: Any) -> str | None:

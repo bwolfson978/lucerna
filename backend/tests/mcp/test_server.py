@@ -129,7 +129,7 @@ async def test_errors_are_tool_errors():
         assert "ACA" in methodology.structuredContent["text"]
 
 
-async def test_http_endpoint_client_and_rate_limit(monkeypatch, clerk_env, memory_store):
+async def test_http_endpoint_client_and_rate_limit(monkeypatch, clerk_env, memory_store, posthog):
     """Streamable HTTP at /mcp, with a real MCP client. The session manager can only start
     once per process, so this is the one HTTP test."""
     from tests.auth_support import ISSUER, USER
@@ -184,6 +184,13 @@ async def test_http_endpoint_client_and_rate_limit(monkeypatch, clerk_env, memor
             listed = await session.call_tool("list_saved_scenarios", {})
             names = [s["name"] for s in listed.structuredContent["saved_scenarios"]]
             assert names == ["Saved earlier"]
+
+        # The call was recorded for that person, as Claude (its OAuth client).
+        call = [e for e in posthog.events if e["event"] == "$mcp_tool_call"][-1]
+        assert call["distinct_id"] == USER
+        assert call["channel"] == "claude"
+        assert call["oauth_client_id"] == "client_claude"
+        assert call["mcp_transport"] == "http"
 
 
 async def test_tools_declare_their_views():

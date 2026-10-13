@@ -228,8 +228,14 @@ async def open_toolbox() -> AsyncIterator[McpToolbox]:
         from mcp.client.streamable_http import streamable_http_client
         from mcp.shared._httpx_utils import create_mcp_http_client
 
-        from app.auth.identity import current_user
-        from app.mcp.server import INTERNAL_HEADER, USER_HEADER, internal_token
+        from app.auth.identity import current_caller
+        from app.mcp.server import (
+            ANONYMOUS_ID_HEADER,
+            INTERNAL_HEADER,
+            SESSION_ID_HEADER,
+            USER_HEADER,
+            internal_token,
+        )
 
         token = internal_token()
         if not token:
@@ -239,8 +245,16 @@ async def open_toolbox() -> AsyncIterator[McpToolbox]:
                 "MCP_INTERNAL_TOKEN, or unset AGENT_MCP_URL to call the tools in process."
             )
         headers = {INTERNAL_HEADER: token} if token else {}
-        if token and (user_id := current_user()):
-            headers[USER_HEADER] = user_id  # the web user the tools act for
+        if token:
+            # The web user the tools act for, and their browser's ids for analytics.
+            caller = current_caller()
+            for header, value in (
+                (USER_HEADER, caller.user_id),
+                (ANONYMOUS_ID_HEADER, caller.anonymous_id),
+                (SESSION_ID_HEADER, caller.session_id),
+            ):
+                if value:
+                    headers[header] = value
         http_client = create_mcp_http_client(headers=headers or None)
         async with (
             http_client,

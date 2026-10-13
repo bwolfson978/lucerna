@@ -100,6 +100,14 @@ People can sign in with Google, save scenarios and come back to them. The same a
 
 ---
 
+### W8. Cross-channel analytics
+
+1. Website: `channel: "web"` on every event; the PostHog distinct and session ids go to `/api/agent` and View tool calls.
+2. Backend (`app/analytics.py`, `app/mcp/analytics.py`): `$mcp_tool_call` for every tool call and `$mcp_tools_list` for listings by external clients, with PostHog's MCP property names, `channel` (`web_assistant`, `claude`, `chatgpt`, `mcp_other`) and the person (Clerk user id, else the browser's id). No tool arguments or results.
+3. Not done: PostHog LLM analytics for the site's assistant (model cost and latency per person), a possible follow-up.
+
+---
+
 ## Needs Barry
 
 These are steps only an account owner can do. Each is marked with when it's needed. The code ships with auth off until the keys exist, so none of these blocks merging.
@@ -114,6 +122,7 @@ These are steps only an account owner can do. Each is marked with when it's need
 | B6 | Deploy | **Set environment variables.** Railway (backend): `CLERK_SECRET_KEY`, `CLERK_ISSUER_URL` (the Frontend API URL), `MCP_RESOURCE_URL` (`https://<backend-host>/mcp`), `DATABASE_URL`. Vercel (frontend): `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, and `NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in`, `NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up`. In Clerk, set the sign-in and sign-up URLs (Paths) to the site's `/sign-in` and `/sign-up` so the OAuth flow uses the branded pages. |
 | B7 | After deploy | **End-to-end check from Claude:** Settings → Connectors → Add custom connector with `https://<backend-host>/mcp`, sign in with Google, then ask it to save a scenario and confirm it shows on `/scenarios`. Repeat in ChatGPT developer mode if wanted. I can't do this from the sandbox (it can't reach clerk.com or sign in to Google). |
 | B8 | Before launch | **Privacy policy and terms:** say that signed-in users' scenario inputs are stored, where, and how to delete them, and that analytics (PostHog) are linked to their account, including their email (the `/scenarios` page deletes; account deletion through Clerk's account menu). |
+| B10 | Deploy | **Analytics on the backend:** set `POSTHOG_PROJECT_TOKEN` (the same project token as the website's `NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN`) on Railway, and `POSTHOG_HOST` if the project isn't on PostHog's US cloud. Then in PostHog, break down `$mcp_tool_call` by `channel`, or filter a person by email to see their website and Claude activity together. |
 | B9 | When merging | **Close PR #126** as superseded (I can do it if you say so). |
 
 ---

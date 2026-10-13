@@ -98,6 +98,8 @@ Chart series the model doesn't need (bracket fill, balances) travel in the tool 
 | `MCP_RESOURCE_URL` | from the request | Public URL of `/mcp`, named in the OAuth metadata. Set it if the backend sits behind a proxy that rewrites the host. |
 | `MCP_OAUTH_SCOPES` | `profile email` | Scopes advertised to MCP clients. Must be ones Clerk allows for dynamically registered clients. |
 | `DATABASE_URL` | unset | Postgres for saved scenarios. Migrations in `backend/migrations/` run on startup. Without it, saving reports unavailable. |
+| `POSTHOG_PROJECT_TOKEN` | unset | PostHog project token (same as the website's). Turns on server-side analytics: one event per MCP tool call. |
+| `POSTHOG_HOST` | `https://us.i.posthog.com` | PostHog ingestion host. |
 | `SAVED_SCENARIOS_STORE` | unset | `memory` keeps saved scenarios in process memory (local development without Postgres). |
 | `AGENT_MCP_URL` | unset | When set (e.g. `http://localhost:8000/mcp`), the web assistant reaches its tools over streamable HTTP instead of in process. The E2E suite uses it. **Production: leave it unset** (in process, no network hop). If you do set it, also set `MCP_INTERNAL_TOKEN`. |
 | `SITE_URL` | `https://rothconversionsoptimizer.com` | Website that `full_results_url` links point to. |
@@ -170,5 +172,19 @@ Clerk is the OAuth authorization server; `/mcp` is the resource server. It's on 
 4. Each `/mcp` request's token is checked with Clerk's Backend API (`app/auth/clerk.py`, cached 60 seconds), and tools act for that user (`app/auth/identity.py`).
 
 Clerk dashboard settings this needs: OAuth applications with dynamic client registration and Client ID Metadata Documents turned on; sign-in and sign-up URLs pointing at the site's `/sign-in` and `/sign-up`. See `docs/planning/Lucerna_Accounts_Execution_Plan.md` (Needs Barry) for the full setup.
+
+## Analytics across channels
+
+One person, every channel. The website identifies signed-in people by their Clerk user id (with email and name as person properties) and tags its own events `channel: "web"`. The backend records every MCP tool call (`app/mcp/analytics.py`, hooked into the server's request handlers so it sees HTTP and in-process calls alike) under the same person:
+
+| `channel` | Where | How it's known |
+|---|---|---|
+| `web` | Website pages (posthog-js) | Registered at startup |
+| `web_assistant` | The site's assistant and the Views it shows | Set by `/api/agent` and `/api/mcp-apps/tools/call` (or the internal header on `/mcp`) |
+| `claude` | Claude (web, apps, Claude Code) | OAuth client id, `x-anthropic-client`, client name or user agent mentions Claude/Anthropic |
+| `chatgpt` | ChatGPT | The same clues mention ChatGPT/OpenAI |
+| `mcp_other` | Any other MCP client | Everything else |
+
+Events and properties follow PostHog's MCP analytics naming (`$mcp_tool_call`, `$mcp_tools_list`, `$mcp_tool_name`, `$mcp_duration_ms`, `$mcp_is_error`, `$mcp_error_type`, `$mcp_client_name`, `$mcp_vendor_client`, ...), plus `channel`, `signed_in`, `mcp_transport` and `oauth_client_id`. Tool arguments and results are never sent: they hold people's financial details. The person is the Clerk user id when signed in; for signed-out website visitors, the browser's PostHog id, which the site sends as `X-POSTHOG-DISTINCT-ID` along with `X-POSTHOG-SESSION-ID` (linking tool calls to the session replay). Other signed-out MCP calls are recorded without a person. The website lists tools on every turn, so `$mcp_tools_list` is only recorded for other clients.
 
 Next steps: submission to the Claude connector directory and the ChatGPT app directory.

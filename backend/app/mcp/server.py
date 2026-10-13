@@ -30,8 +30,10 @@ from starlette.routing import Route
 
 from app.agent.limits import UsageLimiter
 from app.auth.clerk import AuthError, oauth_enabled, verify_oauth_token
-from app.auth.identity import USER_SCOPE_KEY, user_for_tool
+from app.auth.identity import CALLER_SCOPE_KEY, USER_SCOPE_KEY, Caller, user_for_tool
 from app.engine.types import FilingStatus, OptimizationResult, ScenarioInput
+from app.mcp.analytics import WEB_ASSISTANT
+from app.mcp.analytics import instrument as instrument_analytics
 from app.tools import core, saved
 from app.tools.draft import ScenarioDraft, current_year
 from app.tools.links import full_results_url
@@ -451,6 +453,9 @@ def _register_views() -> None:
 
 _register_views()
 
+# One PostHog event per tool call, from every client (see app/mcp/analytics.py).
+instrument_analytics(mcp)
+
 
 # --------------------------------------------------------------------------
 # ASGI app: sign-in (OAuth) and a daily request limit
@@ -465,6 +470,10 @@ _mcp_limiter = UsageLimiter()
 # act for in USER_HEADER.
 INTERNAL_HEADER = "x-lucerna-internal"
 USER_HEADER = "x-lucerna-user"
+# The browser's PostHog ids, forwarded by the web assistant for analytics (same names
+# posthog-js uses for its tracing headers).
+ANONYMOUS_ID_HEADER = "x-posthog-distinct-id"
+SESSION_ID_HEADER = "x-posthog-session-id"
 
 
 def internal_token() -> str:
@@ -528,22 +537,31 @@ class _Guard:
             return
         request = Request(scope)
         if _is_internal(request):
-            scope[USER_SCOPE_KEY] = request.headers.get(USER_HEADER) or None
+            user_id = request.headers.get(USER_HEADER) or None
+            scope[USER_SCOPE_KEY] = user_id
+            scope[CALLER_SCOPE_KEY] = Caller(
+                user_id=user_id,
+                anonymous_id=request.headers.get(ANONYMOUS_ID_HEADER) or None,
+                session_id=request.headers.get(SESSION_ID_HEADER) or None,
+                channel=WEB_ASSISTANT,
+            )
             await self.app(scope, receive, send)
             return
 
-        user_id = None
+        user_id = oauth_client_id = None
         if oauth_enabled():
             token = _bearer_token(request)
             if token is None:
                 await _unauthorized(request, None)(scope, receive, send)
                 return
             try:
-                user_id = (await verify_oauth_token(token)).user_id
+                grant = await verify_oauth_token(token)
             except AuthError:
                 await _unauthorized(request, "invalid_token")(scope, receive, send)
                 return
+            user_id, oauth_client_id = grant.user_id, grant.client_id or None
         scope[USER_SCOPE_KEY] = user_id
+        scope[CALLER_SCOPE_KEY] = Caller(user_id=user_id, oauth_client_id=oauth_client_id)
 
         if scope.get("method") == "POST":
             key, limit = (

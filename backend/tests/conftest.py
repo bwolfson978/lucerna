@@ -59,5 +59,5 @@ def sample_mfj_input():
     return _make
 
 
-# Clerk and saved-scenario fixtures (clerk_env, memory_store).
-from tests.auth_support import clerk_env, memory_store  # noqa: E402, F401
+# Clerk, saved-scenario and analytics fixtures (clerk_env, memory_store, posthog).
+from tests.auth_support import clerk_env, memory_store, posthog  # noqa: E402, F401

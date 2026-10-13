@@ -18,7 +18,7 @@ from app.agent import demo as demo_conversation
 from app.agent.limits import estimate_cost, limiter
 from app.agent.loop import ERROR_MESSAGES, count_user_messages, run_turn
 from app.agent.model import ModelUnavailable, get_model_client
-from app.auth.identity import optional_user
+from app.auth.identity import browser_ids, optional_user
 from app.tools.draft import ScenarioDraft, current_year
 
 router = APIRouter()
@@ -88,6 +88,7 @@ async def agent(body: AgentRequest, request: Request, user_id: str | None = Depe
             start_year=current_year(),
             on_usage=on_usage,
             user_id=user_id,
+            browser=browser_ids(request.headers),
         ):
             yield _sse(event)
 
