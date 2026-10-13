@@ -189,3 +189,33 @@ async def test_http_mode_sends_the_internal_token(monkeypatch):
         async with toolbox_module.open_toolbox():
             pass  # pragma: no cover
     assert seen == {"url": "http://localhost:8000/mcp", "header": "s3cret"}
+
+
+async def test_saved_scenarios_in_the_web_assistant(memory_store):
+    from app.auth.identity import acting_as
+
+    # Signed out: the tool says so and the browser is asked to offer sign-in.
+    context = ctx()
+    async with open_toolbox() as toolbox:
+        content, is_error = await toolbox.call("save_scenario", {"scenario": SCENARIO}, context)
+    assert is_error and content["code"] == "sign_in_required"
+    assert context.events == [{"type": "part", "part": {"kind": "sign_in"}}]
+
+    # Signed in: saved, and opening it loads the draft into the browser.
+    context = ctx()
+    with acting_as("user_web"):
+        async with open_toolbox() as toolbox:
+            content, is_error = await toolbox.call(
+                "save_scenario", {"scenario": SCENARIO, "name": "Plan A"}, context
+            )
+            assert not is_error
+            assert context.events[-1]["type"] == "saved"
+            assert context.events[-1]["scenario"]["name"] == "Plan A"
+
+            content, is_error = await toolbox.call(
+                "open_saved_scenario", {"scenario_id": content["saved"]["scenario_id"]}, context
+            )
+            assert not is_error
+            assert context.events[-1]["type"] == "draft"
+            assert context.draft.retirement_age == 60
+    assert [s.name for s in await memory_store.list("user_web")] == ["Plan A"]

@@ -46,6 +46,9 @@ STATUS = {
     "compare_roth_scenarios": "Comparing scenarios",
     "get_tax_brackets": "Looking up tax brackets",
     "explain_methodology": "Checking the methodology",
+    "save_scenario": "Saving your scenario",
+    "list_saved_scenarios": "Looking up your saved scenarios",
+    "open_saved_scenario": "Opening your saved scenario",
     "show": "Preparing a chart",
 }
 
@@ -140,6 +143,9 @@ class McpToolbox:
         if not self.visible_to(name, "model"):
             return {"error": f"Unknown tool '{name}'."}, True
         result = await self._session.call_tool(name, arguments, meta={UI_META_KEY: True})
+        if result.isError and _structured(result).get("code") == "sign_in_required":
+            # Saving needs an account: the browser offers sign-in in the conversation.
+            ctx.emit("part", part={"kind": "sign_in"})
         if not result.isError:
             _emit_ui_events(name, _structured(result), result, ctx)
             resource_uri = self.ui_tools.get(name)
@@ -213,13 +219,17 @@ def _warn_once(message: str) -> None:
 
 @asynccontextmanager
 async def open_toolbox() -> AsyncIterator[McpToolbox]:
-    """Connect to the MCP server (in process, or over HTTP when AGENT_MCP_URL is set)."""
+    """Connect to the MCP server (in process, or over HTTP when AGENT_MCP_URL is set).
+
+    Tool calls act for the user set with ``app.auth.identity.acting_as``, if any.
+    """
     url = os.environ.get("AGENT_MCP_URL")
     if url:
         from mcp.client.streamable_http import streamable_http_client
         from mcp.shared._httpx_utils import create_mcp_http_client
 
-        from app.mcp.server import INTERNAL_HEADER, internal_token
+        from app.auth.identity import current_user
+        from app.mcp.server import INTERNAL_HEADER, USER_HEADER, internal_token
 
         token = internal_token()
         if not token:
@@ -228,7 +238,10 @@ async def open_toolbox() -> AsyncIterator[McpToolbox]:
                 "calls count against /mcp's per-IP daily limit and will start failing. Set "
                 "MCP_INTERNAL_TOKEN, or unset AGENT_MCP_URL to call the tools in process."
             )
-        http_client = create_mcp_http_client(headers={INTERNAL_HEADER: token} if token else None)
+        headers = {INTERNAL_HEADER: token} if token else {}
+        if token and (user_id := current_user()):
+            headers[USER_HEADER] = user_id  # the web user the tools act for
+        http_client = create_mcp_http_client(headers=headers or None)
         async with (
             http_client,
             streamable_http_client(url, http_client=http_client) as (read, write, _session_id),
@@ -302,8 +315,13 @@ def _set_draft(scenario: dict | None, ctx: ToolContext) -> ScenarioDraft | None:
 
 
 def _emit_ui_events(name: str, data: dict, result: CallToolResult, ctx: ToolContext) -> None:
-    if name == "record_scenario":
+    if name in ("record_scenario", "open_saved_scenario"):
         _set_draft(data.get("scenario"), ctx)
+        return
+
+    if name == "save_scenario":
+        if saved := data.get("saved"):
+            ctx.emit("saved", scenario=saved)
         return
 
     entries = _ui_results(result)

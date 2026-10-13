@@ -30,6 +30,7 @@ from contextlib import AbstractAsyncContextManager
 from app.agent.model import Final, ModelClient, ModelUnavailable, TextDelta, ToolStart
 from app.agent.prompts import SYSTEM_PROMPT
 from app.agent.toolbox import STATUS, McpToolbox, ToolContext, open_toolbox
+from app.auth.identity import acting_as
 from app.tools import core
 from app.tools.draft import ScenarioDraft, current_year
 
@@ -126,27 +127,30 @@ async def run_turn(
     start_year: int | None = None,
     on_usage=None,
     toolbox_factory: ToolboxFactory = open_toolbox,
+    user_id: str | None = None,
 ) -> AsyncIterator[dict]:
     """Run one user message through the agent. Yields UI events (see module docstring).
 
     The turn runs in a worker task that owns the MCP client session for its whole life;
     this generator only relays its events, so a disconnecting browser cancels cleanly.
+    Tool calls act for ``user_id`` (the signed-in web user), or signed out.
     """
     queue: asyncio.Queue[dict | None] = asyncio.Queue()
 
     async def worker() -> None:
         try:
-            async with toolbox_factory() as toolbox:
-                async for event in _run_turn(
-                    client=client,
-                    toolbox=toolbox,
-                    history=history,
-                    text=text,
-                    draft=draft,
-                    start_year=start_year or current_year(),
-                    on_usage=on_usage,
-                ):
-                    await queue.put(event)
+            with acting_as(user_id):
+                async with toolbox_factory() as toolbox:
+                    async for event in _run_turn(
+                        client=client,
+                        toolbox=toolbox,
+                        history=history,
+                        text=text,
+                        draft=draft,
+                        start_year=start_year or current_year(),
+                        on_usage=on_usage,
+                    ):
+                        await queue.put(event)
         except Exception:
             logger.exception("Agent turn failed")
             await queue.put(_error("unavailable"))

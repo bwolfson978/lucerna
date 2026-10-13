@@ -33,8 +33,14 @@ async def test_lists_tools_and_resources():
             "compare_roth_scenarios",
             "get_tax_brackets",
             "explain_methodology",
+            "save_scenario",
+            "list_saved_scenarios",
+            "open_saved_scenario",
         }
-        assert all(t.annotations.readOnlyHint for t in tools)
+        # Only saving writes, and only to the user's own account.
+        writes = {t.name for t in tools if not t.annotations.readOnlyHint}
+        assert writes == {"save_scenario"}
+        assert not any(t.annotations.destructiveHint for t in tools if t.name in writes)
         uris = {str(r.uri) for r in (await session.list_resources()).resources}
         assert "methodology://rmds" in uris
         resource = await session.read_resource("methodology://irmaa")
@@ -123,9 +129,12 @@ async def test_errors_are_tool_errors():
         assert "ACA" in methodology.structuredContent["text"]
 
 
-async def test_http_endpoint_client_and_rate_limit(monkeypatch):
+async def test_http_endpoint_client_and_rate_limit(monkeypatch, clerk_env, memory_store):
     """Streamable HTTP at /mcp, with a real MCP client. The session manager can only start
     once per process, so this is the one HTTP test."""
+    from tests.auth_support import ISSUER, USER
+
+    monkeypatch.delenv("CLERK_ISSUER_URL")  # OAuth off until the sign-in part below
     transport = ASGITransport(app=app)
     async with mcp.session_manager.run():
         http = httpx.AsyncClient(transport=transport, base_url="http://test")
@@ -153,6 +162,28 @@ async def test_http_endpoint_client_and_rate_limit(monkeypatch):
             internal = {**HEADERS, server.INTERNAL_HEADER: "s3cret"}
             response = await client.post("/mcp", json=body, headers=internal)
             assert response.status_code == 200
+
+        # With sign-in on, a client holding an OAuth token from Clerk reaches the tools as
+        # its user, and saved scenarios land in that user's account.
+        monkeypatch.setenv("CLERK_ISSUER_URL", ISSUER)
+        monkeypatch.setattr(server, "_requests_per_ip_per_day", lambda: 300)
+        await memory_store.create(USER, "Saved earlier", {"age": 50})
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.post("/mcp", json=body, headers=HEADERS)
+            assert response.status_code == 401
+        http = httpx.AsyncClient(
+            transport=transport,
+            base_url="http://test",
+            headers={"Authorization": "Bearer oat_alice"},
+        )
+        async with (
+            streamable_http_client("http://test/mcp", http_client=http) as (read, write, _),
+            ClientSession(read, write) as session,
+        ):
+            await session.initialize()
+            listed = await session.call_tool("list_saved_scenarios", {})
+            names = [s["name"] for s in listed.structuredContent["saved_scenarios"]]
+            assert names == ["Saved earlier"]
 
 
 async def test_tools_declare_their_views():

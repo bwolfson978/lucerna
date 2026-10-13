@@ -216,3 +216,24 @@ async def test_show_after_text_has_no_note():
     client = ScriptedModelClient([[text("Here is the answer."), tool_use("t1", "show", tip)], []])
     messages = done_messages(await collect(client))
     assert json.loads(messages[2]["content"][0]["content"]) == {"shown": "suggestions"}
+
+
+async def test_turn_acts_for_the_signed_in_user(memory_store):
+    client = ScriptedModelClient(
+        [
+            [tool_use("t1", "save_scenario", {"scenario": READY, "name": "Plan A"})],
+            [text("Saved as Plan A.")],
+        ]
+    )
+    events = []
+    async for event in run_turn(
+        client=client,
+        history=[],
+        text="Save this",
+        draft=ScenarioDraft(),
+        start_year=2026,
+        user_id="user_web",
+    ):
+        events.append(event)
+    assert any(e["type"] == "saved" for e in events)
+    assert [s.name for s in await memory_store.list("user_web")] == ["Plan A"]

@@ -18,12 +18,13 @@ import json
 import re
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 
 from app.agent.toolbox import open_toolbox
 from app.api.agent import client_ip
+from app.auth.identity import acting_as, optional_user
 from app.mcp import server as mcp_server
 from app.origins import is_allowed_origin
 
@@ -55,16 +56,23 @@ async def read_view(uri: str = Query(min_length=6, max_length=300)):
 
 
 @router.post("/mcp-apps/tools/call")
-async def call_from_view(body: AppToolCall, request: Request):
-    limit = mcp_server._requests_per_ip_per_day()
-    if not mcp_server._mcp_limiter.count_request(client_ip(request), limit):
+async def call_from_view(
+    body: AppToolCall, request: Request, user_id: str | None = Depends(optional_user)
+):
+    key, limit = (
+        (f"user:{user_id}", mcp_server._requests_per_user_per_day())
+        if user_id
+        else (client_ip(request), mcp_server._requests_per_ip_per_day())
+    )
+    if not mcp_server._mcp_limiter.count_request(key, limit):
         raise HTTPException(status_code=429, detail="Daily request limit reached.")
     denied: str | None = None
-    async with open_toolbox() as toolbox:
-        try:
-            result = await toolbox.call_from_app(body.name, body.arguments)
-        except PermissionError as err:
-            denied = str(err)
+    with acting_as(user_id):
+        async with open_toolbox() as toolbox:
+            try:
+                result = await toolbox.call_from_app(body.name, body.arguments)
+            except PermissionError as err:
+                denied = str(err)
     if denied is not None:
         raise HTTPException(status_code=403, detail=denied)
     return result

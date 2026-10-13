@@ -10,6 +10,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from prometheus_fastapi_instrumentator import Instrumentator
 
+from app.db.pool import close_db, open_db
 from app.mcp.server import build_route as build_mcp_route
 from app.mcp.server import mcp as mcp_server
 from app.origins import ORIGIN_REGEX, allowed_origins
@@ -30,10 +31,14 @@ async def lifespan(app: FastAPI):
 
     demo_task = asyncio.create_task(get_demo_conversation())
 
+    # Saved scenarios (no-op without DATABASE_URL).
+    await open_db()
+
     # The MCP server's session manager must run for the app's lifetime.
     async with mcp_server.session_manager.run():
         yield
     demo_task.cancel()
+    await close_db()
 
 
 app = FastAPI(title="Lucerna API", lifespan=lifespan)
@@ -77,8 +82,10 @@ from app.api.feedback import router as feedback_router
 from app.api.mcp_apps import router as mcp_apps_router
 from app.api.mcp_apps import sandbox_router as mcp_apps_sandbox_router
 from app.api.optimize import router as optimize_router
+from app.api.saved_scenarios import router as saved_scenarios_router
 from app.api.scenario_links import router as scenario_links_router
 from app.api.tax_config import router as tax_config_router
+from app.mcp.oauth import router as mcp_oauth_router
 
 app.include_router(optimize_router, prefix="/api")
 app.include_router(demo_router, prefix="/api")
@@ -88,9 +95,12 @@ app.include_router(feedback_router, prefix="/api")
 app.include_router(tax_config_router, prefix="/api")
 app.include_router(mcp_apps_router, prefix="/api")
 app.include_router(scenario_links_router, prefix="/api")
+app.include_router(saved_scenarios_router, prefix="/api")
 app.include_router(mcp_apps_sandbox_router)
 
-# Remote MCP server (streamable HTTP) for Claude, ChatGPT and other MCP clients.
+# Remote MCP server (streamable HTTP) for Claude, ChatGPT and other MCP clients, and its
+# OAuth discovery documents (Clerk is the authorization server).
+app.include_router(mcp_oauth_router)
 app.router.routes.append(build_mcp_route())
 
 

@@ -86,6 +86,11 @@ specific investments), say plainly that it isn't modeled and explain what the an
 does cover.
 - Mention "See full results" when the user wants more detail than the conversation shows. \
 Point to the button; don't paste full_results_url links, which are for other apps.
+- Saving: when the user asks to save their scenario, call save_scenario with it (and a name \
+if they gave one). Never save on your own. If it reports sign_in_required, say they can sign \
+in with the button shown and the scenario is saved as soon as they do. For "my \
+saved scenarios", call list_saved_scenarios; to continue from one, open_saved_scenario, \
+then show the scenario summary for them to confirm, since a saved scenario may be out of date.
 </explaining_results>"""
 
 STYLE = """\

@@ -57,3 +57,7 @@ def sample_mfj_input():
         return ScenarioInput(**defaults)
 
     return _make
+
+
+# Clerk and saved-scenario fixtures (clerk_env, memory_store).
+from tests.auth_support import clerk_env, memory_store  # noqa: E402, F401

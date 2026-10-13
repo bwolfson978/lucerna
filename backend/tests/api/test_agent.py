@@ -124,3 +124,22 @@ async def test_demo_endpoint(async_client, monkeypatch, tmp_path):
 async def test_chat_endpoint_is_retired(async_client):
     response = await async_client.post("/api/chat", json={"message": "hi", "context": {}})
     assert response.status_code == 404
+
+
+async def test_signed_in_users_have_their_own_daily_limit(async_client, clerk_env, monkeypatch):
+    from app.agent.limits import limiter
+    from tests.auth_support import bearer, session_token
+
+    seen = []
+
+    def check(key, count):
+        seen.append(key)
+        return "daily_limit"
+
+    monkeypatch.setattr(limiter, "check", check)
+    body = {"message": "hi", "messages": []}
+    await async_client.post("/api/agent", json=body, headers=bearer(session_token()))
+    await async_client.post("/api/agent", json=body)
+    await async_client.post("/api/agent", json=body, headers=bearer("garbage"))
+    assert seen[0] == "user:user_alice"
+    assert not seen[1].startswith("user:") and not seen[2].startswith("user:")

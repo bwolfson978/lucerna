@@ -29,8 +29,10 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route
 
 from app.agent.limits import UsageLimiter
+from app.auth.clerk import AuthError, oauth_enabled, verify_oauth_token
+from app.auth.identity import USER_SCOPE_KEY, user_for_tool
 from app.engine.types import FilingStatus, OptimizationResult, ScenarioInput
-from app.tools import core
+from app.tools import core, saved
 from app.tools.draft import ScenarioDraft, current_year
 from app.tools.links import full_results_url
 from app.tools.models import MethodologyTopic, ScenarioUpdate
@@ -50,12 +52,18 @@ numbers as a table. A card button may send "Looks right. Run the numbers." (run 
 analysis) or ask to use a what-if as the scenario (call record_scenario with that \
 comparison's what_if_scenario). Results include full_results_url, a link to the full \
 interactive analysis of that scenario on the website; share it when the user wants more \
-detail."""
+detail. The user's account can keep scenarios: save_scenario only when they ask to save one, \
+list_saved_scenarios when they mention a saved scenario, and open_saved_scenario to continue \
+from one (confirm its values before analyzing, since it may be from an earlier year)."""
 
 UI_META_KEY = "lucerna/ui"
 RESULTS_META_KEY = "lucerna/results"
 
 _READ_ONLY = ToolAnnotations(readOnlyHint=True, openWorldHint=False, idempotentHint=True)
+# Writes to the user's own saved scenarios. Never deletes or overwrites.
+_SAVES = ToolAnnotations(
+    readOnlyHint=False, destructiveHint=False, idempotentHint=False, openWorldHint=False
+)
 
 # --------------------------------------------------------------------------
 # MCP Apps (io.modelcontextprotocol/ui): this server owns its UI. Views are
@@ -321,6 +329,85 @@ async def explain_methodology(topic: MethodologyTopic) -> CallToolResult:
     )
 
 
+# --------------------------------------------------------------------------
+# Saved scenarios (the user's account)
+# --------------------------------------------------------------------------
+
+
+def _saved_error(err: saved.SavedError) -> CallToolResult:
+    return _error(str(err), code=err.code)
+
+
+@mcp.tool(
+    title="Save a scenario",
+    annotations=_SAVES,
+    description=(
+        "Save the scenario to the user's account so they can come back to it here or on the "
+        "website. Only call when the user asks to save. Returns the saved scenario's id and name."
+    ),
+)
+async def save_scenario(
+    scenario: ScenarioArg,
+    name: Annotated[
+        str | None,
+        Field(
+            max_length=saved.NAME_MAX,
+            description="Short name the user chose, e.g. 'Retire at 60'. Omit to name it "
+            "from the scenario.",
+        ),
+    ] = None,
+    ctx: Context | None = None,
+) -> CallToolResult:
+    try:
+        draft = core.draft_from_scenario(scenario, current_year())
+        result = await saved.save(user_for_tool(ctx), draft, name)
+    except saved.SavedError as err:
+        return _saved_error(err)
+    except core.ToolError as err:
+        return _error(str(err))
+    return _result({"saved": result})
+
+
+@mcp.tool(
+    title="List saved scenarios",
+    annotations=_READ_ONLY,
+    description=(
+        "The user's saved scenarios, newest first: id, name, when saved and the main inputs."
+    ),
+)
+async def list_saved_scenarios(ctx: Context | None = None) -> CallToolResult:
+    try:
+        scenarios = await saved.list_saved(user_for_tool(ctx))
+    except saved.SavedError as err:
+        return _saved_error(err)
+    return _result({"saved_scenarios": scenarios})
+
+
+@mcp.tool(
+    title="Open a saved scenario",
+    annotations=_READ_ONLY,
+    description=(
+        "Load one of the user's saved scenarios to continue from it. Returns its name, when it "
+        "was saved, and the normalized `scenario` (projected from this year) to pass to later "
+        "calls, with anything still missing."
+    ),
+)
+async def open_saved_scenario(
+    scenario_id: Annotated[str, Field(description="An id from list_saved_scenarios")],
+    ctx: Context | None = None,
+) -> CallToolResult:
+    year = current_year()
+    try:
+        row, draft = await saved.get_saved(user_for_tool(ctx), scenario_id)
+    except saved.SavedError as err:
+        return _saved_error(err)
+    described = core.describe_draft(saved.refreshed_draft(draft, year), year)
+    return _result(
+        {"scenario_id": row.id, "name": row.name, "saved_at": row.updated_at.isoformat()}
+        | described
+    )
+
+
 def _register_resources() -> None:
     for topic in core.methodology_topics():
         topic_id = topic["id"]
@@ -366,7 +453,7 @@ _register_views()
 
 
 # --------------------------------------------------------------------------
-# ASGI app with a per-IP daily request limit
+# ASGI app: sign-in (OAuth) and a daily request limit
 # --------------------------------------------------------------------------
 
 _mcp_limiter = UsageLimiter()
@@ -374,8 +461,10 @@ _mcp_limiter = UsageLimiter()
 
 # The web app's own agent can reach this server over HTTP (AGENT_MCP_URL). Its calls
 # all come from the backend's IP and are already limited per user at /api/agent, so
-# they carry a shared secret and skip this per-IP limit.
+# they carry a shared secret, skip sign-in and this limit, and name the web user they
+# act for in USER_HEADER.
 INTERNAL_HEADER = "x-lucerna-internal"
+USER_HEADER = "x-lucerna-user"
 
 
 def internal_token() -> str:
@@ -387,30 +476,82 @@ def _is_internal(request: Request) -> bool:
     return bool(token) and hmac.compare_digest(request.headers.get(INTERNAL_HEADER, ""), token)
 
 
-def _requests_per_ip_per_day() -> int:
+def _env_int(name: str, default: int) -> int:
     try:
-        return int(os.environ.get("MCP_REQUESTS_PER_IP_PER_DAY", 300))
+        return int(os.environ.get(name, default))
     except ValueError:
-        return 300
+        return default
 
 
-class _RateLimited:
+def _requests_per_ip_per_day() -> int:
+    return _env_int("MCP_REQUESTS_PER_IP_PER_DAY", 300)
+
+
+def _requests_per_user_per_day() -> int:
+    return _env_int("MCP_REQUESTS_PER_USER_PER_DAY", 300)
+
+
+def _client_ip(request: Request) -> str:
+    forwarded = request.headers.get("x-forwarded-for", "")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def _bearer_token(request: Request) -> str | None:
+    scheme, _, token = request.headers.get("authorization", "").partition(" ")
+    return (token.strip() or None) if scheme.lower() == "bearer" else None
+
+
+def _unauthorized(request: Request, error: str | None) -> JSONResponse:
+    """401 that points MCP clients at the protected resource metadata (RFC 9728), which
+    names Clerk as the authorization server."""
+    from app.mcp.oauth import resource_metadata_url
+
+    challenge = f'Bearer resource_metadata="{resource_metadata_url(request)}"'
+    if error:
+        challenge += f', error="{error}"'
+    return JSONResponse(
+        {"error": error or "unauthorized", "error_description": "Sign in to use this server."},
+        status_code=401,
+        headers={"WWW-Authenticate": challenge},
+    )
+
+
+class _Guard:
     def __init__(self, app):
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] == "http" and scope.get("method") == "POST":
-            request = Request(scope)
-            if _is_internal(request):
-                await self.app(scope, receive, send)
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        request = Request(scope)
+        if _is_internal(request):
+            scope[USER_SCOPE_KEY] = request.headers.get(USER_HEADER) or None
+            await self.app(scope, receive, send)
+            return
+
+        user_id = None
+        if oauth_enabled():
+            token = _bearer_token(request)
+            if token is None:
+                await _unauthorized(request, None)(scope, receive, send)
                 return
-            forwarded = request.headers.get("x-forwarded-for", "")
-            ip = (
-                forwarded.split(",")[0].strip()
-                if forwarded
-                else (request.client.host if request.client else "unknown")
+            try:
+                user_id = (await verify_oauth_token(token)).user_id
+            except AuthError:
+                await _unauthorized(request, "invalid_token")(scope, receive, send)
+                return
+        scope[USER_SCOPE_KEY] = user_id
+
+        if scope.get("method") == "POST":
+            key, limit = (
+                (f"user:{user_id}", _requests_per_user_per_day())
+                if user_id
+                else (_client_ip(request), _requests_per_ip_per_day())
             )
-            if not _mcp_limiter.count_request(ip, _requests_per_ip_per_day()):
+            if not _mcp_limiter.count_request(key, limit):
                 response = JSONResponse(
                     {"error": "Daily request limit reached. Try again tomorrow."},
                     status_code=429,
@@ -426,5 +567,5 @@ def build_route() -> Route:
     The session manager must run in the host app's lifespan.
     """
     return Route(
-        "/mcp", endpoint=_RateLimited(mcp.streamable_http_app()), methods=["GET", "POST", "DELETE"]
+        "/mcp", endpoint=_Guard(mcp.streamable_http_app()), methods=["GET", "POST", "DELETE"]
     )
