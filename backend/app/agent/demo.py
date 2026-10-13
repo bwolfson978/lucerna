@@ -193,9 +193,6 @@ class ScriptedDemoClient:
             return [
                 _text(_explanation(data)),
                 _tool_use(
-                    "toolu_demo_4", "show", {"kind": "bracket_fill", "result_id": data["result_id"]}
-                ),
-                _tool_use(
                     "toolu_demo_5",
                     "show",
                     {
