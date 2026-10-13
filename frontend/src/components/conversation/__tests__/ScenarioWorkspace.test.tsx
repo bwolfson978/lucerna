@@ -147,6 +147,23 @@ describe("ScenarioWorkspace (calculator)", () => {
     expect(screen.getByLabelText("Age")).toHaveValue("52");
   });
 
+  it("asks before clearing the conversation", async () => {
+    mockAgent();
+    renderWorkspace("calculator");
+    await sendMessage("I'm 52, married, $90k income, $600k in my 401k, retiring at 60");
+    await screen.findByTestId("scenario-summary");
+
+    fireEvent.click(await screen.findByRole("button", { name: "Start over" }));
+    fireEvent.click(screen.getByRole("button", { name: "Keep it" }));
+    expect(screen.getByTestId("scenario-summary")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Start over" }));
+    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
+    expect(screen.queryByTestId("scenario-summary")).not.toBeInTheDocument();
+    // Back to the opening line; the values gathered so far stay in the draft.
+    expect(screen.getByRole("button", { name: "Run my scenario" })).toBeInTheDocument();
+  });
+
   it("falls back to the form when the assistant is unavailable", async () => {
     server.use(
       http.post(API, () =>

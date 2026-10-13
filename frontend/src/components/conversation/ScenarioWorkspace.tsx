@@ -498,17 +498,13 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
           />
         )}
         {!isDemo && state.messages.length > 0 && !state.streaming && (
-          <button
-            type="button"
-            onClick={() => {
+          <StartOver
+            onConfirm={() => {
               reset();
               setFollowKey(0);
               posthog.capture("conversation_reset");
             }}
-            className="self-start text-body-sm text-text-tertiary underline decoration-border underline-offset-4 hover:text-text-primary"
-          >
-            Start over
-          </button>
+          />
         )}
       </>
     );
@@ -732,6 +728,44 @@ function AssistantIntro({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/** Clearing the conversation can't be undone, so it asks once, inline. */
+function StartOver({ onConfirm }: { onConfirm: () => void }) {
+  const [asking, setAsking] = useState(false);
+  const link =
+    "min-h-[36px] text-body-sm underline decoration-border underline-offset-4 transition-colors";
+  if (!asking) {
+    return (
+      <button
+        type="button"
+        onClick={() => setAsking(true)}
+        className={cn(link, "self-start text-text-tertiary hover:text-text-primary")}
+      >
+        Start over
+      </button>
+    );
+  }
+  return (
+    <div className="flex items-center gap-4 self-start text-body-sm" role="group">
+      <span className="text-text-secondary">Clear this conversation?</span>
+      <button
+        type="button"
+        autoFocus
+        onClick={onConfirm}
+        className={cn(link, "font-semibold text-negative hover:decoration-negative")}
+      >
+        Clear
+      </button>
+      <button
+        type="button"
+        onClick={() => setAsking(false)}
+        className={cn(link, "text-text-tertiary hover:text-text-primary")}
+      >
+        Keep it
+      </button>
     </div>
   );
 }
