@@ -41,6 +41,20 @@ const clerkAppearance = {
     borderRadius: "10px",
     fontFamily: "Inter, sans-serif",
   },
+  elements: {
+    // Clerk's default social button is grey text on white; give it a warm paper fill,
+    // an emphasis border and ink text so it reads as a real choice next to Continue.
+    socialButtonsBlockButton: {
+      backgroundColor: "hsl(var(--background-alt))",
+      border: "1px solid hsl(var(--border-emphasis))",
+      boxShadow: "none",
+      "&:hover": { backgroundColor: "hsl(var(--background-hover))" },
+    },
+    socialButtonsBlockButtonText: {
+      color: "hsl(var(--foreground))",
+      fontWeight: 500,
+    },
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
