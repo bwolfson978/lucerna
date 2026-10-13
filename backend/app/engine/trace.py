@@ -1,5 +1,6 @@
 from app.engine.constants import (
     BRACKET_FULL_THRESHOLD,
+    FULLY_CONVERTED_SHARE,
     HIGH_GROWTH_RATE,
     IRMAA_NEAR_THRESHOLD,
     LARGE_BALANCE_THRESHOLD,
@@ -7,8 +8,10 @@ from app.engine.constants import (
     LONG_RETIREMENT_YEARS,
     LOW_GROWTH_RATE,
     RETIREMENT_SPENDING_RATE,
+    ROUNDING_RESOLUTION,
 )
 from app.engine.irmaa import IRMAA_LOOKBACK_YEARS, IRMAA_TIERS, MEDICARE_START_AGE
+from app.engine.rmd import calculate_rmd, rmd_start_age
 from app.engine.state_tax import resolve_state_for_year
 from app.engine.tax import get_marginal_rate
 from app.engine.tax_cost import (
@@ -113,22 +116,28 @@ def _find_binding_constraint(
     a Medicare surcharge (IRMAA) threshold, or partway into a bracket where
     converting more costs more than it saves. Reports the most common reason.
     """
-    total = sum(conversions)
-    if total >= scenario.traditional_ira_balance * 0.95:
+    remaining = _traditional_left_after_conversions(scenario, conversions)
+    if remaining < scenario.traditional_ira_balance * FULLY_CONVERTED_SHARE:
         return "Traditional IRA balance fully converted"
 
     reasons = []
     for t, fills in enumerate(bracket_fill):
         if t >= len(conversions) or conversions[t] <= 0:
             continue
-        top = next((f for f in reversed(fills) if f.filled_by_conversion > 0), None)
-        if top is None:
+        filled = [f for f in fills if f.filled_by_conversion > 0]
+        if not filled:
             continue
+        top = filled[-1]
+        # Conversions are rounded to $100, so one that fills a bracket can spill a
+        # few dollars into the next. That still stops at the lower bracket's edge.
+        spilled = len(filled) > 1 and top.filled_by_conversion < ROUNDING_RESOLUTION
+        if spilled:
+            top = filled[-2]
         rate = f"{top.bracket_rate:.0%}"
         magi = scenario.timeline[t].gross_income + conversions[t]
         if _just_under_irmaa_threshold(scenario, t, magi):
             reasons.append("Just under the Medicare surcharge (IRMAA) threshold")
-        elif top.remaining_capacity < BRACKET_FULL_THRESHOLD:
+        elif spilled or top.remaining_capacity < BRACKET_FULL_THRESHOLD:
             reasons.append(f"Top of {rate} bracket")
         else:
             reasons.append(f"Partway into {rate} bracket")
@@ -142,6 +151,31 @@ def _find_binding_constraint(
     if most_common.startswith("Partway"):
         label += ": converting more costs more than it saves"
     return label
+
+
+def _traditional_left_after_conversions(scenario: ScenarioInput, conversions: list[float]) -> float:
+    """Traditional balance left right after the last conversion.
+
+    Walks the timeline the way the optimizer does (RMD, conversion, drawdown,
+    then growth). Summing conversions is not enough: the balance grows between
+    conversions, so they can add up to more than today's balance and still
+    leave money behind.
+    """
+    last = max((t for t, c in enumerate(conversions) if c > 0), default=-1)
+    balance = scenario.traditional_ira_balance
+    owner_rmd_start = rmd_start_age(scenario.age)
+    for t in range(last + 1):
+        owner_age = scenario.age + t
+        rmd = calculate_rmd(balance, owner_age) if owner_age >= owner_rmd_start else 0.0
+        balance -= min(rmd, balance)
+        balance -= min(max(0.0, conversions[t]), balance)
+        if t == last:
+            break
+        drawdown = scenario.timeline[t].drawdown
+        if drawdown:
+            balance -= min(float(drawdown), balance)
+        balance *= 1 + scenario.annual_growth_rate
+    return balance
 
 
 def _just_under_irmaa_threshold(scenario: ScenarioInput, t: int, magi: float) -> bool:
@@ -160,34 +194,33 @@ def _cost_of_next_bracket(
     scenario: ScenarioInput,
     conversions: list[float],
 ) -> dict:
-    """What would it cost to convert $1,000 more (federal + state)?"""
+    """What would converting $1,000 more in the first conversion year cost (federal + state)?"""
     extra = 1000
-    total_extra_cost = 0.0
-    for t in range(len(conversions)):
-        income = scenario.timeline[t].gross_income
-        conversion = conversions[t]
-        yr_state = resolve_state_for_year(scenario.timeline[t].state, scenario.state)
-        # Cost of next $extra on top of existing income + conversion
-        total_extra_cost += total_conversion_cost(
-            income + conversion,
-            extra,
-            scenario.filing_status,
-            state=yr_state,
-            custom_state_rate=scenario.custom_state_rate,
-        )
+    t = next((i for i, c in enumerate(conversions) if c > 0), 0)
+    entry = scenario.timeline[t]
+    income = entry.gross_income
+    conversion = conversions[t] if t < len(conversions) else 0.0
+    yr_state = resolve_state_for_year(entry.state, scenario.state)
 
-    rate = combined_marginal_rate(
-        scenario.timeline[0].gross_income,
-        conversions[0] + extra,
+    extra_cost = total_conversion_cost(
+        income + conversion,
+        extra,
         scenario.filing_status,
-        state=resolve_state_for_year(scenario.timeline[0].state, scenario.state),
+        state=yr_state,
+        custom_state_rate=scenario.custom_state_rate,
+    )
+    rate = combined_marginal_rate(
+        income,
+        conversion + extra,
+        scenario.filing_status,
+        state=yr_state,
         custom_state_rate=scenario.custom_state_rate,
     )
 
     return {
         "bracket_rate": rate,
-        "additional_tax": round(total_extra_cost, 2),
-        "net_effect": f"Converting ${extra:,} more would cost ${total_extra_cost:,.0f} in additional tax at the {rate:.0%} rate",
+        "additional_tax": round(extra_cost, 2),
+        "net_effect": f"Converting ${extra:,} more in {entry.year} would cost ${extra_cost:,.0f} in additional tax at the {rate:.0%} rate",
     }
 
 

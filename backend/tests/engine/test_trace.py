@@ -5,7 +5,11 @@ import pytest
 from app.engine.irmaa import IRMAA_TIERS
 from app.engine.optimizer import optimize
 from app.engine.tax import BRACKETS, STANDARD_DEDUCTION, analyze_bracket_fill
-from app.engine.trace import _find_binding_constraint, generate_reasoning_trace
+from app.engine.trace import (
+    _cost_of_next_bracket,
+    _find_binding_constraint,
+    generate_reasoning_trace,
+)
 from app.engine.types import (
     FilingStatus,
     NPVCurvePoint,
@@ -159,3 +163,47 @@ class TestBindingConstraint:
         fills = [analyze_bracket_fill(20000, conversion, FilingStatus.MFJ)]
         label = _find_binding_constraint(scenario, [conversion], fills)
         assert "Medicare" not in label
+
+    def test_growth_left_behind_is_not_fully_converted(self):
+        # Conversions add up to more than today's balance only because it grew in
+        # between; money is still left. The old check compared the sum to today's balance.
+        scenario = self._scenario(income=20000, years=3).model_copy(
+            update={"traditional_ira_balance": 100_000, "annual_growth_rate": 0.07}
+        )
+        conversions = [40_000.0, 40_000.0, 20_000.0]
+        fills = [analyze_bracket_fill(20000, c, FilingStatus.SINGLE) for c in conversions]
+        label = _find_binding_constraint(scenario, conversions, fills)
+        assert label != "Traditional IRA balance fully converted"
+
+    def test_whole_balance_converted(self):
+        scenario = self._scenario(income=20000, years=2).model_copy(
+            update={"traditional_ira_balance": 100_000, "annual_growth_rate": 0.07}
+        )
+        conversions = [50_000.0, 53_500.0]
+        fills = [analyze_bracket_fill(20000, c, FilingStatus.SINGLE) for c in conversions]
+        label = _find_binding_constraint(scenario, conversions, fills)
+        assert label == "Traditional IRA balance fully converted"
+
+    def test_rounding_spill_counts_as_top_of_lower_bracket(self):
+        # A conversion rounded to $100 can land a few dollars into the next bracket.
+        scenario = self._scenario(income=20000)
+        conversion = self._top_of_bracket_gross(FilingStatus.SINGLE, 0.12) - 20000 + 40
+        fills = [analyze_bracket_fill(20000, conversion, FilingStatus.SINGLE)]
+        assert _find_binding_constraint(scenario, [conversion], fills) == "Top of 12% bracket"
+
+
+class TestCostOfNextBracket:
+    def test_prices_one_extra_thousand_in_one_year(self):
+        # It used to add $1,000 to every timeline year and report the sum.
+        scenario = ScenarioInput(
+            age=25,
+            filing_status=FilingStatus.SINGLE,
+            timeline=[PlanYear(year=2026 + t, gross_income=100_000) for t in range(30)],
+            traditional_ira_balance=400_000,
+            drawdown_start_age=55,
+            planning_horizon_age=90,
+        )
+        conversions = [50_000.0] + [0.0] * 29
+        cost = _cost_of_next_bracket(scenario, conversions)
+        assert cost["additional_tax"] == pytest.approx(240, abs=1)
+        assert cost["net_effect"].startswith("Converting $1,000 more in 2026 would cost $240")

@@ -23,6 +23,8 @@ export class PartBoundary extends Component<
       kind: this.props.kind,
       message: error.message,
     });
+    // The boundary swallows the error, so autocapture never sees it.
+    posthog.captureException(error, { boundary: "conversation_part", kind: this.props.kind });
   }
 
   render() {
