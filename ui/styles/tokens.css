@@ -79,6 +79,14 @@
     box-shadow: 0 24px 60px -24px rgba(27, 67, 50, 0.3);
   }
 
+  /* Cards in a conversation also render inside MCP App iframes, which would clip the
+     wide shadow above into a grey box. They share this tighter one in both places. */
+  [data-ui="result-card"],
+  [data-ui="scenario-compare"],
+  [data-ui="scenario-summary"] {
+    box-shadow: 0 14px 28px -22px rgba(27, 67, 50, 0.32);
+  }
+
   @media (max-width: 640px) {
     .card,
     .card-recommended,
@@ -110,8 +118,9 @@
   }
 
   /* Domain-specific data display tokens */
+  /* Sentence-case label above a number, e.g. "Tax cost" */
   .metric-label {
-    @apply font-ui text-caption text-text-tertiary tracking-wide uppercase;
+    @apply font-ui text-caption text-text-tertiary;
   }
 
   .metric-value {

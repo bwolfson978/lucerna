@@ -38,11 +38,12 @@ it("shows the tax bracket chart in the result card", () => {
   expect(screen.queryByRole("button", { name: "See full results" })).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /Balances over time/ })).not.toBeInTheDocument();
   // The results page's chart: bracket lines, the 0% standard deduction band and the
-  // added tax row.
+  // rows under the bars (each year's conversion and the tax it adds).
   expect(screen.getByRole("img", { name: /against the tax brackets/ })).toBeInTheDocument();
   expect(screen.getAllByText(/^0%/).length).toBeGreaterThan(0);
-  expect(screen.getByText("Added tax from conversion")).toBeInTheDocument();
-  expect(screen.getByText("Remaining space in tax bracket")).toBeInTheDocument();
+  expect(screen.getByText("Convert")).toBeInTheDocument();
+  expect(screen.getByText("Tax")).toBeInTheDocument();
+  expect(screen.getByText("Room left in bracket")).toBeInTheDocument();
 });
 
 it("renders the previous release's tool output without the chart instead of crashing", () => {

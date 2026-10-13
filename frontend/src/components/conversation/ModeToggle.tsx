@@ -20,7 +20,7 @@ export function ModeToggle({
     <div
       role="radiogroup"
       aria-label="How do you want to enter your scenario?"
-      className="inline-flex w-full rounded-full border border-border bg-paper-warm p-1 sm:w-auto"
+      className="inline-flex w-full rounded-full border border-border bg-paper-warm p-1 sm:w-auto sm:self-start"
     >
       {OPTIONS.map((option) => {
         const selected = option.value === mode;

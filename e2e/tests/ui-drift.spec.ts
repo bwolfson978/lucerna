@@ -60,7 +60,7 @@ async function converse(page: Page) {
 }
 
 const RESULT_PARTS = ['result-card', 'eyebrow', 'hero', 'stat-value', 'cta', 'bracket-fill']
-const COMPARE_PARTS = ['scenario-compare', 'eyebrow', 'stat-value', 'cta']
+const COMPARE_PARTS = ['scenario-compare', 'eyebrow', 'hero', 'cta']
 
 async function showBrackets(card: Locator) {
   await expect(card.locator('[data-ui=bracket-fill]')).toBeVisible()

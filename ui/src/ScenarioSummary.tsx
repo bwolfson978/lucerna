@@ -193,7 +193,9 @@ export function ScenarioSummary({
         </span>
         {badge && <span className="badge-positive">{badge}</span>}
       </div>
-      <dl className="divide-border divide-y">
+      {/* One column on phones, two from sm. Each row draws its own bottom rule; the list
+          tucks the last one under the next section's top border. */}
+      <dl className="-mb-px grid sm:grid-cols-2">
         {rows.map((row) => (
           <SummaryRow
             key={row.key}
@@ -290,7 +292,7 @@ function SummaryRow({
   return (
     <div
       className={cn(
-        "px-default sm:px-comfortable flex min-h-[44px] items-center justify-between gap-4 py-2",
+        "px-default sm:px-comfortable border-border flex min-h-[44px] items-center justify-between gap-4 border-b py-2 sm:odd:border-r",
         editing && row.editState && "bg-paper flex-wrap gap-y-2 pt-3 pb-3"
       )}
     >
@@ -391,7 +393,7 @@ function StateEditor({
         if (e.key === "Escape") onDone();
       }}
     >
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3">
         <label className="flex flex-col gap-1.5">
           <span className="text-caption text-text-secondary">Now</span>
           <select
@@ -427,7 +429,7 @@ function StateEditor({
         </label>
       </div>
       {now === "custom" && (
-        <label className="flex flex-col gap-1.5 sm:w-1/2 sm:pr-1.5">
+        <label className="flex flex-col gap-1.5">
           <span className="text-caption text-text-secondary">State tax rate (%)</span>
           <input
             inputMode="decimal"

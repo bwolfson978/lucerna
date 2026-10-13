@@ -213,8 +213,8 @@ export function ResultsView({ result }: ResultsViewProps) {
               ...(chartYears.some((y) => (y.rmdAmount ?? 0) > 0)
                 ? [{ color: CHART_COLORS.rmd, label: "Required withdrawal" }]
                 : []),
-              { color: CHART_COLORS.conversion, label: "Roth Conversion" },
-              { color: "", label: "Remaining space in tax bracket", outline: true },
+              { color: CHART_COLORS.conversion, label: "Roth conversion" },
+              { color: "", label: "Room left in bracket", outline: true },
             ]}
           />
         </Card>

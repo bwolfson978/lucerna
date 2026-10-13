@@ -103,12 +103,6 @@ export function useGrow() {
   return { ref, grown: inView || reduced, animate: !reduced };
 }
 
-export function labelEvery(count: number): number {
-  if (count <= 10) return 1;
-  if (count <= 20) return 2;
-  return 5;
-}
-
 /** A chart's title, legend, plot (with tooltip) and footnote. */
 export function ChartBody({
   title,
