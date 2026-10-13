@@ -24,11 +24,32 @@ if (posthogApiKey && !uploadSourceMaps) {
   );
 }
 
-module.exports = uploadSourceMaps
+const withPostHog = uploadSourceMaps
   ? withPostHogConfig(nextConfig, {
       personalApiKey: posthogApiKey,
       projectId: process.env.POSTHOG_PROJECT_ID || "364668",
       host: "https://us.posthog.com",
-      sourcemaps: { releaseName: "lucerna-frontend" },
+      // symbol-set mode injects chunk ids into the built files itself; event mode relies on
+      // Turbopack debug ids, which edge chunks (Clerk middleware) lack, failing the upload.
+      sourcemaps: { releaseName: "lucerna-frontend", releaseMode: "symbol-set" },
     })
+  : null;
+
+// A failed upload (PostHog or its storage unreachable) should not block a deploy: the
+// app works without source maps, only its stack traces are minified.
+module.exports = withPostHog
+  ? async (phase, options) => {
+      const config = await withPostHog(phase, options);
+      const upload = config.compiler?.runAfterProductionCompile;
+      if (upload) {
+        config.compiler.runAfterProductionCompile = async (context) => {
+          try {
+            await upload(context);
+          } catch (error) {
+            console.warn("[next.config] PostHog source map upload failed; continuing.", error);
+          }
+        };
+      }
+      return config;
+    }
   : nextConfig;
