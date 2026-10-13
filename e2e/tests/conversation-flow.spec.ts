@@ -28,6 +28,9 @@ test.describe('Conversation flow', () => {
     await expect(headline.getByText(/\$\d/).first()).toBeVisible()
     // The card shows how the conversions fill the tax brackets.
     await expect(headline.getByRole('img', { name: /against the tax brackets/ })).toBeVisible()
+    // ...so the conversation doesn't repeat that chart in a card of its own.
+    await expect(page.getByTestId('suggestions')).toBeVisible()
+    await expect(page.getByText('How conversions fill your tax brackets')).toHaveCount(0)
 
     await page.getByLabel('Message').fill('What if I retire at 58?')
     await page.getByRole('button', { name: 'Send' }).click()

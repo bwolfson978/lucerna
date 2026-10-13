@@ -137,11 +137,9 @@ class OfflineModelClient:
             if name == "show" and data.get("shown") == "scenario_summary":
                 return [_text("Here's your scenario. Check the values and tap Run the numbers.")]
             if name == "analyze_roth_conversions":
-                rid = data["result_id"]
                 points = data["reasoning"]["summary_points"]
                 return [
                     _text(f"{points['what_to_convert']}. {points['why_this_amount']}."),
-                    _tool("show", {"kind": "bracket_fill", "result_id": rid}),
                     _tool(
                         "show",
                         {

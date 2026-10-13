@@ -133,7 +133,6 @@ class MethodologyTopic(StrEnum):
 
 class DisplayKind(StrEnum):
     SCENARIO_SUMMARY = "scenario_summary"
-    BRACKET_FILL = "bracket_fill"
     BALANCE_COMPARISON = "balance_comparison"
     SUGGESTIONS = "suggestions"
 
@@ -146,7 +145,6 @@ class ShowArgs(BaseModel):
     kind: DisplayKind = Field(
         description=(
             "scenario_summary: the captured inputs for the user to check before running. "
-            "bracket_fill: how conversions fill tax brackets each year (needs result_id). "
             "balance_comparison: account balances with vs. without conversions (needs result_id). "
             "suggestions: 2 to 4 short follow-up questions the user can tap."
         )

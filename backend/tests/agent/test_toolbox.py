@@ -72,6 +72,7 @@ async def test_errors_and_show_validation():
         assert (await toolbox.call("nope", {}, context))[1] is True
         assert (await toolbox.call("record_scenario", {"scenario": {"age": "x"}}, context))[1]
         assert (await toolbox.call("show", {"kind": "scenario_summary"}, context))[1]
+        assert (await toolbox.call("show", {"kind": "balance_comparison"}, context))[1]
         assert (await toolbox.call("show", {"kind": "bracket_fill"}, context))[1]
         assert (await toolbox.call("show", {"kind": "suggestions", "suggestions": []}, context))[1]
         assert (await toolbox.call("show", {"kind": "unknown"}, context))[1]
@@ -89,7 +90,7 @@ async def test_show_notes_when_nothing_was_written_yet():
     async with open_toolbox() as toolbox:
         content, is_error = await toolbox.call("show", suggestions, context)
         assert not is_error and "not seen any text" in content["note"]
-        chart = {"kind": "bracket_fill", "result_id": "r_0123456789"}
+        chart = {"kind": "balance_comparison", "result_id": "r_0123456789"}
         content, is_error = await toolbox.call("show", chart, context)
         assert not is_error and "not seen any text" in content["note"]
 

@@ -122,7 +122,7 @@ E2E (uses the offline stand-in automatically): `cd e2e && npx playwright test`. 
 | `tool_start` | `name`, `status` | Status line ("Running the optimizer") |
 | `draft` | `draft`, `missing` | Updates the shared scenario (form and summary card) |
 | `result` | `result_id`, `label`, `result`, `draft?` | Stores a full engine result for cards and the full results view |
-| `part` | `part` | Renders a card: `scenario_summary`, `result_headline`, `bracket_fill`, `balance_comparison`, `scenario_compare`, `suggestions` |
+| `part` | `part` | Renders a card: `scenario_summary`, `result_headline`, `balance_comparison`, `scenario_compare`, `suggestions` |
 | `error` | `code`, `message` | Notice; `unavailable` and limit codes switch to the form |
 | `done` | `messages` | API-format turns to append to the stored history |
 

@@ -5,6 +5,7 @@ import type { ScenarioDraft } from "@/lib/scenario/draft";
 export type AgentPart =
   | { kind: "scenario_summary"; draft: ScenarioDraft; draft_hash: string }
   | { kind: "result_headline"; result_id: string }
+  /** Saved by earlier versions; no longer emitted or rendered. */
   | { kind: "bracket_fill"; result_id: string }
   | { kind: "balance_comparison"; result_id: string }
   | { kind: "scenario_compare"; result_id: string; base_result_id: string; label: string }

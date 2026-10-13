@@ -158,7 +158,6 @@ async def test_offline_client_drives_a_full_conversation():
     assert seen == [
         "scenario_summary",
         "mcp_app",
-        "bracket_fill",
         "suggestions",
         "mcp_app",
         "scenario_summary",
