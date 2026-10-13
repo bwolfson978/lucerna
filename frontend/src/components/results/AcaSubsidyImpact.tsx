@@ -1,8 +1,7 @@
 "use client";
 
 import type { OptimizationResult } from "@/lib/types";
-import { MetricCard } from "@/components/common/MetricCard";
-import { Tooltip } from "@/components/common/Tooltip";
+import { Stat } from "@lucerna/ui";
 import { formatCurrency, formatPercent } from "@/lib/utils/formatting";
 import { dataFontStyle } from "@/lib/utils/constants";
 import { Card } from "@/components/ui/card";
@@ -26,10 +25,7 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
   return (
     <div className="flex flex-col gap-default">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <h3 className="text-h3 text-text-primary">ACA marketplace subsidy impact</h3>
-          <Tooltip content="Roth conversions increase your income (MAGI), which can reduce your ACA premium tax credit. This section shows how the recommended conversions affect your health insurance subsidy." />
-        </div>
+        <h3 className="text-h3 text-text-primary">ACA marketplace subsidy impact</h3>
         <InfoTrigger
           label="How do conversions affect subsidies?"
           sectionId="conversion-tradeoff"
@@ -39,41 +35,38 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
       </div>
 
       {/* Summary metrics */}
-      <div className="grid grid-cols-2 gap-tight sm:grid-cols-4 sm:gap-default">
-        <MetricCard
-          label="Subsidy preserved"
+      <Card className="grid grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-4">
+        <Stat
+          label="Subsidy kept"
           value={
             hasImpact
               ? formatCurrency(details.reduce((s, d) => s + d.subsidy_with_conversion, 0))
               : "Full subsidy"
           }
-          delta={hasImpact ? "after conversions" : "no impact from conversions"}
-          deltaType={hasImpact ? "neutral" : "positive"}
+          tone={hasImpact ? "default" : "positive"}
+          note={hasImpact ? "after conversions" : "conversions don't reduce it"}
         />
-        <MetricCard
+        <Stat
           label="Subsidy reduced by"
           value={formatCurrency(totalSubsidyLost)}
-          delta={
+          tone={hasImpact ? "negative" : "default"}
+          note={
             hasImpact
               ? `across ${yearsWithLoss.length} year${yearsWithLoss.length > 1 ? "s" : ""}`
               : undefined
           }
-          deltaType={hasImpact ? "negative" : "neutral"}
         />
-        <MetricCard
+        <Stat
           label="True cost of conversions"
           value={formatCurrency(acaSummary.total_combined_cost)}
-          delta="federal tax + subsidy loss"
-          deltaType="neutral"
+          note="federal tax + subsidy loss"
         />
-        <MetricCard
-          label="Effective combined rate"
+        <Stat
+          label="Combined rate"
           value={formatPercent(acaSummary.effective_combined_rate)}
-          delta="tax + subsidy per dollar converted"
-          deltaType="neutral"
-          tooltip="The blended rate including both federal tax and ACA subsidy reduction per dollar converted."
+          note="tax + subsidy per dollar converted"
         />
-      </div>
+      </Card>
 
       {/* Per-year breakdown table */}
       {hasImpact && (
@@ -83,11 +76,17 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
               <tr className="border-b border-border text-text-secondary">
                 <th className="px-3 py-2.5 text-left font-medium">Year</th>
                 <th className="px-3 py-2.5 text-right font-medium">Income + conversion</th>
-                <th className="px-3 py-2.5 text-right font-medium">% of poverty level</th>
-                <th className="px-3 py-2.5 text-right font-medium">Subsidy before</th>
+                <th className="hidden px-3 py-2.5 text-right font-medium sm:table-cell">
+                  % of poverty level
+                </th>
+                <th className="hidden px-3 py-2.5 text-right font-medium sm:table-cell">
+                  Subsidy before
+                </th>
                 <th className="px-3 py-2.5 text-right font-medium">Subsidy after</th>
                 <th className="px-3 py-2.5 text-right font-medium">Subsidy lost</th>
-                <th className="px-3 py-2.5 text-right font-medium">Combined rate</th>
+                <th className="hidden px-3 py-2.5 text-right font-medium sm:table-cell">
+                  Combined rate
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -108,7 +107,7 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
                     {formatCurrency(d.magi_with_conversion)}
                   </td>
                   <td
-                    className={`px-3 py-2.5 text-right ${
+                    className={`hidden px-3 py-2.5 text-right sm:table-cell ${
                       d.income_pct_fpl > 400
                         ? "font-medium text-negative"
                         : d.income_pct_fpl > 350
@@ -119,7 +118,10 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
                   >
                     {Math.round(d.income_pct_fpl)}%
                   </td>
-                  <td className="px-3 py-2.5 text-right text-text-secondary" style={dataFontStyle}>
+                  <td
+                    className="hidden px-3 py-2.5 text-right text-text-secondary sm:table-cell"
+                    style={dataFontStyle}
+                  >
                     {formatCurrency(d.subsidy_without_conversion)}
                   </td>
                   <td className="px-3 py-2.5 text-right text-text-primary" style={dataFontStyle}>
@@ -134,7 +136,10 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
                     {d.subsidy_lost > 0 ? "-" : ""}
                     {formatCurrency(d.subsidy_lost)}
                   </td>
-                  <td className="px-3 py-2.5 text-right text-text-primary" style={dataFontStyle}>
+                  <td
+                    className="hidden px-3 py-2.5 text-right text-text-primary sm:table-cell"
+                    style={dataFontStyle}
+                  >
                     {d.combined_marginal_rate > 0 ? formatPercent(d.combined_marginal_rate) : "--"}
                   </td>
                 </tr>
@@ -152,7 +157,7 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
 
       {/* Cliff warning */}
       {yearsHittingCliff.length > 0 && cliffIncome && (
-        <div className="flex items-start gap-2.5 rounded-[4px] border border-negative/15 bg-negative/5 px-3 py-2.5">
+        <div className="flex items-start gap-2.5 rounded-[14px] border border-negative/15 bg-negative/5 px-4 py-3">
           <svg
             width="16"
             height="16"

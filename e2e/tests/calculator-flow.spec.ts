@@ -15,6 +15,7 @@ test.describe('Calculator form', () => {
     await page.getByLabel('Retirement age', { exact: true }).fill(String(alexScenario.retirement_age))
     await page.getByRole('button', { name: /run my scenario/i }).click()
 
-    await expect(page.getByText(/Total Roth conversion/i)).toBeVisible({ timeout: 30000 })
+    await expect(page.getByTestId('results-hero')).toBeVisible({ timeout: 30000 })
+    await expect(page.getByRole('heading', { name: 'Compare strategies' })).toBeVisible()
   })
 })

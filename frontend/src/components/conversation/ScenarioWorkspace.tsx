@@ -15,7 +15,7 @@ import { Header } from "@/components/common/Header";
 import { PageFooter } from "@/components/common/PageFooter";
 import { InputForm } from "@/components/calculator/InputForm";
 import { ResultsView } from "@/components/results/ResultsView";
-import { MetricCardSkeleton, ChartSkeleton, TableSkeleton } from "@/components/common/Skeleton";
+import { ChartSkeleton, TableSkeleton } from "@/components/common/Skeleton";
 import { Card } from "@/components/ui/card";
 import { GlowButton } from "@/components/common/GlowButton";
 import { SaveResultsBanner, type SaveBannerState } from "@/components/common/SaveResultsBanner";
@@ -532,12 +532,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
         />
         <div ref={formResultsRef} className="scroll-mt-24">
           {formLoading && (
-            <div className="flex flex-col gap-section">
-              <div className="grid grid-cols-2 gap-default sm:grid-cols-4">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <MetricCardSkeleton key={i} />
-                ))}
-              </div>
+            <div className="flex flex-col gap-section" role="status" aria-label="Running">
               <ChartSkeleton />
               <TableSkeleton rows={3} />
             </div>
