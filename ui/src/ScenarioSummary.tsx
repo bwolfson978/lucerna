@@ -58,6 +58,9 @@ interface Row {
   formOnly?: boolean;
 }
 
+/** Rows that hold defaults most people keep; they sit behind one "Assumptions" line. */
+const ASSUMPTION_KEYS = new Set(["growth", "horizon", "return"]);
+
 /** Labels for the fields `record_scenario` reports as missing. */
 export const FIELD_LABELS: Record<string, string> = {
   age: "Age",
@@ -182,8 +185,12 @@ export function ScenarioSummary({
   missing = [],
 }: ScenarioSummaryProps) {
   const rows = buildRows(data.scenario);
+  const primary = rows.filter((row) => !ASSUMPTION_KEYS.has(row.key));
+  const assumptions = rows.filter((row) => ASSUMPTION_KEYS.has(row.key));
+  const [showAssumptions, setShowAssumptions] = useState(false);
   const timeline = data.timeline;
   const notedYears = timeline.filter((y) => y.note);
+  const s = data.scenario;
 
   return (
     <article className="card overflow-hidden !p-0" data-ui="scenario-summary">
@@ -193,19 +200,67 @@ export function ScenarioSummary({
         </span>
         {badge && <span className="badge-positive">{badge}</span>}
       </div>
-      {/* One column on phones, two from sm. Each row draws its own bottom rule; the list
-          tucks the last one under the next section's top border. */}
+      {/* What the person told us: one column on phones, two from sm. Each row draws its
+          own bottom rule; the list tucks the last one under the next section's top border. */}
       <dl className="-mb-px grid sm:grid-cols-2">
-        {rows.map((row) => (
+        {primary.map((row) => (
           <SummaryRow
             key={row.key}
             row={row}
-            scenario={data.scenario}
+            scenario={s}
             onEdit={onEdit}
             onOpenForm={onOpenForm}
+            className="sm:odd:border-r"
           />
         ))}
       </dl>
+      {/* Defaults most people keep, folded into one line until asked for. */}
+      <div className="border-border border-t" data-ui="scenario-assumptions">
+        <button
+          type="button"
+          aria-expanded={showAssumptions}
+          onClick={() => setShowAssumptions((open) => !open)}
+          className="px-default sm:px-comfortable hover:bg-paper flex min-h-[44px] w-full items-center justify-between gap-4 py-1 text-left"
+        >
+          <span className="text-body-sm text-text-secondary">Assumptions</span>
+          <span className="font-data text-text-primary sm:text-body-sm flex items-center gap-2 text-right text-[13px]">
+            {`${s.income_growth_rate_pct ?? 0}% growth · ${s.investment_return_pct ?? 7}% return · age ${s.planning_horizon_age ?? 90}`}
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              aria-hidden="true"
+              className={cn(
+                "text-text-tertiary shrink-0 transition-transform duration-200",
+                showAssumptions && "rotate-180"
+              )}
+            >
+              <path
+                d="M3 4.5 6 7.5l3-3"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+        </button>
+        {showAssumptions && (
+          <dl className="border-border -mb-px grid border-t sm:grid-cols-3">
+            {assumptions.map((row) => (
+              <SummaryRow
+                key={row.key}
+                row={row}
+                scenario={s}
+                onEdit={onEdit}
+                onOpenForm={onOpenForm}
+                className="sm:[&:not(:last-child)]:border-r"
+              />
+            ))}
+          </dl>
+        )}
+      </div>
       {timeline.length > 0 && (
         <div className="border-border px-default text-body-sm text-text-secondary sm:px-comfortable border-t py-3">
           <span className="text-text-primary">
@@ -256,11 +311,14 @@ function SummaryRow({
   scenario,
   onEdit,
   onOpenForm,
+  className,
 }: {
   row: Row;
   scenario: ScenarioValues;
   onEdit?: (patch: Partial<ScenarioValues>) => void;
   onOpenForm?: () => void;
+  /** Column divider for the grid the row sits in. */
+  className?: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState("");
@@ -292,7 +350,8 @@ function SummaryRow({
   return (
     <div
       className={cn(
-        "px-default sm:px-comfortable border-border flex min-h-[44px] items-center justify-between gap-4 border-b py-2 sm:odd:border-r",
+        "px-default sm:px-comfortable border-border flex min-h-[44px] items-center justify-between gap-4 border-b py-1",
+        className,
         editing && row.editState && "bg-paper flex-wrap gap-y-2 pt-3 pb-3"
       )}
     >

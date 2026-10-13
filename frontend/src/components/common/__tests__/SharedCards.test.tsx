@@ -91,7 +91,10 @@ it("renders the scenario summary read-only or editable", () => {
   expect(screen.getByText("California, then Arizona")).toBeInTheDocument();
   expect(screen.getByText(/Sabbatical/)).toBeInTheDocument();
   expect(screen.getByText("Still needed: age.")).toBeInTheDocument();
-  expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  // Read-only: nothing to edit, only the assumptions disclosure.
+  expect(screen.getAllByRole("button").map((b) => b.getAttribute("aria-expanded"))).toEqual([
+    "false",
+  ]);
 
   rerender(<ScenarioSummary data={recorded} onEdit={onEdit} onRun={vi.fn()} />);
   fireEvent.click(screen.getByRole("button", { name: "60" }));
@@ -99,6 +102,21 @@ it("renders the scenario summary read-only or editable", () => {
   fireEvent.change(input, { target: { value: "61" } });
   fireEvent.blur(input);
   expect(onEdit).toHaveBeenCalledWith({ age: 61 });
+});
+
+it("folds default assumptions into one line until asked for", () => {
+  const onEdit = vi.fn();
+  render(<ScenarioSummary data={recorded} onEdit={onEdit} />);
+  const toggle = screen.getByRole("button", { name: /Assumptions/ });
+  expect(toggle).toHaveAttribute("aria-expanded", "false");
+  expect(toggle).toHaveTextContent(/\d+% growth · \d+% return · age \d+/);
+  expect(screen.queryByText("Plan through age")).not.toBeInTheDocument();
+
+  fireEvent.click(toggle);
+  expect(toggle).toHaveAttribute("aria-expanded", "true");
+  expect(screen.getByText("Plan through age")).toBeInTheDocument();
+  expect(screen.getByText("Investment return")).toBeInTheDocument();
+  expect(screen.getByText("Income growth")).toBeInTheDocument();
 });
 
 it("edits the state row in place with a pair of selects", () => {
