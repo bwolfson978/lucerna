@@ -28,8 +28,8 @@ export const WithError: Story = {
     label: "Age",
     type: "number",
     numeric: true,
-    value: "95",
-    error: "Age must be between 18 and 80",
+    defaultValue: "130",
+    error: "Age must be between 0 and 120",
   },
 };
 
@@ -38,7 +38,7 @@ export const WithValue: Story = {
     label: "Investment return (%)",
     type: "number",
     numeric: true,
-    value: "7",
+    defaultValue: "7",
     helper: "Expected annual return",
   },
 };

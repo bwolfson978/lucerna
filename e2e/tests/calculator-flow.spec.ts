@@ -1,31 +1,20 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/test'
 import { alexScenario } from '../fixtures/test-data'
 
-test.describe('Calculator flow', () => {
-  test('completes 3-step form and sees results', async ({ page }) => {
+test.describe('Calculator form', () => {
+  test('fills in the form and sees results', async ({ page }) => {
     await page.goto('/')
+    await page.getByRole('link', { name: 'Talk through your numbers' }).first().click()
+    await page.getByRole('radio', { name: 'Fill in a form' }).click()
 
-    // Navigate to calculator
-    const calcCta = page.getByRole('link', { name: /calculate|get started|start/i })
-    await calcCta.click()
+    await page.getByLabel('Age', { exact: true }).fill(String(alexScenario.age))
+    await page.getByLabel('Filing status').click()
+    await page.getByRole('option', { name: 'Single' }).click()
+    await page.getByLabel('Current income').fill(String(alexScenario.income))
+    await page.getByLabel('Traditional IRA/401(k) balance').fill(String(alexScenario.traditional_ira_balance))
+    await page.getByLabel('Retirement age', { exact: true }).fill(String(alexScenario.retirement_age))
+    await page.getByRole('button', { name: /run my scenario/i }).click()
 
-    // Step 1: Personal info
-    await page.getByLabel(/age/i).fill(String(alexScenario.age))
-    await page.getByLabel(/income/i).fill(String(alexScenario.income))
-    await page.getByRole('button', { name: /next|continue/i }).click()
-
-    // Step 2: Retirement details
-    await page.getByLabel(/retirement age/i).fill(String(alexScenario.retirement_age))
-    await page.getByLabel(/ira balance|traditional/i).fill(String(alexScenario.traditional_ira_balance))
-    await page.getByRole('button', { name: /next|continue/i }).click()
-
-    // Step 3: Location
-    await page.getByLabel(/current state/i).fill(alexScenario.current_tax_state)
-    await page.getByLabel(/retirement state/i).fill(alexScenario.retirement_tax_state)
-    await page.getByRole('button', { name: /calculate|analyze|submit/i }).click()
-
-    // Results page
-    await expect(page.getByText(/conversion/i)).toBeVisible({ timeout: 10000 })
-    await expect(page.getByText(/savings|tax/i)).toBeVisible()
+    await expect(page.getByText(/Total Roth conversion/i)).toBeVisible({ timeout: 30000 })
   })
 })

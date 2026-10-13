@@ -14,13 +14,14 @@ export function generateTimeline(
   currentAge: number,
   drawdownStartAge: number,
   baseIncome: number,
-  annualGrowthRate: number
+  annualGrowthRate: number,
+  startYear: number = CURRENT_YEAR
 ): PlanYear[] {
   const yearsToRetirement = drawdownStartAge - currentAge;
   const trajectoryLength =
     yearsToRetirement > 0 ? yearsToRetirement : Math.max(1, Math.min(10, 73 - currentAge));
   return Array.from({ length: trajectoryLength }, (_, i) => ({
-    year: CURRENT_YEAR + i,
+    year: startYear + i,
     gross_income: Math.round(baseIncome * Math.pow(1 + annualGrowthRate / 100, i)),
   }));
 }

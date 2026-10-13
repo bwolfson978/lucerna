@@ -90,7 +90,7 @@ function ScenarioCard({
       </div>
 
       <Link
-        href={`/calculator?scenario=${scenario.id}`}
+        href={`/calculator?saved=${scenario.id}`}
         className="btn-ghost w-full text-center text-body-sm"
       >
         Re-run this scenario

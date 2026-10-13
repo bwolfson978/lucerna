@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test, expect } from '../fixtures/test'
 
 test.describe('Mobile responsiveness', () => {
   // These tests only run on the Mobile Chrome project

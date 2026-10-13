@@ -5,6 +5,8 @@ on:
     branches: [master, main]
     paths:
       - 'frontend/**'
+      # Shared cards and theme the frontend imports (also built into the MCP Views).
+      - 'ui/**'
       - '.github/workflows/deploy-frontend.yml'
 
 jobs:

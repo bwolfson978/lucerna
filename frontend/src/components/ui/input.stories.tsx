@@ -19,7 +19,7 @@ export const Default: Story = {
 };
 
 export const Numeric: Story = {
-  args: { type: "number", numeric: true, placeholder: "0", value: "85000" },
+  args: { type: "number", numeric: true, placeholder: "0", defaultValue: "85000" },
 };
 
 export const Disabled: Story = {

@@ -17,14 +17,6 @@ describe("apiClient", () => {
     expect(result.result).toBeDefined();
   });
 
-  it("sends chat message", async () => {
-    const result = await apiClient.chat({
-      message: "Why should I convert?",
-      context: {},
-    });
-    expect(result.response).toBeDefined();
-  });
-
   it("submits email", async () => {
     const result = await apiClient.submitEmail("test@example.com");
     expect(result.success).toBe(true);

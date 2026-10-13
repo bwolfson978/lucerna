@@ -34,3 +34,11 @@ Thumbs.db
 
 # Vercel
 .vercel
+
+# Agent demo conversation cache
+backend/.cache/
+
+# Agent eval reports
+backend/evals/results/
+e2e/test-results/
+e2e/playwright-report/

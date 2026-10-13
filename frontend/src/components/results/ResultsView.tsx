@@ -5,9 +5,9 @@ import type { OptimizationResult, ScenarioInput } from "@/lib/types";
 import { MetricCard } from "@/components/common/MetricCard";
 import { Tooltip } from "@/components/common/Tooltip";
 import { ChartLegend } from "@/components/common/ChartLegend";
-import { formatCurrency, formatSavings, formatTableCurrency } from "@/lib/utils/formatting";
+import { BracketChart } from "@lucerna/ui";
+import { formatCurrency, formatSavings } from "@/lib/utils/formatting";
 import { CHART_COLORS, buildResultsDisclaimer, dataFontStyle } from "@/lib/utils/constants";
-import { BracketChart } from "./BracketChart";
 import { ConversionSlider } from "./ConversionSlider";
 import { ScenarioCards } from "./ScenarioCards";
 import { BalanceProjections } from "./BalanceProjections";
@@ -17,6 +17,7 @@ import { useConversionSlider } from "@/hooks/useConversionSlider";
 import { useScrollOnTransition } from "@/hooks/useScrollOnTransition";
 import { computeSnapThreshold } from "@/lib/utils/snap";
 import { InfoTrigger } from "@/components/methodology/InfoTrigger";
+import { useTaxConfig } from "@/lib/tax/TaxConfigProvider";
 
 interface ResultsViewProps {
   result: OptimizationResult;
@@ -27,6 +28,7 @@ interface ResultsViewProps {
 export function ResultsView({ result }: ResultsViewProps) {
   // onReRun and loading are accepted for future calculator re-run support
   const chartScrollRef = useRef<HTMLDivElement>(null);
+  const taxConfig = useTaxConfig();
   const [tableColWidth, setTableColWidth] = useState(58);
   const [chartLayout, setChartLayout] = useState({
     leftOffset: 0,
@@ -43,7 +45,6 @@ export function ResultsView({ result }: ResultsViewProps) {
     totalConversion: sliderValue,
     setTotalConversion: setSliderValue,
     yearlyConversions,
-    yearlyBracketFills,
     yearlyDetail,
     yearlyRmds,
     displayTotalConversion,
@@ -113,17 +114,11 @@ export function ResultsView({ result }: ResultsViewProps) {
     return result.input.timeline.map((yi, i) => ({
       year: yi.year,
       age: result.input.age + i,
-      bracketFill: yearlyBracketFills[i] || [],
       rmdAmount: yearlyRmds[i] ?? 0,
       conversion: yearlyConversions[i],
       income: yi.gross_income,
     }));
-  }, [result.input, yearlyBracketFills, yearlyRmds, yearlyConversions]);
-
-  const yearInfos = result.input.timeline.map((yi, i) => ({
-    year: yi.year,
-    age: result.input.age + i,
-  }));
+  }, [result.input, yearlyRmds, yearlyConversions]);
 
   const snapThreshold = computeSnapThreshold(0, result.input.traditional_ira_balance);
   const isAtOptimal = Math.abs(sliderValue - result.total_conversion) <= snapThreshold;
@@ -201,42 +196,15 @@ export function ResultsView({ result }: ResultsViewProps) {
           </div>
           <BracketChart
             years={chartYears}
-            filingStatus={result.input.filing_status}
+            brackets={taxConfig.brackets[result.input.filing_status]}
+            standardDeduction={taxConfig.standard_deduction[result.input.filing_status]}
+            addedTax={chartYears.map((_, i) => yearlyDetail[i]?.tax_cost)}
             scrollRef={chartScrollRef}
             onBarWidthChange={setTableColWidth}
             onLayoutChange={setChartLayout}
             hideLegend
             stableMaxGrossAmount={stableMaxGrossAmount}
-            leftBottomContent={
-              <div className="flex flex-col border-r border-border">
-                <div className="flex h-8 items-center justify-end px-1 text-right text-data-xs font-medium leading-tight text-text-tertiary">
-                  Added tax from conversion
-                </div>
-              </div>
-            }
-          >
-            {/* Annotation row: tax cost per year */}
-            <div className="flex">
-              {yearInfos.map((yearInfo, i) => {
-                const detail = yearlyDetail[i];
-                const colWidth = tableColWidth;
-                const maxChars = Math.max(4, Math.floor((colWidth - 8) / 6.5));
-                return (
-                  <div
-                    key={yearInfo.year}
-                    className="flex h-8 items-center justify-center px-1 text-data-xs text-text-primary"
-                    style={{
-                      width: `${colWidth}px`,
-                      minWidth: `${colWidth}px`,
-                      ...dataFontStyle,
-                    }}
-                  >
-                    {detail ? formatTableCurrency(detail.tax_cost, maxChars) : "-"}
-                  </div>
-                );
-              })}
-            </div>
-          </BracketChart>
+          />
 
           {/* Series legend */}
           <ChartLegend

@@ -27,6 +27,11 @@ export default {
     const rel = relativeTo("frontend")(files).join(" ");
     return [`bash -c "cd frontend && npx prettier --write ${rel}"`];
   },
+  // Shared UI package and MCP App Views: formatted with the frontend's Prettier config.
+  "{ui/**/*.{ts,tsx,js,css},mcp-views/src/**/*.{ts,tsx,css},mcp-views/build.mjs}": (files) => {
+    const rel = relativeTo("frontend")(files).join(" ");
+    return [`bash -c "cd frontend && npx prettier --config .prettierrc --write ${rel}"`];
+  },
   "backend/**/*.py": (files) => {
     const rel = relativeTo("backend")(files).join(" ");
     return [

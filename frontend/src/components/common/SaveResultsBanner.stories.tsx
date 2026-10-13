@@ -28,7 +28,3 @@ export const Saving: Story = {
 export const Saved: Story = {
   args: { show: true, state: "saved" },
 };
-
-export const Hidden: Story = {
-  args: { show: false },
-};

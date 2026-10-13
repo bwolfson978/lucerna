@@ -1,0 +1,28 @@
+/* Styles for every View: the shared tokens and component classes (ui/), then
+   Tailwind utilities generated from the shared preset for the classes the shared
+   components and the View entries use. Compiled and inlined by build.mjs. */
+@import "../../ui/styles/tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+  }
+
+  body {
+    @apply text-body text-text-primary font-sans antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Room for the card shadow below the card. No side padding: the card must be as
+     wide as the iframe, like the native render, or the strip scales differently. */
+  #root {
+    padding: 0 0 30px;
+  }
+}

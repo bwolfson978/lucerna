@@ -19,17 +19,18 @@ export const metadata: Metadata = {
   },
 };
 
+// Paper & Pine (docs/design-aesthetic.md) for Clerk's sign-in modal.
 const clerkAppearance = {
   variables: {
-    colorPrimary: "#2D5016",
-    colorBackground: "#FAFAF7",
-    colorText: "#1C1C1A",
-    colorTextSecondary: "#6B6B65",
-    colorInputBackground: "#FFFFFF",
-    colorInputText: "#1C1C1A",
-    colorNeutral: "#6B6B65",
-    colorDanger: "#B91C1C",
-    borderRadius: "4px",
+    colorPrimary: "#1b4332",
+    colorBackground: "#ffffff",
+    colorText: "#141414",
+    colorTextSecondary: "#3d3d3d",
+    colorInputBackground: "#ffffff",
+    colorInputText: "#141414",
+    colorNeutral: "#6b6b6b",
+    colorDanger: "#c2410c",
+    borderRadius: "10px",
     fontFamily: "Inter, sans-serif",
   },
 };

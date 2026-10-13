@@ -17,6 +17,7 @@
     "format:backend": "cd backend && ruff format .",
     "format:all": "npm run format:frontend && npm run format:backend",
     "format:check": "cd frontend && npm run format:check && cd ../backend && ruff format --check .",
+    "build:views": "cd mcp-views && npm ci && npm run typecheck && npm run build",
     "prepare": "husky"
   },
   "dependencies": {

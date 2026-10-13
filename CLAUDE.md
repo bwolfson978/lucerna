@@ -19,6 +19,8 @@ Ask the user which workstream or task they're picking up.
 
 - **Deterministic engine + AI explanation layer.** The optimization engine does the math and produces a structured reasoning trace. The AI translates that trace into natural language. The AI never computes financial results.
 - **Progressive disclosure.** Simplicity first, complexity on demand. Headline results up front; detailed analysis available on scroll/click.
+- **One definition per card.** Cards shown both natively and in MCP App Views live in `ui/` (display-only React, shared Tailwind preset and tokens). The web app imports them; Views render them through preact/compat. Change the shared component, not a copy. See `docs/agent-and-mcp.md`.
+- **Storybook is the component catalog.** Adding or changing a component in `ui/src/`, `components/ui/` or `components/common/` means adding or updating its stories in the same PR. See `docs/storybook.md`.
 - **Mobile-first.** All UI must be responsive from the start — many users arrive from Reddit on phones.
 
 ## Design aesthetic
@@ -42,7 +44,11 @@ The AI conversation layer must use educational framing (legal requirement):
 ## Backend guidelines
 
 - All API inputs and outputs use Pydantic models
-- Engine code lives in `app/engine/`, API routes in `app/api/`, AI layer in `app/ai/`
+- Engine code lives in `app/engine/`, API routes in `app/api/`, tools in `app/tools/`, the agent harness in `app/agent/`, the MCP server in `app/mcp/`
+- **The MCP server is the single tool surface** (`app/mcp/server.py`, logic in `app/tools/`). The web agent (`POST /api/agent`) is an MCP client of it (`app/agent/toolbox.py`), so Claude, ChatGPT and the web app all use the same tools. Add a capability as an MCP tool; the web app gets it automatically. Only display concerns (the `show` tool, UI payloads via `_meta`) live in the web toolbox.
+- **MCP Apps:** UI for tool results is owned by the MCP server as `ui://` Views (source in `mcp-views/`, built with `npm run build:views` into `backend/app/mcp/views/`, linked via `_meta.ui.resourceUri`). The web app is a host: it mounts Views through the sandbox proxy (`/mcp-apps/sandbox`) with the official `AppBridge` (`McpAppFrame.tsx`). The model never sees or writes UI. See `docs/agent-and-mcp.md`.
+- The scenario draft (`app/tools/draft.py`) mirrors the calculator form; `frontend/src/lib/scenario/draft.ts` must stay in parity (shared fixtures in `shared/fixtures/`, regenerate with `python -m scripts.generate_draft_fixtures`)
+- Methodology copy lives in `backend/app/content/methodology.json` with an identical copy at `frontend/src/content/methodology.json`
 - The reasoning trace (`app/engine/trace.py`) is the contract between engine and AI — keep it structured and complete
 - **Multi-year optimizer** is the only engine mode — `scipy.optimize.minimize` (SLSQP) with greedy bracket-fill heuristic as initialization and fallback. No separate single-year path; a 1-year timeline is just `len(income_timeline) == 1`.
 - Engine files: `types.py` → `tax.py` → `heuristic.py` → `optimizer.py` → `trace.py` → `demo.py`
@@ -87,14 +93,25 @@ lucerna/
 │   │   │   ├── trace.py   # Reasoning trace generator
 │   │   │   └── demo.py    # Alex 3-year demo scenario
 │   │   ├── api/           # FastAPI route handlers
-│   │   └── ai/            # System prompt, tool definitions
+│   │   ├── tools/         # Transport-neutral tools + scenario draft
+│   │   ├── agent/         # Agent loop, system prompt, limits, demo conversation
+│   │   └── mcp/           # Remote MCP server (/mcp)
 │   └── tests/
 │       ├── engine/        # Pure math tests (no mocks)
 │       ├── api/           # Endpoint tests (httpx AsyncClient)
-│       └── ai/            # Prompt/tool schema tests (mocked SDK)
+│       ├── tools/         # Tool + draft tests
+│       ├── agent/         # Loop, limits, demo tests (scripted model clients)
+│       └── mcp/           # MCP server tests
+├── mcp-views/             # MCP App Views (TS → single-file HTML served by the MCP server)
+├── ui/                    # Shared display components + Paper & Pine tokens/preset
+│   ├── src/               # ResultCard, charts, ScenarioCompareCard, ScenarioSummary, MetricCard (no app context)
+│   ├── tailwind/preset.js # Theme (used by frontend and mcp-views)
+│   └── styles/tokens.css  # CSS variables + component classes
+├── mcp-views/             # MCP App Views: entries around ui/ components, built into backend/app/mcp/views/
+├── shared/fixtures/       # Cross-language fixtures (scenario draft, View data)
 ├── e2e/                   # Playwright E2E tests (spans both services)
 │   ├── playwright.config.ts
-│   ├── fixtures/
+│   ├── fixtures/          # test.ts: the `test` every spec imports (fails on uncaught page errors)
 │   └── tests/
 ├── docs/
 │   ├── design-aesthetic.md    # Visual language, colors, typography, components

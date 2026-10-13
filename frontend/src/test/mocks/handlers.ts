@@ -12,13 +12,6 @@ export const handlers = [
     return HttpResponse.json(sampleOptimizationResult);
   }),
 
-  http.post(`${API_BASE}/api/chat`, async () => {
-    return HttpResponse.json({
-      response:
-        "Based on your inputs, converting $45,000 in 2026 and $50,000 in 2027 could save approximately $28,500 in lifetime taxes by filling the 12% and 22% brackets during your low-income years.",
-    });
-  }),
-
   http.post(`${API_BASE}/api/email`, async () => {
     return HttpResponse.json({ success: true });
   }),
