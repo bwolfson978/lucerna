@@ -25,9 +25,9 @@ way on both sides: any difference in a pair comes from the PR's code.
 1. **Capture.** From the repo root, on the PR branch:
 
    ```bash
-   .claude/skills/pr-evidence/scripts/before-after.sh            # base = merge-base with origin/master
-   .claude/skills/pr-evidence/scripts/before-after.sh --flows conversation --video
-   .claude/skills/pr-evidence/scripts/before-after.sh --base <ref> --head <ref>   # two commits
+   .agents/skills/pr-evidence/scripts/before-after.sh            # base = merge-base with origin/master
+   .agents/skills/pr-evidence/scripts/before-after.sh --flows conversation --video
+   .agents/skills/pr-evidence/scripts/before-after.sh --base <ref> --head <ref>   # two commits
    ```
 
    It checks the base out in a worktree (git hooks off), boots both stacks on ports
@@ -46,7 +46,7 @@ way on both sides: any difference in a pair comes from the PR's code.
    - `summary.json` `failures` is empty. A failed flow is reported, not hidden.
 
    If you recorded video, check it with
-   `python3 .claude/skills/pr-evidence/scripts/annotate.py sheet <file>.mp4 sheet.png`
+   `python3 .agents/skills/pr-evidence/scripts/annotate.py sheet <file>.mp4 sheet.png`
    and read the sheet: you cannot watch video.
 
 3. **Pick.** Publish what a reviewer needs, not everything: the reel (`reel.webp`), the
@@ -57,7 +57,7 @@ way on both sides: any difference in a pair comes from the PR's code.
 4. **Publish.**
 
    ```bash
-   .claude/skills/pr-evidence/scripts/publish.sh --pr <number> <files>...
+   .agents/skills/pr-evidence/scripts/publish.sh --pr <number> <files>...
    ```
 
    This adds one commit to the orphan `pr-assets` branch (never merged, never checked out)

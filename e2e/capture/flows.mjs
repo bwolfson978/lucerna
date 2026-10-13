@@ -1,5 +1,5 @@
 /**
- * Named flows for before/after captures (see .claude/skills/pr-evidence).
+ * Named flows for before/after captures (see .agents/skills/pr-evidence).
  *
  * Each flow drives the app the way a person would and calls `shot` at the moments a
  * reviewer needs to see. The same flow runs against the base branch and the PR head, so

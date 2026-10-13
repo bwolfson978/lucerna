@@ -13,9 +13,9 @@ always answers the same way, so a conversation can be replayed step for step.
 ## Start and stop
 
 ```bash
-.claude/skills/run-lucerna/scripts/start.sh                       # this checkout, ports 3000/8000
-.claude/skills/run-lucerna/scripts/start.sh --dir <checkout> --web-port 3101 --api-port 8101
-.claude/skills/run-lucerna/scripts/stop.sh <logs dir printed by start.sh>
+.agents/skills/run-lucerna/scripts/start.sh                       # this checkout, ports 3000/8000
+.agents/skills/run-lucerna/scripts/start.sh --dir <checkout> --web-port 3101 --api-port 8101
+.agents/skills/run-lucerna/scripts/stop.sh <logs dir printed by start.sh>
 ```
 
 `start.sh` waits until `/health` and the home page answer, then prints `web=`, `api=` and

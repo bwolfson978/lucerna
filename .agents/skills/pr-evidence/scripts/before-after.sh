@@ -16,7 +16,7 @@ set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel)"
 SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-RUN_LUCERNA="$ROOT/.claude/skills/run-lucerna/scripts"
+RUN_LUCERNA="$ROOT/.agents/skills/run-lucerna/scripts"
 BASE=""
 HEAD_REF=""
 FLOWS=""
