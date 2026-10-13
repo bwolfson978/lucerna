@@ -9,3 +9,4 @@ mcp>=1.28,<2  # 2.x renamed FastMCP and changed APIs
 asyncpg
 PyJWT[crypto]
 httpx
+posthog>=7,<8
