@@ -22,6 +22,6 @@ test('a full results link from another app opens the same result', async ({ page
 
   // Back in the conversation, the scenario is filled in and ready to talk about.
   await page.getByRole('button', { name: /Back to conversation/ }).click()
-  await page.getByRole('radio', { name: 'Enter my numbers' }).click()
+  await page.getByRole('radio', { name: 'My numbers' }).click()
   await expect(page.getByLabel('Age', { exact: true })).toHaveValue(String(fixture.scenario.age))
 })
