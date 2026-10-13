@@ -3,13 +3,14 @@
 import json
 
 import httpx
-from httpx import ASGITransport, AsyncClient
+from httpx import ASGITransport
 from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 from mcp.shared.memory import create_connected_server_and_client_session
 
 from app.main import app
 from app.mcp import server
+from app.mcp.limits import AnalysisLimiter, AnalysisLimits, current_caller
 from app.mcp.server import RESULTS_META_KEY, UI_META_KEY, mcp
 from app.tools.views import VIEW_META_KEY
 
@@ -21,7 +22,15 @@ SCENARIO = {
     "retirement_age": 60,
 }
 
-HEADERS = {"content-type": "application/json", "accept": "application/json, text/event-stream"}
+
+def _limits(per_ip: int) -> AnalysisLimits:
+    return AnalysisLimits(
+        per_anonymous_caller_per_day=per_ip,
+        per_user_per_day=100,
+        anonymous_per_day=3000,
+        max_concurrent=2,
+        queue_seconds=10,
+    )
 
 
 async def test_lists_tools_and_resources():
@@ -33,8 +42,11 @@ async def test_lists_tools_and_resources():
             "compare_roth_scenarios",
             "get_tax_brackets",
             "explain_methodology",
+            "save_scenario",
+            "list_saved_scenarios",
+            "open_saved_scenario",
         }
-        assert all(t.annotations.readOnlyHint for t in tools)
+        assert all(t.annotations.readOnlyHint for t in tools if t.name != "save_scenario")
         uris = {str(r.uri) for r in (await session.list_resources()).resources}
         assert "methodology://rmds" in uris
         resource = await session.read_resource("methodology://irmaa")
@@ -123,36 +135,95 @@ async def test_errors_are_tool_errors():
         assert "ACA" in methodology.structuredContent["text"]
 
 
-async def test_http_endpoint_client_and_rate_limit(monkeypatch):
+async def test_http_endpoint_client_and_analysis_limits(monkeypatch):
     """Streamable HTTP at /mcp, with a real MCP client. The session manager can only start
     once per process, so this is the one HTTP test."""
+    monkeypatch.setattr(server, "_analysis_limiter", AnalysisLimiter(_limits(per_ip=1)))
     transport = ASGITransport(app=app)
-    async with mcp.session_manager.run():
-        http = httpx.AsyncClient(transport=transport, base_url="http://test")
+
+    async def call(tool: str, args: dict, headers: dict | None = None):
+        http = httpx.AsyncClient(transport=transport, base_url="http://test", headers=headers)
         async with (
             streamable_http_client("http://test/mcp", http_client=http) as (read, write, _),
             ClientSession(read, write) as session,
         ):
             await session.initialize()
-            result = await session.call_tool(
-                "analyze_roth_conversions", {"scenario": SCENARIO, "user_confirmed": True}
-            )
-            assert result.structuredContent["estimated_lifetime_tax_savings_todays_dollars"] > 0
+            return await session.call_tool(tool, args)
 
-        async with AsyncClient(transport=transport, base_url="http://test") as client:
-            monkeypatch.setattr(server, "_requests_per_ip_per_day", lambda: 0)
-            body = {"jsonrpc": "2.0", "id": 1, "method": "tools/list"}
-            response = await client.post("/mcp", json=body, headers=HEADERS)
-            assert response.status_code == 429
+    async with mcp.session_manager.run():
+        first = {**SCENARIO, "age": 47}
+        result = await call("analyze_roth_conversions", {"scenario": first, "user_confirmed": True})
+        assert result.structuredContent["estimated_lifetime_tax_savings_todays_dollars"] > 0
 
-            # The web app's own agent (AGENT_MCP_URL) skips the per-IP limit with the
-            # shared internal token, and only with the right one.
-            monkeypatch.setenv("MCP_INTERNAL_TOKEN", "s3cret")
-            wrong = {**HEADERS, server.INTERNAL_HEADER: "nope"}
-            assert (await client.post("/mcp", json=body, headers=wrong)).status_code == 429
-            internal = {**HEADERS, server.INTERNAL_HEADER: "s3cret"}
-            response = await client.post("/mcp", json=body, headers=internal)
-            assert response.status_code == 200
+        # Cached results, and tools that don't run the optimizer, don't count.
+        again = await call("analyze_roth_conversions", {"scenario": first, "user_confirmed": True})
+        assert not again.isError
+        assert not (await call("record_scenario", {"scenario": SCENARIO})).isError
+
+        # A fresh analysis over the limit gets a message and a way to keep going.
+        second = {**SCENARIO, "age": 48}
+        limited = await call(
+            "analyze_roth_conversions", {"scenario": second, "user_confirmed": True}
+        )
+        assert limited.isError
+        data = limited.structuredContent
+        assert data["limit_reached"] == "daily_limit"
+        assert "today's 1 free analyses" in data["error"]
+        assert data["resets_at"]
+        assert "/calculator?" in data["full_results_url"]
+
+        # Another address has its own allowance.
+        other = await call(
+            "analyze_roth_conversions",
+            {"scenario": second, "user_confirmed": True},
+            {"x-forwarded-for": "203.0.113.9"},
+        )
+        assert not other.isError
+
+        # The web app's own agent (AGENT_MCP_URL) skips the per-caller limits with the
+        # shared internal token, and only with the right one.
+        monkeypatch.setenv("MCP_INTERNAL_TOKEN", "s3cret")
+        third = {**SCENARIO, "age": 49}
+        args = {"scenario": third, "user_confirmed": True}
+        wrong = await call("analyze_roth_conversions", args, {server.INTERNAL_HEADER: "nope"})
+        assert wrong.isError
+        internal = await call("analyze_roth_conversions", args, {server.INTERNAL_HEADER: "s3cret"})
+        assert not internal.isError
+
+        # Signed in: the token reaches the account tools as the user.
+        monkeypatch.setenv("MCP_AUTH_ISSUER", "https://clerk.example.com")
+        monkeypatch.setattr(server.mcp_auth, "verify_access_token", lambda token: "user_9")
+        seen = []
+
+        async def list_for(user_id):
+            seen.append(user_id)
+            return []
+
+        monkeypatch.setattr(server.saved_store, "list_for", list_for)
+        listed = await call("list_saved_scenarios", {}, {"authorization": "Bearer t0ken"})
+        assert listed.structuredContent["scenarios"] == [] and seen == ["user_9"]
+
+
+async def test_compare_counts_only_fresh_runs(monkeypatch):
+    monkeypatch.setattr(server, "_analysis_limiter", AnalysisLimiter(_limits(per_ip=1)))
+    base = {**SCENARIO, "age": 50}
+    args = {"scenario": base, "changes": {"retirement_age": 62}, "label": "Retire at 62"}
+
+    async def call(caller: str | None, tool: str, arguments: dict):
+        # The caller is read in the server's task, which copies the context it starts in.
+        token = current_caller.set(caller)
+        try:
+            async with create_connected_server_and_client_session(mcp) as session:
+                return await session.call_tool(tool, arguments)
+        finally:
+            current_caller.reset(token)
+
+    limited = await call("ip:198.51.100.7", "compare_roth_scenarios", args)
+    assert limited.structuredContent["limit_reached"] == "daily_limit"
+    # With the base already computed, the what-if is the only fresh run.
+    await call(None, "analyze_roth_conversions", {"scenario": base, "user_confirmed": True})
+    compared = await call("ip:198.51.100.7", "compare_roth_scenarios", args)
+    assert not compared.isError
 
 
 async def test_tools_declare_their_views():

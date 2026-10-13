@@ -97,16 +97,6 @@ class UsageLimiter:
             self._ip_counts[ip] = self._ip_counts.get(ip, 0) + 1
             return None
 
-    def count_request(self, key: str, limit: int) -> bool:
-        """Count one request for ``key``. False when it is already at ``limit`` today."""
-        with self._lock:
-            self._roll_day()
-            used = self._ip_counts.get(key, 0)
-            if used >= limit:
-                return False
-            self._ip_counts[key] = used + 1
-            return True
-
     def record_spend(self, usd: float) -> None:
         with self._lock:
             self._roll_day()

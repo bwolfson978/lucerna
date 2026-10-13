@@ -18,6 +18,7 @@ from app.agent import demo as demo_conversation
 from app.agent.limits import estimate_cost, limiter
 from app.agent.loop import ERROR_MESSAGES, count_user_messages, run_turn
 from app.agent.model import ModelUnavailable, get_model_client
+from app.mcp.limits import client_ip
 from app.tools.draft import ScenarioDraft, current_year
 
 router = APIRouter()
@@ -33,13 +34,6 @@ class AgentRequest(BaseModel):
         description="Conversation history in Messages API format, exactly as returned in done events",
     )
     draft: ScenarioDraft = Field(default_factory=ScenarioDraft)
-
-
-def client_ip(request: Request) -> str:
-    forwarded = request.headers.get("x-forwarded-for", "")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    return request.client.host if request.client else "unknown"
 
 
 def _sse(event: dict) -> str:

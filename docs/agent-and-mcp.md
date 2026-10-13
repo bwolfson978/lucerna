@@ -90,10 +90,16 @@ Chart series the model doesn't need (yearly income, required withdrawals, conver
 | `AGENT_MESSAGES_PER_IP_PER_DAY` | `60` | Agent messages per client IP per day. |
 | `AGENT_DAILY_SPEND_USD` | `50` | Estimated model spend per day before the assistant pauses. |
 | `AGENT_CACHE_DIR` | `backend/.cache` | Where the generated demo conversation is cached. |
-| `MCP_REQUESTS_PER_IP_PER_DAY` | `300` | MCP requests per client IP per day. |
+| `MCP_ANALYSES_PER_IP_PER_DAY` | `25` | Fresh analyses (optimizer runs that aren't cached) per anonymous caller per day, keyed by client IP. Other tool calls and cached results are free. |
+| `MCP_ANALYSES_PER_USER_PER_DAY` | `100` | The same, for signed-in callers (once MCP sign-in lands). |
+| `MCP_ANONYMOUS_ANALYSES_PER_DAY` | `3000` | Fresh analyses per day across all anonymous callers. Signed-in callers don't count toward it. |
+| `MCP_MAX_CONCURRENT_ANALYSES` | `2` | Optimizer runs in progress at once from MCP tools. |
+| `MCP_ANALYSIS_QUEUE_SECONDS` | `10` | How long a run waits for a free slot before the tool answers "busy". |
+| `MCP_AUTH_ISSUER` | unset | Clerk Frontend API URL that issues MCP sign-in tokens (production: `https://clerk.rothconversionsoptimizer.com`). Unset turns MCP sign-in off: the account tools say saving isn't available and nothing else changes. |
+| `MCP_AUTH_SCOPES` | `profile email` | Scopes clients request at sign-in. |
 | `AGENT_MCP_URL` | unset | When set (e.g. `http://localhost:8000/mcp`), the web assistant reaches its tools over streamable HTTP instead of in process. The E2E suite uses it. **Production: leave it unset** (in process, no network hop). If you do set it, also set `MCP_INTERNAL_TOKEN`. |
 | `SITE_URL` | `https://rothconversionsoptimizer.com` | Website that `full_results_url` links point to. |
-| `MCP_INTERNAL_TOKEN` | unset | Shared secret the web assistant sends (`x-lucerna-internal` header) when it calls `/mcp` over HTTP, so its calls skip the per-IP MCP limit. Its users are already limited at `/api/agent`. Without it, `AGENT_MCP_URL` logs a warning and the backend's own calls use up its IP's daily allowance. |
+| `MCP_INTERNAL_TOKEN` | unset | Shared secret the web assistant sends (`x-lucerna-internal` header) when it calls `/mcp` over HTTP, so its calls skip the per-caller analysis limits. Its users are already limited at `/api/agent`. Without it, `AGENT_MCP_URL` logs a warning and the backend's own calls use up its IP's daily allowance. |
 | `AGENT_OFFLINE` | unset | `1` replaces the model with a rule-based stand-in (development and E2E only). |
 
 Limits are kept in process memory, which fits the single Railway instance. Move them to Redis or Postgres before scaling out.
@@ -141,7 +147,17 @@ Reports land in `backend/evals/results/` (git-ignored). Run the live set after a
 
 ## Connecting the MCP server
 
-The server speaks MCP over streamable HTTP at `https://<backend-host>/mcp`, with no login yet (rate-limited per IP).
+The server speaks MCP over streamable HTTP at `https://<backend-host>/mcp`. No sign-in is needed to connect or to run any analysis.
+
+**Sign-in** (`app/mcp/auth.py`) is lazy and only for the account tools: `save_scenario`, `list_saved_scenarios` and `open_saved_scenario`, which share the website's saved scenarios ("My scenarios"). Clerk's production instance is the OAuth authorization server.
+
+- A `tools/call` for an account tool without a valid token gets HTTP 401 with `WWW-Authenticate: Bearer resource_metadata=".../.well-known/oauth-protected-resource/mcp", scope="..."`, sent before the MCP SDK runs (a tool error inside a 200 never starts sign-in). Claude shows a Connect card and retries the call after sign-in. Every other request passes through.
+- `/.well-known/oauth-protected-resource[/mcp]` names the Clerk issuer; `/.well-known/oauth-authorization-server` proxies Clerk's metadata for clients written to older drafts.
+- Tokens are Clerk OAuth access tokens (JWT), checked offline for signature, issuer and expiry; `sub` is the Clerk user id, the same as on the website. A valid token on any call makes the caller `user:<id>` for the analysis limits.
+- Each tool declares ChatGPT `securitySchemes` in `_meta` (`noauth`, or `oauth2` for account tools), and an account tool called without sign-in in process returns `_meta["mcp/www_authenticate"]`.
+- Clerk dashboard (OAuth applications, Settings): publish CIMD and DCR support, and use JWT access tokens. The web assistant's toolbox hides the account tools (the website has its own save).
+
+**Limits** (`app/mcp/limits.py`): only fresh optimizer runs count, so building a scenario, brackets, methodology and re-running a cached result are free. Limits are per caller per day (UTC), with an anonymous ceiling across everyone and a cap on runs in progress. Claude's requests arrive from a pool of Anthropic addresses, so for Claude users the per-IP allowance is shared; the ceiling and the concurrency cap do most of the protecting there. A refused analysis returns a tool error with `limit_reached` (`daily_limit`, `capacity` or `busy`), `resets_at`, and a `full_results_url` so the user can run the scenario on the website instead. View buttons in the web app (`/api/mcp-apps/tools/call`) count against the browser's IP the same way.
 
 - **Claude:** add a custom connector and enter the `/mcp` URL. In a conversation, enable the connector and ask a Roth conversion question.
 - **ChatGPT:** with developer mode enabled, create a connector pointing at the same URL.
@@ -149,4 +165,4 @@ The server speaks MCP over streamable HTTP at `https://<backend-host>/mcp`, with
 
 Tools are read-only and stateless: each call carries the full scenario, and each result returns the normalized `scenario` for the next call. A typical flow is `record_scenario` until nothing is missing, confirm with the user, then `analyze_roth_conversions`, then `compare_roth_scenarios` for what-ifs. Missing required inputs come back as a tool error with a `missing_required` list so the client's model asks the user instead of guessing.
 
-Next steps: OAuth once Clerk auth lands (PR #126), per-user limits, and submission to the Claude connector directory and the ChatGPT app directory.
+Next steps: a privacy page on the website, then submission to the Claude connector directory and the ChatGPT app directory.

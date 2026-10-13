@@ -25,6 +25,8 @@ async def test_lists_server_tools_plus_show():
         assert {"record_scenario", "analyze_roth_conversions", "compare_roth_scenarios"} <= set(
             names
         )
+        # The website saves scenarios itself; account tools are for other clients.
+        assert not {"save_scenario", "list_saved_scenarios", "open_saved_scenario"} & set(names)
         for tool in toolbox.definitions:
             assert tool["input_schema"]["type"] == "object"
             assert "title" not in tool["input_schema"]

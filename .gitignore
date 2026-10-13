@@ -21,8 +21,12 @@ storybook-static/
 *.swp
 *.swo
 
-# Claude Code
-.claude/
+# Claude Code: local state stays out; .claude/skills is a symlink to .agents/skills
+.claude/*
+!.claude/skills
+
+# Before/after captures (pr-evidence skill)
+.qa-runs/
 
 # OS
 .DS_Store
