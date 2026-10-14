@@ -41,10 +41,27 @@ def decode_scenario(param: str) -> dict:
     return data
 
 
-def full_results_url(scenario: dict, result_id: str, label: str | None = None) -> str:
+def utm_params(source: str | None) -> dict[str, str]:
+    """Attribution for a link handed to a chat app (source "claude" or "chatgpt"), so
+    PostHog credits the visit to that app instead of direct traffic."""
+    return {"utm_source": source, "utm_medium": "mcp"} if source else {}
+
+
+def tagged(url: str, source: str | None) -> str:
+    """`url` with utm_params added (the website's own URLs carry no query string)."""
+    params = utm_params(source)
+    if not params:
+        return url
+    return f"{url}{'&' if '?' in url else '?'}{urlencode(params)}"
+
+
+def full_results_url(
+    scenario: dict, result_id: str, label: str | None = None, source: str | None = None
+) -> str:
     """The website's full results page for a scenario. `result` lets a host that already
     has the result open it directly; `scenario` lets anyone else recompute it."""
     params = {"view": "results", "result": result_id, "scenario": encode_scenario(scenario)}
     if label:
         params["label"] = label
+    params |= utm_params(source)
     return f"{site_url()}/calculator?{urlencode(params)}"

@@ -54,6 +54,7 @@ it("comparison data matches the tool's structuredContent", () => {
     base_result_id: structured.base_result_id,
     variant_result_id: structured.variant_result_id,
     estimated_lifetime_tax_savings: structured.estimated_lifetime_tax_savings,
+    tax_breakdown: structured.tax_breakdown,
     conversions_by_year: structured.conversions_by_year,
   });
 });
