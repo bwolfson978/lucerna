@@ -81,6 +81,7 @@ app.add_middleware(
 )
 
 
+from app.api.account import router as account_router
 from app.api.agent import router as agent_router
 from app.api.demo import router as demo_router
 from app.api.email import router as email_router
@@ -98,6 +99,7 @@ app.include_router(agent_router, prefix="/api")
 app.include_router(email_router, prefix="/api")
 app.include_router(feedback_router, prefix="/api")
 app.include_router(scenarios_router, prefix="/api")
+app.include_router(account_router, prefix="/api")
 app.include_router(tax_config_router, prefix="/api")
 app.include_router(mcp_apps_router, prefix="/api")
 app.include_router(scenario_links_router, prefix="/api")

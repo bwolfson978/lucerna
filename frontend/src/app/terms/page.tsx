@@ -64,8 +64,8 @@ export default function TermsPage() {
       <DocSection id="accounts" title="Accounts">
         <p>
           An account is optional and is used to save scenarios. You are responsible for keeping your
-          sign-in secure. You can delete saved scenarios at any time and ask us to delete your
-          account by emailing {mail}.
+          sign-in secure. You can delete saved scenarios or your whole account at any time on My
+          scenarios.
         </p>
       </DocSection>
 

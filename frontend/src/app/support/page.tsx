@@ -37,9 +37,10 @@ export default function SupportPage() {
           troubleshooting.
         </p>
         <p>
-          <strong>How do I delete my data?</strong> Delete saved scenarios on{" "}
-          <Link href="/my-scenarios">My scenarios</Link>. To delete your account and everything
-          linked to it, email {mail} from the address you signed up with.
+          <strong>How do I delete my data?</strong> On{" "}
+          <Link href="/my-scenarios">My scenarios</Link> you can delete single scenarios or your
+          whole account. To also remove analytics or feedback linked to you, email {mail} from the
+          address you signed up with.
         </p>
         <p>
           <strong>How is the analysis calculated?</strong> The{" "}

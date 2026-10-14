@@ -134,11 +134,13 @@ export default function PrivacyPage() {
         <ul>
           <li>Use the analysis without an account. Signing in is only needed to save.</li>
           <li>
-            Delete any saved scenario on <Link href="/my-scenarios">My scenarios</Link>.
+            Delete any saved scenario, or your whole account, on{" "}
+            <Link href="/my-scenarios">My scenarios</Link>. Deleting your account removes your
+            account details and every saved scenario right away.
           </li>
           <li>
-            Ask us to delete your account and everything linked to it, or for a copy of your data,
-            by emailing {mail}. We respond within 30 days.
+            Ask us to delete the usage analytics, session replays or feedback linked to you, or for
+            a copy of your data, by emailing {mail}. We respond within 30 days.
           </li>
           <li>
             Disconnect the app in Claude or ChatGPT at any time from that app&apos;s connector or

@@ -52,6 +52,18 @@ async def test_save_list_get_delete(db):
     assert await store.get("user_a", chat_id) is None
 
 
+async def test_delete_all_removes_only_that_users_scenarios(db):
+    result = {"estimated_lifetime_tax_savings": 1.0}
+    await store.save("user_a", DEMO_SCENARIO, result)
+    await store.save("user_a", DEMO_SCENARIO, result)
+    kept, _ = await store.save("user_b", DEMO_SCENARIO, result)
+
+    assert await store.delete_all("user_a") == 2
+    assert await store.list_for("user_a") == []
+    assert [row.id for row in await store.list_for("user_b")] == [kept]
+    assert await store.delete_all("user_a") == 0
+
+
 async def test_schema_upgrades_an_existing_table(db):
     # Tables created before the scenario column existed gain it on the next startup.
     async with session.get_pool().acquire() as conn:

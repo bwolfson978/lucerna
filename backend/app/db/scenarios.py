@@ -173,3 +173,11 @@ async def delete(user_id: str, scenario_id: str) -> bool:
         )
     # asyncpg returns "DELETE N"
     return result != "DELETE 0"
+
+
+async def delete_all(user_id: str) -> int:
+    """Delete every scenario the user saved (account deletion). Returns how many."""
+    pool = _pool()
+    async with pool.acquire() as conn:
+        result = await conn.execute("DELETE FROM scenarios WHERE clerk_user_id = $1", user_id)
+    return int(result.rsplit(" ", 1)[-1])
