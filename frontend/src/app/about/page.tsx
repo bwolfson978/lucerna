@@ -47,7 +47,7 @@ export default function AboutPage() {
             </p>
             <p>
               {
-                "Starting with what I assumed would be a straightforward question to answer, \"how much should I convert, and when (potentially over multiple years)?\", I went searching. Unfortunately, all I found was expensive, complicated financial tax software at one end of the spectrum and overly simplistic 'calculators' on the other."
+                "Starting with what I assumed would be a straightforward question, \"how much should I convert, and when (potentially over multiple years)?\", I went searching for answers. Unfortunately, all I found was expensive, complicated financial tax software at one end of the spectrum and overly simplistic 'calculators' on the other."
               }
             </p>
             <p>
