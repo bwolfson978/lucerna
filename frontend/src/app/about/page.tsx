@@ -62,7 +62,7 @@ export default function AboutPage() {
             </p>
             <p>
               {
-                'So, whether you\'re on a sabbatical, transitioning careers, taking time off to start a business, in the early years of retirement pre-RMDs, or in any other form of "in-between" period which puts you in lower tax brackets, the tool is meant to help explore possible scenarios, interact with them, and understand the tradeoffs more clearly, without being overwhelming or expensive to access.'
+                'So, whether you\'re on a sabbatical, transitioning careers, taking time off to start a business, in the early years of retirement pre-RMDs, or in any other form of "in-between" period which puts you in lower tax brackets, the tool is meant to help explore possible scenarios, interact with them, and understand the tradeoffs more clearly, without being overwhelming or expensive.'
               }
             </p>
             <p>
