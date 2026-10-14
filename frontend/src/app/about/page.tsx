@@ -57,17 +57,22 @@ export default function AboutPage() {
             </p>
             <p>
               {
-                "Although the v1 excel spreadsheet (built sans AI mind you!) took an embarassingly large amount of hours to complete, it drove a major financial decision for both my wife and I (albeit, after a couple rounds of sanity checking with financial professionals). After that experience, I wanted to package up the learnings into a simple, easy-to-use experience for others attempting to answer similar questions in the future, which is what led to this site."
+                "Although the v1 Excel spreadsheet (built sans AI, mind you!) took an embarrassingly large amount of hours to complete, it drove a major financial decision for both my wife and me - albeit after a couple rounds of sanity checking with financial professionals."
               }
             </p>
             <p>
               {
-                'So, whether you\'re on a sabbatical, transitioning careers, taking time off to start a business, in the early years of retirement pre-RMDs, or in any other form of "in-between" period which puts you in lower tax brackets, the tool is meant to help explore possible scenarios, interact with them, and understand the tradeoffs more clearly, without being overwhelming or expensive.'
+                "I wanted to package up those learnings into a simple, easy-to-use experience for anyone navigating similar questions, which led to building this platform."
               }
             </p>
             <p>
               {
-                "I hope you find it valuable, and I'd love to hear any feature requests and/or feedback you might have - I read every message sent through the "
+                'So, whether you\'re on a sabbatical, transitioning careers, taking time off to start a business, in the early years of retirement pre-RMDs, or in any other "in-between" period that puts you in lower tax brackets, this space is meant to help interactively explore possible scenarios and understand the tradeoffs more clearly, without being overwhelming or expensive.'
+              }
+            </p>
+            <p>
+              {
+                "I hope you find it valuable, and I'd love to hear any feature requests or feedback you might have. Rest assured, I read every message sent through the "
               }
               <Link href="/support" className="text-pine underline underline-offset-2">
                 Support
@@ -76,7 +81,7 @@ export default function AboutPage() {
               <Link href="/feedback" className="text-pine underline underline-offset-2">
                 Feedback
               </Link>
-              {" channels."}
+              {" channels!"}
             </p>
             <p>
               Cheers!
