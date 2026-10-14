@@ -539,8 +539,9 @@ def _build_year_detail(
             combined_rate_val = combined_cost_val / conversion if conversion > 0 else 0.0
             fpl = federal_poverty_level(hc.household_size)
             income_pct_fpl = ((income + conversion) / fpl) * 100
-            # The conversion is what pushes income over 400% FPL, not income alone
-            hits_cliff = income_pct_fpl > 400 and income / fpl * 100 <= 400
+            # The conversion pushes income over 400% FPL and wipes out a subsidy
+            # the household would otherwise get
+            hits_cliff = income_pct_fpl > 400 and subsidy_without > 0
 
             detail["subsidy_lost"] = round(subsidy_lost, 2)
             detail["combined_cost"] = round(combined_cost_val, 2)
