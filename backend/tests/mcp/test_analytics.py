@@ -181,8 +181,8 @@ def test_no_events_without_a_token(monkeypatch):
 
 
 async def test_posthog_mcp_analytics_sends_tool_calls_without_inputs(posthog, monkeypatch):
-    """$mcp_tool_call for PostHog's MCP Analytics: the tool and outcome, never the
-    user's numbers, and tool schemas unchanged."""
+    """$mcp_tool_call for PostHog's MCP Analytics: the tool, outcome and agent intent,
+    never the user's numbers. Only ``context`` is added to tool schemas."""
     from mcp.server.fastmcp import FastMCP
 
     monkeypatch.setattr(analytics, "_handle", None)
@@ -195,8 +195,10 @@ async def test_posthog_mcp_analytics_sends_tool_calls_without_inputs(posthog, mo
     analytics.instrument(demo, lambda: "user_123")
     async with create_connected_server_and_client_session(demo._mcp_server) as client:
         listed = await client.list_tools()
-        assert set(listed.tools[0].inputSchema["properties"]) == {"a", "b"}
-        result = await client.call_tool("add", {"a": 2, "b": 3})
+        schema = listed.tools[0].inputSchema
+        assert set(schema["properties"]) == {"a", "b", "context"}
+        assert "context" in schema["required"]
+        result = await client.call_tool("add", {"a": 2, "b": 3, "context": "Adding two numbers"})
         assert not result.isError
         await analytics.flush()
 
@@ -205,6 +207,7 @@ async def test_posthog_mcp_analytics_sends_tool_calls_without_inputs(posthog, mo
     assert calls[0]["distinct_id"] == "user_123"
     properties = calls[0]["properties"]
     assert properties["$mcp_tool_name"] == "add"
+    assert properties["$mcp_intent"] == "Adding two numbers"
     assert "$mcp_parameters" not in properties
     assert "$mcp_response" not in properties
 

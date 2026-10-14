@@ -140,9 +140,12 @@ def instrument(server: Any, signed_in_user: Callable[[], str | None]) -> None:
     """Send ``$mcp_tool_call`` for every call of ``server``'s tools. Must run before
     ``server.streamable_http_app()``. No-op without ``POSTHOG_PROJECT_TOKEN``.
 
-    Tool schemas stay as they are: the SDK's injected ``context``, ``llm_model`` and
-    ``conversation_id`` arguments are off. Signed-in callers get their Clerk user id;
-    anyone else is the SDK's per-session id, without a person profile.
+    The SDK adds a required ``context`` argument to every tool: the agent's one-line
+    reason for the call, sent as ``$mcp_intent``. Its default description forbids
+    personal details. ``llm_model`` and ``conversation_id`` are off: chat apps don't
+    know their model id, and the conversation id never reaches our results. Signed-in
+    callers get their Clerk user id; anyone else is the SDK's per-session id, without
+    a person profile.
     """
     global _handle
     posthog = error_tracking.init()
@@ -157,7 +160,7 @@ def instrument(server: Any, signed_in_user: Callable[[], str | None]) -> None:
         server,
         posthog,
         MCPAnalyticsOptions(
-            context=False,
+            context=True,
             capture_model=False,
             enable_conversation_id=False,
             identify=identify,
