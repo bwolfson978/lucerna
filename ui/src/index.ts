@@ -32,10 +32,11 @@ export {
 } from "./BracketChart";
 export { BracketFillChart, isBracketFillData, type BracketFillData } from "./BracketFillChart";
 export {
-  CompareBars,
+  PaidVsAvoided,
   ScenarioCompareCard,
   isScenarioCompareData,
   type ScenarioCompareData,
+  type TaxBreakdown,
 } from "./ScenarioCompareCard";
 export {
   FIELD_LABELS,

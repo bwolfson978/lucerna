@@ -11,6 +11,7 @@ import type { ReactNode } from "react";
 import {
   SignInButton as ClerkSignInButton,
   useAuth as useClerkAuth,
+  useClerk,
   useUser as useClerkUser,
 } from "@clerk/nextjs";
 
@@ -27,6 +28,14 @@ export const useUser: () => Pick<
 export const useAuth: () => Pick<ReturnType<typeof useClerkAuth>, "getToken"> = AUTH_ENABLED
   ? useClerkAuth
   : () => signedOutAuth;
+
+/** Signs the visitor out and returns them to the home page. A no-op without Clerk. */
+export const useSignOut: () => () => void = AUTH_ENABLED
+  ? () => {
+      const { signOut } = useClerk();
+      return () => void signOut({ redirectUrl: "/" });
+    }
+  : () => () => {};
 
 export function SignInButton({ children }: { children: ReactNode }) {
   if (!AUTH_ENABLED) return null;

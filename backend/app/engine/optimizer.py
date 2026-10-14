@@ -77,7 +77,13 @@ def _irmaa_exposed_years(scenario: ScenarioInput) -> set[int]:
 
 
 def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> float:
-    """Calculate NPV for a given multi-year conversion schedule.
+    """Calculate NPV for a given multi-year conversion schedule."""
+    return _npv_parts(scenario, yearly_conversions)[0]
+
+
+def _npv_parts(scenario: ScenarioInput, yearly_conversions: list[float]) -> tuple[float, float]:
+    """NPV of a conversion schedule, plus what the conversions cost when they happen
+    (tax, lost ACA subsidy, IRMAA) discounted the same way.
 
     Unified timeline loop: every year can have conversions, RMDs, and drawdowns.
     A post-timeline fallback handles years beyond the timeline until
@@ -91,6 +97,7 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
     trad_balance = scenario.traditional_ira_balance
     roth_balance = scenario.roth_ira_balance
     npv = 0.0
+    upfront_cost = 0.0
 
     aca_years = _aca_coverage_years(scenario)
     irmaa_exposed = _irmaa_exposed_years(scenario)
@@ -141,6 +148,7 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
             is_aca_year=is_aca_year,
         )
         npv -= conv_cost * discount_factor
+        upfront_cost += conv_cost * discount_factor
 
         # IRMAA cost (2-year lag — discounted at the surcharge year, not conversion year)
         if t in irmaa_exposed and conversion > 0:
@@ -148,6 +156,7 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
             if irmaa_cost > 0:
                 irmaa_discount = (1 + d) ** (-(t + IRMAA_LOOKBACK_YEARS))
                 npv -= irmaa_cost * irmaa_discount
+                upfront_cost += irmaa_cost * irmaa_discount
 
         # Update balances: RMD then conversion then growth
         trad_balance -= rmd
@@ -231,7 +240,7 @@ def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> f
 
     npv += roth_balance * discount_factor
 
-    return npv
+    return npv, upfront_cost
 
 
 def _objective(x: np.ndarray, scenario: ScenarioInput) -> float:
@@ -1001,7 +1010,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
             )
             total_conversion = sum(final_conversions)
 
-    npv_at_optimal = calculate_npv(scenario, final_conversions)
+    npv_at_optimal, upfront_cost = _npv_parts(scenario, final_conversions)
     npv_at_zero = calculate_npv(scenario, [0.0] * n_years)
 
     yearly_detail, yearly_bracket_fill, total_tax, aca_details = _build_year_detail(
@@ -1123,6 +1132,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         estimated_lifetime_tax_savings=round(npv_at_optimal - npv_at_zero, 2),
         npv_at_optimal=round(npv_at_optimal, 2),
         npv_at_zero=round(npv_at_zero, 2),
+        conversion_cost_today=round(upfront_cost, 2),
         yearly_detail=yearly_detail,
         yearly_bracket_fill=yearly_bracket_fill,
         scenarios=scenarios,

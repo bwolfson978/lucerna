@@ -10,6 +10,7 @@ import type {
   ResultCardData,
   ResultDetails,
   ScenarioCompareData,
+  TaxBreakdown,
   ScenarioSummaryData,
 } from "@lucerna/ui";
 import type { OptimizationResult } from "@/lib/types";
@@ -68,6 +69,12 @@ export function resultDetails(result: OptimizationResult): ResultDetails {
   return { bracket_fill: bracketFillData(result) };
 }
 
+/** Mirrors backend app/tools/core.py _tax_breakdown. */
+function taxBreakdown(result: OptimizationResult): TaxBreakdown {
+  const paid = round(result.conversion_cost_today ?? 0);
+  return { paid_now: paid, avoided_later: paid + round(result.estimated_lifetime_tax_savings) };
+}
+
 export function compareData(
   baseId: string,
   base: OptimizationResult,
@@ -91,6 +98,7 @@ export function compareData(
         variant.estimated_lifetime_tax_savings - base.estimated_lifetime_tax_savings
       ),
     },
+    tax_breakdown: { current: taxBreakdown(base), what_if: taxBreakdown(variant) },
     conversions_by_year: allYears.map((y) => ({
       year: y,
       current: round(a.get(y) ?? 0),
