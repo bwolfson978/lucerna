@@ -6,6 +6,7 @@ const FOOTER_LINKS = [
   { href: "/", label: "Home" },
   { href: "/demo", label: "Demo" },
   { href: "/methodology", label: "Methodology" },
+  { href: "/about", label: "About" },
   { href: "/calculator", label: "Run your scenario" },
   { href: "/feedback", label: "Feedback" },
   { href: "/connect", label: "Claude & ChatGPT" },

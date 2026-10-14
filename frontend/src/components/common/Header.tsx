@@ -11,6 +11,7 @@ import { Wordmark } from "@/components/common/Wordmark";
 const NAV_LINKS = [
   { href: "/demo", label: "Demo" },
   { href: "/methodology", label: "Methodology" },
+  { href: "/about", label: "About" },
 ] as const;
 
 interface HeaderProps {
