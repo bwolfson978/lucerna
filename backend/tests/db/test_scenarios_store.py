@@ -58,7 +58,9 @@ async def test_delete_all_removes_only_that_users_scenarios(db):
     await store.save("user_a", DEMO_SCENARIO, result)
     kept, _ = await store.save("user_b", DEMO_SCENARIO, result)
 
+    assert await store.count_all("user_a") == 2
     assert await store.delete_all("user_a") == 2
+    assert await store.count_all("user_a") == 0
     assert await store.list_for("user_a") == []
     assert [row.id for row in await store.list_for("user_b")] == [kept]
     assert await store.delete_all("user_a") == 0

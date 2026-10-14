@@ -21,11 +21,15 @@ async def test_deletes_every_saved_scenario(async_client, signed_in, monkeypatch
         calls.append(user_id)
         return 3
 
+    async def forget(user_id):
+        calls.append(("posthog", user_id))
+
     monkeypatch.setattr(account.store, "delete_all", delete_all)
+    monkeypatch.setattr(account.erasure, "forget_web_person", forget)
     response = await async_client.delete("/api/account")
     assert response.status_code == 200
     assert response.json() == {"deleted_scenarios": 3}
-    assert calls == ["user_a"]
+    assert calls == ["user_a", ("posthog", "user_a")]
 
 
 async def test_fails_without_a_database(async_client, signed_in, monkeypatch):

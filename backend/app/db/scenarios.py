@@ -181,3 +181,12 @@ async def delete_all(user_id: str) -> int:
     async with pool.acquire() as conn:
         result = await conn.execute("DELETE FROM scenarios WHERE clerk_user_id = $1", user_id)
     return int(result.rsplit(" ", 1)[-1])
+
+
+async def count_all(user_id: str) -> int:
+    """How many scenarios a user has saved (for a dry run before ``delete_all``)."""
+    pool = _pool()
+    async with pool.acquire() as conn:
+        return await conn.fetchval(
+            "SELECT count(*) FROM scenarios WHERE clerk_user_id = $1", user_id
+        )
