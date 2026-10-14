@@ -20,7 +20,7 @@ export default function GlobalError({
   return (
     <html lang="en">
       <body>
-        <ErrorNotice onRetry={reset} />
+        <ErrorNotice onRetry={reset} digest={error.digest} />
       </body>
     </html>
   );

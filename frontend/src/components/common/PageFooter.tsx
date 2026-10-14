@@ -7,6 +7,7 @@ const FOOTER_LINKS = [
   { href: "/demo", label: "Demo" },
   { href: "/methodology", label: "Methodology" },
   { href: "/calculator", label: "Run your scenario" },
+  { href: "/feedback", label: "Feedback" },
 ] as const;
 
 export function PageFooter() {

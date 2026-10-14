@@ -17,7 +17,7 @@ export const handlers = [
   }),
 
   http.post(`${API_BASE}/api/feedback`, async () => {
-    return HttpResponse.json({ success: true });
+    return HttpResponse.json({ success: true, id: "feedback-1" });
   }),
 
   http.get(`${API_BASE}/api/demo`, () => {

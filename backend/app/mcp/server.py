@@ -40,7 +40,7 @@ from app.mcp.limits import (
     is_signed_in,
     next_reset,
 )
-from app.tools import core
+from app.tools import core, feedback
 from app.tools.draft import ScenarioDraft, current_year
 from app.tools.links import full_results_url, site_url
 from app.tools.models import MethodologyTopic, ScenarioUpdate
@@ -63,7 +63,9 @@ interactive analysis of that scenario on the website; share it when the user wan
 detail. Users can keep scenarios in a free account: call save_scenario when they ask to \
 save one (the first call asks them to sign in), and list_saved_scenarios and \
 open_saved_scenario to pick one up later. Saving is optional: mention it at most once, \
-after an analysis, and never ask them to sign in for anything else."""
+after an analysis, and never ask them to sign in for anything else. When the user wants to \
+share feedback or says something is broken or wrong, offer send_feedback or report_problem, \
+show them what will be sent, and send it only once they agree."""
 
 UI_META_KEY = "lucerna/ui"
 RESULTS_META_KEY = "lucerna/results"
@@ -409,6 +411,138 @@ async def explain_methodology(topic: MethodologyTopic) -> CallToolResult:
             "text": core.methodology_text(topic.value),
             "shown_to_user": False,
         }
+    )
+
+
+# --------------------------------------------------------------------------
+# Feedback: open to everyone, sent to PostHog Surveys (app.tools.feedback). They write
+# to the developer's inbox, not to anything the user owns, so they aren't destructive.
+# --------------------------------------------------------------------------
+
+_FEEDBACK = ToolAnnotations(
+    readOnlyHint=False, destructiveHint=False, openWorldHint=False, idempotentHint=False
+)
+
+_CONSENT = (
+    "Only call when the user asks to send it. First show the user the exact text you'll "
+    "send and get their OK. Don't add their financial details or anything they didn't ask "
+    "to include."
+)
+
+EmailArg = Annotated[
+    str | None,
+    Field(
+        max_length=feedback.MAX_EMAIL,
+        description="The user's email, only if they want a reply and gave it to you",
+    ),
+]
+
+
+def _feedback_source(ctx: Context | None) -> str:
+    """Which app the user is in: ChatGPT, Claude, another MCP client, or (no HTTP
+    request) the website's own assistant."""
+    request = None
+    meta: dict = {}
+    if ctx is not None:
+        try:
+            request = ctx.request_context.request
+            raw = ctx.request_context.meta
+            meta = dict(getattr(raw, "model_extra", None) or {}) if raw is not None else {}
+        except (AttributeError, LookupError, ValueError):
+            pass
+    if request is None or (isinstance(request, Request) and _is_internal(request)):
+        return feedback.WEB_ASSISTANT
+    agent = request.headers.get("user-agent", "").lower() if isinstance(request, Request) else ""
+    if "openai" in agent or "chatgpt" in agent or any(k.startswith("openai/") for k in meta):
+        return feedback.CHATGPT
+    if "claude" in agent or "anthropic" in agent:
+        return feedback.CLAUDE
+    return feedback.OTHER_MCP
+
+
+def _send(ctx: Context | None, kind: feedback.FeedbackKind, message: str, **kwargs: Any):
+    user_id = _signed_in_user()
+    try:
+        feedback.submit(
+            kind,
+            message,
+            source=_feedback_source(ctx),
+            caller=current_caller.get(),
+            distinct_id=user_id,
+            **kwargs,
+        )
+    except feedback.FeedbackLimitReached:
+        return _error(
+            "Too many messages have been sent today. The user can try again tomorrow or use "
+            "the form on the website.",
+            website=site_url(),
+        )
+    except feedback.FeedbackError as err:
+        return _error(str(err))
+    note = (
+        "Sent to the developer, who may reply by email."
+        if kwargs.get("email")
+        else "Sent to the developer. No email was given, so there won't be a reply."
+    )
+    return _result({"sent": True, "note": note})
+
+
+@mcp.tool(
+    title="Send feedback",
+    annotations=_FEEDBACK,
+    meta=_NO_AUTH,
+    description=(
+        "Send the user's feedback, ideas or questions about Roth Conversions Optimizer to "
+        f"its developer. {_CONSENT}"
+    ),
+)
+async def send_feedback(
+    message: Annotated[
+        str,
+        Field(max_length=feedback.MAX_MESSAGE, description="The feedback, in the user's words"),
+    ],
+    email: EmailArg = None,
+    ctx: Context | None = None,
+) -> CallToolResult:
+    return _send(ctx, feedback.FeedbackKind.FEEDBACK, message, email=email)
+
+
+@mcp.tool(
+    title="Report a problem",
+    annotations=_FEEDBACK,
+    meta=_NO_AUTH,
+    description=(
+        "Report something broken or wrong in Roth Conversions Optimizer (an error, a result "
+        f"that looks wrong, a card that didn't show) to its developer. {_CONSENT} Include "
+        "the tool that misbehaved and what it returned when that helps."
+    ),
+)
+async def report_problem(
+    what_happened: Annotated[
+        str,
+        Field(max_length=feedback.MAX_MESSAGE, description="What went wrong"),
+    ],
+    expected: Annotated[
+        str | None,
+        Field(max_length=feedback.MAX_MESSAGE, description="What the user expected instead"),
+    ] = None,
+    results_url: Annotated[
+        str | None,
+        Field(
+            max_length=feedback.MAX_CONTEXT,
+            description="full_results_url of the analysis involved, if the user agrees",
+        ),
+    ] = None,
+    email: EmailArg = None,
+    ctx: Context | None = None,
+) -> CallToolResult:
+    return _send(
+        ctx,
+        feedback.FeedbackKind.PROBLEM,
+        what_happened,
+        expected=expected,
+        email=email,
+        context={"results_url": results_url},
     )
 
 
