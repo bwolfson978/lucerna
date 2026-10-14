@@ -290,10 +290,9 @@ export const flows = {
       }
       const encoded = Buffer.from(JSON.stringify(scenario)).toString('base64url')
       await page.goto(`/calculator?view=results&scenario=${encoded}`)
-      const savings = page.getByText('Estimated lifetime tax savings', { exact: false }).first()
-      await savings.waitFor({ timeout: 90000 })
+      const card = page.getByTestId('results-hero')
+      await card.waitFor({ timeout: 90000 })
       await page.waitForLoadState('networkidle')
-      const card = savings.locator('xpath=ancestor::div[contains(@class, "rounded")][1]')
       await card.scrollIntoViewIfNeeded()
       await shot('result', 'Result card for a single filer moving TX to OR at 58', { element: card })
     },
