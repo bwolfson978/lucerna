@@ -100,6 +100,15 @@ export const flows = {
         await page.getByRole('heading', { level: 1 }).waitFor()
         await shot(path.slice(1), caption)
       }
+      await page.goto('/privacy')
+      for (const [id, caption] of [
+        ['what-we-collect', 'Privacy: what we collect'],
+        ['claude-and-chatgpt', 'Privacy: in Claude and ChatGPT'],
+      ]) {
+        const section = page.locator(`#${id}`)
+        await section.scrollIntoViewIfNeeded()
+        await shot(`privacy-${id}`, caption, { element: section })
+      }
     },
   },
 
