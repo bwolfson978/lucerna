@@ -15,7 +15,7 @@ Paste into Claude's "Test and launch" step and ChatGPT's "Review details". The p
 >
 > Signing in is only for saving. Ask to save a scenario (for example "Save this scenario as Retire at 62 in Texas"). The first save asks you to sign in. Use reviewer@rothconversionsoptimizer.com with the password provided. Then ask "Show my saved scenarios": the new one appears first, followed by three sample scenarios already in the account ("Married · $1500K IRA · 27 yr", "Single · $450K IRA · 36 yr" and "Married · $900K IRA · 31 yr"). Ask to open one to continue from it.
 >
-> The same account works on the website: sign in at https://rothconversionsoptimizer.com/my-scenarios to see the saved scenarios there.
+> The same account works on the website: sign in at https://www.rothconversionsoptimizer.com/my-scenarios to see the saved scenarios there.
 >
 > Suggested path through all 10 tools:
 > 1. Describe a household (age, filing status, income, IRA balance, retirement age). This calls prepare_scenario and shows the scenario card.
