@@ -80,6 +80,8 @@ def resolve_states(scenario: ScenarioInput) -> ScenarioInput:
         for t, entry in enumerate(scenario.timeline)
     ]
     return scenario.model_copy(update={"timeline": timeline})
+
+
 def conversion_magi(income_with_rmd, available_for_conv, need, conversion):
     """Income before a conversion and the income the conversion adds, counting the
     traditional withdrawal that funds spending.
