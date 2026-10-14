@@ -122,7 +122,7 @@ export function FeedbackForm({
               aria-checked={selected}
               onClick={() => setKind(option.value)}
               className={cn(
-                "min-h-[40px] flex-1 rounded-full px-5 text-[14.5px] font-semibold transition-all duration-200 sm:flex-none",
+                "min-h-[40px] flex-1 whitespace-nowrap rounded-full px-3 text-[14.5px] font-semibold transition-all duration-200 sm:flex-none sm:px-5",
                 selected
                   ? "bg-pine-deep text-[#f5f2ea] shadow-[0_8px_20px_-12px_rgba(11,29,21,0.6)]"
                   : "text-text-secondary hover:text-text-primary"
