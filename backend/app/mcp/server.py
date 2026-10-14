@@ -824,6 +824,27 @@ def _register_views() -> None:
 
 _register_views()
 
+
+def _polish_tool_listings() -> None:
+    """Fill gaps the Claude directory's tool check flags in tools/list.
+
+    Pydantic writes model and enum parameters as a bare {"$ref": ...}, so the type is
+    copied from the referenced definition onto the parameter. annotations.title repeats
+    the tool's title for clients that only read annotations.
+    """
+    for tool in mcp._tool_manager.list_tools():
+        defs = tool.parameters.get("$defs", {})
+        for prop in tool.parameters.get("properties", {}).values():
+            ref = prop.get("$ref", "")
+            target = defs.get(ref.removeprefix("#/$defs/"), {})
+            if "type" not in prop and "type" in target:
+                prop["type"] = target["type"]
+        if tool.annotations is not None:
+            tool.annotations = tool.annotations.model_copy(update={"title": tool.title})
+
+
+_polish_tool_listings()
+
 # PostHog MCP Analytics: before build_route() creates the ASGI app.
 analytics.instrument(mcp, _signed_in_user)
 
