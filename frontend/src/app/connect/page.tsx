@@ -13,13 +13,13 @@ import { MCP_SERVER_URL, SUPPORT_EMAIL } from "@/lib/utils/constants";
 export const metadata: Metadata = {
   title: "Claude & ChatGPT | Roth Conversions Optimizer",
   description:
-    "Ask Claude or ChatGPT about Roth conversions and get the real math: add Roth Conversions Optimizer to your assistant, see what each tool does, and fix common problems.",
+    "Analyze Roth conversions with Claude or ChatGPT: add Roth Conversions Optimizer to your agent, see what each tool does, and fix common problems.",
 };
 
 const FEATURES = [
   [
     "The real math, not a guess",
-    "Your assistant runs the same multi-year optimizer as this site, with 2026 federal and state brackets, RMDs, IRMAA and ACA subsidies.",
+    "Your agent runs the same multi-year optimizer as this site, with 2026 federal and state brackets, RMDs, IRMAA and ACA subsidies.",
   ],
   [
     "Results right in the chat",
@@ -27,7 +27,7 @@ const FEATURES = [
   ],
   [
     "Private, no account needed",
-    "It only sees the numbers your assistant sends, never your chat history. Sign in only if you want to save scenarios.",
+    "It only sees the numbers your agent sends, never your chat history. Sign in only if you want to save scenarios.",
   ],
 ] as const;
 
@@ -101,15 +101,15 @@ export default function ConnectPage() {
           <div className="hero-wash" />
           <div className="relative mx-auto grid max-w-wide grid-cols-1 items-center gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
             <div>
-              <Reveal className="eyebrow-pine mb-5">Claude &amp; ChatGPT</Reveal>
+              <Reveal className="eyebrow-pine mb-5">For your AI agent</Reveal>
               <Reveal
                 as="h1"
                 delay={1}
-                className="display-heading mb-6 text-[clamp(2.6rem,5vw,3.9rem)]"
+                className="display-heading mb-6 text-[clamp(2.2rem,10vw,3.9rem)] lg:text-[clamp(2.6rem,5vw,3.9rem)]"
               >
-                Ask your assistant.
+                Analyze with
                 <br />
-                <em>Get the real math.</em>
+                <em>Claude or ChatGPT.</em>
               </Reveal>
               <Reveal
                 as="p"
@@ -132,10 +132,10 @@ export default function ConnectPage() {
               </Reveal>
               <Reveal delay={3} className="mt-9 flex flex-col gap-3.5 sm:flex-row sm:flex-wrap">
                 <a href="#setup" className="btn-dark">
-                  Connect your assistant
+                  Connect your agent
                 </a>
                 <a href="#try" className="btn-ghost">
-                  Things to ask
+                  Ask your agent
                 </a>
               </Reveal>
             </div>
@@ -155,7 +155,7 @@ export default function ConnectPage() {
             </SectionHeading>
             <div className="mb-8 flex max-w-[640px] flex-col gap-3">
               <p className="text-body text-text-secondary">
-                If your assistant asks for a server URL, use this one:
+                If your agent asks for a server URL, use this one:
               </p>
               <CopyField value={MCP_SERVER_URL} label="server URL" />
             </div>
@@ -234,7 +234,7 @@ export default function ConnectPage() {
             <DocSection id="troubleshooting" title="Troubleshooting">
               <ul>
                 <li>
-                  <strong>The assistant doesn&apos;t use the app.</strong> Mention Roth Conversions
+                  <strong>The agent doesn&apos;t use the app.</strong> Mention Roth Conversions
                   Optimizer by name, and check the connector is turned on for the chat.
                 </li>
                 <li>
@@ -255,9 +255,9 @@ export default function ConnectPage() {
 
             <DocSection id="privacy" title="Privacy">
               <p>
-                The app only receives the scenario values the assistant sends for each request. It
-                never reads your conversation history. See the{" "}
-                <Link href="/privacy">Privacy Policy</Link>.
+                The app only receives the scenario values the agent sends for each request. It never
+                reads your conversation history. See the <Link href="/privacy">Privacy Policy</Link>
+                .
               </p>
             </DocSection>
           </div>

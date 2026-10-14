@@ -46,7 +46,7 @@ export function DocSection({
   return (
     <section id={id} className="flex scroll-mt-24 flex-col gap-3">
       <h2 className="font-serif text-h1 text-text-primary">{title}</h2>
-      <div className="flex flex-col gap-3 text-body leading-relaxed text-text-secondary [&_a]:text-pine [&_a]:underline [&_a]:underline-offset-2 [&_li]:pl-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-semibold [&_strong]:text-text-primary [&_ul]:list-disc [&_ul]:pl-5">
+      <div className="flex flex-col gap-3 text-body leading-relaxed text-text-secondary [&_a]:break-words [&_a]:text-pine [&_a]:underline [&_a]:underline-offset-2 [&_li]:pl-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-semibold [&_strong]:text-text-primary [&_ul]:list-disc [&_ul]:pl-5">
         {children}
       </div>
     </section>
