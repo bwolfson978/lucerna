@@ -96,10 +96,10 @@ export default function TermsPage() {
 
       <DocSection id="general" title="General">
         <p>
-          These terms are governed by the laws of the United States and the state where we reside,
-          without regard to conflict of law rules. If we update these terms we&apos;ll change the
-          date at the top; continuing to use the service means you accept the update. Questions:{" "}
-          {mail}.
+          These terms are governed by the laws of the United States and the Commonwealth of
+          Massachusetts, without regard to conflict of law rules. If we update these terms
+          we&apos;ll change the date at the top; continuing to use the service means you accept the
+          update. Questions: {mail}.
         </p>
       </DocSection>
     </DocPage>
