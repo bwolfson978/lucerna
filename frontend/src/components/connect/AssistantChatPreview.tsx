@@ -1,4 +1,4 @@
-import { ResultCard, type ResultCardData } from "@lucerna/ui";
+import { ResultCard, type ResultCardData, type ResultDetails } from "@lucerna/ui";
 import { SparkleIcon } from "@/components/common/icons";
 import fixture from "../../../../shared/fixtures/view-data.json";
 
@@ -6,6 +6,8 @@ import fixture from "../../../../shared/fixtures/view-data.json";
 // View contracts and stories use), so the preview never shows invented numbers.
 const analysis = fixture.analyze_roth_conversions.structured_content;
 const result = analysis as unknown as ResultCardData;
+// The View's chart data, so the card draws the same bracket chart Claude and ChatGPT show.
+const details = fixture.analyze_roth_conversions.view_meta as ResultDetails;
 
 const brackets = [
   ...new Set(
@@ -39,7 +41,7 @@ export function AssistantChatPreview() {
         Used <span className="font-medium text-text-secondary">Roth Conversions Optimizer</span>
       </div>
 
-      <ResultCard data={result} />
+      <ResultCard data={result} details={details} />
 
       <p className="text-body-sm leading-relaxed text-text-secondary">
         Based on your inputs, the analysis spreads conversions over {result.years_with_conversions}{" "}

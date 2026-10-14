@@ -99,7 +99,7 @@ export default function ConnectPage() {
       <main className="flex flex-col">
         <section className="relative overflow-hidden px-default pb-16 pt-14 sm:px-7 lg:pb-[70px] lg:pt-24">
           <div className="hero-wash" />
-          <div className="relative mx-auto grid max-w-wide grid-cols-1 items-center gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
+          <div className="relative mx-auto grid max-w-wide grid-cols-1 items-start gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:gap-14">
             <div>
               <Reveal className="eyebrow-pine mb-5">For your AI agent</Reveal>
               <Reveal
@@ -139,7 +139,8 @@ export default function ConnectPage() {
                 </a>
               </Reveal>
             </div>
-            <Reveal delay={2}>
+            {/* min-w-0: the chart scrolls inside the card instead of widening the column */}
+            <Reveal delay={2} className="min-w-0">
               <AssistantChatPreview />
             </Reveal>
           </div>
