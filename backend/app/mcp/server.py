@@ -60,7 +60,7 @@ numbers as a table. A card button may send "Looks right. Run the numbers." (run 
 analysis) or ask to use a what-if as the scenario (call record_scenario with that \
 comparison's what_if_scenario). Results include full_results_url, a link to the full \
 interactive analysis of that scenario on the website; share it when the user wants more \
-detail. Users can keep scenarios in a free account: call save_scenario when they ask to \
+detail. Users can keep scenarios in an account: call save_scenario when they ask to \
 save one (the first call asks them to sign in), and list_saved_scenarios and \
 open_saved_scenario to pick one up later. Saving is optional: mention it at most once, \
 after an analysis, and never ask them to sign in for anything else."""
@@ -68,7 +68,10 @@ after an analysis, and never ask them to sign in for anything else."""
 UI_META_KEY = "lucerna/ui"
 RESULTS_META_KEY = "lucerna/results"
 
-_READ_ONLY = ToolAnnotations(readOnlyHint=True, openWorldHint=False, idempotentHint=True)
+# Directory reviews (ChatGPT in particular) want every hint as an explicit boolean.
+_READ_ONLY = ToolAnnotations(
+    readOnlyHint=True, destructiveHint=False, openWorldHint=False, idempotentHint=True
+)
 
 # --------------------------------------------------------------------------
 # MCP Apps (io.modelcontextprotocol/ui): this server owns its UI. Views are
@@ -209,7 +212,7 @@ _analysis_limiter = AnalysisLimiter()
 
 _LIMIT_MESSAGES = {
     "daily_limit": (
-        "This connection has used today's {limit} free analyses. The limit resets at "
+        "This connection has reached today's limit of {limit} analyses. It resets at "
         "{reset}. Until then the user can run this scenario on the website at "
         "full_results_url, which has no daily limit."
     ),
@@ -418,7 +421,9 @@ async def explain_methodology(topic: MethodologyTopic) -> CallToolResult:
 # check below covers in-process callers and gives ChatGPT its linking hint.
 # --------------------------------------------------------------------------
 
-_ACCOUNT = ToolAnnotations(readOnlyHint=True, openWorldHint=False, idempotentHint=True)
+_ACCOUNT = ToolAnnotations(
+    readOnlyHint=True, destructiveHint=False, openWorldHint=False, idempotentHint=True
+)
 _SAVE = ToolAnnotations(
     readOnlyHint=False, destructiveHint=False, openWorldHint=False, idempotentHint=False
 )

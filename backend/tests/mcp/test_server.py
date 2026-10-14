@@ -47,6 +47,11 @@ async def test_lists_tools_and_resources():
             "open_saved_scenario",
         }
         assert all(t.annotations.readOnlyHint for t in tools if t.name != "save_scenario")
+        # Directory reviews flag tools without a title or with any hint left unset.
+        for tool in tools:
+            assert tool.title, tool.name
+            hints = tool.annotations
+            assert None not in (hints.readOnlyHint, hints.destructiveHint, hints.openWorldHint)
         uris = {str(r.uri) for r in (await session.list_resources()).resources}
         assert "methodology://rmds" in uris
         resource = await session.read_resource("methodology://irmaa")
@@ -168,7 +173,7 @@ async def test_http_endpoint_client_and_analysis_limits(monkeypatch):
         assert limited.isError
         data = limited.structuredContent
         assert data["limit_reached"] == "daily_limit"
-        assert "today's 1 free analyses" in data["error"]
+        assert "today's limit of 1 analyses" in data["error"]
         assert data["resets_at"]
         assert "/calculator?" in data["full_results_url"]
 

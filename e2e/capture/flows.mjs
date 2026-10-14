@@ -59,6 +59,34 @@ export const flows = {
     },
   },
 
+  'policy-pages': {
+    title: 'Footer links and policy pages',
+    paths: [
+      'frontend/src/app/privacy/',
+      'frontend/src/app/terms/',
+      'frontend/src/app/support/',
+      'frontend/src/app/connect/',
+      'frontend/src/components/legal/',
+      'frontend/src/components/common/PageFooter',
+    ],
+    async run(page, shot) {
+      await page.goto('/methodology')
+      const footer = page.locator('footer').last()
+      await footer.scrollIntoViewIfNeeded()
+      await shot('footer', 'Site footer', { element: footer })
+      for (const [path, caption] of [
+        ['/privacy', 'Privacy Policy'],
+        ['/terms', 'Terms of Service'],
+        ['/support', 'Support'],
+        ['/connect', 'Use it in Claude or ChatGPT'],
+      ]) {
+        await page.goto(path)
+        await page.getByRole('heading', { level: 1 }).waitFor()
+        await shot(path.slice(1), caption)
+      }
+    },
+  },
+
   'signed-out-links': {
     title: 'Saved-scenario links while signed out',
     paths: ['frontend/src/app/my-scenarios/', 'frontend/src/components/common/SignInRequired'],
