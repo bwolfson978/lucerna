@@ -300,6 +300,9 @@ class OptimizationResult(BaseModel):
     estimated_lifetime_tax_savings: float  # vs. no conversion
     npv_at_optimal: float
     npv_at_zero: float
+    # Discounted tax, lost ACA subsidy and IRMAA paid because of the conversions.
+    # Savings plus this is what the conversions avoid later, in today's dollars.
+    conversion_cost_today: float = 0.0
 
     # Per-year detail
     yearly_detail: list[

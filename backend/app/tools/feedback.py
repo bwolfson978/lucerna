@@ -80,12 +80,10 @@ QUESTIONS = {
     "email": "Email, if you'd like a reply",
 }
 
-# Where a submission came from, stored as the event's ``source`` property.
+# Where a submission came from, stored as the event's ``source`` property: the website
+# form, or the MCP client that called the tool (``app.mcp.analytics``: "claude",
+# "chatgpt", "lucerna_web" for the website's assistant, "other").
 WEB = "web"
-WEB_ASSISTANT = "web_assistant"
-CHATGPT = "chatgpt"
-CLAUDE = "claude"
-OTHER_MCP = "mcp_other"
 
 
 class FeedbackError(ValueError):

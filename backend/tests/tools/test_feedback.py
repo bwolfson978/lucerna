@@ -29,7 +29,7 @@ def test_problem_report_fills_the_survey(posthog):
     feedback.submit(
         FeedbackKind.PROBLEM,
         "  The chart is blank  ",
-        source=feedback.CLAUDE,
+        source="claude",
         caller="ip:1.2.3.4",
         expected="A chart",
         email="a@b.co",

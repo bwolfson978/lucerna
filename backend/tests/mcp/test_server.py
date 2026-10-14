@@ -112,6 +112,12 @@ async def test_ui_payloads_on_request():
         ]
 
 
+def _survey_sent(posthog) -> dict:
+    """kwargs of the last feedback event (tool calls also send mcp_tool_called)."""
+    calls = [c for c in posthog.capture.call_args_list if c.args[0] == "survey sent"]
+    return calls[-1].kwargs
+
+
 async def test_feedback_from_the_web_assistant(monkeypatch):
     posthog = MagicMock()
     monkeypatch.setattr(error_tracking, "_client", posthog)
@@ -120,8 +126,7 @@ async def test_feedback_from_the_web_assistant(monkeypatch):
         sent = await session.call_tool("send_feedback", {"message": "Very clear"})
         assert sent.structuredContent["sent"] is True
         assert "won't be a reply" in sent.structuredContent["note"]
-        _, kwargs = posthog.capture.call_args
-        assert kwargs["properties"]["source"] == "web_assistant"
+        assert _survey_sent(posthog)["properties"]["source"] == "lucerna_web"
         empty = await session.call_tool("send_feedback", {"message": " "})
         assert empty.isError
     feedback.limiter.reset()
@@ -234,7 +239,7 @@ async def test_http_endpoint_client_and_analysis_limits(monkeypatch):
         claude = {"user-agent": "Claude-User"}
         sent = await call("report_problem", report, claude)
         assert sent.structuredContent["sent"] is True
-        _, kwargs = posthog.capture.call_args
+        kwargs = _survey_sent(posthog)
         assert kwargs["properties"]["source"] == "claude"
         assert kwargs["distinct_id"].startswith("feedback-anon:")
         assert (await call("report_problem", report, claude)).isError
@@ -244,7 +249,7 @@ async def test_http_endpoint_client_and_analysis_limits(monkeypatch):
             {"authorization": "Bearer t0ken", "user-agent": "openai-mcp/1.0"},
         )
         assert "may reply" in signed_in.structuredContent["note"]
-        _, kwargs = posthog.capture.call_args
+        kwargs = _survey_sent(posthog)
         assert kwargs["distinct_id"] == "user_9"
         assert kwargs["properties"]["source"] == "chatgpt"
 

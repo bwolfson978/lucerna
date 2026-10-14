@@ -207,6 +207,8 @@ export interface OptimizationResult {
   estimated_lifetime_tax_savings: number;
   npv_at_optimal: number;
   npv_at_zero: number;
+  /** Discounted tax, lost ACA subsidy and IRMAA the conversions cost. */
+  conversion_cost_today?: number;
   yearly_detail: YearlyDetail[];
   yearly_bracket_fill: BracketFillResult[][];
   scenarios: ScenarioComparison[];

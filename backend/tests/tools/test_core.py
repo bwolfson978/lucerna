@@ -149,6 +149,13 @@ def test_compare_results():
     )
     assert comparison["base_result_id"] != comparison["variant_result_id"]
     assert "difference" in comparison["estimated_lifetime_tax_savings"]
+    for side, result in (("current", base), ("what_if", variant)):
+        breakdown = comparison["tax_breakdown"][side]
+        assert breakdown["paid_now"] > 0
+        # The two bars net to the headline savings.
+        assert breakdown["avoided_later"] - breakdown["paid_now"] == round(
+            result.estimated_lifetime_tax_savings
+        )
 
 
 def test_reference_data():
