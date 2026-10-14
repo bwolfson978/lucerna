@@ -7,7 +7,6 @@ from app.engine.constants import (
     LARGE_INCOME_VARIATION,
     LONG_RETIREMENT_YEARS,
     LOW_GROWTH_RATE,
-    RETIREMENT_SPENDING_RATE,
     ROUNDING_RESOLUTION,
 )
 from app.engine.irmaa import IRMAA_LOOKBACK_YEARS, IRMAA_TIERS, MEDICARE_START_AGE
@@ -36,6 +35,7 @@ def generate_reasoning_trace(
     npv_curve: list[NPVCurvePoint],
     aca_details: list[AcaSubsidyDetail] | None = None,
     lifetime_savings: float | None = None,
+    conversion_cost_today: float | None = None,
 ) -> ReasoningTrace:
     """Generate a structured reasoning trace for the AI explanation layer.
 
@@ -45,6 +45,8 @@ def generate_reasoning_trace(
     ``lifetime_savings`` is the plan's headline savings (NPV of the schedule
     minus NPV of not converting). Pass it so the summary quotes the same number
     as the headline; ``npv_curve`` only tests year-one conversions.
+    ``conversion_cost_today`` is what the conversions cost when they happen, in
+    today's dollars, so tax paid and tax avoided add up to the savings.
     """
     n_years = len(optimal_conversions)
 
@@ -83,7 +85,9 @@ def generate_reasoning_trace(
 
     # Cost/benefit of brackets
     cost_of_next = _cost_of_next_bracket(scenario, optimal_conversions, bases)
-    benefit_of_current = _benefit_of_current_bracket(scenario, optimal_conversions, bases)
+    benefit_of_current = _benefit_of_current_bracket(
+        scenario, optimal_conversions, marginal_benefit, conversion_cost_today, bases
+    )
 
     # Sensitivity notes
     sensitivity_notes = _build_sensitivity_notes(scenario, optimal_conversions, bases)
@@ -125,7 +129,8 @@ def _find_binding_constraint(
     """
     remaining = _traditional_left_after_conversions(scenario, conversions)
     if remaining < scenario.traditional_ira_balance * FULLY_CONVERTED_SHARE:
-        return "Traditional IRA balance fully converted"
+        last = max(t for t, c in enumerate(conversions) if c > 0)
+        return f"Converts nearly all of the traditional balance by {scenario.timeline[last].year}"
 
     reasons = []
     for t, fills in enumerate(bracket_fill):
@@ -218,13 +223,8 @@ def _cost_of_next_bracket(
         state=yr_state,
         custom_state_rate=scenario.custom_state_rate,
     )
-    rate = combined_marginal_rate(
-        income,
-        conversion + extra,
-        scenario.filing_status,
-        state=yr_state,
-        custom_state_rate=scenario.custom_state_rate,
-    )
+    # The extra $1,000 can straddle a bracket edge, so the rate is its blended cost
+    rate = extra_cost / extra
 
     return {
         "bracket_rate": rate,
@@ -236,9 +236,17 @@ def _cost_of_next_bracket(
 def _benefit_of_current_bracket(
     scenario: ScenarioInput,
     conversions: list[float],
+    lifetime_savings: float,
+    conversion_cost_today: float | None,
     bases: list[float] | None = None,
 ) -> dict:
-    """What benefit does the current conversion provide (federal + state)?"""
+    """What the conversions cost now and avoid later, in today's dollars.
+
+    ``bracket_rate`` is the average federal + state rate on the conversions.
+    ``tax_paid`` is the tax, lost ACA subsidy and IRMAA the conversions cause,
+    discounted to today, and ``future_tax_avoided`` is that plus the savings, so
+    avoided minus paid is the headline savings.
+    """
     total_tax_paid = 0.0
     for t in range(len(conversions)):
         income = bases[t] if bases else scenario.timeline[t].gross_income
@@ -253,20 +261,12 @@ def _benefit_of_current_bracket(
 
     total_conversion = sum(conversions)
     avg_rate = total_tax_paid / total_conversion if total_conversion > 0 else 0.0
-
-    # Estimate future tax avoided (rough: retirement rate * conversion * growth)
-    years_to_retire = max(0, scenario.drawdown_start_age - scenario.age)
-    future_value = total_conversion * (1 + scenario.annual_growth_rate) ** years_to_retire
-    retirement_rate = get_marginal_rate(
-        scenario.default_drawdown or future_value * RETIREMENT_SPENDING_RATE,
-        scenario.filing_status,
-    )
-    future_tax_avoided = future_value * retirement_rate
+    paid_now = total_tax_paid if conversion_cost_today is None else conversion_cost_today
 
     return {
         "bracket_rate": round(avg_rate, 4),
-        "tax_paid": round(total_tax_paid, 2),
-        "future_tax_avoided": round(future_tax_avoided, 2),
+        "tax_paid": round(paid_now, 2),
+        "future_tax_avoided": round(paid_now + lifetime_savings, 2),
     }
 
 
@@ -371,22 +371,23 @@ def _build_aca_summary(
 ) -> dict:
     """Build a human-readable summary of the ACA subsidy impact."""
     total_subsidy_lost = sum(d.subsidy_lost for d in aca_details)
-    total_federal_tax = sum(d.federal_tax_cost for d in aca_details)
+    # federal_tax_cost on each year holds federal + state tax on the conversion
+    total_tax = sum(d.federal_tax_cost for d in aca_details)
     total_combined = sum(d.combined_cost for d in aca_details)
-    total_conversion = sum(conversions)
+    # Only marketplace years are in aca_details, so the rate divides by their conversions
+    marketplace_conversion = sum(
+        d.magi_with_conversion - d.magi_without_conversion for d in aca_details
+    )
 
     years_with_loss = [d for d in aca_details if d.subsidy_lost > 0]
     years_hitting_cliff = [d for d in aca_details if d.hits_cliff]
 
-    # Find the year with the highest combined marginal rate
-    worst_year = max(aca_details, key=lambda d: d.combined_marginal_rate) if aca_details else None
-
     summary: dict = {
         "total_subsidy_lost": round(total_subsidy_lost, 2),
-        "total_federal_tax": round(total_federal_tax, 2),
+        "tax_on_conversions_in_marketplace_years": round(total_tax, 2),
         "total_combined_cost": round(total_combined, 2),
-        "effective_combined_rate": round(total_combined / total_conversion, 4)
-        if total_conversion > 0
+        "effective_combined_rate": round(total_combined / marketplace_conversion, 4)
+        if marketplace_conversion > 0
         else 0.0,
         "years_with_subsidy_loss": len(years_with_loss),
         "years_hitting_cliff": len(years_hitting_cliff),
@@ -395,8 +396,9 @@ def _build_aca_summary(
     # Plain-English explanation for the AI layer
     if total_subsidy_lost == 0:
         summary["explanation"] = (
-            "The recommended conversions do not affect your ACA marketplace subsidy. "
-            "Your income with conversions stays within a range where the subsidy remains unchanged."
+            "The recommended conversions do not reduce your ACA marketplace subsidy. In each "
+            "marketplace year your income either stays where the subsidy is unchanged or is "
+            "already above 400% of the federal poverty level without converting."
         )
     elif years_hitting_cliff:
         cliff_years = ", ".join(str(d.year) for d in years_hitting_cliff)
@@ -409,14 +411,16 @@ def _build_aca_summary(
         summary["explanation"] = (
             f"The recommended conversions reduce your ACA subsidy by "
             f"${total_subsidy_lost:,.0f} total across {len(years_with_loss)} year(s). "
-            f"This subsidy loss is factored into the optimization — the recommended "
+            f"This subsidy loss is factored into the optimization, and the recommended "
             f"conversion amounts already balance tax savings against subsidy cost."
         )
 
-    if worst_year and worst_year.combined_marginal_rate > 0:
+    # Only name a worst year when subsidy is actually lost; otherwise it is just tax
+    worst_year = max(years_with_loss, key=lambda d: d.combined_marginal_rate, default=None)
+    if worst_year:
         summary["worst_year_note"] = (
             f"In {worst_year.year}, each dollar converted has a combined cost of "
-            f"{worst_year.combined_marginal_rate:.0%} (federal tax + subsidy reduction)"
+            f"{worst_year.combined_marginal_rate:.0%} (tax + subsidy reduction)"
         )
 
     return summary

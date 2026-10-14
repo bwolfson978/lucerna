@@ -824,6 +824,9 @@ def _register_views() -> None:
 
 _register_views()
 
+# PostHog MCP Analytics: before build_route() creates the ASGI app.
+analytics.instrument(mcp, _signed_in_user)
+
 
 # --------------------------------------------------------------------------
 # ASGI app: who is calling, and the sign-in gate for account tools

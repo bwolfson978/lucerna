@@ -1,3 +1,4 @@
+import posthog from "posthog-js";
 import type { ScenarioDraft } from "@/lib/scenario/draft";
 import type { AgentEvent, DemoConversation } from "./types";
 
@@ -7,6 +8,23 @@ export interface AgentRequest {
   message: string;
   messages: unknown[];
   draft: ScenarioDraft;
+}
+
+/**
+ * The visitor's PostHog ids, so the API's AI analytics for this message land on the
+ * same person and session replay. Empty when PostHog isn't running.
+ */
+function posthogHeaders(): Record<string, string> {
+  try {
+    const headers: Record<string, string> = {};
+    const distinctId = posthog.get_distinct_id?.();
+    const sessionId = posthog.get_session_id?.();
+    if (distinctId) headers["X-POSTHOG-DISTINCT-ID"] = distinctId;
+    if (sessionId) headers["X-POSTHOG-SESSION-ID"] = sessionId;
+    return headers;
+  } catch {
+    return {};
+  }
 }
 
 /** Split a server-sent event buffer into complete events and the unfinished remainder. */
@@ -47,7 +65,11 @@ export async function streamAgent(
   try {
     const res = await fetch(`${API_BASE}/api/agent`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "text/event-stream" },
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+        ...posthogHeaders(),
+      },
       body: JSON.stringify(body),
       signal,
     });

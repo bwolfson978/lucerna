@@ -182,7 +182,7 @@ class TestBindingConstraint:
         conversions = [50_000.0, 53_500.0]
         fills = [analyze_bracket_fill(20000, c, FilingStatus.SINGLE) for c in conversions]
         label = _find_binding_constraint(scenario, conversions, fills)
-        assert label == "Traditional IRA balance fully converted"
+        assert label == "Converts nearly all of the traditional balance by 2027"
 
     def test_rounding_spill_counts_as_top_of_lower_bracket(self):
         # A conversion rounded to $100 can land a few dollars into the next bracket.
@@ -207,3 +207,60 @@ class TestCostOfNextBracket:
         cost = _cost_of_next_bracket(scenario, conversions)
         assert cost["additional_tax"] == pytest.approx(240, abs=1)
         assert cost["net_effect"].startswith("Converting $1,000 more in 2026 would cost $240")
+
+    def test_rate_is_blended_when_the_extra_straddles_a_bracket_edge(self):
+        # MFJ 24% bracket ends at $403,550 taxable; put $650 of the extra $1,000 below it
+        edge = BRACKETS[FilingStatus.MFJ][3]["max"] + STANDARD_DEDUCTION[FilingStatus.MFJ]
+        scenario = ScenarioInput(
+            age=58,
+            filing_status=FilingStatus.MFJ,
+            timeline=[PlanYear(year=2026, gross_income=140_000)],
+            traditional_ira_balance=1_000_000,
+        )
+        cost = _cost_of_next_bracket(scenario, [edge - 140_000 - 650])
+        assert cost["additional_tax"] == pytest.approx(650 * 0.24 + 350 * 0.32, abs=1)
+        assert cost["bracket_rate"] == pytest.approx(cost["additional_tax"] / 1000)
+
+
+class TestEngineNumbersAddUp:
+    def test_tax_paid_and_avoided_differ_by_the_savings(self):
+        scenario = ScenarioInput(
+            age=60,
+            filing_status=FilingStatus.MFJ,
+            timeline=[PlanYear(year=2026 + t, gross_income=40_000) for t in range(31)],
+            traditional_ira_balance=900_000,
+            drawdown_start_age=60,
+        )
+        result = optimize(scenario)
+        benefit = result.reasoning_trace.benefit_of_current_bracket
+        assert benefit["tax_paid"] == pytest.approx(result.conversion_cost_today, abs=1)
+        assert benefit["future_tax_avoided"] - benefit["tax_paid"] == pytest.approx(
+            result.estimated_lifetime_tax_savings, abs=1
+        )
+
+
+class TestAcaSummary:
+    def test_income_already_over_the_cliff_is_not_a_cliff_year(self):
+        from app.engine.types import HealthcareInput
+
+        scenario = ScenarioInput(
+            age=58,
+            filing_status=FilingStatus.MFJ,
+            timeline=[
+                *(PlanYear(year=2026 + t, gross_income=140_000) for t in range(2)),
+                *(PlanYear(year=2028 + t, gross_income=20_000) for t in range(30)),
+            ],
+            traditional_ira_balance=1_000_000,
+            drawdown_start_age=60,
+            default_drawdown=40_000,
+            # Marketplace coverage named explicitly, so the high-wage years are ACA years
+            healthcare=HealthcareInput(household_size=2, aca_coverage_years=list(range(2026, 2033))),
+        )
+        result = optimize(scenario)
+        by_year = {d.year: d for d in result.aca_subsidy_impact}
+        assert not by_year[2026].hits_cliff
+        assert not by_year[2027].hits_cliff
+        summary = result.reasoning_trace.aca_summary
+        assert summary["years_hitting_cliff"] == sum(d.hits_cliff for d in by_year.values())
+        if summary["total_subsidy_lost"] == 0:
+            assert "worst_year_note" not in summary

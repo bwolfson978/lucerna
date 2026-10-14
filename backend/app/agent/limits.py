@@ -52,8 +52,12 @@ class LimitConfig:
         )
 
 
+def prices_per_mtok(model: str) -> dict[str, float]:
+    return _PRICES_PER_MTOK.get(model, _FALLBACK_PRICE)
+
+
 def estimate_cost(model: str, usage: object) -> float:
-    price = _PRICES_PER_MTOK.get(model, _FALLBACK_PRICE)
+    price = prices_per_mtok(model)
 
     def tokens(name: str) -> int:
         value = getattr(usage, name, None)

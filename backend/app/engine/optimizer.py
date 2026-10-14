@@ -26,6 +26,7 @@ from app.engine.retirement import (
     draw_beyond_rmd,
     post_timeline_start,
     resolve_drawdowns,
+    resolve_states,
     withdrawal_tax,
 )
 from app.engine.rmd import calculate_rmd, rmd_start_age
@@ -531,7 +532,9 @@ def _build_year_detail(
             combined_rate_val = combined_cost_val / conversion if conversion > 0 else 0.0
             fpl = federal_poverty_level(hc.household_size)
             income_pct_fpl = ((base + added) / fpl) * 100
-            hits_cliff = income_pct_fpl > 400
+            # The conversion pushes income over 400% FPL and wipes out a subsidy
+            # the household would otherwise get
+            hits_cliff = income_pct_fpl > 400 and subsidy_without > 0
 
             detail["subsidy_lost"] = round(subsidy_lost, 2)
             detail["combined_cost"] = round(combined_cost_val, 2)
@@ -955,7 +958,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
     from app.engine.dp import dp_optimize
 
     original = scenario
-    scenario = resolve_drawdowns(scenario)
+    scenario = resolve_states(resolve_drawdowns(scenario))
     n_years = len(scenario.timeline)
     max_balance = scenario.traditional_ira_balance
 
@@ -1087,6 +1090,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         npv_curve,
         aca_details=aca_details,
         lifetime_savings=npv_at_optimal - npv_at_zero,
+        conversion_cost_today=upfront_cost,
     )
 
     result_unconstrained_npv = None

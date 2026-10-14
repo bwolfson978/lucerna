@@ -18,6 +18,7 @@ from app.agent import demo as demo_conversation
 from app.agent.limits import estimate_cost, limiter
 from app.agent.loop import ERROR_MESSAGES, count_user_messages, run_turn
 from app.agent.model import ModelUnavailable, get_model_client
+from app.agent.observability import TurnTrace
 from app.mcp.limits import client_ip
 from app.tools.draft import ScenarioDraft, current_year
 
@@ -70,6 +71,8 @@ async def agent(body: AgentRequest, request: Request):
     def on_usage(model: str, usage: dict) -> None:
         limiter.record_spend(estimate_cost(model, usage))
 
+    trace = TurnTrace.from_request(request)
+
     async def events() -> AsyncIterator[str]:
         async for event in run_turn(
             client=client,
@@ -78,6 +81,7 @@ async def agent(body: AgentRequest, request: Request):
             draft=body.draft,
             start_year=current_year(),
             on_usage=on_usage,
+            trace=trace,
         ):
             yield _sse(event)
 
