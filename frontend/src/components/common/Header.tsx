@@ -6,7 +6,11 @@ import { usePathname } from "next/navigation";
 import { useSignOut, useUser } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { HowItWorksButton } from "@/components/methodology/HowItWorksButton";
+import { SparkleIcon } from "@/components/common/icons";
 import { Wordmark } from "@/components/common/Wordmark";
+
+/** First in the nav so people find they can use the tool from their own AI assistant. */
+const ASSISTANT_LINK = { href: "/connect", label: "Claude & ChatGPT" } as const;
 
 const NAV_LINKS = [
   { href: "/demo", label: "Demo" },
@@ -39,8 +43,19 @@ export function Header({ isSignedIn: signedInOverride }: HeaderProps = {}) {
         <div className="mx-auto flex h-[68px] w-full max-w-wide items-center justify-between gap-4">
           <Wordmark />
 
-          {/* Desktop nav */}
-          <nav className="hidden items-center gap-8 sm:flex" aria-label="Main">
+          {/* Desktop nav: from lg, where the wordmark and every link fit on one line */}
+          <nav className="hidden items-center gap-8 lg:flex" aria-label="Main">
+            <Link
+              href={ASSISTANT_LINK.href}
+              aria-current={pathname === ASSISTANT_LINK.href ? "page" : undefined}
+              className={cn(
+                "inline-flex items-center gap-1.5 text-[15px] font-medium transition-colors duration-200 hover:text-text-primary",
+                pathname === ASSISTANT_LINK.href ? "text-pine" : "text-text-secondary"
+              )}
+            >
+              <SparkleIcon size={12} className="text-pine-mid" />
+              {ASSISTANT_LINK.label}
+            </Link>
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
@@ -85,7 +100,7 @@ export function Header({ isSignedIn: signedInOverride }: HeaderProps = {}) {
           </nav>
 
           {/* Mobile controls */}
-          <div className="flex items-center gap-2 sm:hidden">
+          <div className="flex items-center gap-2 lg:hidden">
             <HowItWorksButton />
             <button
               type="button"
@@ -126,9 +141,17 @@ export function Header({ isSignedIn: signedInOverride }: HeaderProps = {}) {
         {/* Mobile dropdown menu — absolute so it overlays content instead of pushing it down */}
         {mobileMenuOpen && (
           <nav
-            className="absolute left-0 right-0 top-full z-50 flex flex-col gap-1 border-b border-border bg-paper px-default py-3 shadow-elevated sm:hidden"
+            className="absolute left-0 right-0 top-full z-50 flex flex-col gap-1 border-b border-border bg-paper px-default py-3 shadow-elevated lg:hidden"
             aria-label="Mobile"
           >
+            <Link
+              href={ASSISTANT_LINK.href}
+              onClick={() => handleNavClick(ASSISTANT_LINK.href)}
+              className="-mx-2 flex items-center gap-2 rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-200 hover:bg-paper-warm hover:text-pine"
+            >
+              <SparkleIcon size={13} className="text-pine-mid" />
+              {ASSISTANT_LINK.label}
+            </Link>
             {[{ href: "/", label: "Home" }, ...NAV_LINKS].map((link) => (
               <Link
                 key={link.href}
@@ -170,7 +193,7 @@ export function Header({ isSignedIn: signedInOverride }: HeaderProps = {}) {
       {/* Scrim — covers page content behind the mobile menu, closes on tap */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 z-[39] bg-ink/20 backdrop-blur-[2px] sm:hidden"
+          className="fixed inset-0 z-[39] bg-ink/20 backdrop-blur-[2px] lg:hidden"
           onClick={() => setMobileMenuOpen(false)}
           aria-hidden="true"
         />

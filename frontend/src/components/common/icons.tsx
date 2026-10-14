@@ -51,3 +51,19 @@ export function ChevronDownIcon({ className, size = 12 }: IconProps) {
     </svg>
   );
 }
+
+/** Four-point sparkle, filled. Marks the Claude and ChatGPT entry points. */
+export function SparkleIcon({ className, size = 12 }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="currentColor"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M8 0c.5 4.2 2.8 6.6 8 8-5.2 1.4-7.5 3.8-8 8-.5-4.2-2.8-6.6-8-8 5.2-1.4 7.5-3.8 8-8z" />
+    </svg>
+  );
+}
