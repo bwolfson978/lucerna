@@ -67,7 +67,7 @@ export default function AboutPage() {
             </p>
             <p>
               {
-                "I hope you find it valuable in some way, and I'd love to hear any feature requests and/or feedback you might have - I read every message sent through the "
+                "I hope you find it valuable, and I'd love to hear any feature requests and/or feedback you might have - I read every message sent through the "
               }
               <Link href="/support" className="text-pine underline underline-offset-2">
                 Support
