@@ -5,9 +5,11 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { TaxConfigProvider } from "@/lib/tax/TaxConfigProvider";
 import { PostHogIdentifier } from "@/components/providers/PostHogIdentifier";
+import { SITE_URL } from "@/lib/utils/constants";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "Roth Conversions Optimizer | Model. Optimize. Convert.",
   description:
     "Roth conversion planning. Find the low-tax window before required minimum distributions begin and build a year-by-year conversion schedule.",

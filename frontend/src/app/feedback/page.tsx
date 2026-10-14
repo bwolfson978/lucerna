@@ -4,6 +4,7 @@ import { PageFooter } from "@/components/common/PageFooter";
 import { FeedbackPageForm } from "./FeedbackPageForm";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/feedback" },
   title: "Feedback | Roth Conversions Optimizer",
   description: "Share feedback or report a problem with Roth Conversions Optimizer.",
 };

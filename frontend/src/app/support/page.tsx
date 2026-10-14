@@ -4,6 +4,7 @@ import { DocPage, DocSection } from "@/components/legal/DocPage";
 import { SUPPORT_EMAIL } from "@/lib/utils/constants";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/support" },
   title: "Support | Roth Conversions Optimizer",
   description: "Get help with Roth Conversions Optimizer on the website, in Claude or in ChatGPT.",
 };

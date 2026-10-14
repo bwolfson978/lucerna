@@ -38,6 +38,9 @@ export const dataFontStyle = {
   fontVariantNumeric: "tabular-nums",
 } as const;
 
+// Canonical origin for SEO metadata, robots.txt and the sitemap. The bare domain redirects here.
+export const SITE_URL = "https://www.rothconversionsoptimizer.com";
+
 // Contact for users, reviewers and security reports (privacy, terms, support pages).
 export const SUPPORT_EMAIL = "support@rothconversionsoptimizer.com";
 
