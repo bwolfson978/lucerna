@@ -203,6 +203,39 @@ export const flows = {
     },
   },
 
+  'aca-card': {
+    title: 'ACA subsidy card in full results',
+    paths: ['frontend/src/components/results/AcaSubsidyImpact', 'backend/app/engine/trace.py'],
+    async run(page, shot) {
+      // Retiring at 62 from California to Nevada, on the marketplace until 65
+      const scenario = {
+        age: 58,
+        filing_status: 'married_filing_jointly',
+        current_income: 140000,
+        traditional_balance: 1270000,
+        retirement_age: 62,
+        retirement_spending: 95000,
+        state: 'CA',
+        retirement_state: 'NV',
+        include_aca: true,
+        household_size: 2,
+        income_sources: [
+          { kind: 'pension', amount: 30000, start_age: 65 },
+          { kind: 'social_security', amount: 36000, start_age: 67 },
+          { kind: 'social_security', owner: 'spouse', amount: 30000, start_age: 70 },
+        ],
+      }
+      const encoded = Buffer.from(JSON.stringify(scenario)).toString('base64url')
+      await page.goto(`/calculator?view=results&scenario=${encoded}`)
+      const heading = page.getByRole('heading', { name: 'ACA marketplace subsidy impact' })
+      await heading.waitFor({ timeout: 90000 })
+      await page.waitForLoadState('networkidle')
+      const card = heading.locator('xpath=../..')
+      await card.scrollIntoViewIfNeeded()
+      await shot('aca-card', 'ACA subsidy card for a CA to NV household retiring at 62', { element: card })
+    },
+  },
+
   conversation: {
     title: 'Conversation to a result',
     paths: [

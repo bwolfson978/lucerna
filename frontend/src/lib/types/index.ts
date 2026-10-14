@@ -138,7 +138,7 @@ export interface ReasoningTrace {
   aca_impact?: AcaSubsidyDetail[] | null;
   aca_summary?: {
     total_subsidy_lost: number;
-    total_federal_tax: number;
+    tax_on_conversions_in_marketplace_years: number;
     total_combined_cost: number;
     effective_combined_rate: number;
     years_with_subsidy_loss: number;

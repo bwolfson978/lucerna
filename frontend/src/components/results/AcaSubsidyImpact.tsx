@@ -67,7 +67,7 @@ export function AcaSubsidyImpact({ result }: AcaSubsidyImpactProps) {
         <Stat
           label="True cost"
           value={formatCurrency(acaSummary.total_combined_cost)}
-          note="federal tax + subsidy lost"
+          note="tax + subsidy lost"
         />
         <Stat
           label="Combined rate"

@@ -440,7 +440,7 @@
         }
       ],
       "reasoning": {
-        "binding_constraint": "Traditional IRA balance fully converted",
+        "binding_constraint": "Converts nearly all of the traditional balance by 2054",
         "marginal_tax_rate_at_optimal": 0.1232,
         "cost_of_next_bracket": {
           "bracket_rate": 0.2,
@@ -449,8 +449,8 @@
         },
         "benefit_of_current_bracket": {
           "bracket_rate": 0.0482,
-          "tax_paid": 32584.72,
-          "future_tax_avoided": 82763.91
+          "tax_paid": 28762.43,
+          "future_tax_avoided": 186891.57
         },
         "summary_points": {
           "what_to_convert": "Convert $5,500 in 2026, $60,900 in 2027, $72,000 in 2029, $72,000 in 2030, $44,300 in 2031, $44,300 in 2032, $44,300 in 2033, $44,300 in 2034, $44,300 in 2035, $44,300 in 2036, $16,600 in 2037, $16,600 in 2038, $16,600 in 2039, $16,600 in 2040, $16,600 in 2041, $16,600 in 2042, $11,100 in 2043, $11,100 in 2044, $11,100 in 2045, $11,100 in 2046, $11,100 in 2047, $11,100 in 2048, $11,100 in 2049, $11,100 in 2050, $5,500 in 2051, $5,500 in 2054",
@@ -1930,7 +1930,7 @@
         }
       ],
       "reasoning_trace": {
-        "binding_constraint": "Traditional IRA balance fully converted",
+        "binding_constraint": "Converts nearly all of the traditional balance by 2054",
         "marginal_tax_rate_at_optimal": 0.1232,
         "marginal_benefit_at_optimal": 158129.15,
         "cost_of_next_bracket": {
@@ -1940,8 +1940,8 @@
         },
         "benefit_of_current_bracket": {
           "bracket_rate": 0.0482,
-          "tax_paid": 32584.72,
-          "future_tax_avoided": 82763.91
+          "tax_paid": 28762.43,
+          "future_tax_avoided": 186891.57
         },
         "sensitivity_notes": [
           "Moderate growth assumption (7%) \u2014 result changes modestly with \u00b12% variation",
@@ -4158,7 +4158,7 @@
         }
       ],
       "reasoning_trace": {
-        "binding_constraint": "Traditional IRA balance fully converted",
+        "binding_constraint": "Converts nearly all of the traditional balance by 2054",
         "marginal_tax_rate_at_optimal": 0.1232,
         "marginal_benefit_at_optimal": 158129.15,
         "cost_of_next_bracket": {
@@ -4168,8 +4168,8 @@
         },
         "benefit_of_current_bracket": {
           "bracket_rate": 0.0482,
-          "tax_paid": 32584.72,
-          "future_tax_avoided": 82763.91
+          "tax_paid": 28762.43,
+          "future_tax_avoided": 186891.57
         },
         "sensitivity_notes": [
           "Moderate growth assumption (7%) \u2014 result changes modestly with \u00b12% variation",
@@ -6138,14 +6138,14 @@
         "marginal_tax_rate_at_optimal": 0.1174,
         "marginal_benefit_at_optimal": 156963.1,
         "cost_of_next_bracket": {
-          "bracket_rate": 0.2,
+          "bracket_rate": 0.18576000000000023,
           "additional_tax": 185.76,
-          "net_effect": "Converting $1,000 more in 2027 would cost $186 in additional tax at the 20% rate"
+          "net_effect": "Converting $1,000 more in 2027 would cost $186 in additional tax at the 19% rate"
         },
         "benefit_of_current_bracket": {
           "bracket_rate": 0.0411,
-          "tax_paid": 26618.2,
-          "future_tax_avoided": 74097.93
+          "tax_paid": 24391.41,
+          "future_tax_avoided": 181354.51
         },
         "sensitivity_notes": [
           "Moderate growth assumption (7%) \u2014 result changes modestly with \u00b12% variation",
