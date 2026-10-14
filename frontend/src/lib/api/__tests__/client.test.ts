@@ -24,8 +24,8 @@ describe("apiClient", () => {
 
   it("submits feedback", async () => {
     const result = await apiClient.submitFeedback({
-      rating: 5,
-      comment: "Great tool!",
+      kind: "feedback",
+      message: "Great tool!",
     });
     expect(result.success).toBe(true);
   });

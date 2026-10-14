@@ -87,6 +87,31 @@ export const flows = {
     },
   },
 
+  feedback: {
+    title: 'Feedback and problem reports',
+    paths: [
+      'frontend/src/app/feedback/',
+      'frontend/src/components/common/FeedbackForm',
+      'frontend/src/components/common/ErrorNotice',
+      'frontend/src/components/common/PageFooter',
+    ],
+    async run(page, shot) {
+      await page.goto('/')
+      const footer = page.getByRole('navigation', { name: 'Footer' })
+      await footer.scrollIntoViewIfNeeded()
+      await shot('footer', 'Footer links', { element: page.locator('footer') })
+      await page.goto('/feedback')
+      await page.getByRole('heading', { level: 1 }).waitFor()
+      await shot('feedback', 'Feedback page')
+      await page.getByRole('radio', { name: 'Report a problem' }).click()
+      await page.getByLabel('What went wrong?').fill('The chart under my results is blank.')
+      await shot('problem', 'Report a problem, filled in', { element: page.locator('form') })
+      await page.getByRole('button', { name: 'Send' }).click()
+      await page.getByRole('status').waitFor()
+      await shot('sent', 'After sending', { element: page.getByRole('status') })
+    },
+  },
+
   'signed-out-links': {
     title: 'Saved-scenario links while signed out',
     paths: ['frontend/src/app/my-scenarios/', 'frontend/src/components/common/SignInRequired'],

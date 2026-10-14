@@ -27,6 +27,8 @@ const TOOLS = [
   ["Save a scenario", "Saves a scenario to your account. Needs sign-in."],
   ["List saved scenarios", "Lists scenarios you've saved. Needs sign-in."],
   ["Open a saved scenario", "Loads a saved scenario so you can pick up where you left off."],
+  ["Send feedback", "Sends your feedback or ideas to the developer, only when you ask."],
+  ["Report a problem", "Sends a description of something that went wrong, only when you ask."],
 ] as const;
 
 const mail = <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>;
@@ -89,8 +91,8 @@ export default function ConnectPage() {
           ))}
         </ul>
         <p>
-          Only Save a scenario changes anything, and only in your own account. The analysis tools
-          are read-only.
+          The analysis tools are read-only. Save a scenario only changes your own account, and the
+          feedback tools only send what you ask them to send.
         </p>
       </DocSection>
 

@@ -22,7 +22,10 @@ export default function SupportPage() {
       }
     >
       <DocSection id="contact" title="Contact">
-        <p>Email {mail}.</p>
+        <p>
+          Email {mail}, or use the <Link href="/feedback">feedback form</Link> to send feedback or
+          report a problem without leaving the site.
+        </p>
         <p>
           For a problem with a result, include the numbers you entered (or the link to the result)
           and what looked wrong. For a problem in Claude or ChatGPT, say which one and what the
