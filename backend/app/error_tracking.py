@@ -46,7 +46,8 @@ def init() -> Posthog | None:
 
 
 def client() -> Posthog | None:
-    """The shared PostHog client, also used for product analytics (app.mcp.analytics)."""
+    """The shared PostHog client, also used for product analytics (app.mcp.analytics)
+    and feedback (app.tools.feedback)."""
     return _client
 
 

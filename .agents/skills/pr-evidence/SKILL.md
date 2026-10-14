@@ -1,12 +1,12 @@
 ---
 name: pr-evidence
-description: Capture before and after screenshots (and an optional short video) of a UI change, publish them to the private pr-assets branch, and fill the PR's Before / After sections. Use for every PR that touches frontend/, ui/ or mcp-views/, or when asked to show what a change looks like.
+description: Capture before and after screenshots (and an optional short video) of a UI change, publish them to the private pr-assets branch, fill the PR's Before / After sections, and share the same images in the chat where the work was requested. Use for every PR that touches frontend/, ui/ or mcp-views/, or when asked to show what a change looks like.
 ---
 
 # PR evidence: before and after
 
-A reviewer should be able to judge a UI change from the PR page, without pulling the
-branch. This skill runs the **same scripted flows** against the base branch and the PR head,
+A reviewer should be able to judge a UI change from the PR page, and from the chat where
+they asked for it, without pulling the branch. This skill runs the **same scripted flows** against the base branch and the PR head,
 at desktop and phone width, and puts the side-by-side results in the PR description.
 
 The backend runs the offline agent (see `run-lucerna`), so conversations answer the same
@@ -71,6 +71,17 @@ way on both sides: any difference in a pair comes from the PR's code.
    - **Evidence:** base and head SHAs, flows run, viewports, anything that failed or was
      not covered (for example "sign-in modal: needs Clerk, not captured").
    Use the printed markdown as is; never retype a URL.
+
+6. **Share them where the request came from.** The person who asked for the change
+   reviews from the chat, not only from GitHub. In the message that says the PR is up,
+   attach the key images from step 3 (the after shots, plus a before/after pair where
+   the difference matters) at desktop and phone width, and the MP4 if you recorded one,
+   with one line each saying what it shows. Attach the files themselves through
+   whatever file attachment your chat surface offers, not just links to the
+   `pr-assets` branch, which only render for people signed in to GitHub. If your
+   surface can't attach files, say so and link the PR's Before / After section.
+   When a later push changes what the screens look like, share the new shots the
+   same way.
 
 ## Adding or fixing a flow
 
