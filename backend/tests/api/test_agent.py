@@ -124,3 +124,58 @@ async def test_demo_endpoint(async_client, monkeypatch, tmp_path):
 async def test_chat_endpoint_is_retired(async_client):
     response = await async_client.post("/api/chat", json={"message": "hi", "context": {}})
     assert response.status_code == 404
+
+
+async def test_ai_generations_carry_usage_and_never_the_conversation(async_client, monkeypatch):
+    """PostHog AI Observability: one $ai_generation per model call, on the visitor's
+    person and session, with tokens and prices but no prompts or replies."""
+    from unittest.mock import MagicMock
+
+    from app import error_tracking
+
+    posthog = MagicMock()
+    monkeypatch.setattr(error_tracking, "_client", posthog)
+    set_model_client(
+        ScriptedModelClient(
+            [[tool_use("t1", "record_scenario", {"scenario": {"age": 40}})], [text("Thanks!")]]
+        )
+    )
+    headers = {"x-posthog-distinct-id": "visitor-1", "x-posthog-session-id": "session-1"}
+    await async_client.post("/api/agent", json={"message": "I'm 40"}, headers=headers)
+
+    calls = [c.kwargs for c in posthog.capture.call_args_list if c.args[0] == "$ai_generation"]
+    assert len(calls) == 2
+    first, second = (c["properties"] for c in calls)
+    assert {c["distinct_id"] for c in calls} == {"visitor-1"}
+    assert first["$ai_trace_id"] == second["$ai_trace_id"]
+    assert first["$ai_session_id"] == first["$session_id"] == "session-1"
+    assert first["$ai_provider"] == "anthropic"
+    assert first["$ai_input_tokens"] == 1000
+    assert first["$ai_output_tokens"] == 100
+    assert first["$ai_input_token_price"] > 0
+    assert first["$ai_latency"] >= 0
+    assert first["$ai_is_error"] is False
+    assert first["stop_reason"] == "tool_use"
+    for props in (first, second):
+        assert "$ai_input" not in props
+        assert "$ai_output_choices" not in props
+        assert "I'm 40" not in json.dumps(props)
+
+
+async def test_ai_generations_without_visitor_ids_have_no_person(async_client, monkeypatch):
+    from unittest.mock import MagicMock
+
+    from app import error_tracking
+    from tests.agent.fakes import UNAVAILABLE
+
+    posthog = MagicMock()
+    monkeypatch.setattr(error_tracking, "_client", posthog)
+    set_model_client(ScriptedModelClient([UNAVAILABLE]))
+    await async_client.post("/api/agent", json={"message": "hi"})
+
+    (call,) = [c.kwargs for c in posthog.capture.call_args_list if c.args[0] == "$ai_generation"]
+    props = call["properties"]
+    assert call["distinct_id"] == props["$ai_trace_id"]
+    assert props["$process_person_profile"] is False
+    assert props["$ai_is_error"] is True
+    assert "$session_id" not in props

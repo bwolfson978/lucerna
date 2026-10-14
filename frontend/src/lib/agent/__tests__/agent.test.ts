@@ -1,4 +1,5 @@
 import { http, HttpResponse } from "msw";
+import posthog from "posthog-js";
 import { server } from "@/test/mocks/server";
 import { parseSseChunk, streamAgent } from "../client";
 import {
@@ -56,6 +57,24 @@ describe("streamAgent", () => {
       events.push(e)
     );
     expect(events.map((e) => e.type)).toEqual(["text_delta", "text_delta", "done"]);
+  });
+
+  it("sends the visitor's PostHog ids for the API's AI analytics", async () => {
+    vi.spyOn(posthog, "get_distinct_id").mockReturnValue("visitor-1");
+    vi.spyOn(posthog, "get_session_id").mockReturnValue("session-1");
+    let headers: Headers | undefined;
+    server.use(
+      http.post(API, ({ request }) => {
+        headers = request.headers;
+        return new HttpResponse(sse([{ type: "done", messages: [] }]), {
+          headers: { "Content-Type": "text/event-stream" },
+        });
+      })
+    );
+    await streamAgent({ message: "hello", messages: [], draft: EMPTY_DRAFT }, () => {});
+    expect(headers?.get("x-posthog-distinct-id")).toBe("visitor-1");
+    expect(headers?.get("x-posthog-session-id")).toBe("session-1");
+    vi.restoreAllMocks();
   });
 
   it("reports a network error when the stream ends without done", async () => {

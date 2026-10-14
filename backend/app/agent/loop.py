@@ -24,11 +24,13 @@ import asyncio
 import json
 import logging
 import re
+import time
 from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager
 
 from app import error_tracking
-from app.agent.model import Final, ModelClient, ModelUnavailable, TextDelta, ToolStart
+from app.agent.model import MODEL, Final, ModelClient, ModelUnavailable, TextDelta, ToolStart
+from app.agent.observability import TurnTrace
 from app.agent.prompts import SYSTEM_PROMPT
 from app.agent.toolbox import STATUS, McpToolbox, ToolContext, open_toolbox
 from app.tools import core
@@ -121,6 +123,7 @@ async def run_turn(
     draft: ScenarioDraft,
     start_year: int | None = None,
     on_usage=None,
+    trace: TurnTrace | None = None,
     toolbox_factory: ToolboxFactory = open_toolbox,
 ) -> AsyncIterator[dict]:
     """Run one user message through the agent. Yields UI events (see module docstring).
@@ -141,6 +144,7 @@ async def run_turn(
                     draft=draft,
                     start_year=start_year or current_year(),
                     on_usage=on_usage,
+                    trace=trace,
                 ):
                     await queue.put(event)
         except Exception as exc:
@@ -169,6 +173,7 @@ async def _run_turn(
     draft: ScenarioDraft,
     start_year: int,
     on_usage=None,
+    trace: TurnTrace | None = None,
 ) -> AsyncIterator[dict]:
     ctx = ToolContext(draft=draft, start_year=start_year)
     user_turn = build_user_turn(text, draft, history, start_year)
@@ -178,10 +183,14 @@ async def _run_turn(
 
     for _ in range(MAX_MODEL_CALLS_PER_TURN):
         turn = None
+        start = time.monotonic()
+        first_token: float | None = None
         try:
             async for event in client.stream(
                 system=SYSTEM_PROMPT, tools=tools, messages=[*history, *new_messages]
             ):
+                if first_token is None and isinstance(event, TextDelta | ToolStart):
+                    first_token = time.monotonic() - start
                 if isinstance(event, TextDelta):
                     if event.text.strip():
                         ctx.wrote_text = True
@@ -194,7 +203,11 @@ async def _run_turn(
                     }
                 elif isinstance(event, Final):
                     turn = event.turn
-        except ModelUnavailable:
+        except ModelUnavailable as err:
+            if trace is not None:
+                trace.generation(
+                    model=MODEL, latency=time.monotonic() - start, error=f"unavailable: {err}"
+                )
             yield _error("unavailable")
             yield {"type": "done", "messages": []}
             return
@@ -205,6 +218,14 @@ async def _run_turn(
             return
         if on_usage is not None:
             on_usage(turn.model, turn.usage)
+        if trace is not None:
+            trace.generation(
+                model=turn.model,
+                usage=turn.usage,
+                latency=time.monotonic() - start,
+                time_to_first_token=first_token,
+                stop_reason=turn.stop_reason,
+            )
 
         if turn.stop_reason == "refusal":
             # Drop the whole exchange so the stored history stays valid.

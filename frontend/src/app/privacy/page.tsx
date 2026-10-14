@@ -60,7 +60,9 @@ export default function PrivacyPage() {
         </DocTerm>
         <DocTerm term="Website chat messages.">
           When you use the chat on the website, your messages are sent to Anthropic&apos;s Claude
-          API to generate replies. We don&apos;t store chat transcripts on our servers.
+          API to generate replies. We don&apos;t store chat transcripts on our servers. For each
+          reply we record usage data (the model, its token count and cost, how long it took and any
+          error) with that visit&apos;s usage analytics, never your messages or the replies.
         </DocTerm>
       </DocSection>
 
@@ -70,6 +72,12 @@ export default function PrivacyPage() {
           values needed for each request. Our server does not read, request or store your
           conversation history, memory or files. Anything you type in the chat is handled by
           Anthropic or OpenAI under their own privacy policies.
+        </p>
+        <p>
+          With each request, the assistant also sends a one-sentence description of why it is using
+          the tool, which it is asked to write without personal details. We keep it with usage
+          analytics, along with the tool used, how long it took and whether it worked, to learn how
+          the app is used. We don&apos;t keep the scenario values or the results.
         </p>
         <p>
           Signing in from a chat is only needed to save, list or open saved scenarios. When you sign
