@@ -31,12 +31,12 @@ export {
   type TaxBracket,
 } from "./BracketChart";
 export { BracketFillChart, isBracketFillData, type BracketFillData } from "./BracketFillChart";
-export { BalanceComparison, BalanceLines, type BalanceComparisonData } from "./BalanceComparison";
 export {
-  CompareBars,
+  PaidVsAvoided,
   ScenarioCompareCard,
   isScenarioCompareData,
   type ScenarioCompareData,
+  type TaxBreakdown,
 } from "./ScenarioCompareCard";
 export {
   FIELD_LABELS,

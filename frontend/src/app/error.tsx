@@ -16,5 +16,5 @@ export default function RouteError({
     posthog.captureException(error, { digest: error.digest, boundary: "route" });
   }, [error]);
 
-  return <ErrorNotice onRetry={reset} />;
+  return <ErrorNotice onRetry={reset} digest={error.digest} />;
 }

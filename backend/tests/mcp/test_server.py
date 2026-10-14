@@ -1,6 +1,7 @@
 """The MCP server, exercised the way clients use it: through an MCP client session."""
 
 import json
+from unittest.mock import MagicMock
 
 import httpx
 from httpx import ASGITransport
@@ -8,10 +9,12 @@ from mcp import ClientSession
 from mcp.client.streamable_http import streamable_http_client
 from mcp.shared.memory import create_connected_server_and_client_session
 
+from app import error_tracking
 from app.main import app
 from app.mcp import server
 from app.mcp.limits import AnalysisLimiter, AnalysisLimits, current_caller
 from app.mcp.server import RESULTS_META_KEY, UI_META_KEY, mcp
+from app.tools import feedback
 from app.tools.views import VIEW_META_KEY
 
 SCENARIO = {
@@ -45,8 +48,17 @@ async def test_lists_tools_and_resources():
             "save_scenario",
             "list_saved_scenarios",
             "open_saved_scenario",
+            "send_feedback",
+            "report_problem",
         }
-        assert all(t.annotations.readOnlyHint for t in tools if t.name != "save_scenario")
+        writes = {"save_scenario", "send_feedback", "report_problem"}
+        assert all(t.annotations.readOnlyHint for t in tools if t.name not in writes)
+        assert not any(t.annotations.destructiveHint for t in tools if t.name in writes)
+        # Directory reviews flag tools without a title or with any hint left unset.
+        for tool in tools:
+            assert tool.title, tool.name
+            hints = tool.annotations
+            assert None not in (hints.readOnlyHint, hints.destructiveHint, hints.openWorldHint)
         uris = {str(r.uri) for r in (await session.list_resources()).resources}
         assert "methodology://rmds" in uris
         resource = await session.read_resource("methodology://irmaa")
@@ -103,6 +115,26 @@ async def test_ui_payloads_on_request():
             "Your scenario",
             "Retire at 58",
         ]
+
+
+def _survey_sent(posthog) -> dict:
+    """kwargs of the last feedback event (tool calls also send mcp_tool_called)."""
+    calls = [c for c in posthog.capture.call_args_list if c.args[0] == "survey sent"]
+    return calls[-1].kwargs
+
+
+async def test_feedback_from_the_web_assistant(monkeypatch):
+    posthog = MagicMock()
+    monkeypatch.setattr(error_tracking, "_client", posthog)
+    feedback.limiter.reset()
+    async with create_connected_server_and_client_session(mcp) as session:
+        sent = await session.call_tool("send_feedback", {"message": "Very clear"})
+        assert sent.structuredContent["sent"] is True
+        assert "won't be a reply" in sent.structuredContent["note"]
+        assert _survey_sent(posthog)["properties"]["source"] == "lucerna_web"
+        empty = await session.call_tool("send_feedback", {"message": " "})
+        assert empty.isError
+    feedback.limiter.reset()
 
 
 async def test_errors_are_tool_errors():
@@ -168,7 +200,7 @@ async def test_http_endpoint_client_and_analysis_limits(monkeypatch):
         assert limited.isError
         data = limited.structuredContent
         assert data["limit_reached"] == "daily_limit"
-        assert "today's 1 free analyses" in data["error"]
+        assert "today's limit of 1 analyses" in data["error"]
         assert data["resets_at"]
         assert "/calculator?" in data["full_results_url"]
 
@@ -202,6 +234,29 @@ async def test_http_endpoint_client_and_analysis_limits(monkeypatch):
         monkeypatch.setattr(server.saved_store, "list_for", list_for)
         listed = await call("list_saved_scenarios", {}, {"authorization": "Bearer t0ken"})
         assert listed.structuredContent["scenarios"] == [] and seen == ["user_9"]
+
+        # Feedback is open to everyone, says which app it came from, and is limited per
+        # caller; a signed-in user's report is filed under their account.
+        posthog = MagicMock()
+        monkeypatch.setattr(error_tracking, "_client", posthog)
+        monkeypatch.setattr(feedback, "limiter", feedback.FeedbackLimiter(per_caller=1))
+        report = {"what_happened": "The chart is blank", "expected": "A chart"}
+        claude = {"user-agent": "Claude-User"}
+        sent = await call("report_problem", report, claude)
+        assert sent.structuredContent["sent"] is True
+        kwargs = _survey_sent(posthog)
+        assert kwargs["properties"]["source"] == "claude"
+        assert kwargs["distinct_id"].startswith("feedback-anon:")
+        assert (await call("report_problem", report, claude)).isError
+        signed_in = await call(
+            "send_feedback",
+            {"message": "Love it", "email": "a@b.co"},
+            {"authorization": "Bearer t0ken", "user-agent": "openai-mcp/1.0"},
+        )
+        assert "may reply" in signed_in.structuredContent["note"]
+        kwargs = _survey_sent(posthog)
+        assert kwargs["distinct_id"] == "user_9"
+        assert kwargs["properties"]["source"] == "chatgpt"
 
 
 async def test_compare_counts_only_fresh_runs(monkeypatch):

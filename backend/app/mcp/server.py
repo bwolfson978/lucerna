@@ -13,9 +13,12 @@ in the result ``_meta`` under ``lucerna/results``, outside what a model sees.
 
 from __future__ import annotations
 
+import functools
 import hmac
 import json
 import os
+import time
+from contextvars import ContextVar
 from pathlib import Path
 from typing import Annotated, Any
 from urllib.parse import urlencode
@@ -31,6 +34,7 @@ from starlette.routing import Route
 
 from app.db import scenarios as saved_store
 from app.engine.types import FilingStatus, OptimizationResult, ScenarioInput
+from app.mcp import analytics
 from app.mcp import auth as mcp_auth
 from app.mcp.limits import (
     AnalysisLimiter,
@@ -40,9 +44,9 @@ from app.mcp.limits import (
     is_signed_in,
     next_reset,
 )
-from app.tools import core
+from app.tools import core, feedback
 from app.tools.draft import ScenarioDraft, current_year
-from app.tools.links import full_results_url, site_url
+from app.tools.links import full_results_url, site_url, tagged
 from app.tools.models import MethodologyTopic, ScenarioUpdate
 from app.tools.views import VIEW_META_KEY, result_view
 
@@ -60,15 +64,20 @@ numbers as a table. A card button may send "Looks right. Run the numbers." (run 
 analysis) or ask to use a what-if as the scenario (call record_scenario with that \
 comparison's what_if_scenario). Results include full_results_url, a link to the full \
 interactive analysis of that scenario on the website; share it when the user wants more \
-detail. Users can keep scenarios in a free account: call save_scenario when they ask to \
+detail. Users can keep scenarios in an account: call save_scenario when they ask to \
 save one (the first call asks them to sign in), and list_saved_scenarios and \
 open_saved_scenario to pick one up later. Saving is optional: mention it at most once, \
-after an analysis, and never ask them to sign in for anything else."""
+after an analysis, and never ask them to sign in for anything else. When the user wants to \
+share feedback or says something is broken or wrong, offer send_feedback or report_problem, \
+show them what will be sent, and send it only once they agree."""
 
 UI_META_KEY = "lucerna/ui"
 RESULTS_META_KEY = "lucerna/results"
 
-_READ_ONLY = ToolAnnotations(readOnlyHint=True, openWorldHint=False, idempotentHint=True)
+# Directory reviews (ChatGPT in particular) want every hint as an explicit boolean.
+_READ_ONLY = ToolAnnotations(
+    readOnlyHint=True, destructiveHint=False, openWorldHint=False, idempotentHint=True
+)
 
 # --------------------------------------------------------------------------
 # MCP Apps (io.modelcontextprotocol/ui): this server owns its UI. Views are
@@ -184,6 +193,73 @@ def _error(message: str, **extra: Any) -> CallToolResult:
     return _result({"error": message, **extra}, error=True)
 
 
+# --------------------------------------------------------------------------
+# Analytics: every tool call sends one PostHog event (see app.mcp.analytics), and
+# links handed to a chat app carry utm tags naming it.
+# --------------------------------------------------------------------------
+
+# Fresh optimizer runs in the current tool call (cached results don't count).
+_fresh_runs: ContextVar[int] = ContextVar("fresh_runs", default=0)
+
+
+def _request_meta() -> dict[str, Any]:
+    try:
+        meta = mcp.get_context().request_context.meta
+    except (AttributeError, LookupError, ValueError):
+        return {}
+    return dict(getattr(meta, "model_extra", None) or {}) if meta is not None else {}
+
+
+def _client() -> str:
+    return analytics.resolve_client(_request_meta())
+
+
+def _link(url: str) -> str:
+    return tagged(url, analytics.link_source(_client()))
+
+
+def _results_url(scenario: dict, result_id: str, label: str | None = None) -> str:
+    return full_results_url(scenario, result_id, label, analytics.link_source(_client()))
+
+
+def _tracked(fn):
+    """Send an analytics event after each call of a tool. Applied under @mcp.tool."""
+
+    @functools.wraps(fn)
+    async def call(*args, **kwargs):
+        start = time.monotonic()
+        fresh = _fresh_runs.set(0)
+        properties: dict[str, Any] = {}
+        try:
+            result = await fn(*args, **kwargs)
+        except Exception:
+            properties["is_error"] = True
+            properties["error"] = "exception"
+            raise
+        else:
+            data = result.structuredContent or {}
+            properties["is_error"] = bool(result.isError)
+            if result.isError:
+                properties["error"] = data.get("limit_reached") or (
+                    "incomplete" if "missing_required" in data else "other"
+                )
+            return result
+        finally:
+            properties["fresh_analyses"] = _fresh_runs.get()
+            properties["duration_ms"] = round((time.monotonic() - start) * 1000)
+            _fresh_runs.reset(fresh)
+            meta = _request_meta()
+            analytics.tool_called(
+                fn.__name__,
+                client=analytics.resolve_client(meta),
+                user_id=_signed_in_user(),
+                request_meta=meta,
+                properties=properties,
+            )
+
+    return call
+
+
 def _ui_results(entries: list[tuple[str, str, ScenarioInput, OptimizationResult]]) -> dict:
     return {
         RESULTS_META_KEY: [
@@ -209,7 +285,7 @@ _analysis_limiter = AnalysisLimiter()
 
 _LIMIT_MESSAGES = {
     "daily_limit": (
-        "This connection has used today's {limit} free analyses. The limit resets at "
+        "This connection has reached today's limit of {limit} analyses. It resets at "
         "{reset}. Until then the user can run this scenario on the website at "
         "full_results_url, which has no daily limit."
     ),
@@ -238,13 +314,13 @@ def _limit_error(err: LimitReached, draft: ScenarioDraft) -> CallToolResult:
     ):
         message += _SIGN_IN_NOTE
     scenario = core.scenario_from_draft(draft, current_year())
-    url = full_results_url(scenario, core.result_id_for(core.scenario_input(draft)))
+    url = _results_url(scenario, core.result_id_for(core.scenario_input(draft)))
     return _error(
         message,
         limit_reached=err.code,
         resets_at=reset.isoformat() if err.code != "busy" else None,
         full_results_url=url,
-        website=site_url(),
+        website=_link(site_url()),
     )
 
 
@@ -256,6 +332,7 @@ async def _run_drafts(
     inputs = [core.scenario_input(d) for d in drafts]
     fresh = {core.scenario_key(i) for i in inputs if not core.is_cached(i)}
     async with _analysis_limiter.admit(current_caller.get(), len(fresh)):
+        _fresh_runs.set(_fresh_runs.get() + len(fresh))
         return [(i, await anyio.to_thread.run_sync(core.run_optimization, i)) for i in inputs]
 
 
@@ -270,6 +347,7 @@ async def _run_drafts(
         "calls, the projected income timeline, and which required values are still missing."
     ),
 )
+@_tracked
 async def record_scenario(scenario: ScenarioArg) -> CallToolResult:
     try:
         draft = core.draft_from_scenario(scenario, current_year())
@@ -290,6 +368,7 @@ async def record_scenario(scenario: ScenarioArg) -> CallToolResult:
         "reasoning, and a result_id."
     ),
 )
+@_tracked
 async def analyze_roth_conversions(
     scenario: ScenarioArg,
     user_confirmed: Annotated[
@@ -312,7 +391,7 @@ async def analyze_roth_conversions(
     result_id = core.result_id_for(scenario_input)
     summary = core.summarize_result(result, result_id)
     summary["scenario"] = core.scenario_from_draft(draft, current_year())
-    summary["full_results_url"] = full_results_url(summary["scenario"], result_id)
+    summary["full_results_url"] = _results_url(summary["scenario"], result_id)
     # Chart series for the View travel in _meta, which hosts don't show the model.
     meta = {VIEW_META_KEY: result_view(result)}
     if _wants_ui(ctx):
@@ -331,6 +410,7 @@ async def analyze_roth_conversions(
         "changed version if the user wants to adopt it."
     ),
 )
+@_tracked
 async def compare_roth_scenarios(
     scenario: ScenarioArg,
     changes: Annotated[
@@ -358,7 +438,7 @@ async def compare_roth_scenarios(
     base_id, variant_id = core.result_id_for(base_input), core.result_id_for(variant_input)
     comparison = core.compare_results(base, variant, base_id, variant_id, label)
     comparison["what_if_scenario"] = core.scenario_from_draft(variant_draft, year)
-    comparison["what_if_full_results_url"] = full_results_url(
+    comparison["what_if_full_results_url"] = _results_url(
         comparison["what_if_scenario"], variant_id, label
     )
     meta = (
@@ -380,6 +460,7 @@ async def compare_roth_scenarios(
     meta=_NO_AUTH,
     description="2026 federal (and optionally state) income tax brackets and standard deductions.",
 )
+@_tracked
 async def get_tax_brackets(
     filing_status: FilingStatus,
     state: Annotated[str | None, Field(description="Optional two-letter state code")] = None,
@@ -402,6 +483,7 @@ async def get_tax_brackets(
         "for you and is not shown to the user, so answer from it in your own words."
     ),
 )
+@_tracked
 async def explain_methodology(topic: MethodologyTopic) -> CallToolResult:
     return _result(
         {
@@ -413,12 +495,123 @@ async def explain_methodology(topic: MethodologyTopic) -> CallToolResult:
 
 
 # --------------------------------------------------------------------------
+# Feedback: open to everyone, sent to PostHog Surveys (app.tools.feedback). They write
+# to the developer's inbox, not to anything the user owns, so they aren't destructive.
+# --------------------------------------------------------------------------
+
+_FEEDBACK = ToolAnnotations(
+    readOnlyHint=False, destructiveHint=False, openWorldHint=False, idempotentHint=False
+)
+
+_CONSENT = (
+    "Only call when the user asks to send it. First show the user the exact text you'll "
+    "send and get their OK. Don't add their financial details or anything they didn't ask "
+    "to include."
+)
+
+EmailArg = Annotated[
+    str | None,
+    Field(
+        max_length=feedback.MAX_EMAIL,
+        description="The user's email, only if they want a reply and gave it to you",
+    ),
+]
+
+
+def _send(kind: feedback.FeedbackKind, message: str, **kwargs: Any) -> CallToolResult:
+    user_id = _signed_in_user()
+    try:
+        feedback.submit(
+            kind,
+            message,
+            source=_client(),
+            caller=current_caller.get(),
+            distinct_id=user_id,
+            **kwargs,
+        )
+    except feedback.FeedbackLimitReached:
+        return _error(
+            "Too many messages have been sent today. The user can try again tomorrow or use "
+            "the form on the website.",
+            website=_link(site_url()),
+        )
+    except feedback.FeedbackError as err:
+        return _error(str(err))
+    note = (
+        "Sent to the developer, who may reply by email."
+        if kwargs.get("email")
+        else "Sent to the developer. No email was given, so there won't be a reply."
+    )
+    return _result({"sent": True, "note": note})
+
+
+@mcp.tool(
+    title="Send feedback",
+    annotations=_FEEDBACK,
+    meta=_NO_AUTH,
+    description=(
+        "Send the user's feedback, ideas or questions about Roth Conversions Optimizer to "
+        f"its developer. {_CONSENT}"
+    ),
+)
+@_tracked
+async def send_feedback(
+    message: Annotated[
+        str,
+        Field(max_length=feedback.MAX_MESSAGE, description="The feedback, in the user's words"),
+    ],
+    email: EmailArg = None,
+) -> CallToolResult:
+    return _send(feedback.FeedbackKind.FEEDBACK, message, email=email)
+
+
+@mcp.tool(
+    title="Report a problem",
+    annotations=_FEEDBACK,
+    meta=_NO_AUTH,
+    description=(
+        "Report something broken or wrong in Roth Conversions Optimizer (an error, a result "
+        f"that looks wrong, a card that didn't show) to its developer. {_CONSENT} Include "
+        "the tool that misbehaved and what it returned when that helps."
+    ),
+)
+@_tracked
+async def report_problem(
+    what_happened: Annotated[
+        str,
+        Field(max_length=feedback.MAX_MESSAGE, description="What went wrong"),
+    ],
+    expected: Annotated[
+        str | None,
+        Field(max_length=feedback.MAX_MESSAGE, description="What the user expected instead"),
+    ] = None,
+    results_url: Annotated[
+        str | None,
+        Field(
+            max_length=feedback.MAX_CONTEXT,
+            description="full_results_url of the analysis involved, if the user agrees",
+        ),
+    ] = None,
+    email: EmailArg = None,
+) -> CallToolResult:
+    return _send(
+        feedback.FeedbackKind.PROBLEM,
+        what_happened,
+        expected=expected,
+        email=email,
+        context={"results_url": results_url},
+    )
+
+
+# --------------------------------------------------------------------------
 # Account tools: saved scenarios, shared with "My scenarios" on the website.
 # Calls without a valid token never get here over HTTP (see _IdentifyCaller); the
 # check below covers in-process callers and gives ChatGPT its linking hint.
 # --------------------------------------------------------------------------
 
-_ACCOUNT = ToolAnnotations(readOnlyHint=True, openWorldHint=False, idempotentHint=True)
+_ACCOUNT = ToolAnnotations(
+    readOnlyHint=True, destructiveHint=False, openWorldHint=False, idempotentHint=True
+)
 _SAVE = ToolAnnotations(
     readOnlyHint=False, destructiveHint=False, openWorldHint=False, idempotentHint=False
 )
@@ -434,7 +627,7 @@ def _sign_in_required() -> CallToolResult:
         return _error(
             "Saving scenarios from a chat isn't available yet. The user can save it on the "
             "website from full_results_url.",
-            website=site_url(),
+            website=_link(site_url()),
         )
     result = _error("The user needs to sign in to Roth Conversions Optimizer first.")
     result.meta = {
@@ -450,7 +643,7 @@ def _storage_unavailable() -> CallToolResult:
 
 
 def _saved_url(saved_id: str) -> str:
-    return f"{site_url()}/calculator?{urlencode({'saved': saved_id})}"
+    return _link(f"{site_url()}/calculator?{urlencode({'saved': saved_id})}")
 
 
 @mcp.tool(
@@ -464,6 +657,7 @@ def _saved_url(saved_id: str) -> str:
         "first call asks them to."
     ),
 )
+@_tracked
 async def save_scenario(
     scenario: ScenarioArg,
     name: Annotated[
@@ -502,7 +696,7 @@ async def save_scenario(
                 result.estimated_lifetime_tax_savings
             ),
             "open_url": _saved_url(saved_id),
-            "my_scenarios_url": f"{site_url()}/my-scenarios",
+            "my_scenarios_url": _link(f"{site_url()}/my-scenarios"),
         }
     )
 
@@ -517,6 +711,7 @@ async def save_scenario(
         "Needs the user to sign in."
     ),
 )
+@_tracked
 async def list_saved_scenarios() -> CallToolResult:
     user_id = _signed_in_user()
     if user_id is None:
@@ -537,7 +732,7 @@ async def list_saved_scenarios() -> CallToolResult:
                 }
                 for row in rows
             ],
-            "my_scenarios_url": f"{site_url()}/my-scenarios",
+            "my_scenarios_url": _link(f"{site_url()}/my-scenarios"),
         }
     )
 
@@ -553,6 +748,7 @@ async def list_saved_scenarios() -> CallToolResult:
         "user to sign in."
     ),
 )
+@_tracked
 async def open_saved_scenario(
     saved_id: Annotated[str, Field(description="saved_id from list_saved_scenarios")],
 ) -> CallToolResult:
@@ -686,8 +882,12 @@ class _IdentifyCaller:
 
     async def __call__(self, scope, receive, send):
         caller = None
+        client = None
+        user_agent = ""
         if scope["type"] == "http":
             request = Request(scope)
+            user_agent = request.headers.get("user-agent", "")
+            client = analytics.client_from(user_agent, internal=_is_internal(request))
             user_id = None
             token = mcp_auth.bearer_token(request)
             if token and mcp_auth.auth_issuer():
@@ -713,9 +913,13 @@ class _IdentifyCaller:
                     await response(scope, receive, send)
                     return
         reset = current_caller.set(caller)
+        client_reset = analytics.current_client.set(client)
+        ua_reset = analytics.current_user_agent.set(user_agent)
         try:
             await self.app(scope, receive, send)
         finally:
+            analytics.current_user_agent.reset(ua_reset)
+            analytics.current_client.reset(client_reset)
             current_caller.reset(reset)
 
 

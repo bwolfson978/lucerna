@@ -104,12 +104,6 @@
       "expect": {"tools_called": ["compare_roth_scenarios"]}
     },
     {
-      "id": "chart-request",
-      "category": "explanation",
-      "turns": ["I'm 52, married, $90,000 income, $600,000 traditional 401(k), retiring at 60.", "Run the numbers.", "Can you show me how my balances compare with and without converting?"],
-      "expect": {"parts_shown": ["balance_comparison"]}
-    },
-    {
       "id": "methodology-how-it-works",
       "category": "methodology",
       "turns": ["How does this tool decide how much to convert?"],

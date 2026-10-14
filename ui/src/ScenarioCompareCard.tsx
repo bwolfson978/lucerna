@@ -1,11 +1,15 @@
 "use client";
 
-import { useRef, useState } from "react";
 import { cn } from "./cn";
-import { CHART_COLORS } from "./colors";
-import { formatCurrency } from "./format";
-import { useContainerWidth } from "./charts/hooks";
-import { ChartBody, GAP, Legend, W, useGrow, type TooltipState } from "./charts/primitives";
+import { CHART_COLORS, PALETTE } from "./colors";
+import { formatAxisCurrency, formatCurrency } from "./format";
+import { ChartBody, Legend, useGrow } from "./charts/primitives";
+
+/** What conversions cost when they happen and what they avoid later, today's dollars. */
+export interface TaxBreakdown {
+  paid_now: number;
+  avoided_later: number;
+}
 
 /**
  * A what-if next to the current scenario: the `structuredContent` that
@@ -15,7 +19,13 @@ export interface ScenarioCompareData {
   label: string;
   base_result_id: string;
   variant_result_id: string;
-  estimated_lifetime_tax_savings: { current: number; what_if: number; difference: number };
+  estimated_lifetime_tax_savings: {
+    current: number;
+    what_if: number;
+    difference: number;
+  };
+  /** Savings = avoided_later - paid_now. Missing from results saved before it existed. */
+  tax_breakdown?: { current: TaxBreakdown; what_if: TaxBreakdown };
   conversions_by_year: { year: number; current: number; what_if: number }[];
 }
 
@@ -30,125 +40,117 @@ export function isScenarioCompareData(value: unknown): value is ScenarioCompareD
   );
 }
 
-const H = 112;
-/** Below this slot width, years print as '26. */
-const SHORT_YEAR_SLOT = 40;
+const COLORS = { paid: PALETTE.ember, avoided: CHART_COLORS.conversion };
 
-export function CompareBars({
-  years,
-  variantLabel,
+/**
+ * One row per scenario: tax paid on conversions to the left of the axis, tax they
+ * avoid later to the right. The gap between the two is the savings, so a what-if
+ * that changes the savings but not the schedule still looks different.
+ */
+export function PaidVsAvoided({
+  rows,
 }: {
-  years: ScenarioCompareData["conversions_by_year"];
-  variantLabel: string;
+  rows: { label: string; breakdown: TaxBreakdown; savings: number }[];
 }) {
   const { ref, grown, animate } = useGrow();
-  const plotRef = useRef<HTMLDivElement>(null);
-  // Drawn at the container's real width so labels keep their size on every screen.
-  const width = useContainerWidth(plotRef) ?? W;
-  const [tip, setTip] = useState<TooltipState | null>(null);
-  const max = Math.max(1, ...years.map((y) => Math.max(y.current, y.what_if)));
-  const slot = width / Math.max(1, years.length);
-  const pairW = Math.max(6, Math.min(40, slot - 8));
-  const barW = (pairW - GAP) / 2;
-  const every = slot < 22 ? 2 : 1;
-  const shortYears = slot < SHORT_YEAR_SLOT;
-  const colors = { base: CHART_COLORS.income, variant: CHART_COLORS.conversion };
+  const maxPaid = Math.max(0, ...rows.map((r) => r.breakdown.paid_now));
+  const maxAvoided = Math.max(0, ...rows.map((r) => r.breakdown.avoided_later));
+  const total = maxPaid + maxAvoided;
+  if (total <= 0) return null;
+  // The axis sits where the biggest cost ends, so both sides share one scale.
+  const axis = (maxPaid / total) * 100;
+  const pct = (v: number) => (Math.max(0, v) / total) * 100;
 
   return (
-    <div ref={ref} className="flex flex-col gap-3">
+    <div ref={ref} className="flex flex-col gap-2">
       <ChartBody
-        tip={tip}
+        tip={null}
         legend={
           <Legend
             items={[
-              { label: "Your scenario", color: colors.base },
-              { label: variantLabel, color: colors.variant },
+              { label: "Tax paid on conversions", color: COLORS.paid },
+              { label: "Tax avoided later", color: COLORS.avoided },
             ]}
           />
         }
       >
-        <div ref={plotRef}>
-          <svg
-            width={width}
-            height={H + 22}
-            className="block"
-            role="img"
-            aria-label="Conversions by year, your scenario compared with the what-if"
-            onPointerLeave={() => setTip(null)}
-          >
-            <line x1={0} x2={width} y1={H} y2={H} className="stroke-border" />
-            {years.map((yr, i) => {
-              const x = slot * i + (slot - pairW) / 2;
-              const show = () =>
-                setTip({
-                  x: ((x + pairW / 2) / width) * 100,
-                  title: String(yr.year),
-                  lines: [
-                    {
-                      label: variantLabel,
-                      value: formatCurrency(yr.what_if),
-                      color: colors.variant,
-                    },
-                    {
-                      label: "your scenario",
-                      value: formatCurrency(yr.current),
-                      color: colors.base,
-                    },
-                  ],
-                });
-              return (
-                <g
-                  key={yr.year}
-                  tabIndex={0}
-                  role="img"
-                  aria-label={`${yr.year}: ${formatCurrency(yr.current)} now, ${formatCurrency(yr.what_if)} in the what-if`}
-                  onPointerEnter={show}
-                  onFocus={show}
-                  onBlur={() => setTip(null)}
-                  className="outline-none"
-                >
-                  <rect x={slot * i} y={0} width={slot} height={H} fill="transparent" />
-                  {[
-                    { v: yr.current, dx: 0, color: colors.base },
-                    { v: yr.what_if, dx: barW + GAP, color: colors.variant },
-                  ].map((bar) => {
-                    const h = Math.max(bar.v > 0 ? 2 : 0, (H - 4) * (bar.v / max));
-                    return (
-                      <rect
-                        key={bar.dx}
-                        x={x + bar.dx}
-                        y={H - h}
-                        width={barW}
-                        height={h}
-                        rx={2}
-                        fill={bar.color}
-                        style={{
-                          transform: grown ? "scaleY(1)" : "scaleY(0)",
-                          transformOrigin: `0 ${H}px`,
-                          transition: animate ? `transform 500ms ease ${i * 25}ms` : undefined,
-                        }}
-                      />
-                    );
-                  })}
-                  {i % every === 0 && (
-                    <text
-                      x={x + pairW / 2}
-                      y={H + 16}
-                      textAnchor="middle"
-                      className="fill-text-tertiary text-[11px]"
-                      fontFamily="'Inter', system-ui"
+        <div className="flex flex-col gap-3" data-ui="paid-vs-avoided">
+          {rows.map((row, i) => {
+            const { paid_now: paid, avoided_later: avoided } = row.breakdown;
+            const grow = (origin: "left" | "right") => ({
+              transform: grown ? "scaleX(1)" : "scaleX(0)",
+              transformOrigin: origin,
+              transition: animate ? `transform 500ms ease ${i * 80}ms` : undefined,
+            });
+            return (
+              <div
+                key={row.label}
+                role="img"
+                aria-label={`${row.label}: ${formatCurrency(paid)} paid on conversions, ${formatCurrency(avoided)} avoided later, ${formatCurrency(row.savings)} saved`}
+                className="flex flex-col gap-1"
+              >
+                <div className="text-caption flex items-baseline justify-between gap-3">
+                  <span className="text-text-secondary truncate">{row.label}</span>
+                  <span className="font-data text-text-primary font-semibold whitespace-nowrap">
+                    {formatCurrency(row.savings)} saved
+                  </span>
+                </div>
+                <div className="px-12">
+                  <div className="relative h-6">
+                    <div
+                      className="bg-text-tertiary absolute -top-1 -bottom-1 w-px"
+                      style={{ left: `${axis}%` }}
+                    />
+                    <div
+                      className="absolute top-0 bottom-0 rounded-l-[3px]"
+                      style={{
+                        right: `${100 - axis}%`,
+                        width: `${pct(paid)}%`,
+                        background: COLORS.paid,
+                        ...grow("right"),
+                      }}
+                    />
+                    <span
+                      className="font-data text-text-secondary absolute top-1/2 -translate-y-1/2 pr-1.5 text-[11px] whitespace-nowrap"
+                      style={{ right: `${100 - axis + pct(paid)}%` }}
                     >
-                      {shortYears ? `\u2019${String(yr.year).slice(-2)}` : yr.year}
-                    </text>
-                  )}
-                </g>
-              );
-            })}
-          </svg>
+                      -{formatAxisCurrency(paid)}
+                    </span>
+                    <div
+                      className="absolute top-0 bottom-0 rounded-r-[3px]"
+                      style={{
+                        left: `${axis}%`,
+                        width: `${pct(avoided)}%`,
+                        background: COLORS.avoided,
+                        ...grow("left"),
+                      }}
+                    />
+                    <span
+                      className="font-data text-text-secondary absolute top-1/2 -translate-y-1/2 pl-1.5 text-[11px] whitespace-nowrap"
+                      style={{ left: `${axis + pct(avoided)}%` }}
+                    >
+                      +{formatAxisCurrency(avoided)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </ChartBody>
     </div>
   );
+}
+
+/** "$430,000 over 7 years", or "No conversions". */
+function scheduleText(
+  years: ScenarioCompareData["conversions_by_year"],
+  key: "current" | "what_if"
+) {
+  const active = years.filter((y) => y[key] > 0);
+  if (active.length === 0) return "no conversions";
+  const sum = active.reduce((acc, y) => acc + y[key], 0);
+  return `${formatCurrency(sum)} over ${active.length} ${active.length === 1 ? "year" : "years"}`;
 }
 
 interface ScenarioCompareCardProps {
@@ -161,7 +163,7 @@ interface ScenarioCompareCardProps {
   applyDisabled?: boolean;
 }
 
-/** Estimated lifetime tax savings now vs. with a change, and conversions by year. */
+/** Estimated lifetime tax savings now vs. with a change, and where the difference comes from. */
 export function ScenarioCompareCard({
   data,
   onOpenFullResults,
@@ -201,7 +203,26 @@ export function ScenarioCompareCard({
           Your scenario: {formatCurrency(savings.current)}, in today&apos;s dollars
         </span>
       </div>
-      <CompareBars years={data.conversions_by_year} variantLabel={data.label} />
+      {data.tax_breakdown && (
+        <PaidVsAvoided
+          rows={[
+            {
+              label: "Your scenario",
+              breakdown: data.tax_breakdown.current,
+              savings: savings.current,
+            },
+            {
+              label: data.label,
+              breakdown: data.tax_breakdown.what_if,
+              savings: savings.what_if,
+            },
+          ]}
+        />
+      )}
+      <p className="text-body-sm text-text-secondary" data-ui="schedule-change">
+        Converts {scheduleText(data.conversions_by_year, "current")} now,{" "}
+        {scheduleText(data.conversions_by_year, "what_if")} with this change.
+      </p>
       {(onOpenFullResults || onApply) && (
         <div className="border-border pt-default flex flex-col gap-3 border-t sm:flex-row">
           {onOpenFullResults && (

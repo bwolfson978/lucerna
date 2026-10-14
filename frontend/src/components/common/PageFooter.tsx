@@ -8,6 +8,14 @@ const FOOTER_LINKS = [
   { href: "/methodology", label: "Methodology" },
   { href: "/about", label: "About" },
   { href: "/calculator", label: "Run your scenario" },
+  { href: "/feedback", label: "Feedback" },
+  { href: "/connect", label: "Claude & ChatGPT" },
+] as const;
+
+const LEGAL_LINKS = [
+  { href: "/privacy", label: "Privacy" },
+  { href: "/terms", label: "Terms" },
+  { href: "/support", label: "Support" },
 ] as const;
 
 export function PageFooter() {
@@ -28,9 +36,22 @@ export function PageFooter() {
             ))}
           </nav>
         </div>
-        <p className="max-w-[760px] border-t border-border pt-7 text-[13px] leading-relaxed text-text-tertiary">
-          {PAGE_FOOTER_DISCLAIMER}
-        </p>
+        <div className="flex flex-col gap-4 border-t border-border pt-7">
+          <p className="max-w-[760px] text-[13px] leading-relaxed text-text-tertiary">
+            {PAGE_FOOTER_DISCLAIMER}
+          </p>
+          <nav className="flex flex-wrap gap-x-5 gap-y-2" aria-label="Legal">
+            {LEGAL_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-[13px] text-text-tertiary underline-offset-2 transition-colors duration-200 hover:text-text-secondary hover:underline"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
       </div>
     </footer>
   );

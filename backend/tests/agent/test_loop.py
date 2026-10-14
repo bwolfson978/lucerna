@@ -6,7 +6,6 @@ from app.agent.loop import (
     MAX_MODEL_CALLS_PER_TURN,
     build_user_turn,
     count_user_messages,
-    known_result_ids,
     last_seen_draft_hash,
     run_turn,
 )
@@ -186,7 +185,6 @@ def test_history_helpers():
         {"role": "user", "content": "plain string"},
     ]
     assert count_user_messages(history) == 2
-    assert known_result_ids(history) == {"r_0123456789"}
 
 
 def test_prompt_rules():

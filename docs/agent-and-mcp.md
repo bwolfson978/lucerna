@@ -52,7 +52,7 @@ The same View renders in Claude, ChatGPT or any MCP Apps host with no changes. "
 
 Cards that appear both in MCP App Views and natively in the web app are defined once, in `ui/`:
 
-- `ui/src/`: display-only React components (`ResultCard`, `ConversionStrip`, `BracketChart` (the tax bracket chart, also used by the results page), `BracketFillChart`, `BalanceComparison`, `ScenarioCompareCard`, `ScenarioSummary`, `MetricCard`), plus chart colors, form options and formatters the web app re-exports. Plain data and callbacks in; no app context, data fetching, analytics or Next imports.
+- `ui/src/`: display-only React components (`ResultCard`, `ConversionStrip`, `BracketChart` (the tax bracket chart, also used by the results page), `BracketFillChart`, `ScenarioCompareCard`, `ScenarioSummary`, `MetricCard`), plus chart colors, form options and formatters the web app re-exports. Plain data and callbacks in; no app context, data fetching, analytics or Next imports.
 - `ui/tailwind/preset.js` and `ui/styles/tokens.css`: the Paper & Pine theme, CSS variables and component classes (`card-recommended`, `eyebrow`, `metric-*`, `btn-*`). The web app's `tailwind.config.ts` and `globals.css` pull them in.
 
 `ui/` is source-only with no `node_modules`; each consumer resolves its `react` import:
@@ -128,7 +128,7 @@ E2E (uses the offline stand-in automatically): `cd e2e && npx playwright test`. 
 | `tool_start` | `name`, `status` | Status line ("Running the optimizer") |
 | `draft` | `draft`, `missing` | Updates the shared scenario (form and summary card) |
 | `result` | `result_id`, `label`, `result`, `draft?` | Stores a full engine result for cards and the full results view |
-| `part` | `part` | Renders a card: `scenario_summary`, `result_headline`, `balance_comparison`, `scenario_compare`, `suggestions` |
+| `part` | `part` | Renders a card: `scenario_summary`, `result_headline`, `scenario_compare`, `suggestions` |
 | `error` | `code`, `message` | Notice; `unavailable` and limit codes switch to the form |
 | `done` | `messages` | API-format turns to append to the stored history |
 
@@ -157,7 +157,11 @@ The server speaks MCP over streamable HTTP at `https://<backend-host>/mcp`. No s
 - Each tool declares ChatGPT `securitySchemes` in `_meta` (`noauth`, or `oauth2` for account tools), and an account tool called without sign-in in process returns `_meta["mcp/www_authenticate"]`.
 - Clerk dashboard (OAuth applications, Settings): publish CIMD and DCR support, and use JWT access tokens. The web assistant's toolbox hides the account tools (the website has its own save).
 
+**Feedback** (`app/tools/feedback.py`): `send_feedback` and `report_problem` are open to everyone (no sign-in) and send a `survey sent` event to one of two API surveys in PostHog ("Feedback" and "Report a problem"), the same path as the website's form (`POST /api/feedback`). Each event carries `source`: `web` for the website form, otherwise the MCP client as `app.mcp.analytics` names it (`claude`, `chatgpt`, `lucerna_web`, `other`); a signed-in user's report is filed under their Clerk id, anonymous chat reports get no person profile. The tool descriptions tell the model to show the user the text and send only on their OK. Limits: `FEEDBACK_PER_CALLER_PER_DAY` (10) and `FEEDBACK_PER_DAY` (500) across everyone. The survey and question ids are constants in that module.
+
 **Limits** (`app/mcp/limits.py`): only fresh optimizer runs count, so building a scenario, brackets, methodology and re-running a cached result are free. Limits are per caller per day (UTC), with an anonymous ceiling across everyone and a cap on runs in progress. Claude's requests arrive from a pool of Anthropic addresses, so for Claude users the per-IP allowance is shared; the ceiling and the concurrency cap do most of the protecting there. A refused analysis returns a tool error with `limit_reached` (`daily_limit`, `capacity` or `busy`), `resets_at`, and a `full_results_url` so the user can run the scenario on the website instead. View buttons in the web app (`/api/mcp-apps/tools/call`) count against the browser's IP the same way.
+
+**Analytics** (`app/mcp/analytics.py`): every tool call sends one PostHog event, `mcp_tool_called`, through the API's PostHog client (`POSTHOG_PROJECT_TOKEN`; nothing is sent without it). Properties: `tool`, `client` (`claude` or `chatgpt` from the User-Agent, ChatGPT's `openai/*` request meta as a fallback, `lucerna_web` for the web assistant, else `other`), `signed_in`, `is_error`, `error` (`incomplete`, a `limit_reached` code, `exception` or `other`), `fresh_analyses`, `duration_ms`, `user_agent`, and `locale` when ChatGPT sends one. The distinct id is the Clerk user id when signed in (so chat and website usage are one person), `chatgpt:<openai/subject>` for anonymous ChatGPT users, and a fresh `mcp-anon:` id per call otherwise, so anonymous Claude usage counts calls, not people. Anonymous events have no person profile. Links returned to a chat app (`full_results_url`, `open_url`, `my_scenarios_url`, `website`) carry `utm_source=claude|chatgpt&utm_medium=mcp`, so website visits from a chat are credited to it.
 
 - **Claude:** add a custom connector and enter the `/mcp` URL. In a conversation, enable the connector and ask a Roth conversion question.
 - **ChatGPT:** with developer mode enabled, create a connector pointing at the same URL.

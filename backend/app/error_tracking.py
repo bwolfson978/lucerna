@@ -45,6 +45,12 @@ def init() -> Posthog | None:
     return _client
 
 
+def client() -> Posthog | None:
+    """The shared PostHog client, also used for product analytics (app.mcp.analytics)
+    and feedback (app.tools.feedback)."""
+    return _client
+
+
 def capture_exception(exc: BaseException, **properties) -> None:
     """Report a handled exception. Never raises: reporting must not break the request."""
     if _client is None:

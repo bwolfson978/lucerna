@@ -25,7 +25,7 @@ Ask the user which workstream or task they're picking up.
 - **Progressive disclosure.** Simplicity first, complexity on demand. Headline results up front; detailed analysis available on scroll/click.
 - **One definition per card.** Cards shown both natively and in MCP App Views live in `ui/` (display-only React, shared Tailwind preset and tokens). The web app imports them; Views render them through preact/compat. Change the shared component, not a copy. See `docs/agent-and-mcp.md`.
 - **Storybook is the component catalog.** Adding or changing a component in `ui/src/`, `components/ui/` or `components/common/` means adding or updating its stories in the same PR. See `docs/storybook.md`.
-- **UI PRs show before and after.** A PR that changes `frontend/`, `ui/` or `mcp-views/` (or backend output the UI renders) carries side-by-side screenshots at desktop and phone width in its Before / After section. Use the `pr-evidence` skill; `run-lucerna` covers starting the app. Both live in `.agents/skills/`.
+- **UI PRs show before and after.** A PR that changes `frontend/`, `ui/` or `mcp-views/` (or backend output the UI renders) carries side-by-side screenshots at desktop and phone width in its Before / After section, and the same images go in the chat message that says the PR is up. Use the `pr-evidence` skill; `run-lucerna` covers starting the app. Both live in `.agents/skills/`.
 - **Mobile-first.** All UI must be responsive from the start — many users arrive from Reddit on phones.
 
 ## Design aesthetic

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Response, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -81,6 +81,7 @@ app.add_middleware(
 )
 
 
+from app.api.account import router as account_router
 from app.api.agent import router as agent_router
 from app.api.demo import router as demo_router
 from app.api.email import router as email_router
@@ -98,6 +99,7 @@ app.include_router(agent_router, prefix="/api")
 app.include_router(email_router, prefix="/api")
 app.include_router(feedback_router, prefix="/api")
 app.include_router(scenarios_router, prefix="/api")
+app.include_router(account_router, prefix="/api")
 app.include_router(tax_config_router, prefix="/api")
 app.include_router(mcp_apps_router, prefix="/api")
 app.include_router(scenario_links_router, prefix="/api")
@@ -116,6 +118,16 @@ FAVICON = Path(__file__).parent / "static" / "favicon.ico"
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
     return FileResponse(FAVICON, media_type="image/x-icon")
+
+
+# OpenAI's plugin portal verifies we own the MCP domain by fetching this token. Paste the
+# token the portal shows into OPENAI_APPS_CHALLENGE (Railway); unset, the path is a 404.
+@app.get("/.well-known/openai-apps-challenge", include_in_schema=False)
+async def openai_apps_challenge():
+    token = os.environ.get("OPENAI_APPS_CHALLENGE", "").strip()
+    if not token:
+        raise HTTPException(status_code=404)
+    return PlainTextResponse(token)
 
 
 @app.get("/health")

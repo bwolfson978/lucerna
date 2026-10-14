@@ -75,6 +75,59 @@ export const flows = {
     },
   },
 
+  'policy-pages': {
+    title: 'Footer links and policy pages',
+    paths: [
+      'frontend/src/app/privacy/',
+      'frontend/src/app/terms/',
+      'frontend/src/app/support/',
+      'frontend/src/app/connect/',
+      'frontend/src/components/legal/',
+      'frontend/src/components/common/PageFooter',
+    ],
+    async run(page, shot) {
+      await page.goto('/methodology')
+      const footer = page.locator('footer').last()
+      await footer.scrollIntoViewIfNeeded()
+      await shot('footer', 'Site footer', { element: footer })
+      for (const [path, caption] of [
+        ['/privacy', 'Privacy Policy'],
+        ['/terms', 'Terms of Service'],
+        ['/support', 'Support'],
+        ['/connect', 'Use it in Claude or ChatGPT'],
+      ]) {
+        await page.goto(path)
+        await page.getByRole('heading', { level: 1 }).waitFor()
+        await shot(path.slice(1), caption)
+      }
+    },
+  },
+
+  feedback: {
+    title: 'Feedback and problem reports',
+    paths: [
+      'frontend/src/app/feedback/',
+      'frontend/src/components/common/FeedbackForm',
+      'frontend/src/components/common/ErrorNotice',
+      'frontend/src/components/common/PageFooter',
+    ],
+    async run(page, shot) {
+      await page.goto('/')
+      const footer = page.getByRole('navigation', { name: 'Footer' })
+      await footer.scrollIntoViewIfNeeded()
+      await shot('footer', 'Footer links', { element: page.locator('footer') })
+      await page.goto('/feedback')
+      await page.getByRole('heading', { level: 1 }).waitFor()
+      await shot('feedback', 'Feedback page')
+      await page.getByRole('radio', { name: 'Report a problem' }).click()
+      await page.getByLabel('What went wrong?').fill('The chart under my results is blank.')
+      await shot('problem', 'Report a problem, filled in', { element: page.locator('form') })
+      await page.getByRole('button', { name: 'Send' }).click()
+      await page.getByRole('status').waitFor()
+      await shot('sent', 'After sending', { element: page.getByRole('status') })
+    },
+  },
+
   'signed-out-links': {
     title: 'Saved-scenario links while signed out',
     paths: ['frontend/src/app/my-scenarios/', 'frontend/src/components/common/SignInRequired'],
@@ -177,6 +230,24 @@ export const flows = {
       await page.getByTestId('assistant-message').first().waitFor({ timeout: 60000 })
       await page.waitForLoadState('networkidle')
       await shot('page', 'Demo page with Margaret\'s results', { fullPage: true })
+      // Margaret's long timeline is where the values under the bracket chart get crowded.
+      const card = page.getByTestId('mcp-app').first()
+      await card.scrollIntoViewIfNeeded()
+      const result = view(page, 0).locator('[data-ui=result-card]')
+      await result.locator('[data-ui=bracket-fill]').waitFor({ timeout: 30000 })
+      await result.evaluate(() => document.fonts.ready)
+      await page.waitForTimeout(1000)
+      await shot('result-card', 'Result card in the demo conversation', { element: card })
+      await view(page, 0).getByRole('button', { name: 'See full results' }).click()
+      const hero = page.getByTestId('results-hero')
+      await hero.waitFor({ timeout: 30000 })
+      await page.waitForTimeout(1500)
+      await shot('results-hero', 'Full results at the highest-savings amount', { element: hero })
+      // Off the optimum the "vs. highest savings" delta appears; it should not move the layout.
+      const box = await hero.locator('input[type=range]').boundingBox()
+      await page.mouse.click(box.x + box.width * 0.7, box.y + box.height / 2)
+      await page.waitForTimeout(800)
+      await shot('results-hero-moved', 'Full results after moving the slider below the optimum', { element: hero })
     },
   },
 

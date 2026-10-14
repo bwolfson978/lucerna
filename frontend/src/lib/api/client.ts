@@ -48,10 +48,27 @@ export const apiClient = {
     });
   },
 
-  submitFeedback(input: { rating: number; comment: string }) {
-    return request("/api/feedback", {
+  /** Feedback or a problem report, filed in PostHog Surveys (backend app/tools/feedback.py). */
+  async submitFeedback(input: {
+    kind: "feedback" | "problem";
+    message: string;
+    expected?: string;
+    email?: string;
+    page_url?: string;
+    error_digest?: string;
+    distinct_id?: string;
+    session_id?: string;
+  }) {
+    const res = await fetch(`${API_BASE}/api/feedback`, {
       method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),
     });
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      const detail = typeof body?.detail === "string" ? body.detail : null;
+      throw new Error(detail ?? "That didn't send. Please try again in a moment.");
+    }
+    return res.json() as Promise<{ success: boolean; id: string }>;
   },
 };

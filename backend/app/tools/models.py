@@ -180,7 +180,6 @@ class MethodologyTopic(StrEnum):
 
 class DisplayKind(StrEnum):
     SCENARIO_SUMMARY = "scenario_summary"
-    BALANCE_COMPARISON = "balance_comparison"
     SUGGESTIONS = "suggestions"
 
 
@@ -192,11 +191,9 @@ class ShowArgs(BaseModel):
     kind: DisplayKind = Field(
         description=(
             "scenario_summary: the captured inputs for the user to check before running. "
-            "balance_comparison: account balances with vs. without conversions (needs result_id). "
             "suggestions: 2 to 4 short follow-up questions the user can tap."
         )
     )
-    result_id: str | None = Field(default=None, description="Result to chart, from a tool result")
     suggestions: list[str] | None = Field(
         default=None, max_length=4, description="Follow-up questions, each under 60 characters"
     )

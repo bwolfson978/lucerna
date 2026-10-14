@@ -37,6 +37,20 @@ export const useSignOut: () => () => void = AUTH_ENABLED
     }
   : () => () => {};
 
+/**
+ * Deletes the signed-in Clerk user (which also signs them out). Throws if Clerk refuses,
+ * for example when self-deletion is turned off for the instance. A no-op without Clerk.
+ */
+export const useDeleteClerkUser: () => () => Promise<void> = AUTH_ENABLED
+  ? () => {
+      const { user } = useClerkUser();
+      return async () => {
+        if (!user) throw new Error("Not signed in");
+        await user.delete();
+      };
+    }
+  : () => async () => {};
+
 export function SignInButton({ children }: { children: ReactNode }) {
   if (!AUTH_ENABLED) return null;
   return <ClerkSignInButton mode="modal">{children}</ClerkSignInButton>;

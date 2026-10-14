@@ -37,6 +37,11 @@ class TestOptimize:
         result = optimize(scenario)
         assert isinstance(result, OptimizationResult)
 
+    def test_conversion_cost_today_is_discounted_tax(self, sample_single_input):
+        result = optimize(sample_single_input())
+        assert result.total_conversion > 0
+        assert 0 < result.conversion_cost_today <= result.total_tax_on_conversions
+
     def test_yearly_conversions_length_matches_timeline(self, sample_single_input):
         """Should return one conversion amount per year in timeline."""
         scenario = sample_single_input()

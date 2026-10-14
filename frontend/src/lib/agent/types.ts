@@ -7,6 +7,7 @@ export type AgentPart =
   | { kind: "result_headline"; result_id: string }
   /** Saved by earlier versions; no longer emitted or rendered. */
   | { kind: "bracket_fill"; result_id: string }
+  /** Saved by earlier versions; no longer emitted or rendered. */
   | { kind: "balance_comparison"; result_id: string }
   | { kind: "scenario_compare"; result_id: string; base_result_id: string; label: string }
   | { kind: "suggestions"; suggestions: string[] }

@@ -44,5 +44,11 @@ export function createScenariosApi(getToken: () => Promise<string | null>) {
     delete(id: string) {
       return authedRequest<void>(`/api/scenarios/${id}`, getToken, { method: "DELETE" });
     },
+    /** Erase everything stored for the account (saved scenarios) before deleting the user. */
+    deleteAccountData() {
+      return authedRequest<{ deleted_scenarios: number }>("/api/account", getToken, {
+        method: "DELETE",
+      });
+    },
   };
 }

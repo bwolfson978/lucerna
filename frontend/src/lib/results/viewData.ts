@@ -6,11 +6,11 @@
  */
 
 import type {
-  BalanceComparisonData,
   BracketFillData,
   ResultCardData,
   ResultDetails,
   ScenarioCompareData,
+  TaxBreakdown,
   ScenarioSummaryData,
 } from "@lucerna/ui";
 import type { OptimizationResult } from "@/lib/types";
@@ -65,28 +65,14 @@ export function bracketFillData(result: OptimizationResult): BracketFillData {
   };
 }
 
-export function balanceData(result: OptimizationResult): BalanceComparisonData {
-  const withRmd = result.rmd_projection;
-  const withoutRmd = result.rmd_projection_no_conversion;
-  const withoutByAge = new Map(
-    (withoutRmd?.yearly_detail ?? []).map((d) => [d.age, d.trad_balance_start])
-  );
-  return {
-    roth_at_retirement: round(result.roth_at_retirement),
-    peak_rmd_with: withRmd ? round(withRmd.peak_rmd_amount) : null,
-    peak_rmd_without: withoutRmd ? round(withoutRmd.peak_rmd_amount) : null,
-    after_tax_wealth_change: round(result.npv_at_optimal - result.npv_at_zero),
-    points: (withRmd?.yearly_detail ?? []).map((d) => ({
-      age: d.age,
-      year: d.year,
-      with: round(d.trad_balance_start),
-      without: round(withoutByAge.get(d.age) ?? 0),
-    })),
-  };
-}
-
 export function resultDetails(result: OptimizationResult): ResultDetails {
   return { bracket_fill: bracketFillData(result) };
+}
+
+/** Mirrors backend app/tools/core.py _tax_breakdown. */
+function taxBreakdown(result: OptimizationResult): TaxBreakdown {
+  const paid = round(result.conversion_cost_today ?? 0);
+  return { paid_now: paid, avoided_later: paid + round(result.estimated_lifetime_tax_savings) };
 }
 
 export function compareData(
@@ -112,6 +98,7 @@ export function compareData(
         variant.estimated_lifetime_tax_savings - base.estimated_lifetime_tax_savings
       ),
     },
+    tax_breakdown: { current: taxBreakdown(base), what_if: taxBreakdown(variant) },
     conversions_by_year: allYears.map((y) => ({
       year: y,
       current: round(a.get(y) ?? 0),

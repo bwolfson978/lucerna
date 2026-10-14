@@ -104,14 +104,17 @@ export function ResultsView({ result }: ResultsViewProps) {
                 triggerId="hero-savings"
               />
             </div>
-            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <div className="flex flex-col gap-1">
               <span className="metric-value-hero text-pine">{formatSavings(estimatedSavings)}</span>
-              {!isAtOptimal && (
-                <span className="font-data text-body-sm font-semibold text-negative">
-                  &minus;{formatCurrency(Math.max(1, Math.abs(savingsDifference)))} vs. highest
-                  savings
-                </span>
-              )}
+              {/* Always on its own line, and its line kept at the optimum, so nothing moves
+                  while the slider runs. */}
+              <span
+                className={`font-data whitespace-nowrap text-body-sm font-semibold text-negative ${isAtOptimal ? "invisible" : ""}`}
+                aria-hidden={isAtOptimal || undefined}
+              >
+                &minus;{formatCurrency(Math.max(1, Math.abs(savingsDifference)))} vs. highest
+                savings
+              </span>
             </div>
             <span className="text-caption text-text-tertiary">
               In today&apos;s dollars, compared with not converting

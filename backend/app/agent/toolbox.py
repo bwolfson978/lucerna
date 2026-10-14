@@ -76,10 +76,6 @@ class ToolContext:
 
     draft: ScenarioDraft
     start_year: int
-    # Result ids the conversation already knows about (from earlier turns).
-    known_result_ids: set[str] = field(default_factory=set)
-    # Full results received during this turn, keyed by result id.
-    results: dict[str, dict] = field(default_factory=dict)
     # Events for the browser, in order.
     events: list[dict] = field(default_factory=list)
     # Whether any reply text has reached the user this turn (set by the loop).
@@ -87,9 +83,6 @@ class ToolContext:
 
     def emit(self, event_type: str, **payload: Any) -> None:
         self.events.append({"type": event_type, **payload})
-
-    def has_result(self, result_id: str) -> bool:
-        return result_id in self.results or result_id in self.known_result_ids
 
 
 class McpToolbox:
@@ -314,7 +307,6 @@ def _emit_ui_events(name: str, data: dict, result: CallToolResult, ctx: ToolCont
     if name == "analyze_roth_conversions":
         _set_draft(data.get("scenario"), ctx)
         for entry in entries:
-            ctx.results[entry["result_id"]] = entry["result"]
             ctx.emit("result", **entry)
         # The result card itself is the tool's MCP App View (see McpToolbox.call).
         return
@@ -329,7 +321,6 @@ def _emit_ui_events(name: str, data: dict, result: CallToolResult, ctx: ToolCont
             except (ValidationError, core.ToolError):
                 variant_draft = None
         for entry in entries:
-            ctx.results[entry["result_id"]] = entry["result"]
             extra = (
                 {"draft": variant_draft.model_dump(mode="json")}
                 if variant_draft is not None and entry["result_id"] == data["variant_result_id"]
@@ -369,20 +360,11 @@ def _show(arguments: dict, ctx: ToolContext) -> tuple[dict, bool]:
         )
         return {"shown": "scenario_summary", "draft_hash": described["draft_hash"]}, False
 
-    if args.kind == DisplayKind.SUGGESTIONS:
-        suggestions = [s.strip() for s in args.suggestions or [] if s.strip()]
-        if not 1 <= len(suggestions) <= 4:
-            return {"error": "Provide 1 to 4 suggestions."}, True
-        ctx.emit("part", part={"kind": "suggestions", "suggestions": suggestions})
-        return _shown(ctx, {"shown": "suggestions"}), False
-
-    if not args.result_id or not ctx.has_result(args.result_id):
-        return {
-            "error": f"{args.kind.value} needs a result_id from an earlier "
-            "analyze_roth_conversions or compare_roth_scenarios result."
-        }, True
-    ctx.emit("part", part={"kind": args.kind.value, "result_id": args.result_id})
-    return _shown(ctx, {"shown": args.kind.value, "result_id": args.result_id}), False
+    suggestions = [s.strip() for s in args.suggestions or [] if s.strip()]
+    if not 1 <= len(suggestions) <= 4:
+        return {"error": "Provide 1 to 4 suggestions."}, True
+    ctx.emit("part", part={"kind": "suggestions", "suggestions": suggestions})
+    return _shown(ctx, {"shown": "suggestions"}), False
 
 
 # The model sometimes drafts its answer while thinking, shows a chart or suggestions, and
