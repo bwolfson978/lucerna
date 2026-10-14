@@ -161,6 +161,21 @@ export const flows = {
       await page.getByTestId('assistant-message').first().waitFor({ timeout: 60000 })
       await page.waitForLoadState('networkidle')
       await shot('page', 'Demo page with Margaret\'s results', { fullPage: true })
+      // Margaret's long timeline is where the values under the bracket chart get crowded.
+      const card = page.getByTestId('mcp-app').first()
+      await view(page, 0).locator('[data-ui=bracket-fill]').waitFor({ timeout: 30000 })
+      await shot('result-card', 'Result card in the demo conversation', { element: card })
+      await view(page, 0).getByRole('button', { name: 'See full results' }).click()
+      const hero = page.getByTestId('results-hero')
+      await hero.waitFor({ timeout: 30000 })
+      await page.waitForTimeout(1500)
+      await shot('results-hero', 'Full results at the highest-savings amount', { element: hero })
+      // Off the optimum the "vs. highest savings" delta appears; it should not move the layout.
+      const slider = hero.locator('input[type=range]')
+      await slider.focus()
+      for (let i = 0; i < 6; i++) await slider.press('ArrowLeft')
+      await page.waitForTimeout(800)
+      await shot('results-hero-moved', 'Full results after moving the slider below the optimum', { element: hero })
     },
   },
 
