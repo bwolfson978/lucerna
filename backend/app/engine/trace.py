@@ -14,7 +14,6 @@ from app.engine.irmaa import IRMAA_LOOKBACK_YEARS, IRMAA_TIERS, MEDICARE_START_A
 from app.engine.retirement import conversion_bases
 from app.engine.rmd import calculate_rmd, rmd_start_age
 from app.engine.state_tax import resolve_state_for_year, state_name
-from app.engine.tax import get_marginal_rate
 from app.engine.tax_cost import (
     combined_marginal_rate,
     total_conversion_cost,
@@ -27,6 +26,7 @@ from app.engine.types import (
     ReasoningTrace,
     ScenarioInput,
 )
+from app.engine.year_tax import year_tax
 
 # Below this a state's marginal rate on conversions counts as no state tax
 MIN_STATE_RATE = 0.0005
@@ -74,6 +74,7 @@ def generate_reasoning_trace(
             scenario.filing_status,
             state=yr_state,
             custom_state_rate=scenario.custom_state_rate,
+            year=year_tax(scenario, t),
         )
         marginal_rates.append(rate)
 
@@ -151,7 +152,7 @@ def _find_binding_constraint(
             top = filled[-2]
         rate = f"{top.bracket_rate:.0%}"
         base = bases[t] if bases else scenario.timeline[t].gross_income
-        magi = base + conversions[t]
+        magi = year_tax(scenario, t).agi(base + conversions[t])
         if _just_under_irmaa_threshold(scenario, t, magi):
             reasons.append("Just under the Medicare surcharge (IRMAA) threshold")
         elif spilled or top.remaining_capacity < BRACKET_FULL_THRESHOLD:
@@ -226,6 +227,7 @@ def _cost_of_next_bracket(
         scenario.filing_status,
         state=yr_state,
         custom_state_rate=scenario.custom_state_rate,
+        year=year_tax(scenario, t),
     )
     # The extra $1,000 can straddle a bracket edge, so the rate is its blended cost
     rate = extra_cost / extra
@@ -261,6 +263,7 @@ def _benefit_of_current_bracket(
             scenario.filing_status,
             state=yr_state,
             custom_state_rate=scenario.custom_state_rate,
+            year=year_tax(scenario, t),
         )
 
     total_conversion = sum(conversions)
@@ -350,14 +353,16 @@ def _build_sensitivity_notes(
             continue
         income = bases[t] if bases else scenario.timeline[t].gross_income
         # State-only marginal = combined - federal
+        yt = year_tax(scenario, t)
         total_rate = combined_marginal_rate(
             income,
             conversions[t],
             scenario.filing_status,
             state=yr_state,
             custom_state_rate=scenario.custom_state_rate,
+            year=yt,
         )
-        federal_rate = get_marginal_rate(income + conversions[t], scenario.filing_status)
+        federal_rate = yt.federal_bracket(income + conversions[t])
         by_state.setdefault(yr_state, []).append(
             (scenario.timeline[t].year, total_rate - federal_rate)
         )

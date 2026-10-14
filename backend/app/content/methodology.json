@@ -95,7 +95,7 @@
         },
         {
           "heading": "What's not included",
-          "text": "Social Security is counted as fully taxable income. In reality only up to 85% of it is taxed, so the tax on years with Social Security is somewhat overstated. IRMAA surcharges are factored in during optimization but are not a direct user input. These simplifications could shift the optimal amount depending on your situation."
+          "text": "Only the taxable part of Social Security is taxed: up to 85% of benefits, depending on your other income, following the IRS worksheet. Filers 65 and older get the larger standard deduction, and benefits are left out of state tax in states that don't tax them. The few states that do tax benefits are treated as taxing them in full, without their own exemptions. IRMAA surcharges are factored in during optimization but are not a direct user input. These simplifications could shift the optimal amount depending on your situation."
         }
       ]
     },

@@ -2576,111 +2576,138 @@
         },
         {
           "year": 2030,
-          "gross_income": 46000.0
+          "gross_income": 46000.0,
+          "social_security": 46000.0
         },
         {
           "year": 2031,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2032,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2033,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2034,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2035,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2036,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2037,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2038,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2039,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2040,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2041,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2042,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2043,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2044,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2045,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2046,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2047,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2048,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2049,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2050,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2051,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2052,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2053,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2054,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2055,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         },
         {
           "year": 2056,
-          "gross_income": 60000.0
+          "gross_income": 60000.0,
+          "social_security": 60000.0
         }
       ],
       "scenario": {
@@ -2710,137 +2737,164 @@
           {
             "year": 2030,
             "gross_income": 46000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 46000.0
           },
           {
             "year": 2031,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2032,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2033,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2034,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2035,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2036,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2037,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2038,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2039,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2040,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2041,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2042,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2043,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2044,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2045,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2046,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2047,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2048,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2049,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2050,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2051,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2052,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2053,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2054,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2055,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           },
           {
             "year": 2056,
             "gross_income": 60000.0,
-            "notes": ""
+            "notes": "",
+            "social_security": 60000.0
           }
         ],
         "traditional_ira_balance": 1400000.0,

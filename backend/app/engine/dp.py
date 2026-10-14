@@ -97,12 +97,10 @@ from app.engine.retirement import (
 )
 from app.engine.rmd import calculate_rmd, rmd_start_age, vectorized_rmd
 from app.engine.state_tax import (
-    calculate_state_tax,
     resolve_state_for_year,
-    vectorized_state_tax,
 )
-from app.engine.tax import calculate_federal_tax, vectorized_federal_tax
 from app.engine.types import ConversionCurvePoint, ScenarioInput
+from app.engine.year_tax import YearTax, year_taxes
 
 
 def _aca_coverage_years(scenario: ScenarioInput) -> set[int]:
@@ -110,8 +108,17 @@ def _aca_coverage_years(scenario: ScenarioInput) -> set[int]:
     return aca_coverage_years(scenario)
 
 
+def _irmaa_loss(yt: YearTax, base, added):
+    """IRMAA surcharge loss on MAGI that counts only the taxable part of Social Security."""
+    agi_base = yt.agi(base)
+    return vectorized_irmaa_surcharge_loss(
+        agi_base, yt.agi(base + added) - agi_base, yt.filing_status
+    )
+
+
 def _surcharges_with_spending(
     scenario: ScenarioInput,
+    yt: YearTax,
     is_aca_year: bool,
     irmaa_exposed: bool,
     income_with_rmd: float,
@@ -132,10 +139,7 @@ def _surcharges_with_spending(
     if is_aca_year and hc is not None:
         cost += vectorized_subsidy_loss(base, added, hc.household_size, hc.monthly_slcsp_premium)
     if irmaa_exposed:
-        cost += (
-            vectorized_irmaa_surcharge_loss(base, added, scenario.filing_status)
-            * irmaa_discount_ratio
-        )
+        cost += _irmaa_loss(yt, base, added) * irmaa_discount_ratio
     return cost
 
 
@@ -311,9 +315,9 @@ def _dp_backward(
     hc = scenario.healthcare
     aca_years = _aca_coverage_years(scenario)
 
+    taxes = year_taxes(scenario)
     tax_without_cache = [
-        calculate_federal_tax(scenario.timeline[t].gross_income, scenario.filing_status)
-        for t in range(n_years)
+        taxes[t].federal(scenario.timeline[t].gross_income) for t in range(n_years)
     ]
 
     # Pre-compute per-grid-state RMD arrays for each year. None for non-RMD years.
@@ -338,7 +342,7 @@ def _dp_backward(
             tax_cost_by_year.append(None)  # computed per-state in backward loop
         else:
             income_t = scenario.timeline[t].gross_income
-            tax_with = vectorized_federal_tax(income_t + extended_grid, scenario.filing_status)
+            tax_with = taxes[t].federal(income_t + extended_grid)
             tax_cost_by_year.append(tax_with - tax_without_cache[t])
 
     state_cost_by_year: list[np.ndarray | None] = [None] * n_years
@@ -348,15 +352,8 @@ def _dp_backward(
         yr_state = resolve_state_for_year(scenario.timeline[t].state, scenario.state)
         if yr_state:
             income_t = scenario.timeline[t].gross_income
-            st_with = vectorized_state_tax(
-                income_t + extended_grid,
-                yr_state,
-                scenario.filing_status,
-                scenario.custom_state_rate,
-            )
-            st_without = calculate_state_tax(
-                income_t, yr_state, scenario.filing_status, scenario.custom_state_rate
-            )
+            st_with = taxes[t].state_tax(income_t + extended_grid)
+            st_without = taxes[t].state_tax(income_t)
             state_cost_by_year[t] = st_with - st_without
 
     # ACA: only applies before Medicare (age < 65); RMDs start at 73+, so no overlap
@@ -385,9 +382,7 @@ def _dp_backward(
             income_t = scenario.timeline[t].gross_income
             irmaa_arr = np.array(
                 [
-                    vectorized_irmaa_surcharge_loss(
-                        income_t, np.array([extended_grid[i]]), scenario.filing_status
-                    )[0]
+                    _irmaa_loss(taxes[t], income_t, np.array([extended_grid[i]]))[0]
                     for i in range(G)
                 ],
                 dtype=float,
@@ -408,6 +403,7 @@ def _dp_backward(
         income_t = entry_t.gross_income
         drawdown_t = float(entry_t.drawdown) if entry_t.drawdown is not None else 0.0
         yr_state = resolve_state_for_year(entry_t.state, scenario.state)
+        yt_t = taxes[t]
         rmd_arr_t = rmd_arrays_per_year[t]
         has_rmd = rmd_arr_t is not None
         irmaa_exposed_t = owner_age_t >= MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS
@@ -455,29 +451,11 @@ def _dp_backward(
             # Conversion cost (marginal tax on top of effective income)
             if has_rmd:
                 eff_income = income_t + rmd_i
-                cost_opts = vectorized_federal_tax(
-                    eff_income + conv_options, scenario.filing_status
-                ) - calculate_federal_tax(eff_income, scenario.filing_status)
-                if yr_state:
-                    cost_opts = (
-                        cost_opts
-                        + vectorized_state_tax(
-                            eff_income + conv_options,
-                            yr_state,
-                            scenario.filing_status,
-                            scenario.custom_state_rate,
-                        )
-                        - calculate_state_tax(
-                            eff_income, yr_state, scenario.filing_status, scenario.custom_state_rate
-                        )
-                    )
+                cost_opts = yt_t.total(eff_income + conv_options) - yt_t.total(eff_income)
                 if irmaa_exposed_t:
                     cost_opts = (
                         cost_opts
-                        + vectorized_irmaa_surcharge_loss(
-                            eff_income, conv_options, scenario.filing_status
-                        )
-                        * irmaa_discount_ratio
+                        + _irmaa_loss(yt_t, eff_income, conv_options) * irmaa_discount_ratio
                     )
                 cost_opts = cost_opts * discount_factor
             else:
@@ -545,21 +523,14 @@ def _withdrawal_value(
     conv_options: np.ndarray,
     draw_from_trad: np.ndarray | None,
     need: float,
-    state: str | None,
+    yt: YearTax,
 ) -> np.ndarray:
     """After-tax value of a year's RMD and spending draws, per conversion option.
 
     Mirrors calculate_npv: the RMD is taxed on top of income, the traditional
     draw on top of income + RMD + conversion, and the Roth draw is tax-free.
     """
-    fs = scenario.filing_status
-    rate = scenario.custom_state_rate
-
-    def tax(x):
-        out = vectorized_federal_tax(x, fs)
-        if state:
-            out = out + vectorized_state_tax(x, state, fs, rate)
-        return out
+    tax = yt.total
 
     value = np.zeros_like(conv_options, dtype=float)
     if rmd > 0:
@@ -655,9 +626,9 @@ def _dp_backward_2d(
     hc = scenario.healthcare
     aca_years = _aca_coverage_years(scenario)
 
+    taxes = year_taxes(scenario)
     tax_without_cache = [
-        calculate_federal_tax(scenario.timeline[t].gross_income, scenario.filing_status)
-        for t in range(n_years)
+        taxes[t].federal(scenario.timeline[t].gross_income) for t in range(n_years)
     ]
 
     rmd_arrays_per_year: list[np.ndarray | None] = []
@@ -676,7 +647,7 @@ def _dp_backward_2d(
             tax_cost_by_year.append(None)
         else:
             income_t = scenario.timeline[t].gross_income
-            tax_with = vectorized_federal_tax(income_t + extended_trad, scenario.filing_status)
+            tax_with = taxes[t].federal(income_t + extended_trad)
             tax_cost_by_year.append(tax_with - tax_without_cache[t])
 
     state_cost_by_year: list[np.ndarray | None] = [None] * n_years
@@ -686,15 +657,8 @@ def _dp_backward_2d(
         yr_state = resolve_state_for_year(scenario.timeline[t].state, scenario.state)
         if yr_state:
             income_t = scenario.timeline[t].gross_income
-            st_with = vectorized_state_tax(
-                income_t + extended_trad,
-                yr_state,
-                scenario.filing_status,
-                scenario.custom_state_rate,
-            )
-            st_without = calculate_state_tax(
-                income_t, yr_state, scenario.filing_status, scenario.custom_state_rate
-            )
+            st_with = taxes[t].state_tax(income_t + extended_trad)
+            st_without = taxes[t].state_tax(income_t)
             state_cost_by_year[t] = st_with - st_without
 
     aca_cost_by_year: list[np.ndarray | None] = [None] * n_years
@@ -720,8 +684,7 @@ def _dp_backward_2d(
         if scenario.age + t >= MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS:
             income_t = scenario.timeline[t].gross_income
             irmaa_cost_by_year[t] = (
-                vectorized_irmaa_surcharge_loss(income_t, extended_trad, scenario.filing_status)
-                * irmaa_discount_ratio
+                _irmaa_loss(taxes[t], income_t, extended_trad) * irmaa_discount_ratio
             )
 
     # ── Backward induction ───────────────────────────────────────────────────
@@ -742,6 +705,7 @@ def _dp_backward_2d(
         income_t = entry_t.gross_income
         drawdown_t = float(entry_t.drawdown) if entry_t.drawdown is not None else 0.0
         yr_state = resolve_state_for_year(entry_t.state, scenario.state)
+        yt_t = taxes[t]
         rmd_arr_t = rmd_arrays_per_year[t]
         has_rmd = rmd_arr_t is not None
         irmaa_exposed_t = owner_age_t >= MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS
@@ -802,28 +766,9 @@ def _dp_backward_2d(
             # Conversion cost (same as _dp_backward)
             if has_rmd:
                 eff_income = income_t + rmd_i
-                cost_opts = vectorized_federal_tax(
-                    eff_income + conv_options, scenario.filing_status
-                ) - calculate_federal_tax(eff_income, scenario.filing_status)
-                if yr_state:
-                    cost_opts += vectorized_state_tax(
-                        eff_income + conv_options,
-                        yr_state,
-                        scenario.filing_status,
-                        scenario.custom_state_rate,
-                    ) - calculate_state_tax(
-                        eff_income,
-                        yr_state,
-                        scenario.filing_status,
-                        scenario.custom_state_rate,
-                    )
+                cost_opts = yt_t.total(eff_income + conv_options) - yt_t.total(eff_income)
                 if irmaa_exposed_t and need_i == 0:
-                    cost_opts += (
-                        vectorized_irmaa_surcharge_loss(
-                            eff_income, conv_options, scenario.filing_status
-                        )
-                        * irmaa_discount_ratio
-                    )
+                    cost_opts += _irmaa_loss(yt_t, eff_income, conv_options) * irmaa_discount_ratio
                 cost_opts *= discount_factor
             else:
                 cost_opts = cost_row[:n_opts]
@@ -831,6 +776,7 @@ def _dp_backward_2d(
             if need_i > 0 and (is_aca_t or irmaa_exposed_t):
                 cost_opts = cost_opts + discount_factor * _surcharges_with_spending(
                     scenario,
+                    yt_t,
                     is_aca_t,
                     irmaa_exposed_t,
                     income_t + rmd_i,
@@ -844,7 +790,7 @@ def _dp_backward_2d(
             # as calculate_npv counts them
             if rmd_i > 0 or need_i > 0:
                 cost_opts = cost_opts - discount_factor * _withdrawal_value(
-                    scenario, income_t, rmd_i, conv_options, draw_from_trad, need_i, yr_state
+                    scenario, income_t, rmd_i, conv_options, draw_from_trad, need_i, yt_t
                 )
 
             # Bilinear interpolation of future_ref at (next_trad[k], next_roth[k,j])
@@ -1142,9 +1088,9 @@ def _dp_backward_3d(
     owner_rmd_start = rmd_start_age(scenario.age)
 
     # Pre-compute tax costs (same as 2D)
+    taxes = year_taxes(scenario)
     tax_without_cache = [
-        calculate_federal_tax(scenario.timeline[t].gross_income, scenario.filing_status)
-        for t in range(n_years)
+        taxes[t].federal(scenario.timeline[t].gross_income) for t in range(n_years)
     ]
 
     # Pre-compute per-year RMD arrays. None for non-RMD years.
@@ -1168,7 +1114,7 @@ def _dp_backward_3d(
             tax_cost_by_year.append(None)
         else:
             income_t = scenario.timeline[t].gross_income
-            tax_with = vectorized_federal_tax(income_t + extended_grid, scenario.filing_status)
+            tax_with = taxes[t].federal(income_t + extended_grid)
             tax_cost_by_year.append(tax_with - tax_without_cache[t])
 
     # State tax cost indexed by conversion amount j. None for RMD years.
@@ -1179,15 +1125,8 @@ def _dp_backward_3d(
         yr_state = resolve_state_for_year(scenario.timeline[t].state, scenario.state)
         if yr_state:
             income_t = scenario.timeline[t].gross_income
-            st_with = vectorized_state_tax(
-                income_t + extended_grid,
-                yr_state,
-                scenario.filing_status,
-                scenario.custom_state_rate,
-            )
-            st_without = calculate_state_tax(
-                income_t, yr_state, scenario.filing_status, scenario.custom_state_rate
-            )
+            st_with = taxes[t].state_tax(income_t + extended_grid)
+            st_without = taxes[t].state_tax(income_t)
             state_cost_by_year_3d[t] = st_with - st_without
 
     aca_cost_by_year: list[np.ndarray | None] = [None] * n_years
@@ -1214,9 +1153,7 @@ def _dp_backward_3d(
             continue  # per-state in loop (income base includes rmd(grid[i]))
         if scenario.age + t >= MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS:
             income_t = scenario.timeline[t].gross_income
-            irmaa_arr = vectorized_irmaa_surcharge_loss(
-                income_t, extended_grid, scenario.filing_status
-            )
+            irmaa_arr = _irmaa_loss(taxes[t], income_t, extended_grid)
             irmaa_cost_by_year_3d[t] = irmaa_arr * irmaa_discount_ratio
 
     # Backward induction — vectorized bilinear interpolation across the budget dimension.
@@ -1232,6 +1169,7 @@ def _dp_backward_3d(
         income_t = entry_t.gross_income
         drawdown_t = float(entry_t.drawdown) if entry_t.drawdown is not None else 0.0
         yr_state = resolve_state_for_year(entry_t.state, scenario.state)
+        yt_t = taxes[t]
         rmd_arr_t = rmd_arrays_per_year_3d[t]
         has_rmd = rmd_arr_t is not None
         irmaa_exposed_t = owner_age_t >= MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS
@@ -1278,29 +1216,11 @@ def _dp_backward_3d(
             # Per-state cost for RMD years: income base is income_t + rmd(grid[i]).
             if has_rmd:
                 eff_income = income_t + rmd_i
-                cost_opts = vectorized_federal_tax(
-                    eff_income + conv_options, scenario.filing_status
-                ) - calculate_federal_tax(eff_income, scenario.filing_status)
-                if yr_state:
-                    cost_opts = (
-                        cost_opts
-                        + vectorized_state_tax(
-                            eff_income + conv_options,
-                            yr_state,
-                            scenario.filing_status,
-                            scenario.custom_state_rate,
-                        )
-                        - calculate_state_tax(
-                            eff_income, yr_state, scenario.filing_status, scenario.custom_state_rate
-                        )
-                    )
+                cost_opts = yt_t.total(eff_income + conv_options) - yt_t.total(eff_income)
                 if irmaa_exposed_t and need_i == 0:
                     cost_opts = (
                         cost_opts
-                        + vectorized_irmaa_surcharge_loss(
-                            eff_income, conv_options, scenario.filing_status
-                        )
-                        * irmaa_discount_ratio
+                        + _irmaa_loss(yt_t, eff_income, conv_options) * irmaa_discount_ratio
                     )
                 cost_opts = cost_opts * discount_factor
             else:
@@ -1309,6 +1229,7 @@ def _dp_backward_3d(
             if need_i > 0 and (is_aca_t or irmaa_exposed_t):
                 cost_opts = cost_opts + discount_factor * _surcharges_with_spending(
                     scenario,
+                    yt_t,
                     is_aca_t,
                     irmaa_exposed_t,
                     income_t + rmd_i,

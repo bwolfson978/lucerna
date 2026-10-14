@@ -111,7 +111,8 @@ def generate_timeline(
 
     Current income (growing at ``growth_pct``) runs until ``base_end_age``: by default the
     year before retirement, or the whole plan for someone already retired. Each income
-    source adds its amount for the ages it covers.
+    source adds its amount for the ages it covers, and Social Security is also
+    recorded on its own so only its taxable part is taxed.
     """
     length = max(1, planning_horizon_age - age + 1)
     if base_end_age is None:
@@ -120,11 +121,17 @@ def generate_timeline(
     for i in range(length):
         year_age = age + i
         income = base_income * (1 + growth_pct / 100) ** i if year_age <= base_end_age else 0.0
+        social_security = 0.0
         for src in sources or []:
             end = planning_horizon_age if src.end_age is None else src.end_age
             if src.start_age <= year_age <= end:
                 income += src.amount
-        rows.append(PlanYear(year=start_year + i, gross_income=_js_round(income)))
+                if src.kind == "social_security":
+                    social_security += src.amount
+        row = PlanYear(year=start_year + i, gross_income=_js_round(income))
+        if social_security > 0:
+            row.social_security = _js_round(social_security)
+        rows.append(row)
     return rows
 
 
