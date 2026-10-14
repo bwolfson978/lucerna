@@ -142,7 +142,12 @@ class ScenarioUpdate(BaseModel):
         description="Discount rate for today's dollars, percent. Default 5.",
     )
     include_aca: bool | None = Field(
-        default=None, description="True if they buy health insurance on the ACA marketplace"
+        default=None,
+        description=(
+            "True if they buy health insurance on the ACA marketplace before 65. Years whose "
+            "income alone is over 400% of the poverty level (usually working years) get no "
+            "subsidy and are left out."
+        ),
     )
     household_size: int | None = Field(default=None, ge=1, le=12)
     monthly_slcsp_premium: float | None = Field(

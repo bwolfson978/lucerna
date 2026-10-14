@@ -81,7 +81,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from app.engine.aca import vectorized_subsidy_loss
+from app.engine.aca import aca_coverage_years, vectorized_subsidy_loss
 from app.engine.constants import round_to_resolution
 from app.engine.irmaa import (
     IRMAA_LOOKBACK_YEARS,
@@ -90,6 +90,7 @@ from app.engine.irmaa import (
 )
 from app.engine.retirement import (
     account_spending,
+    conversion_magi,
     draw_beyond_rmd,
     post_timeline_start,
     vectorized_withdrawal_tax,
@@ -105,27 +106,37 @@ from app.engine.types import ConversionCurvePoint, ScenarioInput
 
 
 def _aca_coverage_years(scenario: ScenarioInput) -> set[int]:
-    """Determine which calendar years the user needs ACA marketplace coverage.
+    """Calendar years the household needs ACA marketplace coverage."""
+    return aca_coverage_years(scenario)
 
-    Shared logic for both 2D and 3D DP backward passes. Equivalent to the
-    function of the same name in optimizer.py.
+
+def _surcharges_with_spending(
+    scenario: ScenarioInput,
+    is_aca_year: bool,
+    irmaa_exposed: bool,
+    income_with_rmd: float,
+    available_for_conv: float,
+    need: float,
+    conv_options: np.ndarray,
+    irmaa_discount_ratio: float,
+) -> np.ndarray:
+    """Lost ACA subsidy and IRMAA per conversion option in a year with a spending draw.
+
+    The traditional withdrawal for spending counts toward income, so these
+    depend on the balance state and can't use the precomputed rows.
     """
+    base, added = conversion_magi(income_with_rmd, available_for_conv, need, conv_options)
+    base = float(base)
+    cost = np.zeros_like(conv_options, dtype=float)
     hc = scenario.healthcare
-    if hc is None:
-        return set()
-
-    # Medicare replaces marketplace coverage at 65
-    timeline_years = {
-        y.year for t, y in enumerate(scenario.timeline) if scenario.age + t < MEDICARE_START_AGE
-    }
-
-    if hc.aca_coverage_years is not None:
-        return set(hc.aca_coverage_years) & timeline_years
-
-    if hc.has_employer_coverage_after is not None:
-        return {y for y in timeline_years if y < hc.has_employer_coverage_after}
-
-    return timeline_years
+    if is_aca_year and hc is not None:
+        cost += vectorized_subsidy_loss(base, added, hc.household_size, hc.monthly_slcsp_premium)
+    if irmaa_exposed:
+        cost += (
+            vectorized_irmaa_surcharge_loss(base, added, scenario.filing_status)
+            * irmaa_discount_ratio
+        )
+    return cost
 
 
 @dataclass
@@ -739,9 +750,10 @@ def _dp_backward_2d(
             cost_row = tax_cost_by_year[t].copy()
             if state_cost_by_year[t] is not None:
                 cost_row += state_cost_by_year[t]
-            if aca_cost_by_year[t] is not None:
+            # With a spending draw, ACA and IRMAA depend on the balance (added per state)
+            if aca_cost_by_year[t] is not None and drawdown_t == 0:
                 cost_row += aca_cost_by_year[t]
-            if irmaa_cost_by_year[t] is not None:
+            if irmaa_cost_by_year[t] is not None and drawdown_t == 0:
                 cost_row += irmaa_cost_by_year[t]
             cost_row *= discount_factor
         else:
@@ -805,7 +817,7 @@ def _dp_backward_2d(
                         scenario.filing_status,
                         scenario.custom_state_rate,
                     )
-                if irmaa_exposed_t:
+                if irmaa_exposed_t and need_i == 0:
                     cost_opts += (
                         vectorized_irmaa_surcharge_loss(
                             eff_income, conv_options, scenario.filing_status
@@ -815,6 +827,18 @@ def _dp_backward_2d(
                 cost_opts *= discount_factor
             else:
                 cost_opts = cost_row[:n_opts]
+            is_aca_t = hc is not None and entry_t.year in aca_years
+            if need_i > 0 and (is_aca_t or irmaa_exposed_t):
+                cost_opts = cost_opts + discount_factor * _surcharges_with_spending(
+                    scenario,
+                    is_aca_t,
+                    irmaa_exposed_t,
+                    income_t + rmd_i,
+                    available_for_conv,
+                    need_i,
+                    conv_options,
+                    irmaa_discount_ratio,
+                )
 
             # After-tax value of this year's withdrawals (RMD and spending draws),
             # as calculate_npv counts them
@@ -1217,9 +1241,10 @@ def _dp_backward_3d(
             cost_row = tax_cost_by_year[t].copy()
             if state_cost_by_year_3d[t] is not None:
                 cost_row += state_cost_by_year_3d[t]
-            if aca_cost_by_year[t] is not None:
+            # With a spending draw, ACA and IRMAA depend on the balance (added per state)
+            if aca_cost_by_year[t] is not None and drawdown_t == 0:
                 cost_row += aca_cost_by_year[t]
-            if irmaa_cost_by_year_3d[t] is not None:
+            if irmaa_cost_by_year_3d[t] is not None and drawdown_t == 0:
                 cost_row += irmaa_cost_by_year_3d[t]
             cost_row *= discount_factor
         else:
@@ -1243,8 +1268,9 @@ def _dp_backward_3d(
 
             # State transition: conversion + drawdown, then grow.
             avail_after_conv = available_for_conv - conv_options  # shape (n_opts,)
+            need_i = max(0.0, drawdown_t - rmd_i)
             if drawdown_t > 0:
-                draw_from_trad = np.minimum(max(0.0, drawdown_t - rmd_i), avail_after_conv)
+                draw_from_trad = np.minimum(need_i, avail_after_conv)
                 remaining_bal = (avail_after_conv - draw_from_trad) * (1 + g)
             else:
                 remaining_bal = avail_after_conv * (1 + g)
@@ -1268,7 +1294,7 @@ def _dp_backward_3d(
                             eff_income, yr_state, scenario.filing_status, scenario.custom_state_rate
                         )
                     )
-                if irmaa_exposed_t:
+                if irmaa_exposed_t and need_i == 0:
                     cost_opts = (
                         cost_opts
                         + vectorized_irmaa_surcharge_loss(
@@ -1279,6 +1305,18 @@ def _dp_backward_3d(
                 cost_opts = cost_opts * discount_factor
             else:
                 cost_opts = cost_row[:n_opts]
+            is_aca_t = hc is not None and entry_t.year in aca_years
+            if need_i > 0 and (is_aca_t or irmaa_exposed_t):
+                cost_opts = cost_opts + discount_factor * _surcharges_with_spending(
+                    scenario,
+                    is_aca_t,
+                    irmaa_exposed_t,
+                    income_t + rmd_i,
+                    available_for_conv,
+                    need_i,
+                    conv_options,
+                    irmaa_discount_ratio,
+                )
 
             # Step 1: Balance interpolation for all (j, b) pairs.
             # For each conversion j, find balance bracket and interpolate

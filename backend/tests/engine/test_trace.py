@@ -253,7 +253,10 @@ class TestAcaSummary:
             traditional_ira_balance=1_000_000,
             drawdown_start_age=60,
             default_drawdown=40_000,
-            healthcare=HealthcareInput(household_size=2),
+            # Marketplace coverage named explicitly, so the high-wage years are ACA years
+            healthcare=HealthcareInput(
+                household_size=2, aca_coverage_years=list(range(2026, 2033))
+            ),
         )
         result = optimize(scenario)
         by_year = {d.year: d for d in result.aca_subsidy_impact}

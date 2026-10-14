@@ -301,6 +301,16 @@ def summarize_result(result: OptimizationResult, result_id: str) -> dict:
             "tax_on_conversion": round(d["tax_cost"]),
             "marginal_bracket": d.get("marginal_bracket"),
             **({"rmd": round(d["rmd"])} if d.get("rmd") else {}),
+            **(
+                {"spending_from_traditional": round(d["spending_from_traditional"])}
+                if d.get("spending_from_traditional")
+                else {}
+            ),
+            **(
+                {"spending_from_roth": round(d["spending_from_roth"])}
+                if d.get("spending_from_roth")
+                else {}
+            ),
         }
         for d in result.yearly_detail
     ]
