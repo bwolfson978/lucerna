@@ -27,7 +27,7 @@ def reset_limits():
 async def test_streams_events_from_the_loop(async_client):
     set_model_client(
         ScriptedModelClient(
-            [[tool_use("t1", "record_scenario", {"scenario": {"age": 40}})], [text("Thanks!")]]
+            [[tool_use("t1", "prepare_scenario", {"scenario": {"age": 40}})], [text("Thanks!")]]
         )
     )
     response = await async_client.post("/api/agent", json={"message": "I'm 40"})
@@ -137,7 +137,7 @@ async def test_ai_generations_carry_usage_and_never_the_conversation(async_clien
     monkeypatch.setattr(error_tracking, "_client", posthog)
     set_model_client(
         ScriptedModelClient(
-            [[tool_use("t1", "record_scenario", {"scenario": {"age": 40}})], [text("Thanks!")]]
+            [[tool_use("t1", "prepare_scenario", {"scenario": {"age": 40}})], [text("Thanks!")]]
         )
     )
     headers = {"x-posthog-distinct-id": "visitor-1", "x-posthog-session-id": "session-1"}

@@ -61,7 +61,7 @@ stateless: pass the `scenario` returned by the previous call, with any new value
 Confirm the values with the user before analyze_roth_conversions. In hosts that show this \
 server's UI, scenario, result and what-if cards appear on their own: don't repeat their \
 numbers as a table. A card button may send "Looks right. Run the numbers." (run the \
-analysis) or ask to use a what-if as the scenario (call record_scenario with that \
+analysis) or ask to use a what-if as the scenario (call prepare_scenario with that \
 comparison's what_if_scenario). Results include full_results_url, a link to the full \
 interactive analysis of that scenario on the website; share it when the user wants more \
 detail. Users can keep scenarios in an account: call save_scenario when they ask to \
@@ -337,7 +337,7 @@ async def _run_drafts(
 
 
 @mcp.tool(
-    title="Record a scenario",
+    title="Prepare a scenario",
     annotations=_READ_ONLY,
     meta=_tool_ui(SCENARIO_SUMMARY_URI),
     description=(
@@ -348,7 +348,7 @@ async def _run_drafts(
     ),
 )
 @_tracked
-async def record_scenario(scenario: ScenarioArg) -> CallToolResult:
+async def prepare_scenario(scenario: ScenarioArg) -> CallToolResult:
     try:
         draft = core.draft_from_scenario(scenario, current_year())
     except core.ToolError as err:

@@ -10,7 +10,7 @@ Roth Conversions Optimizer finds the Roth conversion schedule with the highest e
 ## Flow
 
 1. Gather the five required values: age, filing status, current gross income, traditional IRA/401(k) balance, and the age they start drawing on the accounts. Ask for any that are missing; never guess.
-2. Call `record_scenario` with only what the user said. It returns the normalized `scenario` and shows a card the user can check.
+2. Call `prepare_scenario` with only what the user said. It returns the normalized `scenario` and shows a card the user can check.
 3. Once the user confirms, call `analyze_roth_conversions` with that `scenario` and `user_confirmed: true`.
 4. For a what-if (retire earlier, a sabbatical year, different spending), call `compare_roth_scenarios` with the scenario and only the values that change.
 5. If the user asks to keep a scenario, call `save_scenario`; the first call asks them to sign in. `list_saved_scenarios` and `open_saved_scenario` pick one up later. Mention saving at most once.

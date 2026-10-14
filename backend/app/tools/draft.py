@@ -1,7 +1,7 @@
 """Scenario draft: the partially filled inputs shared by the conversation and the form.
 
 The draft mirrors the calculator form field for field. The conversation fills it
-through the ``record_scenario`` MCP tool; the form edits the same object in the browser. Both
+through the ``prepare_scenario`` MCP tool; the form edits the same object in the browser. Both
 sides turn a complete draft into a ``ScenarioInput`` with the same rules, so a
 scenario gives identical results whichever mode produced it. The parity cases in
 ``shared/fixtures/scenario-draft-cases.json`` keep this module and

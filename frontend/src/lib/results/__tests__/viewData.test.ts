@@ -59,8 +59,8 @@ it("comparison data matches the tool's structuredContent", () => {
   });
 });
 
-it("summary data from a draft has the record_scenario shape", () => {
-  const recorded = fixture.record_scenario.structured_content;
+it("summary data from a draft has the prepare_scenario shape", () => {
+  const recorded = fixture.prepare_scenario.structured_content;
   expect(isScenarioSummaryData(recorded)).toBe(true);
   const draft = normalizeDraft({
     ...recorded.scenario,

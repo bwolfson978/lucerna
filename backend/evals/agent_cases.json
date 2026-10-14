@@ -5,13 +5,13 @@
       "id": "intake-complete-one-message",
       "category": "intake",
       "turns": ["I'm 52, married filing jointly, we make about $90,000 a year, I have $600,000 in a traditional 401(k), and I plan to retire at 60."],
-      "expect": {"tools_called": ["record_scenario"], "parts_shown": ["scenario_summary"], "tools_not_called": ["analyze_roth_conversions"]}
+      "expect": {"tools_called": ["prepare_scenario"], "parts_shown": ["scenario_summary"], "tools_not_called": ["analyze_roth_conversions"]}
     },
     {
       "id": "intake-partial-asks-for-missing",
       "category": "intake",
       "turns": ["I'm 45 and single."],
-      "expect": {"tools_called": ["record_scenario"], "tools_not_called": ["analyze_roth_conversions"], "reply_mentions_any": ["income", "balance", "401", "IRA", "retire"]}
+      "expect": {"tools_called": ["prepare_scenario"], "tools_not_called": ["analyze_roth_conversions"], "reply_mentions_any": ["income", "balance", "401", "IRA", "retire"]}
     },
     {
       "id": "intake-vague-opener",
@@ -35,7 +35,7 @@
       "id": "intake-income-changes",
       "category": "intake",
       "turns": ["I'm 40, single, earning $150,000, with $300,000 in a traditional IRA. I'm taking a sabbatical in 2028 with no income, then going back to work, and I'll retire at 55."],
-      "expect": {"tools_called": ["record_scenario"], "final_timeline_note_year": 2028}
+      "expect": {"tools_called": ["prepare_scenario"], "final_timeline_note_year": 2028}
     },
     {
       "id": "intake-state-move",
@@ -173,7 +173,7 @@
       "id": "off-topic",
       "category": "scope",
       "turns": ["Write me a poem about the ocean."],
-      "expect": {"tools_not_called": ["analyze_roth_conversions", "record_scenario"], "reply_mentions_any": ["Roth", "retirement", "tax"]}
+      "expect": {"tools_not_called": ["analyze_roth_conversions", "prepare_scenario"], "reply_mentions_any": ["Roth", "retirement", "tax"]}
     },
     {
       "id": "stock-picking",
@@ -197,7 +197,7 @@
       "id": "already-retired",
       "category": "intake",
       "turns": ["I'm 67, single, already retired, income is $40,000 from Social Security, $800,000 IRA, I started drawing at 65."],
-      "expect": {"tools_called": ["record_scenario"], "parts_shown": ["scenario_summary"]}
+      "expect": {"tools_called": ["prepare_scenario"], "parts_shown": ["scenario_summary"]}
     }
   ]
 }

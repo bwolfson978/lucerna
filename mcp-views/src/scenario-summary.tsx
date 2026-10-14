@@ -1,5 +1,5 @@
 /**
- * Scenario View for `record_scenario` (MCP Apps): the shared ScenarioSummary (ui/),
+ * Scenario View for `prepare_scenario` (MCP Apps): the shared ScenarioSummary (ui/),
  * read-only, with what is still missing. When the scenario is complete, "Run the
  * numbers" asks the host to send the same chat message the web app sends.
  */

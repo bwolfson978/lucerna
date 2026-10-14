@@ -247,7 +247,7 @@ async def test_tools_declare_their_auth_for_chatgpt():
         tools = {t.name: t for t in (await session.list_tools()).tools}
     for name in mcp_auth.ACCOUNT_TOOLS:
         assert tools[name].meta["securitySchemes"][0]["type"] == "oauth2"
-    for name in ("record_scenario", "analyze_roth_conversions", "get_tax_brackets"):
+    for name in ("prepare_scenario", "analyze_roth_conversions", "get_tax_brackets"):
         assert tools[name].meta["securitySchemes"] == [{"type": "noauth"}]
     assert tools["save_scenario"].annotations.readOnlyHint is False
     assert tools["save_scenario"].annotations.destructiveHint is False
@@ -309,7 +309,7 @@ async def test_open_a_website_save(issuer, store):
     assert "note" in opened
     assert opened["estimated_lifetime_tax_savings_when_saved"] == 1234
     assert opened["scenario"]["traditional_balance"] == DEMO_SCENARIO.traditional_ira_balance
-    recorded = await _tool("user:u1", "record_scenario", {"scenario": opened["scenario"]})
+    recorded = await _tool("user:u1", "prepare_scenario", {"scenario": opened["scenario"]})
     assert recorded.structuredContent["ready_to_run"]
 
 

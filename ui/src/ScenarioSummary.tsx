@@ -8,7 +8,7 @@ import { FILING_STATUS_OPTIONS, STATE_OPTIONS, filingStatusLabel, stateName } fr
 
 export type FilingStatus = "single" | "married_filing_jointly";
 
-/** Scenario values as recorded: the `scenario` from `record_scenario` (backend
+/** Scenario values as recorded: the `scenario` from `prepare_scenario` (backend
  * app/tools/core.py scenario_from_draft), or the web app's draft. */
 export interface ScenarioValues {
   age?: number | null;
@@ -65,7 +65,7 @@ interface Row {
 /** Rows that hold defaults most people keep; they sit behind one "Assumptions" line. */
 const ASSUMPTION_KEYS = new Set(["growth", "horizon", "return"]);
 
-/** Labels for the fields `record_scenario` reports as missing. */
+/** Labels for the fields `prepare_scenario` reports as missing. */
 export const FIELD_LABELS: Record<string, string> = {
   age: "Age",
   filing_status: "Filing status",

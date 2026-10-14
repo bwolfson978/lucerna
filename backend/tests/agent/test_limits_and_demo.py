@@ -76,7 +76,7 @@ async def test_agent_generated_demo(monkeypatch):
         return [
             tool_use(
                 "t1",
-                "record_scenario",
+                "prepare_scenario",
                 {"scenario": SCENARIO},
             )
         ]

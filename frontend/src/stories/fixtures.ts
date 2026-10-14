@@ -26,5 +26,5 @@ export const bracketFill = resultDetails.bracket_fill!;
 
 export const compare = fixture.compare_roth_scenarios
   .structured_content as unknown as ScenarioCompareData;
-export const recordedScenario = fixture.record_scenario
+export const recordedScenario = fixture.prepare_scenario
   .structured_content as unknown as ScenarioSummaryData;

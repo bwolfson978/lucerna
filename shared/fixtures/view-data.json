@@ -16,7 +16,7 @@
       }
     ]
   },
-  "record_scenario": {
+  "prepare_scenario": {
     "structured_content": {
       "scenario": {
         "age": 60,

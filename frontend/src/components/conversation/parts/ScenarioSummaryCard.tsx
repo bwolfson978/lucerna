@@ -14,7 +14,7 @@ interface ScenarioSummaryCardProps {
 }
 
 /**
- * The shared scenario summary (ui/), wired to the live draft. The `record_scenario`
+ * The shared scenario summary (ui/), wired to the live draft. The `prepare_scenario`
  * View renders the same component read-only in other MCP hosts; this host shows its
  * own because edits here update the draft and the form directly.
  */

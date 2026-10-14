@@ -11,7 +11,7 @@ frontend (Next.js)                         backend (FastAPI)
     full results view (?view=results)                              │  HTTP when AGENT_MCP_URL is set)
                                                                    ▼
   Claude / ChatGPT / any MCP client ───────────────────────▶ /mcp  app/mcp/server.py
-                                                               record_scenario
+                                                               prepare_scenario
                                                                analyze_roth_conversions
                                                                compare_roth_scenarios
                                                                get_tax_brackets
@@ -64,7 +64,7 @@ Cards that appear both in MCP App Views and natively in the web app are defined 
 
 **Data contract.** Views render the tool's `structuredContent` and View `_meta`; native cards render the same shapes, built from full engine results by `frontend/src/lib/results/viewData.ts`. `shared/fixtures/view-data.json` holds one real call of each tool with a View (regenerate with `python -m scripts.generate_view_fixtures` from `backend/`). Backend and frontend tests check both sides against it.
 
-**Drift check.** `e2e/tests/ui-drift.spec.ts` runs a conversation to a result and a what-if, renders both cards (the result card with its bracket chart) as Views inside the sandbox iframes and natively (the host's fallback, shown while a View loads or if it fails), then compares computed styles and sizes of each part. Any visual difference fails CI. `e2e/tests/scenario-view.spec.ts` mounts the `record_scenario` View, which the web app doesn't show on its own.
+**Drift check.** `e2e/tests/ui-drift.spec.ts` runs a conversation to a result and a what-if, renders both cards (the result card with its bracket chart) as Views inside the sandbox iframes and natively (the host's fallback, shown while a View loads or if it fails), then compares computed styles and sizes of each part. Any visual difference fails CI. `e2e/tests/scenario-view.spec.ts` mounts the `prepare_scenario` View, which the web app doesn't show on its own.
 
 **Deploying.** The frontend imports files outside its directory, so the Vercel project must keep "Include files outside the root directory in the Build Step" enabled (the default).
 
@@ -72,7 +72,7 @@ Cards that appear both in MCP App Views and natively in the web app are defined 
 
 | Tool | View | Shared component (ui/) | Web app |
 |---|---|---|---|
-| `record_scenario` | `scenario-summary.html` | `ScenarioSummary` | Not mounted: the host shows its own editable card (same component, wired to the live draft and form) via `show` |
+| `prepare_scenario` | `scenario-summary.html` | `ScenarioSummary` | Not mounted: the host shows its own editable card (same component, wired to the live draft and form) via `show` |
 | `analyze_roth_conversions` | `result-card.html` | `ResultCard` with `BracketFillChart`: the results page's `BracketChart` at the optimal schedule | Mounted |
 | `compare_roth_scenarios` | `scenario-compare.html` | `ScenarioCompareCard` | Mounted |
 
@@ -167,6 +167,6 @@ The server speaks MCP over streamable HTTP at `https://<backend-host>/mcp`. No s
 - **ChatGPT:** with developer mode enabled, create a connector pointing at the same URL.
 - **Any MCP client:** configure a remote (streamable HTTP) server with the URL. Inspect it with `npx @modelcontextprotocol/inspector`.
 
-Tools are read-only and stateless: each call carries the full scenario, and each result returns the normalized `scenario` for the next call. A typical flow is `record_scenario` until nothing is missing, confirm with the user, then `analyze_roth_conversions`, then `compare_roth_scenarios` for what-ifs. Missing required inputs come back as a tool error with a `missing_required` list so the client's model asks the user instead of guessing.
+Tools are read-only and stateless: each call carries the full scenario, and each result returns the normalized `scenario` for the next call. A typical flow is `prepare_scenario` until nothing is missing, confirm with the user, then `analyze_roth_conversions`, then `compare_roth_scenarios` for what-ifs. Missing required inputs come back as a tool error with a `missing_required` list so the client's model asks the user instead of guessing.
 
 Next steps: a privacy page on the website, then submission to the Claude connector directory and the ChatGPT app directory.
