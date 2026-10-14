@@ -443,6 +443,45 @@ class TestStateTaxIntegration:
             f"Schedule: {result.yearly_conversions}"
         )
 
+    def test_retirement_state_applies_from_drawdown_start(self):
+        """Timeline years from drawdown_start_age on are taxed in the retirement state."""
+        scenario = ScenarioInput(
+            age=58,
+            filing_status=FilingStatus.MFJ,
+            timeline=[
+                *(PlanYear(year=2026 + i, gross_income=140000) for i in range(4)),
+                *(PlanYear(year=2030 + i, gross_income=0) for i in range(3)),
+            ],
+            traditional_ira_balance=600000,
+            drawdown_start_age=62,
+            planning_horizon_age=90,
+            default_drawdown=60000,
+            state="CA",
+            retirement_state="NV",
+        )
+        result = optimize(scenario)
+        working = result.yearly_detail[:4]
+        retired = result.yearly_detail[4:]
+
+        assert all(d["state_tax_cost"] == 0 for d in retired)
+        # Waiting for Nevada beats converting on top of California wages
+        assert sum(d["conversion"] for d in retired) > sum(d["conversion"] for d in working)
+        # A year with its own state keeps it
+        pinned = scenario.model_copy(
+            update={
+                "timeline": [
+                    *scenario.timeline[:4],
+                    scenario.timeline[4].model_copy(update={"state": "CA"}),
+                    *scenario.timeline[5:],
+                ]
+            }
+        )
+        pinned_result = optimize(pinned)
+        assert pinned_result.yearly_detail[4]["conversion"] == 0 or (
+            pinned_result.yearly_detail[4]["state_tax_cost"] > 0
+        )
+        assert result.input.timeline[4].state is None
+
     def test_yearly_detail_includes_state_tax_cost(self):
         """yearly_detail should report state_tax_cost when state is set."""
         with_ca = self._base_scenario(state="CA")

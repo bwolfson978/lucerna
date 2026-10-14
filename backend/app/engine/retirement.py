@@ -62,6 +62,26 @@ def draw_beyond_rmd(drawdown: float | None, rmd: float) -> float:
     return max(0.0, drawdown - rmd)
 
 
+def resolve_states(scenario: ScenarioInput) -> ScenarioInput:
+    """Tax timeline years from ``drawdown_start_age`` on in the retirement state.
+
+    The timeline runs to the plan's last year, so retirement years are timeline
+    years. A year with its own state override keeps it; the rest move to
+    ``retirement_state`` once drawdowns start.
+    """
+    ret_state = scenario.retirement_state
+    if ret_state is None or ret_state == scenario.state:
+        return scenario
+    start_offset = scenario.drawdown_start_age - scenario.age
+    timeline = [
+        entry.model_copy(update={"state": ret_state})
+        if entry.state is None and t >= start_offset
+        else entry
+        for t, entry in enumerate(scenario.timeline)
+    ]
+    return scenario.model_copy(update={"timeline": timeline})
+
+
 def resolve_drawdowns(scenario: ScenarioInput) -> ScenarioInput:
     """Fill in spending draws for timeline years once drawdowns have started.
 
