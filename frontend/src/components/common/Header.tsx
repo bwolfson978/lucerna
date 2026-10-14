@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useUser } from "@/lib/auth";
+import { useSignOut, useUser } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { HowItWorksButton } from "@/components/methodology/HowItWorksButton";
 import { Wordmark } from "@/components/common/Wordmark";
@@ -13,10 +13,17 @@ const NAV_LINKS = [
   { href: "/methodology", label: "Methodology" },
 ] as const;
 
-export function Header() {
+interface HeaderProps {
+  /** Overrides the signed-in state (Storybook, tests); the app leaves it to Clerk. */
+  isSignedIn?: boolean;
+}
+
+export function Header({ isSignedIn: signedInOverride }: HeaderProps = {}) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-  const { isSignedIn } = useUser();
+  const user = useUser();
+  const isSignedIn = signedInOverride ?? user.isSignedIn;
+  const signOut = useSignOut();
 
   // Only close the menu explicitly when tapping the current page's link —
   // cross-page navigation unmounts this component, so the menu resets naturally.
@@ -58,6 +65,15 @@ export function Header() {
               >
                 My scenarios
               </Link>
+            )}
+            {isSignedIn && (
+              <button
+                type="button"
+                onClick={signOut}
+                className="text-[15px] font-medium text-text-secondary transition-colors duration-200 hover:text-text-primary"
+              >
+                Sign out
+              </button>
             )}
             <HowItWorksButton />
             {/* Not on the calculator itself, where it would link to the page you're on. */}
@@ -131,6 +147,15 @@ export function Header() {
               >
                 My scenarios
               </Link>
+            )}
+            {isSignedIn && (
+              <button
+                type="button"
+                onClick={signOut}
+                className="-mx-2 rounded-lg px-2 py-2.5 text-left text-body text-text-secondary transition-colors duration-200 hover:bg-paper-warm hover:text-pine"
+              >
+                Sign out
+              </button>
             )}
             <Link
               href="/calculator"
