@@ -2,20 +2,16 @@
 
 /**
  * Native renders of the shared cards (ui/) for conversation parts that point at stored
- * results: the `show` tool's charts, and parts saved by earlier versions. Results
+ * results saved by earlier versions. Results
  * from tools with MCP App Views render through McpAppFrame instead; both use the
  * same components with the same data (lib/results/viewData.ts).
  */
 
 import { useEffect, useState } from "react";
 import posthog from "posthog-js";
-import {
-  BalanceComparison,
-  ResultCard,
-  ScenarioCompareCard as SharedScenarioCompareCard,
-} from "@lucerna/ui";
+import { ResultCard, ScenarioCompareCard as SharedScenarioCompareCard } from "@lucerna/ui";
 import type { StoredResult } from "@/lib/agent/types";
-import { balanceData, compareData, resultCardData, resultDetails } from "@/lib/results/viewData";
+import { compareData, resultCardData, resultDetails } from "@/lib/results/viewData";
 import { useConversationContext } from "../ConversationContext";
 
 /** Look up a result, recomputing it if it was dropped from session storage. */
@@ -57,17 +53,6 @@ export function ResultHeadlineCard({ resultId }: { resultId: string }) {
         details={resultDetails(result)}
         onOpenFullResults={() => openFull(openResults, resultId, "headline")}
       />
-    </div>
-  );
-}
-
-export function BalanceComparisonCard({ resultId }: { resultId: string }) {
-  const stored = useStoredResult(resultId);
-  if (!stored) return null;
-  if (!stored.result) return <Pending />;
-  return (
-    <div data-testid="balance-comparison">
-      <BalanceComparison data={balanceData(stored.result)} />
     </div>
   );
 }

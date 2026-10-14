@@ -116,6 +116,8 @@ export const DEFAULT_BAR_WIDTH = 48;
 // Phones get tighter bars so a typical plan (up to about nine years) fits without scrolling.
 const BAR_GAP_MOBILE = 6;
 const MIN_BAR_WIDTH_MOBILE = 16;
+/** With values under the bars, phone columns stay wide enough for "193K" (the chart scrolls instead). */
+const MIN_BAR_WIDTH_MOBILE_WITH_VALUES = 28;
 /** Below this column width, years print as '26. */
 const SHORT_YEAR_COL_WIDTH = 34;
 /** Below this column width, values under the bars drop the $ ("126K") so neighbors don't touch. */
@@ -185,6 +187,8 @@ export function BracketChart({
     return () => document.removeEventListener("pointerdown", handleOutsideClick);
   }, []);
 
+  const showValues = addedTax != null;
+
   // Responsive layout computation
   const layout = useMemo(() => {
     const isMobile = containerWidth !== undefined && containerWidth < MOBILE_BREAKPOINT;
@@ -204,7 +208,11 @@ export function BracketChart({
     const leftAxisWidth = isMobile ? LEFT_AXIS_WIDTH_MOBILE : LEFT_AXIS_WIDTH_DESKTOP;
     const rightAxisWidth = isMobile ? RIGHT_AXIS_WIDTH_MOBILE : RIGHT_AXIS_WIDTH_DESKTOP;
     const gap = isMobile ? BAR_GAP_MOBILE : BAR_GAP;
-    const minBarWidth = isMobile ? MIN_BAR_WIDTH_MOBILE : MIN_BAR_WIDTH;
+    const minBarWidth = !isMobile
+      ? MIN_BAR_WIDTH
+      : showValues
+        ? MIN_BAR_WIDTH_MOBILE_WITH_VALUES
+        : MIN_BAR_WIDTH_MOBILE;
     const totalOverhead = leftAxisWidth + rightAxisWidth;
 
     let barWidth = DEFAULT_BAR_WIDTH;
@@ -235,7 +243,7 @@ export function BracketChart({
       totalBarWidth,
       barsFit,
     };
-  }, [containerWidth, viewportHeight, fixedHeight, years.length]);
+  }, [containerWidth, viewportHeight, fixedHeight, years.length, showValues]);
 
   const {
     isMobile,
@@ -269,7 +277,7 @@ export function BracketChart({
   }, [onLayoutChange, leftAxisWidth, rightAxisWidth]);
 
   // Under the bars: what to convert each year (the answer), then the tax it adds.
-  const rows = addedTax
+  const rows = showValues
     ? [
         {
           label: "Convert",

@@ -31,7 +31,6 @@ export {
   type TaxBracket,
 } from "./BracketChart";
 export { BracketFillChart, isBracketFillData, type BracketFillData } from "./BracketFillChart";
-export { BalanceComparison, BalanceLines, type BalanceComparisonData } from "./BalanceComparison";
 export {
   PaidVsAvoided,
   ScenarioCompareCard,

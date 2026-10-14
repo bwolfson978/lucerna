@@ -9,12 +9,7 @@ import { usePrefersReducedMotion } from "@/hooks/useInView";
 import { McpAppFrame } from "./parts/McpAppFrame";
 import { PartBoundary } from "./parts/PartBoundary";
 import { ScenarioSummaryCard } from "./parts/ScenarioSummaryCard";
-import {
-  BalanceComparisonCard,
-  ResultHeadlineCard,
-  ScenarioCompareCard,
-  SuggestionChips,
-} from "./parts/ResultCards";
+import { ResultHeadlineCard, ScenarioCompareCard, SuggestionChips } from "./parts/ResultCards";
 
 /** Screen height the header, composer and margins take: what the latest turn needn't fill. */
 const TURN_ROOM = 192;
@@ -225,10 +220,9 @@ function PartView({
     case "result_headline":
       return <ResultHeadlineCard resultId={part.result_id} />;
     case "bracket_fill":
-      // Saved by earlier versions; the result card above already has this chart.
-      return null;
     case "balance_comparison":
-      return <BalanceComparisonCard resultId={part.result_id} />;
+      // Saved by earlier versions; the result card above already covers these.
+      return null;
     case "scenario_compare":
       return (
         <ScenarioCompareCard
