@@ -6,6 +6,7 @@ import { PageFooter } from "@/components/common/PageFooter";
 import barryPhoto from "../../../public/barry.jpg";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/about" },
   title: "About | Roth Conversions Optimizer",
   description:
     "Why Barry Wolfson built Roth Conversions Optimizer: an MBA side quest, three classes and weeks of spreadsheet modeling, packaged into an easy-to-use tool.",

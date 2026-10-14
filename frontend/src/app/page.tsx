@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Header } from "@/components/common/Header";
 import { PageFooter } from "@/components/common/PageFooter";
@@ -7,6 +8,10 @@ import { IncomeWindowMap } from "@/components/landing/IncomeWindowMap";
 import { BracketFiller } from "@/components/landing/BracketFiller";
 import { LandingDemo } from "@/components/landing/LandingDemo";
 import { WhyItMatters } from "@/components/landing/WhyItMatters";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 const WINDOW_YEARS = [
   "Early retirement",

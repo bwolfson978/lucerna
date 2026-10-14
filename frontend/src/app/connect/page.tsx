@@ -11,6 +11,7 @@ import { AssistantChatPreview } from "@/components/connect/AssistantChatPreview"
 import { MCP_SERVER_URL, SUPPORT_EMAIL } from "@/lib/utils/constants";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/connect" },
   title: "Claude & ChatGPT | Roth Conversions Optimizer",
   description:
     "Analyze Roth conversions with Claude or ChatGPT: add Roth Conversions Optimizer to your agent, see what each tool does, and fix common problems.",

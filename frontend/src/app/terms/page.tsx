@@ -4,6 +4,7 @@ import { DocPage, DocSection } from "@/components/legal/DocPage";
 import { SUPPORT_EMAIL } from "@/lib/utils/constants";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/terms" },
   title: "Terms of Service | Roth Conversions Optimizer",
   description:
     "The terms for using Roth Conversions Optimizer on the website and in Claude and ChatGPT.",

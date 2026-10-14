@@ -4,6 +4,7 @@ import { DocPage, DocSection, DocTerm } from "@/components/legal/DocPage";
 import { SUPPORT_EMAIL } from "@/lib/utils/constants";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/privacy" },
   title: "Privacy Policy | Roth Conversions Optimizer",
   description:
     "What Roth Conversions Optimizer collects on the website and in Claude and ChatGPT, why, who processes it, how long it is kept, and how to delete it.",

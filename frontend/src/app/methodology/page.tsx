@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { MethodologyPageClient } from "./MethodologyPageClient";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/methodology" },
   title: "Methodology | Roth Conversions Optimizer",
   description:
     "A transparent look at the math behind this Roth conversion analysis. Learn how our optimization engine finds the conversion schedule that maximizes your after-tax wealth.",
