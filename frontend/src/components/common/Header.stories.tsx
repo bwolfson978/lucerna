@@ -18,3 +18,8 @@ export const Default: Story = {};
 export const OnCalculator: Story = {
   parameters: { nextjs: { navigation: { pathname: "/calculator" } } },
 };
+
+/** Signed in: "My scenarios" and "Sign out" join the nav (and the phone menu). */
+export const SignedIn: Story = {
+  args: { isSignedIn: true },
+};
