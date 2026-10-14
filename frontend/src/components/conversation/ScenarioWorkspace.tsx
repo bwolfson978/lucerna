@@ -19,6 +19,7 @@ import { ChartSkeleton, TableSkeleton } from "@/components/common/Skeleton";
 import { Card } from "@/components/ui/card";
 import { GlowButton } from "@/components/common/GlowButton";
 import { SaveResultsBanner, type SaveBannerState } from "@/components/common/SaveResultsBanner";
+import { SignInRequired } from "@/components/common/SignInRequired";
 import { MethodologyProvider } from "@/components/methodology/MethodologyContext";
 import { MethodologyLayout } from "@/components/methodology/MethodologyLayout";
 import { apiClient } from "@/lib/api/client";
@@ -383,14 +384,19 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
     }
   }
 
-  // A saved scenario from "My scenarios" (?saved=<id>) re-runs in the form.
+  // A saved scenario from "My scenarios" or a chat app (?saved=<id>) re-runs in the
+  // form. Signed-out visitors (often a chat app's own browser) are asked to sign in
+  // first, and the scenario loads once they have.
   const savedOpened = useRef(false);
+  const [savedNeedsSignIn, setSavedNeedsSignIn] = useState(false);
   useEffect(() => {
-    if (isDemo || savedOpened.current || !isLoaded || !isSignedIn) return;
+    if (isDemo || savedOpened.current || !isLoaded) return;
     const savedId = new URLSearchParams(window.location.search).get("saved");
     if (!savedId) return;
-    savedOpened.current = true;
     changeMode("form");
+    setSavedNeedsSignIn(!isSignedIn);
+    if (!isSignedIn) return;
+    savedOpened.current = true;
     createScenariosApi(getToken)
       .get(savedId)
       .then((detail) => handleFormSubmit(detail.inputs))
@@ -518,6 +524,17 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
           >
             {fallbackNotice}
           </div>
+        )}
+        {savedNeedsSignIn && (
+          <SignInRequired
+            title="Sign in to open this saved scenario"
+            description="It will load here once you're signed in."
+            signInButton={
+              <SignInButton>
+                <GlowButton size="sm">Sign in</GlowButton>
+              </SignInButton>
+            }
+          />
         )}
         <InputForm
           onSubmit={handleFormSubmit}

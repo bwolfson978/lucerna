@@ -16,6 +16,9 @@ interface IncomeTimelineEditorProps {
   onReset?: () => void;
   description?: string;
   defaultState?: string;
+  title?: string;
+  /** Show "+ Add year". Off when the timeline already runs to the plan end. */
+  allowAddYear?: boolean;
 }
 
 const buildStateYearOptions = (defaultState?: string) => [
@@ -72,9 +75,11 @@ export function IncomeTimelineEditor({
   onReset,
   description,
   defaultState,
+  title = "Income timeline",
+  allowAddYear = true,
 }: IncomeTimelineEditorProps) {
   const addYear = useCallback(() => {
-    if (timeline.length >= 40) return;
+    if (timeline.length >= 80) return;
     const lastYear = timeline.length > 0 ? timeline[timeline.length - 1].year : CURRENT_YEAR - 1;
     onChange([...timeline, { year: lastYear + 1, gross_income: 0 }]);
   }, [timeline, onChange]);
@@ -115,7 +120,7 @@ export function IncomeTimelineEditor({
               className={`mt-[3px] shrink-0 text-text-tertiary transition-transform duration-300 ${open ? "rotate-0" : "-rotate-90"}`}
             />
             <span className="flex flex-col gap-0.5">
-              <span className="text-h3 text-text-primary">Income timeline</span>
+              <span className="text-h3 text-text-primary">{title}</span>
               {!open && (
                 <span className="text-body-sm text-text-tertiary">
                   {yearRange} · {timeline.length} {timeline.length === 1 ? "year" : "years"}
@@ -235,14 +240,16 @@ export function IncomeTimelineEditor({
               </Card>
             ))}
 
-            <button
-              type="button"
-              onClick={addYear}
-              disabled={timeline.length >= 40}
-              className="min-h-[44px] w-full rounded-[14px] border border-dashed border-border py-2 text-body-sm font-medium text-text-secondary transition-colors duration-300 hover:border-accent/50 hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              + Add year
-            </button>
+            {allowAddYear && (
+              <button
+                type="button"
+                onClick={addYear}
+                disabled={timeline.length >= 80}
+                className="min-h-[44px] w-full rounded-[14px] border border-dashed border-border py-2 text-body-sm font-medium text-text-secondary transition-colors duration-300 hover:border-accent/50 hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                + Add year
+              </button>
+            )}
           </div>
         </div>
       </CollapsibleContent>

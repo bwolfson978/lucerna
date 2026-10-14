@@ -10,7 +10,7 @@ test.describe('Calculator form', () => {
     await page.getByLabel('Age', { exact: true }).fill(String(alexScenario.age))
     await page.getByLabel('Filing status').click()
     await page.getByRole('option', { name: 'Single' }).click()
-    await page.getByLabel('Current income').fill(String(alexScenario.income))
+    await page.getByLabel('Current income', { exact: true }).fill(String(alexScenario.income))
     await page.getByLabel('Traditional IRA/401(k) balance').fill(String(alexScenario.traditional_ira_balance))
     await page.getByLabel('Retirement age', { exact: true }).fill(String(alexScenario.retirement_age))
     await page.getByRole('button', { name: /run my scenario/i }).click()

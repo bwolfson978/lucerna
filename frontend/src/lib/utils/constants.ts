@@ -19,7 +19,7 @@ export function buildResultsDisclaimer({
   return (
     `This analysis uses 2026 ${brackets} tax brackets, models required minimum distributions (RMDs), ` +
     `and factors in IRMAA surcharges during the Medicare phase.${aca} ` +
-    `Social Security income is not modeled. This is educational scenario analysis, not financial advice.`
+    `Social Security is treated as fully taxable. This is educational scenario analysis, not financial advice.`
   );
 }
 

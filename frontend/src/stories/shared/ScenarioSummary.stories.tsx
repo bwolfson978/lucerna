@@ -22,6 +22,29 @@ type Story = StoryObj<typeof ScenarioSummary>;
 
 export const ReadOnly: Story = {};
 
+/** Social Security and a pension recorded as income sources. Current income stops at 66. */
+export const WithIncomeSources: Story = {
+  args: {
+    data: {
+      ...recordedScenario,
+      scenario: {
+        ...recordedScenario.scenario,
+        filing_status: "married_filing_jointly",
+        current_income: 20000,
+        current_income_end_age: 66,
+        retirement_spending: 95000,
+        income_sources: [
+          { kind: "social_security", owner: "you", amount: 46000, start_age: 67 },
+          { kind: "social_security", owner: "spouse", amount: 14000, start_age: 68 },
+          { kind: "pension", owner: "you", amount: 12000, start_age: 65, end_age: 80 },
+        ],
+      },
+    },
+    onEdit: fn(),
+    onOpenForm: fn(),
+  },
+};
+
 export const StillNeedsInputs: Story = {
   args: { missing: ["age", "retirement_age"] },
 };

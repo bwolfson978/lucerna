@@ -13,11 +13,13 @@ import { Label } from "@/components/ui/label";
 import { IncomeTimelineEditor } from "@/components/calculator/IncomeTimelineEditor";
 import { CURRENT_YEAR } from "@/lib/utils/constants";
 import { FILING_STATUS_OPTIONS, STATE_OPTIONS } from "@/lib/utils/formOptions";
-import { generateTimeline } from "@/lib/utils/timeline";
+import { IncomeSourcesEditor } from "@/components/calculator/IncomeSourcesEditor";
+import { IncomePreviewChart } from "@/components/calculator/IncomePreviewChart";
 import {
   EMPTY_DRAFT,
   applyDraftPatch,
   buildScenarioInput,
+  projectedTimeline,
   type DraftPatch,
   type ScenarioDraft,
 } from "@/lib/scenario/draft";
@@ -42,6 +44,8 @@ const FIELD_ORDER = [
   "customStateRate",
   "rothBalance",
   "retirementSpending",
+  "currentIncomeEndAge",
+  "incomeSources",
   "timeline",
   "yearsInRetirement",
   "householdSize",
@@ -102,8 +106,16 @@ export function InputForm({
     include_aca: includeAca,
     household_size: householdSize,
     employer_coverage_year: employerCoverageYear,
+    current_income_end_age: currentIncomeEndAge,
+    income_sources: incomeSources,
     timeline,
   } = draft;
+  const horizon = planningHorizonAge ?? 90;
+  const sourceErrors: Record<number, string> = {};
+  incomeSources.forEach((src, i) => {
+    if (src.end_age != null && src.end_age < src.start_age)
+      sourceErrors[i] = "Ends before it starts";
+  });
   const state = draft.state ?? "none";
   const retirementState = draft.retirement_state ?? "none";
   const monthlySlcspPremium = draft.monthly_slcsp_premium ?? 620;
@@ -111,14 +123,7 @@ export function InputForm({
   const handleResetTimeline = useCallback(() => {
     const d = draftRef.current;
     if (d.age == null || d.retirement_age == null || d.current_income == null) return;
-    patch({
-      timeline: generateTimeline(
-        d.age,
-        d.retirement_age,
-        d.current_income,
-        d.income_growth_rate_pct ?? 0
-      ),
-    });
+    patch({ timeline: projectedTimeline(d, CURRENT_YEAR) });
   }, [patch]);
 
   const showTimeline = timeline.length > 0;
@@ -177,6 +182,8 @@ export function InputForm({
       errs.yearsInRetirement = "Planning horizon must be age 50 or later";
     if (retirementSpending !== null && retirementSpending < 0)
       errs.retirementSpending = "Spending cannot be negative";
+    if (Object.keys(sourceErrors).length > 0)
+      errs.incomeSources = "Fix the income source that ends before it starts";
     if (timeline.length === 0)
       errs.timeline = "Enter your income and retirement age to generate a timeline";
     if (timeline.some((y) => y.gross_income < 0)) errs.timeline = "Income cannot be negative";
@@ -234,6 +241,7 @@ export function InputForm({
           min={0}
           required
           error={errors.currentIncome}
+          helper="Taxable income this year, before tax"
           onChange={(v) => patch({ current_income: v })}
         />
         <NumericField
@@ -290,6 +298,7 @@ export function InputForm({
           placeholder="Optional (4% rule)"
           min={0}
           error={errors.retirementSpending}
+          helper="Total household spending. Your accounts cover whatever income doesn't."
           onChange={(val) => patch({ retirement_spending: val || null })}
         />
         <FormSelect
@@ -328,14 +337,80 @@ export function InputForm({
         )}
       </div>
 
-      {/* Inline income timeline editor */}
-      <div ref={timelineRef}>
+      {/* Income that runs across years: Social Security, pensions, other */}
+      <section className="flex flex-col gap-default" aria-labelledby="income-sources-heading">
+        <div className="flex flex-col gap-1">
+          <h3 id="income-sources-heading" className="text-h3 text-text-primary">
+            Income in retirement
+          </h3>
+          <p className="text-body-sm text-text-secondary">
+            Social Security, pensions and anything else taxable you expect. Amounts are per year.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-default sm:grid-cols-2">
+          <NumericField
+            ref={(el) => {
+              fieldRefs.current.currentIncomeEndAge = el;
+            }}
+            label="Current income ends at age"
+            value={currentIncomeEndAge ?? ""}
+            placeholder={
+              age != null && drawdownStartAge != null && drawdownStartAge > age
+                ? `${drawdownStartAge - 1} (year before retirement)`
+                : "Continues for life"
+            }
+            min={0}
+            max={120}
+            helper="Your age in the last year you earn it"
+            onChange={(v) => patch({ current_income_end_age: v })}
+          />
+        </div>
+        <div
+          ref={(el) => {
+            fieldRefs.current.incomeSources = el;
+          }}
+        >
+          <IncomeSourcesEditor
+            sources={incomeSources}
+            onChange={(next) => patch({ income_sources: next })}
+            age={age}
+            retirementAge={drawdownStartAge}
+            planningHorizonAge={horizon}
+            married={filingStatus === "married_filing_jointly"}
+            errors={sourceErrors}
+          />
+        </div>
+      </section>
+
+      {/* Live preview of the year-by-year timeline, with per-year overrides */}
+      <div ref={timelineRef} className="flex flex-col gap-default">
+        {showTimeline && age != null && drawdownStartAge != null && (
+          <section className="flex flex-col gap-tight" aria-labelledby="income-preview-heading">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h3 id="income-preview-heading" className="text-h3 text-text-primary">
+                Your income, year by year
+              </h3>
+              <span className="text-caption text-text-tertiary">
+                {age} to {age + timeline.length - 1} · {timeline.length} years
+              </span>
+            </div>
+            <IncomePreviewChart
+              timeline={timeline}
+              sources={incomeSources}
+              age={age}
+              retirementAge={drawdownStartAge}
+              spending={retirementSpending}
+            />
+          </section>
+        )}
         {showTimeline && (
           <IncomeTimelineEditor
+            title="Edit individual years"
+            allowAddYear={false}
             timeline={timeline}
             onChange={(next) => patch({ timeline: next })}
             onReset={hasCustomizations ? handleResetTimeline : undefined}
-            description="Projected from your inputs above. Adjust any year to reflect expected changes: job transitions, time off, or anything else on the horizon."
+            description="Built from your income above. Adjust any year for one-off changes: a job change, time off, a bonus."
             defaultState={state !== "none" ? state : undefined}
           />
         )}

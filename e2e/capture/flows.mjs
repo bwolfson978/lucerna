@@ -59,6 +59,21 @@ export const flows = {
     },
   },
 
+  'signed-out-links': {
+    title: 'Saved-scenario links while signed out',
+    paths: ['frontend/src/app/my-scenarios/', 'frontend/src/components/common/SignInRequired'],
+    async run(page, shot) {
+      // Local runs have no Clerk key, so every visitor is signed out (the sign-in
+      // button itself needs Clerk and is not drawn).
+      await page.goto('/my-scenarios')
+      await page.waitForLoadState('networkidle')
+      await shot('my-scenarios', 'Opening My Scenarios while signed out')
+      await page.goto('/calculator?saved=00000000-0000-0000-0000-000000000000')
+      await page.waitForLoadState('networkidle')
+      await shot('saved-link', 'Opening a saved-scenario link while signed out')
+    },
+  },
+
   'calculator-form': {
     title: 'Calculator form',
     paths: ['frontend/src/app/calculator/', 'frontend/src/components/calculator/', 'frontend/src/components/ui/'],
@@ -67,6 +82,34 @@ export const flows = {
       await page.getByRole('radio', { name: 'My numbers' }).click()
       await page.getByRole('heading', { level: 1 }).waitFor()
       await shot('form', 'Calculator in form mode ("My numbers")', { fullPage: true })
+
+      // Margaret's numbers. Fields that only exist on one side are skipped there.
+      const fill = (label, value) => page.getByLabel(label, { exact: true }).first().fill(String(value))
+      await fill('Age', 63)
+      await page.getByLabel('Filing status').click()
+      await page.getByRole('option', { name: /Married/ }).click()
+      await fill('Current income', 20000)
+      await fill('Traditional IRA/401(k) balance', 1400000)
+      await fill('Retirement age', 73)
+      await fill('Roth IRA/401(k) balance', 52000)
+      await fill('Income growth rate (%)', 0)
+      await fill('Yearly spend in retirement', 95000)
+      const addSs = page.getByRole('button', { name: '+ Social Security' })
+      if (await addSs.count()) {
+        await fill('Current income ends at age', 66)
+        await addSs.click()
+        await fill('Yearly amount', 46000)
+        await page.getByRole('button', { name: 'Done' }).click()
+        await addSs.click()
+        await fill('Yearly amount', 14000)
+        await fill('Starts at age', 68)
+        await page.getByRole('button', { name: 'Done' }).click()
+      }
+      await shot('filled', "Form with Margaret's numbers", { fullPage: true })
+      await page.getByRole('button', { name: /run my scenario/i }).click()
+      await page.getByText('Estimated lifetime tax savings', { exact: false }).first().waitFor({ timeout: 90000 })
+      await page.waitForLoadState('networkidle')
+      await shot('results', "Results for Margaret's numbers", { fullPage: true })
     },
   },
 

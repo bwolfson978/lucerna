@@ -7,7 +7,8 @@ shows how the real components do look.
 
 ## What it's for
 
-- **Reviewing UI changes on a PR.** Each PR gets a Storybook preview link in a comment.
+- **Reviewing UI changes on a PR.** Each PR that changes the UI gets a Storybook preview
+  link in a comment.
   Open it to see the changed components without running the app or clicking through to
   the state that shows them (for example, a result card for an older server's output).
 - **Building components in isolation.** `npm run storybook` in `frontend/` starts it at
@@ -38,9 +39,13 @@ contracts use, so the stories update when the fixtures are regenerated.
 
 ## PR previews
 
-The `lucerna-storybook` Vercel project is connected to this repository. On every PR it
-runs `build-storybook` and adds a row to the Vercel bot's comment, next to the web app's
-preview. Click its **Preview** link to review the PR's components. A failed Storybook
+The `lucerna-storybook` Vercel project is connected to this repository. On a PR that
+changes something Storybook shows, it runs `build-storybook` and adds a row to the Vercel
+bot's comment, next to the web app's preview. Pushes that only touch the backend, docs,
+e2e or CI are skipped (shown as "Ignored" in Vercel), which saves deployments against
+Vercel's daily limit. The project's Ignored Build Step runs
+`frontend/scripts/storybook-ignore-build.sh`, which lists the paths that count; add to it
+if Storybook starts depending on something new. Click its **Preview** link to review the PR's components. A failed Storybook
 build shows up there as a failed deployment.
 
 Who can open the previews is set under the project's Deployment Protection in Vercel.

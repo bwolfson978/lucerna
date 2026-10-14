@@ -53,3 +53,42 @@ def vectorized_withdrawal_tax(scenario: ScenarioInput, amounts: np.ndarray) -> n
             amounts, state, scenario.filing_status, scenario.custom_state_rate
         )
     return tax
+
+
+def draw_beyond_rmd(drawdown: float | None, rmd: float) -> float:
+    """Spending still to fund after the year's RMD, which counts toward it."""
+    if not drawdown:
+        return 0.0
+    return max(0.0, drawdown - rmd)
+
+
+def resolve_drawdowns(scenario: ScenarioInput) -> ScenarioInput:
+    """Fill in spending draws for timeline years once drawdowns have started.
+
+    A timeline year at or after ``drawdown_start_age`` with no explicit
+    ``drawdown`` funds the household's spending from the accounts: explicit
+    spending less that year's income, or the 4% rule on the balance projected
+    to the drawdown start. Explicit drawdowns are kept as given.
+    """
+    start_offset = scenario.drawdown_start_age - scenario.age
+    if not any(
+        entry.drawdown is None and t >= start_offset for t, entry in enumerate(scenario.timeline)
+    ):
+        return scenario
+
+    if scenario.default_drawdown is None:
+        projected = (scenario.traditional_ira_balance + scenario.roth_ira_balance) * (
+            1 + scenario.annual_growth_rate
+        ) ** max(0, start_offset)
+        four_percent = projected * RETIREMENT_SPENDING_RATE
+
+    timeline = []
+    for t, entry in enumerate(scenario.timeline):
+        if entry.drawdown is None and t >= start_offset:
+            if scenario.default_drawdown is None:
+                need = four_percent
+            else:
+                need = max(0.0, scenario.default_drawdown - entry.gross_income)
+            entry = entry.model_copy(update={"drawdown": round(need, 2)})
+        timeline.append(entry)
+    return scenario.model_copy(update={"timeline": timeline})

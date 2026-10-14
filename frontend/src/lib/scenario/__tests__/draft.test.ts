@@ -5,6 +5,7 @@ import {
   applyDraftPatch,
   buildScenarioInput,
   hasDraftValues,
+  incomeSourceErrors,
   isDraftReady,
   missingFields,
   normalizeDraft,
@@ -55,13 +56,38 @@ describe("applyDraftPatch", () => {
       traditional_balance: 200000,
       retirement_age: 48,
       income_growth_rate_pct: 0,
+      planning_horizon_age: 50,
     },
     2026
   );
 
   it("generates the timeline once base inputs are present", () => {
-    expect(base.timeline.map((y) => y.year)).toEqual([2026, 2027, 2028]);
+    expect(base.timeline.map((y) => y.year)).toEqual([2026, 2027, 2028, 2029, 2030, 2031]);
+    expect(base.timeline.map((y) => y.gross_income)).toEqual([100000, 100000, 100000, 0, 0, 0]);
     expect(isDraftReady(base)).toBe(true);
+  });
+
+  it("adds income sources to the years they cover", () => {
+    const withSs = applyDraftPatch(
+      base,
+      { income_sources: [{ kind: "social_security", owner: "you", amount: 30000, start_age: 49 }] },
+      2026
+    );
+    expect(withSs.timeline.map((y) => y.gross_income)).toEqual([
+      100000, 100000, 100000, 0, 30000, 30000,
+    ]);
+  });
+
+  it("blocks a run when a source ends before it starts", () => {
+    const bad = applyDraftPatch(
+      base,
+      {
+        income_sources: [{ kind: "pension", owner: "you", amount: 1, start_age: 49, end_age: 48 }],
+      },
+      2026
+    );
+    expect(incomeSourceErrors(bad)).toEqual(["Pension ends before it starts"]);
+    expect(isDraftReady(bad)).toBe(false);
   });
 
   it("keeps edited rows unless base inputs change", () => {
