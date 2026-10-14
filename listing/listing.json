@@ -15,10 +15,10 @@
   "serverUrl": "https://mcp.rothconversionsoptimizer.com/mcp",
   "slug": "roth-conversions-optimizer",
   "urls": {
-    "website": "https://rothconversionsoptimizer.com/connect",
-    "support": "https://rothconversionsoptimizer.com/support",
-    "privacyPolicy": "https://rothconversionsoptimizer.com/privacy",
-    "termsOfService": "https://rothconversionsoptimizer.com/terms"
+    "website": "https://www.rothconversionsoptimizer.com/connect",
+    "support": "https://www.rothconversionsoptimizer.com/support",
+    "privacyPolicy": "https://www.rothconversionsoptimizer.com/privacy",
+    "termsOfService": "https://www.rothconversionsoptimizer.com/terms"
   },
   "supportEmail": "support@rothconversionsoptimizer.com",
   "allowedLinkOrigins": ["https://rothconversionsoptimizer.com", "https://www.rothconversionsoptimizer.com"],
