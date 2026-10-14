@@ -41,7 +41,6 @@ ToolboxFactory = Callable[[], AbstractAsyncContextManager[McpToolbox]]
 MAX_MODEL_CALLS_PER_TURN = 8
 MAX_TOOL_CALLS_PER_TURN = 12
 
-_RESULT_ID = re.compile(r"\br_[0-9a-f]{10}\b")
 _DRAFT_HASH = re.compile(r'draft_hash[\\"\s:=]+([0-9a-f]{12})')
 
 ERROR_MESSAGES = {
@@ -75,10 +74,6 @@ def count_user_messages(history: list[dict]) -> int:
         ):
             count += 1
     return count
-
-
-def known_result_ids(history: list[dict]) -> set[str]:
-    return set(_RESULT_ID.findall(json.dumps(history)))
 
 
 def last_seen_draft_hash(history: list[dict]) -> str | None:
@@ -175,9 +170,7 @@ async def _run_turn(
     start_year: int,
     on_usage=None,
 ) -> AsyncIterator[dict]:
-    ctx = ToolContext(
-        draft=draft, start_year=start_year, known_result_ids=known_result_ids(history)
-    )
+    ctx = ToolContext(draft=draft, start_year=start_year)
     user_turn = build_user_turn(text, draft, history, start_year)
     new_messages: list[dict] = [user_turn]
     tools = toolbox.definitions

@@ -1,6 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import {
-  BalanceComparison,
   BracketFillChart,
   ResultCard,
   isResultDetails,
@@ -13,7 +12,6 @@ import {
 } from "@lucerna/ui";
 import fixture from "../../../../../shared/fixtures/view-data.json";
 import previous from "../../../../../shared/fixtures/view-data-previous.json";
-import { balanceData } from "@/lib/results/viewData";
 import { MetricCard } from "../MetricCard";
 
 const card = fixture.analyze_roth_conversions.structured_content as unknown as ResultCardData;
@@ -64,15 +62,9 @@ it("renders the previous release's tool output without the chart instead of cras
   );
 });
 
-it("renders the standalone charts with their own titles", () => {
-  render(
-    <>
-      <BracketFillChart data={details.bracket_fill!} />
-      <BalanceComparison data={balanceData(fixture.analyze_roth_conversions.result as never)} />
-    </>
-  );
+it("renders the standalone chart with its own title", () => {
+  render(<BracketFillChart data={details.bracket_fill!} />);
   expect(screen.getByText("How conversions fill your tax brackets")).toBeInTheDocument();
-  expect(screen.getByText("Your traditional balance over time")).toBeInTheDocument();
 });
 
 it("renders the what-if card with its actions", () => {

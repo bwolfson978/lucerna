@@ -75,7 +75,6 @@ its chart of how conversions fill the tax brackets each year. Then:
 - Explain the result in two to four short paragraphs: what the schedule does, why the engine \
 stopped where it did (use the reasoning: binding constraint, next bracket cost, RMD and \
 IRMAA notes), and the main trade-off.
-- Use show balance_comparison when long-run account balances help the explanation.
 - After your written explanation, call show kind suggestions: two to four short follow-up \
 questions grounded in their situation, such as a what-if on retirement age, income or spending.
 - For what-if questions use compare_roth_scenarios. It does not change their scenario. \

@@ -6,7 +6,6 @@
  */
 
 import type {
-  BalanceComparisonData,
   BracketFillData,
   ResultCardData,
   ResultDetails,
@@ -62,26 +61,6 @@ export function bracketFillData(result: OptimizationResult): BracketFillData {
       max: b.max == null ? null : round(b.max),
     })),
     standard_deduction: round(tax.standard_deduction[status]),
-  };
-}
-
-export function balanceData(result: OptimizationResult): BalanceComparisonData {
-  const withRmd = result.rmd_projection;
-  const withoutRmd = result.rmd_projection_no_conversion;
-  const withoutByAge = new Map(
-    (withoutRmd?.yearly_detail ?? []).map((d) => [d.age, d.trad_balance_start])
-  );
-  return {
-    roth_at_retirement: round(result.roth_at_retirement),
-    peak_rmd_with: withRmd ? round(withRmd.peak_rmd_amount) : null,
-    peak_rmd_without: withoutRmd ? round(withoutRmd.peak_rmd_amount) : null,
-    after_tax_wealth_change: round(result.npv_at_optimal - result.npv_at_zero),
-    points: (withRmd?.yearly_detail ?? []).map((d) => ({
-      age: d.age,
-      year: d.year,
-      with: round(d.trad_balance_start),
-      without: round(withoutByAge.get(d.age) ?? 0),
-    })),
   };
 }
 

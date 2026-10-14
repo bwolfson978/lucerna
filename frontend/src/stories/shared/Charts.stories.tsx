@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { BalanceComparison, BracketFillChart, ConversionStrip } from "@lucerna/ui";
-import { balances, bracketFill, resultCard } from "../fixtures";
+import { BracketFillChart, ConversionStrip } from "@lucerna/ui";
+import { bracketFill, resultCard } from "../fixtures";
 
 const meta: Meta = {
   title: "Shared cards/Charts",
@@ -15,14 +15,6 @@ export const BracketFill: Story = {
 
 export const BracketFillUnframed: Story = {
   render: () => <BracketFillChart data={bracketFill} framed={false} />,
-};
-
-export const Balances: Story = {
-  render: () => <BalanceComparison data={balances} />,
-};
-
-export const BalancesUnframed: Story = {
-  render: () => <BalanceComparison data={balances} framed={false} />,
 };
 
 /** The small bar strip inside ResultCard. Hover or focus a bar for its year. */

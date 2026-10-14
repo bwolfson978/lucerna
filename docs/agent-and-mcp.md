@@ -52,7 +52,7 @@ The same View renders in Claude, ChatGPT or any MCP Apps host with no changes. "
 
 Cards that appear both in MCP App Views and natively in the web app are defined once, in `ui/`:
 
-- `ui/src/`: display-only React components (`ResultCard`, `ConversionStrip`, `BracketChart` (the tax bracket chart, also used by the results page), `BracketFillChart`, `BalanceComparison`, `ScenarioCompareCard`, `ScenarioSummary`, `MetricCard`), plus chart colors, form options and formatters the web app re-exports. Plain data and callbacks in; no app context, data fetching, analytics or Next imports.
+- `ui/src/`: display-only React components (`ResultCard`, `ConversionStrip`, `BracketChart` (the tax bracket chart, also used by the results page), `BracketFillChart`, `ScenarioCompareCard`, `ScenarioSummary`, `MetricCard`), plus chart colors, form options and formatters the web app re-exports. Plain data and callbacks in; no app context, data fetching, analytics or Next imports.
 - `ui/tailwind/preset.js` and `ui/styles/tokens.css`: the Paper & Pine theme, CSS variables and component classes (`card-recommended`, `eyebrow`, `metric-*`, `btn-*`). The web app's `tailwind.config.ts` and `globals.css` pull them in.
 
 `ui/` is source-only with no `node_modules`; each consumer resolves its `react` import:
@@ -128,7 +128,7 @@ E2E (uses the offline stand-in automatically): `cd e2e && npx playwright test`. 
 | `tool_start` | `name`, `status` | Status line ("Running the optimizer") |
 | `draft` | `draft`, `missing` | Updates the shared scenario (form and summary card) |
 | `result` | `result_id`, `label`, `result`, `draft?` | Stores a full engine result for cards and the full results view |
-| `part` | `part` | Renders a card: `scenario_summary`, `result_headline`, `balance_comparison`, `scenario_compare`, `suggestions` |
+| `part` | `part` | Renders a card: `scenario_summary`, `result_headline`, `scenario_compare`, `suggestions` |
 | `error` | `code`, `message` | Notice; `unavailable` and limit codes switch to the form |
 | `done` | `messages` | API-format turns to append to the stored history |
 

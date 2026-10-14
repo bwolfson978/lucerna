@@ -5,13 +5,11 @@
  */
 
 import type {
-  BalanceComparisonData,
   ResultCardData,
   ResultDetails,
   ScenarioCompareData,
   ScenarioSummaryData,
 } from "@lucerna/ui";
-import { balanceData } from "@/lib/results/viewData";
 import fixture from "../../../shared/fixtures/view-data.json";
 import previous from "../../../shared/fixtures/view-data-previous.json";
 
@@ -25,7 +23,6 @@ export const previousResultDetails = previous.analyze_roth_conversions
   .view_meta as unknown as ResultDetails;
 
 export const bracketFill = resultDetails.bracket_fill!;
-export const balances: BalanceComparisonData = balanceData(analyze.result as never);
 
 export const compare = fixture.compare_roth_scenarios
   .structured_content as unknown as ScenarioCompareData;
