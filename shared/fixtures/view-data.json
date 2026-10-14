@@ -440,7 +440,7 @@
         }
       ],
       "reasoning": {
-        "binding_constraint": "Traditional IRA balance fully converted",
+        "binding_constraint": "Converts nearly all of the traditional balance by 2056",
         "marginal_tax_rate_at_optimal": 0.1342,
         "cost_of_next_bracket": {
           "bracket_rate": 0.16,
@@ -449,8 +449,8 @@
         },
         "benefit_of_current_bracket": {
           "bracket_rate": 0.0736,
-          "tax_paid": 44417.94,
-          "future_tax_avoided": 73980.35
+          "tax_paid": 35056.74,
+          "future_tax_avoided": 193940.13
         },
         "summary_points": {
           "what_to_convert": "Convert $27,700 in 2027, $83,100 in 2029, $83,100 in 2030, $83,100 in 2031, $83,100 in 2032, $83,100 in 2033, $72,000 in 2034, $11,100 in 2035, $11,100 in 2036, $11,100 in 2037, $11,100 in 2038, $11,100 in 2039, $11,100 in 2040, $11,100 in 2041, $5,500 in 2049, $5,500 in 2056",
@@ -1970,7 +1970,7 @@
         }
       ],
       "reasoning_trace": {
-        "binding_constraint": "Traditional IRA balance fully converted",
+        "binding_constraint": "Converts nearly all of the traditional balance by 2056",
         "marginal_tax_rate_at_optimal": 0.1342,
         "marginal_benefit_at_optimal": 158883.39,
         "cost_of_next_bracket": {
@@ -1980,8 +1980,8 @@
         },
         "benefit_of_current_bracket": {
           "bracket_rate": 0.0736,
-          "tax_paid": 44417.94,
-          "future_tax_avoided": 73980.35
+          "tax_paid": 35056.74,
+          "future_tax_avoided": 193940.13
         },
         "sensitivity_notes": [
           "Moderate growth assumption (7%) \u2014 result changes modestly with \u00b12% variation",
@@ -4242,7 +4242,7 @@
         }
       ],
       "reasoning_trace": {
-        "binding_constraint": "Traditional IRA balance fully converted",
+        "binding_constraint": "Converts nearly all of the traditional balance by 2056",
         "marginal_tax_rate_at_optimal": 0.1342,
         "marginal_benefit_at_optimal": 158883.39,
         "cost_of_next_bracket": {
@@ -4252,8 +4252,8 @@
         },
         "benefit_of_current_bracket": {
           "bracket_rate": 0.0736,
-          "tax_paid": 44417.94,
-          "future_tax_avoided": 73980.35
+          "tax_paid": 35056.74,
+          "future_tax_avoided": 193940.13
         },
         "sensitivity_notes": [
           "Moderate growth assumption (7%) \u2014 result changes modestly with \u00b12% variation",
@@ -6272,7 +6272,7 @@
         }
       ],
       "reasoning_trace": {
-        "binding_constraint": "Traditional IRA balance fully converted",
+        "binding_constraint": "Converts nearly all of the traditional balance by 2056",
         "marginal_tax_rate_at_optimal": 0.1311,
         "marginal_benefit_at_optimal": 157175.89,
         "cost_of_next_bracket": {
@@ -6282,8 +6282,8 @@
         },
         "benefit_of_current_bracket": {
           "bracket_rate": 0.0685,
-          "tax_paid": 38286.44,
-          "future_tax_avoided": 64011.36
+          "tax_paid": 31733.48,
+          "future_tax_avoided": 188909.37
         },
         "sensitivity_notes": [
           "Moderate growth assumption (7%) \u2014 result changes modestly with \u00b12% variation",
