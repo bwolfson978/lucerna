@@ -478,9 +478,8 @@ async def get_tax_brackets(
     description=(
         "How the optimizer works and the concepts behind it: the savings number, bracket "
         "filling, the conversion trade-off, multi-year allocation, assumptions and limits, "
-        "Roth conversions, RMDs, ACA subsidies, IRMAA, state taxes and using the tool. Read it "
-        "before answering questions about methodology or the product. The text is reference "
-        "for you and is not shown to the user, so answer from it in your own words."
+        "Roth conversions, RMDs, ACA subsidies, IRMAA, state taxes and using the tool. Returns "
+        "reference text on the chosen topic. The text is not displayed to the user."
     ),
 )
 @_tracked
