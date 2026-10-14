@@ -25,6 +25,14 @@ class PlanYear(BaseModel):
     state: str | None = Field(
         default=None, description="State override for this year. None = use scenario default."
     )
+    social_security: float | None = Field(
+        default=None,
+        ge=0,
+        description=(
+            "Part of gross_income that is Social Security benefits. Only the taxable "
+            "part (up to 85%) is taxed federally, and most states don't tax it."
+        ),
+    )
 
 
 # Backward-compat alias — remove once all callers are updated

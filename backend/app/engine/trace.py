@@ -1,3 +1,4 @@
+from app.engine.aca import find_subsidy_cliff_income
 from app.engine.constants import (
     BRACKET_FULL_THRESHOLD,
     FULLY_CONVERTED_SHARE,
@@ -12,8 +13,7 @@ from app.engine.constants import (
 from app.engine.irmaa import IRMAA_LOOKBACK_YEARS, IRMAA_TIERS, MEDICARE_START_AGE
 from app.engine.retirement import conversion_bases
 from app.engine.rmd import calculate_rmd, rmd_start_age
-from app.engine.state_tax import resolve_state_for_year
-from app.engine.tax import get_marginal_rate
+from app.engine.state_tax import resolve_state_for_year, state_name
 from app.engine.tax_cost import (
     combined_marginal_rate,
     total_conversion_cost,
@@ -26,6 +26,10 @@ from app.engine.types import (
     ReasoningTrace,
     ScenarioInput,
 )
+from app.engine.year_tax import year_tax
+
+# Below this a state's marginal rate on conversions counts as no state tax
+MIN_STATE_RATE = 0.0005
 
 
 def generate_reasoning_trace(
@@ -70,6 +74,7 @@ def generate_reasoning_trace(
             scenario.filing_status,
             state=yr_state,
             custom_state_rate=scenario.custom_state_rate,
+            year=year_tax(scenario, t),
         )
         marginal_rates.append(rate)
 
@@ -147,7 +152,7 @@ def _find_binding_constraint(
             top = filled[-2]
         rate = f"{top.bracket_rate:.0%}"
         base = bases[t] if bases else scenario.timeline[t].gross_income
-        magi = base + conversions[t]
+        magi = year_tax(scenario, t).agi(base + conversions[t])
         if _just_under_irmaa_threshold(scenario, t, magi):
             reasons.append("Just under the Medicare surcharge (IRMAA) threshold")
         elif spilled or top.remaining_capacity < BRACKET_FULL_THRESHOLD:
@@ -222,6 +227,7 @@ def _cost_of_next_bracket(
         scenario.filing_status,
         state=yr_state,
         custom_state_rate=scenario.custom_state_rate,
+        year=year_tax(scenario, t),
     )
     # The extra $1,000 can straddle a bracket edge, so the rate is its blended cost
     rate = extra_cost / extra
@@ -257,6 +263,7 @@ def _benefit_of_current_bracket(
             scenario.filing_status,
             state=yr_state,
             custom_state_rate=scenario.custom_state_rate,
+            year=year_tax(scenario, t),
         )
 
     total_conversion = sum(conversions)
@@ -267,6 +274,9 @@ def _benefit_of_current_bracket(
         "bracket_rate": round(avg_rate, 4),
         "tax_paid": round(paid_now, 2),
         "future_tax_avoided": round(paid_now + lifetime_savings, 2),
+        "dollars": "today's dollars (the schedule adds up each year's tax as paid)"
+        if conversion_cost_today is not None
+        else "each year's tax as paid",
     }
 
 
@@ -333,32 +343,40 @@ def _build_sensitivity_notes(
             f"could push into higher brackets — early conversion mitigates this"
         )
 
-    if scenario.state and scenario.state != "none":
-        # Find the average state marginal rate across conversion years
-        state_rates = []
-        for t in range(len(conversions)):
-            if conversions[t] > 0:
-                yr_state = resolve_state_for_year(scenario.timeline[t].state, scenario.state)
-                if yr_state:
-                    income = bases[t] if bases else scenario.timeline[t].gross_income
-                    # State-only marginal = combined - federal
-                    total_rate = combined_marginal_rate(
-                        income,
-                        conversions[t],
-                        scenario.filing_status,
-                        state=yr_state,
-                        custom_state_rate=scenario.custom_state_rate,
-                    )
-                    federal_rate = get_marginal_rate(
-                        income + conversions[t],
-                        scenario.filing_status,
-                    )
-                    state_rates.append(total_rate - federal_rate)
-        if state_rates:
-            avg_state = sum(state_rates) / len(state_rates)
+    # One note per state, so a move between states reads as two rates, not a blend
+    by_state: dict[str, list[tuple[int, float]]] = {}
+    for t in range(len(conversions)):
+        if conversions[t] <= 0:
+            continue
+        yr_state = resolve_state_for_year(scenario.timeline[t].state, scenario.state)
+        if not yr_state or yr_state == "none":
+            continue
+        income = bases[t] if bases else scenario.timeline[t].gross_income
+        # State-only marginal = combined - federal
+        yt = year_tax(scenario, t)
+        total_rate = combined_marginal_rate(
+            income,
+            conversions[t],
+            scenario.filing_status,
+            state=yr_state,
+            custom_state_rate=scenario.custom_state_rate,
+            year=yt,
+        )
+        federal_rate = yt.federal_bracket(income + conversions[t])
+        by_state.setdefault(yr_state, []).append(
+            (scenario.timeline[t].year, total_rate - federal_rate)
+        )
+    for code, rows in by_state.items():
+        years = [y for y, _ in rows]
+        span = str(years[0]) if len(years) == 1 else f"{years[0]} to {years[-1]}"
+        avg_state = sum(r for _, r in rows) / len(rows)
+        name = state_name(code)
+        if avg_state < MIN_STATE_RATE:
+            notes.append(f"{name} adds no state income tax to conversions ({span})")
+        else:
             notes.append(
-                f"State income tax adds approximately {avg_state:.1%} marginal cost "
-                f"to conversions — combined federal + state rates are used in optimization"
+                f"{name} income tax adds about {avg_state:.1%} to conversions ({span}); "
+                f"combined federal and state rates are used in optimization"
             )
 
     return notes
@@ -394,7 +412,18 @@ def _build_aca_summary(
     }
 
     # Plain-English explanation for the AI layer
-    if total_subsidy_lost == 0:
+    if aca_details and marketplace_conversion <= 0:
+        years = [d.year for d in aca_details]
+        span = str(years[0]) if len(years) == 1 else f"{years[0]} to {years[-1]}"
+        cliff = find_subsidy_cliff_income(scenario.healthcare.household_size)
+        highest = max(d.magi_without_conversion for d in aca_details)
+        summary["explanation"] = (
+            f"No conversions fall in your marketplace years ({span}). Without converting, "
+            f"income in those years is up to ${highest:,.0f} (the subsidy ends at "
+            f"${cliff:,.0f}), so converting then would cost more in tax and lost subsidy "
+            f"than it saves."
+        )
+    elif total_subsidy_lost == 0:
         summary["explanation"] = (
             "The recommended conversions do not reduce your ACA marketplace subsidy. In each "
             "marketplace year your income either stays where the subsidy is unchanged or is "

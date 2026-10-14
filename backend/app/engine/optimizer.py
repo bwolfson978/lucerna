@@ -30,8 +30,11 @@ from app.engine.retirement import (
     withdrawal_tax,
 )
 from app.engine.rmd import calculate_rmd, rmd_start_age
-from app.engine.state_tax import calculate_state_tax, resolve_state_for_year
-from app.engine.tax import analyze_bracket_fill, calculate_federal_tax, get_marginal_rate
+from app.engine.state_tax import resolve_state_for_year
+from app.engine.tax import (
+    STANDARD_DEDUCTION,
+    analyze_bracket_fill,
+)
 from app.engine.tax_cost import (
     combined_marginal_rate,
     federal_tax_on_conversion,
@@ -50,6 +53,7 @@ from app.engine.types import (
     ScenarioComparison,
     ScenarioInput,
 )
+from app.engine.year_tax import year_tax, year_taxes
 
 
 def _aca_coverage_years(scenario: ScenarioInput) -> set[int]:
@@ -65,16 +69,6 @@ def _irmaa_exposed_years(scenario: ScenarioInput) -> set[int]:
     """
     threshold = MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS
     return {t for t in range(len(scenario.timeline)) if scenario.age + t >= threshold}
-
-
-def _income_tax(scenario: ScenarioInput, amount: float, state: str | None) -> float:
-    """Federal plus state income tax on ``amount`` of income."""
-    tax = calculate_federal_tax(amount, scenario.filing_status)
-    if state:
-        tax += calculate_state_tax(
-            amount, state, scenario.filing_status, scenario.custom_state_rate
-        )
-    return tax
 
 
 def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> float:
@@ -104,13 +98,14 @@ def _npv_parts(scenario: ScenarioInput, yearly_conversions: list[float]) -> tupl
     irmaa_exposed = _irmaa_exposed_years(scenario)
     hc = scenario.healthcare
     owner_rmd_start = rmd_start_age(scenario.age)
+    taxes = year_taxes(scenario)
 
     # ── Unified timeline loop ────────────────────────────────────────────────
     for t in range(n_years):
         entry = scenario.timeline[t]
         income = entry.gross_income
         owner_age = scenario.age + t
-        year_state = resolve_state_for_year(entry.state, scenario.state)
+        yt = taxes[t]
         is_aca_year = hc is not None and entry.year in aca_years
         discount_factor = (1 + d) ** (-t)
 
@@ -126,15 +121,7 @@ def _npv_parts(scenario: ScenarioInput, yearly_conversions: list[float]) -> tupl
 
         # Tax cost of RMD (marginal on top of gross_income)
         if rmd > 0:
-            rmd_tax = calculate_federal_tax(income + rmd, filing_status) - calculate_federal_tax(
-                income, filing_status
-            )
-            if year_state:
-                rmd_tax += calculate_state_tax(
-                    income + rmd, year_state, filing_status, scenario.custom_state_rate
-                ) - calculate_state_tax(
-                    income, year_state, filing_status, scenario.custom_state_rate
-                )
+            rmd_tax = yt.total(income + rmd) - yt.total(income)
             after_tax_rmd = rmd - rmd_tax
             npv += after_tax_rmd * discount_factor
 
@@ -144,10 +131,7 @@ def _npv_parts(scenario: ScenarioInput, yearly_conversions: list[float]) -> tupl
         base, added = conversion_magi(effective_income, available_for_conv, need, conversion)
         trad_draw = min(need, available_for_conv - conversion)
 
-        def year_tax(amount: float, state: str | None = year_state) -> float:
-            return _income_tax(scenario, amount, state)
-
-        conv_cost = year_tax(base + added) - year_tax(base)
+        conv_cost = yt.total(base + added) - yt.total(base)
         if is_aca_year and added > 0:
             conv_cost += calculate_subsidy_loss(
                 base, added, hc.household_size, hc.monthly_slcsp_premium
@@ -157,7 +141,11 @@ def _npv_parts(scenario: ScenarioInput, yearly_conversions: list[float]) -> tupl
 
         # IRMAA cost (2-year lag — discounted at the surcharge year, not conversion year)
         if t in irmaa_exposed and added > 0:
-            irmaa_cost = irmaa_surcharge_loss(base, added, filing_status)
+            # IRMAA MAGI counts only the taxable part of Social Security
+            agi_base = yt.agi(base)
+            irmaa_cost = irmaa_surcharge_loss(
+                agi_base, yt.agi(base + added) - agi_base, filing_status
+            )
             if irmaa_cost > 0:
                 irmaa_discount = (1 + d) ** (-(t + IRMAA_LOOKBACK_YEARS))
                 npv -= irmaa_cost * irmaa_discount
@@ -165,7 +153,7 @@ def _npv_parts(scenario: ScenarioInput, yearly_conversions: list[float]) -> tupl
 
         # Spending draws: traditional first (taxed on top of income + RMD), then Roth
         if base > effective_income:
-            npv += (trad_draw - (year_tax(base) - year_tax(effective_income))) * discount_factor
+            npv += (trad_draw - (yt.total(base) - yt.total(effective_income))) * discount_factor
         trad_balance -= rmd + conversion + trad_draw
         roth_balance += conversion
         roth_draw = min(need - trad_draw, roth_balance)
@@ -333,9 +321,10 @@ def _build_constrained_params(
                 _cap=cap,
                 _yr_state=yr_state,
                 _custom_rate=custom_rate,
+                _yt=year_tax(scenario, t),
             ):
-                cost = federal_tax_on_conversion(_income, x[_t], _fs)
-                cost += state_tax_on_conversion(_income, x[_t], _yr_state, _fs, _custom_rate)
+                cost = federal_tax_on_conversion(_income, x[_t], _fs, _yt)
+                cost += state_tax_on_conversion(_income, x[_t], _yr_state, _fs, _custom_rate, _yt)
                 return _cap - cost
 
             constraints.append({"type": "ineq", "fun": _tax_constraint})
@@ -468,13 +457,15 @@ def _build_year_detail(
         trad_draw = min(need, available_for_conv - actual_conv)
         roth_draw = min(need - trad_draw, roth_balance + actual_conv)
 
-        fed_cost = federal_tax_on_conversion(base, added, scenario.filing_status)
+        yt = year_tax(scenario, t)
+        fed_cost = federal_tax_on_conversion(base, added, scenario.filing_status, yt)
         state_cost = state_tax_on_conversion(
             base,
             added,
             year_state,
             scenario.filing_status,
             scenario.custom_state_rate,
+            yt,
         )
         tax_cost = fed_cost + state_cost
         total_tax += tax_cost
@@ -486,15 +477,18 @@ def _build_year_detail(
             scenario.filing_status,
             state=year_state,
             custom_state_rate=scenario.custom_state_rate,
+            year=yt,
         )
-        fed_marginal = get_marginal_rate(base + added, scenario.filing_status)
+        fed_marginal = yt.federal_bracket(base + added)
 
         # IRMAA detail
         irmaa_cost = 0.0
         irmaa_tier = 0
         if t in irmaa_exposed:
-            irmaa_cost = irmaa_surcharge_loss(base, added, scenario.filing_status)
-            irmaa_tier = irmaa_tier_index(base + added, scenario.filing_status)
+            agi_base = yt.agi(base)
+            agi_with = yt.agi(base + added)
+            irmaa_cost = irmaa_surcharge_loss(agi_base, agi_with - agi_base, scenario.filing_status)
+            irmaa_tier = irmaa_tier_index(agi_with, scenario.filing_status)
 
         detail: dict = {
             "year": year,
@@ -507,9 +501,12 @@ def _build_year_detail(
             "federal_tax_cost": round(fed_cost, 2),
             "state_tax_cost": round(state_cost, 2),
             "effective_rate": round(eff_rate, 4),
-            "marginal_bracket": f"{fed_marginal:.0%}",
+            # Under the standard deduction the conversion is not taxed federally at all
+            "marginal_bracket": "0%"
+            if yt.under_standard_deduction(base + added, STANDARD_DEDUCTION[scenario.filing_status])
+            else f"{fed_marginal:.0%}",
             "state_marginal_rate": round(
-                marginal - get_marginal_rate(base + added, scenario.filing_status),
+                marginal - fed_marginal,
                 4,
             ),
             "irmaa_cost": round(irmaa_cost, 2),
@@ -596,7 +593,7 @@ def _build_irmaa_projection(
 
         if t in irmaa_exposed:
             # Income, RMD, conversion and the traditional withdrawal for spending
-            magi = entry.gross_income + rmd + actual_conv + trad_draw
+            magi = year_tax(scenario, t).agi(entry.gross_income + rmd + actual_conv + trad_draw)
 
             irmaa_cost = calculate_irmaa(magi, scenario.filing_status)
             tier = irmaa_tier_index(magi, scenario.filing_status)
@@ -681,7 +678,6 @@ def _build_rmd_projection(
     """Project RMD amounts and taxes across the full plan (timeline + post-timeline)."""
     n_years = len(scenario.timeline)
     g = scenario.annual_growth_rate
-    filing_status = scenario.filing_status
 
     trad_balance = scenario.traditional_ira_balance
     roth_balance = scenario.roth_ira_balance
@@ -710,15 +706,8 @@ def _build_rmd_projection(
             # The RMD plus any spending drawn on top of it, taxed on top of income
             income = entry.gross_income
             distribution = rmd + trad_draw
-            tax = calculate_federal_tax(income + distribution, filing_status) - (
-                calculate_federal_tax(income, filing_status)
-            )
-            if ret_state:
-                tax += calculate_state_tax(
-                    income + distribution, ret_state, filing_status, scenario.custom_state_rate
-                ) - calculate_state_tax(
-                    income, ret_state, filing_status, scenario.custom_state_rate
-                )
+            yt = year_tax(scenario, t, state=ret_state)
+            tax = yt.total(income + distribution) - yt.total(income)
 
             yearly_detail.append(
                 RmdYearDetail(
@@ -909,13 +898,15 @@ def _build_scenarios(
 
     yr0_income = scenario.timeline[0].gross_income
     yr0_state = resolve_state_for_year(scenario.timeline[0].state, scenario.state)
-    tax_full = federal_tax_on_conversion(yr0_income, max_balance, scenario.filing_status)
+    yr0_tax = year_tax(scenario, 0)
+    tax_full = federal_tax_on_conversion(yr0_income, max_balance, scenario.filing_status, yr0_tax)
     tax_full += state_tax_on_conversion(
         yr0_income,
         max_balance,
         yr0_state,
         scenario.filing_status,
         scenario.custom_state_rate,
+        yr0_tax,
     )
 
     return [

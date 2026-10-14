@@ -42,11 +42,18 @@ export function generateTimeline(
   return Array.from({ length }, (_, i) => {
     const age = currentAge + i;
     let income = age <= baseEnd ? baseIncome * Math.pow(1 + annualGrowthRate / 100, i) : 0;
+    let socialSecurity = 0;
     for (const src of sources) {
       const end = src.end_age ?? horizon;
-      if (src.start_age <= age && age <= end) income += src.amount;
+      if (src.start_age <= age && age <= end) {
+        income += src.amount;
+        if (src.kind === "social_security") socialSecurity += src.amount;
+      }
     }
-    return { year: startYear + i, gross_income: Math.round(income) };
+    const row: PlanYear = { year: startYear + i, gross_income: Math.round(income) };
+    // Recorded on its own so only the taxable part of benefits is taxed
+    if (socialSecurity > 0) row.social_security = Math.round(socialSecurity);
+    return row;
   });
 }
 

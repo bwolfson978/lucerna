@@ -84,6 +84,12 @@ def _get_state_data(state: str) -> dict | None:
     return _TAX_DATA.get("states", {}).get(state)
 
 
+def state_name(state: str) -> str:
+    """The state's full name, or the code itself when it has no entry."""
+    data = _get_state_data(state)
+    return data["name"] if data and data.get("name") else state
+
+
 def _get_deduction(state: str, filing_status: FilingStatus) -> float:
     """Get the standard deduction for a state."""
     state_data = _get_state_data(state)

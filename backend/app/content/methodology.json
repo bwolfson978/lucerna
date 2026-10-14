@@ -34,6 +34,10 @@
         {
           "heading": "Why this changes year to year",
           "text": "In years when your income is lower, there's more room in cheaper brackets, so the analysis places more conversion there. This is why your income trajectory matters so much."
+        },
+        {
+          "heading": "Social Security",
+          "text": "Only part of Social Security is taxed: up to 85% of benefits, depending on your other income. Each converted dollar can make more of your benefits taxable, so in some years a conversion costs more than its bracket suggests. Filers 65 and older get a larger standard deduction, and most states don't tax benefits at all."
         }
       ]
     },
@@ -95,7 +99,7 @@
         },
         {
           "heading": "What's not included",
-          "text": "Social Security is counted as fully taxable income. In reality only up to 85% of it is taxed, so the tax on years with Social Security is somewhat overstated. IRMAA surcharges are factored in during optimization but are not a direct user input. These simplifications could shift the optimal amount depending on your situation."
+          "text": "The few states that tax Social Security are treated as taxing all of it, without their own exemptions. IRMAA surcharges are factored in during optimization but are not a direct user input. The net investment income tax is not included, and future tax brackets are not adjusted for inflation. These simplifications could shift the optimal amount depending on your situation."
         }
       ]
     },

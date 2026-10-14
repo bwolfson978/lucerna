@@ -4,6 +4,8 @@ export interface PlanYear {
   year: number;
   gross_income: number;
   drawdown?: number | null;
+  /** Social Security included in gross_income; only its taxable part is taxed. */
+  social_security?: number | null;
   notes?: string;
   state?: string | null;
 }
