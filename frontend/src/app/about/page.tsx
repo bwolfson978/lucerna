@@ -57,7 +57,7 @@ export default function AboutPage() {
             </p>
             <p>
               {
-                'Although the v1 excel spreadsheet (built sans AI mind you!) took an embarassingly large amount of hours to complete, it drove a major financial decision for both my wife and I (albeit, after a couple rounds of sanity checking with financial professionals lol). After that experience, I wanted to "package up" the learnings into something easy-to-use, and available to others attempting to answer similar questions in the future, which is what led to this site.'
+                'Although the v1 excel spreadsheet (built sans AI mind you!) took an embarassingly large amount of hours to complete, it drove a major financial decision for both my wife and I (albeit, after a couple rounds of sanity checking with financial professionals). After that experience, I wanted to "package up" the learnings into something easy-to-use, and available to others attempting to answer similar questions in the future, which is what led to this site.'
               }
             </p>
             <p>
