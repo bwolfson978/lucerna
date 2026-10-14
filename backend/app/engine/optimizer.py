@@ -20,6 +20,7 @@ from app.engine.retirement import (
     draw_beyond_rmd,
     post_timeline_start,
     resolve_drawdowns,
+    resolve_states,
     withdrawal_tax,
 )
 from app.engine.rmd import calculate_rmd, rmd_start_age
@@ -968,7 +969,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
     from app.engine.dp import dp_optimize
 
     original = scenario
-    scenario = resolve_drawdowns(scenario)
+    scenario = resolve_states(resolve_drawdowns(scenario))
     n_years = len(scenario.timeline)
     max_balance = scenario.traditional_ira_balance
 

@@ -114,6 +114,7 @@ lucerna/
 │   └── styles/tokens.css  # CSS variables + component classes
 ├── mcp-views/             # MCP App Views: entries around ui/ components, built into backend/app/mcp/views/
 ├── shared/fixtures/       # Cross-language fixtures (scenario draft, View data)
+├── listing/               # Claude and ChatGPT directory listing kit: copy, test cases, screenshots, plugin ZIP build
 ├── e2e/                   # Playwright E2E tests (spans both services)
 │   ├── playwright.config.ts
 │   ├── capture/           # Before/after capture flows (pr-evidence skill)
