@@ -16,12 +16,6 @@ export const metadata: Metadata = {
   },
 };
 
-const CLASSES = [
-  ["Tax", "after-tax wealth and tax brackets"],
-  ["Finance", "the present value of future cash flows"],
-  ["Data, Models, and Decisions", "modeling constrained optimization problems"],
-] as const;
-
 export default function AboutPage() {
   return (
     <>
@@ -47,44 +41,47 @@ export default function AboutPage() {
 
           <div className="flex flex-col gap-5 text-body leading-relaxed text-text-secondary">
             <p>
-              I&apos;m Barry. I first came across Roth conversions while taking two years off work
-              for an MBA at MIT Sloan. A friend pointed out that a few low-income years can be a
-              good window to convert, so I looked into it.
+              {
+                "Hi there 👋 I'm Barry. Although I've always been interested in investing and personal finance, my side quest to optimize roth conversion schedules started while at MIT, where I took two years off from work to attend graduate school. A friend had mentioned two lower-income years could be a good opportunity to for roth conversions, so I decided to look into it."
+              }
             </p>
             <p>
-              What I found was expensive, complicated software built for financial advisors, and
-              simple calculators that only modeled one &ldquo;convert everything or nothing&rdquo;
-              decision for just the current year. None of them told me how much to convert in each
-              year.
-            </p>
-            <p>But, little did I know, three of my classes had already covered the pieces:</p>
-            <ul className="flex flex-col gap-2 border-l-2 border-pine pl-5">
-              {CLASSES.map(([course, lesson]) => (
-                <li key={course}>
-                  <strong className="font-semibold text-text-primary">{course}</strong>: {lesson}
-                </li>
-              ))}
-            </ul>
-            <p>
-              So initially I took the spreadsheet route. After weeks of modeling, I turned what I
-              learned into this tool, so others don&apos;t have to build their own.
+              {
+                "Starting with what I assumed would be a straightforward question to answer, \"how much should I convert, and when (potentially over multiple years)?\", I went searching. Unfortunately, all I found was expensive, complicated financial tax software at one end of the spectrum and overly simplistic 'calculators' on the other."
+              }
             </p>
             <p>
-              Whether you&apos;re on a sabbatical, changing careers, starting a business, or in the
-              early years of retirement before required minimum distributions begin, it&apos;s meant
-              to help you lay out your scenarios, compare them, and see the tradeoffs more clearly.
+              {
+                "So, armed with the wide-eyed optimism of grad school and the knowledge from three of the more intimidating classes at Sloan - Tax Strategy, Managerial Finance, and Data, Models, and Decisions, I set out to weave knowledge of tax brackets, retirement accounts, present value of future cash flows, and constraint optimization problems into a usable product."
+              }
             </p>
             <p>
-              I hope you find it valuable in some way. I&apos;d love to hear your feature requests
-              and feedback, and I read every message sent through{" "}
+              {
+                'Although the v1 excel spreadsheet (built sans AI mind you!) took an embarassingly large amount of hours to complete, it drove a major financial decision for both my wife and I (albeit, after a couple rounds of sanity checking with financial professionals lol). After that experience, I wanted to "package up" the learnings into something easy-to-use, and available to others attempting to answer similar questions in the future, which is what led to this site.'
+              }
+            </p>
+            <p>
+              {
+                'So whether you\'re on a sabbatical, transitioning careers, taking time off to go to grad school like I was, in the early years of retirement pre-RMDs, or in any other form of "in-between" period which puts you in lower tax brackets, the tool is meant to help explore possible scenarios, interact with them, and understand the tradeoffs more clearly, without being overwhelming or expensive to access.'
+              }
+            </p>
+            <p>
+              {
+                "I hope you find it valuable in some way, and I'd love to hear any feature requests and/or feedback you might have - I read every message sent through the "
+              }
               <Link href="/support" className="text-pine underline underline-offset-2">
                 Support
-              </Link>{" "}
-              and{" "}
+              </Link>
+              {" and "}
               <Link href="/feedback" className="text-pine underline underline-offset-2">
                 Feedback
               </Link>
-              . Enjoy!
+              {" channels."}
+            </p>
+            <p>
+              Cheers!
+              <br />
+              Barry
             </p>
           </div>
 
