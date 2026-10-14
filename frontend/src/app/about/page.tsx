@@ -42,7 +42,7 @@ export default function AboutPage() {
           <div className="flex flex-col gap-5 text-body leading-relaxed text-text-secondary">
             <p>
               {
-                "Hi there 👋 I'm Barry. Although I've always been interested in investing and personal finance, my side quest to optimize roth conversion schedules started while at MIT, where I took two years off from work to attend graduate school. A friend had mentioned two lower-income years could be a good opportunity to for roth conversions, so I decided to look into it."
+                "Hi there 👋 I'm Barry. Although I've always been interested in investing and personal finance, this side quest to optimize roth conversion schedules started while at MIT, where I took two years off from work to attend graduate school. A friend had mentioned two lower-income years could be a good opportunity to for roth conversions, so I decided to look into it."
               }
             </p>
             <p>
