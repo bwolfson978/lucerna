@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { DocPage, DocSection } from "@/components/legal/DocPage";
+import { DocPage, DocSection, DocTerm } from "@/components/legal/DocPage";
 import { SUPPORT_EMAIL } from "@/lib/utils/constants";
 
 export const metadata: Metadata = {
@@ -27,37 +27,34 @@ export default function PrivacyPage() {
       }
     >
       <DocSection id="what-we-collect" title="What we collect">
-        <p>
-          <strong>The numbers you enter for an analysis.</strong> Age, filing status, state, income,
-          account balances, the age withdrawals begin and similar scenario inputs. We use them to
-          run the analysis and send the results back. If you don&apos;t save a scenario, we
-          don&apos;t store these inputs.
-        </p>
-        <p>
-          <strong>Saved scenarios.</strong> If you sign in and save a scenario, on the website or
-          from a chat, we store its inputs, its results, the name you give it and when you saved it,
-          linked to your account.
-        </p>
-        <p>
-          <strong>Account details.</strong> Accounts are optional. If you create one, our sign-in
-          provider stores your email address, your name if you give one, and your sign-in method. We
-          receive an account ID and your email address and name.
-        </p>
-        <p>
-          <strong>Technical data.</strong> We use your IP address to apply daily usage limits. These
-          counters are kept in memory and reset every day. Our hosting providers keep standard
-          request logs (IP address, time, requested URL, user agent) for operations and security.
-        </p>
-        <p>
-          <strong>Website usage and errors.</strong> On the website we measure which pages and
-          features are used and collect error reports, so we can find bugs and improve the tool. If
-          you are signed in, these are linked to your account ID and email.
-        </p>
-        <p>
-          <strong>Website chat messages.</strong> When you use the chat on the website, your
-          messages are sent to Anthropic&apos;s Claude API to generate replies. We don&apos;t store
-          chat transcripts on our servers.
-        </p>
+        <DocTerm term="The numbers you enter for an analysis.">
+          Age, filing status, state, income, account balances, the age withdrawals begin and similar
+          scenario inputs. We use them to run the analysis and send the results back. If you
+          don&apos;t save a scenario, we don&apos;t store these inputs.
+        </DocTerm>
+        <DocTerm term="Saved scenarios.">
+          If you sign in and save a scenario, on the website or from a chat, we store its inputs,
+          its results, the name you give it and when you saved it, linked to your account.
+        </DocTerm>
+        <DocTerm term="Account details.">
+          Accounts are optional. If you create one, our sign-in provider stores your email address,
+          your name if you give one, and your sign-in method. We receive an account ID and your
+          email address and name.
+        </DocTerm>
+        <DocTerm term="Technical data.">
+          We use your IP address to apply daily usage limits. These counters are kept in memory and
+          reset every day. Our hosting providers keep standard request logs (IP address, time,
+          requested URL, user agent) for operations and security.
+        </DocTerm>
+        <DocTerm term="Website usage and errors.">
+          On the website we measure which pages and features are used and collect error reports, so
+          we can find bugs and improve the tool. If you are signed in, these are linked to your
+          account ID and email.
+        </DocTerm>
+        <DocTerm term="Website chat messages.">
+          When you use the chat on the website, your messages are sent to Anthropic&apos;s Claude
+          API to generate replies. We don&apos;t store chat transcripts on our servers.
+        </DocTerm>
       </DocSection>
 
       <DocSection id="claude-and-chatgpt" title="In Claude and ChatGPT">

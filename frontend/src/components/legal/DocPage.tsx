@@ -52,3 +52,12 @@ export function DocSection({
     </section>
   );
 }
+
+/** A paragraph that opens with a bold lead-in, e.g. "Saved scenarios. We store...". */
+export function DocTerm({ term, children }: { term: string; children: ReactNode }) {
+  return (
+    <p>
+      <strong>{term}</strong> {children}
+    </p>
+  );
+}
