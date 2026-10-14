@@ -48,6 +48,22 @@ export const GLOBAL_PATHS = [
 ]
 
 export const flows = {
+  about: {
+    title: 'About page and its links',
+    paths: ['frontend/src/app/about/', 'frontend/public/barry.jpg', 'frontend/src/components/common/Header', 'frontend/src/components/common/PageFooter'],
+    async run(page, shot) {
+      await page.goto('/methodology')
+      await shot('header', 'Site header', { element: page.locator('header').first() })
+      const footer = page.locator('footer').last()
+      await footer.scrollIntoViewIfNeeded()
+      await shot('footer', 'Site footer', { element: footer })
+      await page.goto('/about')
+      await page.getByRole('heading', { level: 1 }).waitFor()
+      await shot('about', 'About page, first screen')
+      await shot('about-full', 'About page, whole page', { fullPage: true })
+    },
+  },
+
   landing: {
     title: 'Landing page',
     paths: ['frontend/src/app/page.tsx', 'frontend/src/components/landing/', 'frontend/src/components/common/'],
