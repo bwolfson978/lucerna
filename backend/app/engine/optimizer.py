@@ -31,7 +31,12 @@ from app.engine.retirement import (
 )
 from app.engine.rmd import calculate_rmd, rmd_start_age
 from app.engine.state_tax import calculate_state_tax, resolve_state_for_year
-from app.engine.tax import analyze_bracket_fill, calculate_federal_tax, get_marginal_rate
+from app.engine.tax import (
+    STANDARD_DEDUCTION,
+    analyze_bracket_fill,
+    calculate_federal_tax,
+    get_marginal_rate,
+)
 from app.engine.tax_cost import (
     combined_marginal_rate,
     federal_tax_on_conversion,
@@ -507,7 +512,10 @@ def _build_year_detail(
             "federal_tax_cost": round(fed_cost, 2),
             "state_tax_cost": round(state_cost, 2),
             "effective_rate": round(eff_rate, 4),
-            "marginal_bracket": f"{fed_marginal:.0%}",
+            # Under the standard deduction the conversion is not taxed federally at all
+            "marginal_bracket": "0%"
+            if base + added <= STANDARD_DEDUCTION[scenario.filing_status]
+            else f"{fed_marginal:.0%}",
             "state_marginal_rate": round(
                 marginal - get_marginal_rate(base + added, scenario.filing_status),
                 4,

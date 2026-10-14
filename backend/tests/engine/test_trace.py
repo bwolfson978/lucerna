@@ -266,3 +266,78 @@ class TestAcaSummary:
         assert summary["years_hitting_cliff"] == sum(d.hits_cliff for d in by_year.values())
         if summary["total_subsidy_lost"] == 0:
             assert "worst_year_note" not in summary
+
+
+class TestLabels:
+    def test_state_note_names_each_state(self):
+        # Texas working years, then Oregon: one note per state, not a blended average
+        from app.engine.trace import _build_sensitivity_notes
+
+        scenario = ScenarioInput(
+            age=55,
+            filing_status=FilingStatus.SINGLE,
+            state="TX",
+            timeline=[
+                *(PlanYear(year=2026 + t, gross_income=95_000) for t in range(3)),
+                *(PlanYear(year=2029 + t, gross_income=40_000, state="OR") for t in range(3)),
+            ],
+            traditional_ira_balance=650_000,
+            drawdown_start_age=73,
+            planning_horizon_age=90,
+        )
+        notes = _build_sensitivity_notes(scenario, [20_000.0] * 6)
+        assert "Texas adds no state income tax to conversions (2026 to 2028)" in notes
+        oregon = next(n for n in notes if n.startswith("Oregon"))
+        assert "(2029 to 2031)" in oregon
+        assert not any("approximately" in n for n in notes)
+
+    def test_aca_explains_years_with_no_conversions(self):
+        from app.engine.trace import _build_aca_summary
+        from app.engine.types import AcaSubsidyDetail, HealthcareInput
+
+        scenario = ScenarioInput(
+            age=58,
+            filing_status=FilingStatus.SINGLE,
+            timeline=[PlanYear(year=2029 + t, gross_income=60_000) for t in range(2)],
+            traditional_ira_balance=500_000,
+            drawdown_start_age=58,
+            planning_horizon_age=90,
+            healthcare=HealthcareInput(household_size=1),
+        )
+        details = [
+            AcaSubsidyDetail(
+                year=2029 + t,
+                magi_without_conversion=60_000,
+                magi_with_conversion=60_000,
+                subsidy_without_conversion=2_000,
+                subsidy_with_conversion=2_000,
+                subsidy_lost=0,
+                federal_tax_cost=0,
+                combined_cost=0,
+                combined_marginal_rate=0,
+                income_pct_fpl=383,
+                hits_cliff=False,
+            )
+            for t in range(2)
+        ]
+        summary = _build_aca_summary(scenario, details, [0.0, 0.0])
+        assert summary["explanation"].startswith(
+            "No conversions fall in your marketplace years (2029 to 2030)"
+        )
+        assert "$60,000" in summary["explanation"]
+
+
+class TestZeroBracketLabel:
+    def test_conversion_under_the_standard_deduction_reads_zero(self):
+        scenario = ScenarioInput(
+            age=60,
+            filing_status=FilingStatus.SINGLE,
+            timeline=[PlanYear(year=2026, gross_income=0)],
+            traditional_ira_balance=8_000,
+            drawdown_start_age=73,
+            planning_horizon_age=90,
+        )
+        result = optimize(scenario)
+        first = result.yearly_detail[0]
+        assert first["conversion"] + first["income"] <= STANDARD_DEDUCTION[FilingStatus.SINGLE]
+        assert first["marginal_bracket"] == "0%"

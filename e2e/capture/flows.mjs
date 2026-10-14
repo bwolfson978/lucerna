@@ -242,6 +242,30 @@ export const flows = {
       const card = heading.locator('xpath=../..')
       await card.scrollIntoViewIfNeeded()
       await shot('aca-card', 'ACA subsidy card for a CA to NV household retiring at 62', { element: card })
+
+      // Single, Texas to Oregon at 58, living on traditional withdrawals near the cliff
+      const single = {
+        age: 55,
+        filing_status: 'single',
+        current_income: 95000,
+        traditional_balance: 650000,
+        roth_balance: 40000,
+        retirement_age: 58,
+        retirement_spending: 60000,
+        state: 'TX',
+        retirement_state: 'OR',
+        include_aca: true,
+        household_size: 1,
+        income_sources: [{ kind: 'social_security', amount: 28000, start_age: 67 }],
+      }
+      const singleEncoded = Buffer.from(JSON.stringify(single)).toString('base64url')
+      await page.goto(`/calculator?view=results&scenario=${singleEncoded}`)
+      await heading.waitFor({ timeout: 90000 })
+      await page.waitForLoadState('networkidle')
+      await card.scrollIntoViewIfNeeded()
+      await shot('aca-card-single', 'ACA subsidy card for a single filer moving TX to OR at 58', {
+        element: card,
+      })
     },
   },
 

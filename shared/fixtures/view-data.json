@@ -478,7 +478,8 @@
         "benefit_of_current_bracket": {
           "bracket_rate": 0.1408,
           "tax_paid": 63471.48,
-          "future_tax_avoided": 222354.87
+          "future_tax_avoided": 222354.87,
+          "dollars": "today's dollars (the schedule adds up each year's tax as paid)"
         },
         "summary_points": {
           "what_to_convert": "Convert $27,700 in 2027, $83,100 in 2029, $83,100 in 2030, $83,100 in 2031, $83,100 in 2032, $83,100 in 2033, $72,000 in 2034, $11,100 in 2035, $11,100 in 2036, $11,100 in 2037, $11,100 in 2038, $11,100 in 2039, $11,100 in 2040, $11,100 in 2041, $5,500 in 2049, $5,500 in 2056",
@@ -491,7 +492,8 @@
           "Large income variation across years creates significant conversion opportunities in low-income years",
           "Long retirement horizon amplifies the tax-free growth benefit of Roth conversions",
           "RMDs begin at age 75 (15 years from now) \u2014 converting before then reduces forced taxable withdrawals in retirement",
-          "State income tax adds approximately 2.6% marginal cost to conversions \u2014 combined federal + state rates are used in optimization"
+          "California income tax adds about 4.0% to conversions (2027); combined federal and state rates are used in optimization",
+          "Arizona income tax adds about 2.5% to conversions (2029 to 2056); combined federal and state rates are used in optimization"
         ],
         "rmd_summary": {
           "rmd_start_age": 75,
@@ -2141,14 +2143,16 @@
         "benefit_of_current_bracket": {
           "bracket_rate": 0.1408,
           "tax_paid": 63471.48,
-          "future_tax_avoided": 222354.87
+          "future_tax_avoided": 222354.87,
+          "dollars": "today's dollars (the schedule adds up each year's tax as paid)"
         },
         "sensitivity_notes": [
           "Moderate growth assumption (7%) \u2014 result changes modestly with \u00b12% variation",
           "Large income variation across years creates significant conversion opportunities in low-income years",
           "Long retirement horizon amplifies the tax-free growth benefit of Roth conversions",
           "RMDs begin at age 75 (15 years from now) \u2014 converting before then reduces forced taxable withdrawals in retirement",
-          "State income tax adds approximately 2.6% marginal cost to conversions \u2014 combined federal + state rates are used in optimization"
+          "California income tax adds about 4.0% to conversions (2027); combined federal and state rates are used in optimization",
+          "Arizona income tax adds about 2.5% to conversions (2029 to 2056); combined federal and state rates are used in optimization"
         ],
         "summary_points": {
           "what_to_convert": "Convert $27,700 in 2027, $83,100 in 2029, $83,100 in 2030, $83,100 in 2031, $83,100 in 2032, $83,100 in 2033, $72,000 in 2034, $11,100 in 2035, $11,100 in 2036, $11,100 in 2037, $11,100 in 2038, $11,100 in 2039, $11,100 in 2040, $11,100 in 2041, $5,500 in 2049, $5,500 in 2056",
@@ -4552,14 +4556,16 @@
         "benefit_of_current_bracket": {
           "bracket_rate": 0.1408,
           "tax_paid": 63471.48,
-          "future_tax_avoided": 222354.87
+          "future_tax_avoided": 222354.87,
+          "dollars": "today's dollars (the schedule adds up each year's tax as paid)"
         },
         "sensitivity_notes": [
           "Moderate growth assumption (7%) \u2014 result changes modestly with \u00b12% variation",
           "Large income variation across years creates significant conversion opportunities in low-income years",
           "Long retirement horizon amplifies the tax-free growth benefit of Roth conversions",
           "RMDs begin at age 75 (15 years from now) \u2014 converting before then reduces forced taxable withdrawals in retirement",
-          "State income tax adds approximately 2.6% marginal cost to conversions \u2014 combined federal + state rates are used in optimization"
+          "California income tax adds about 4.0% to conversions (2027); combined federal and state rates are used in optimization",
+          "Arizona income tax adds about 2.5% to conversions (2029 to 2056); combined federal and state rates are used in optimization"
         ],
         "summary_points": {
           "what_to_convert": "Convert $27,700 in 2027, $83,100 in 2029, $83,100 in 2030, $83,100 in 2031, $83,100 in 2032, $83,100 in 2033, $72,000 in 2034, $11,100 in 2035, $11,100 in 2036, $11,100 in 2037, $11,100 in 2038, $11,100 in 2039, $11,100 in 2040, $11,100 in 2041, $5,500 in 2049, $5,500 in 2056",
@@ -6701,14 +6707,16 @@
         "benefit_of_current_bracket": {
           "bracket_rate": 0.1388,
           "tax_paid": 60557.49,
-          "future_tax_avoided": 217733.38
+          "future_tax_avoided": 217733.38,
+          "dollars": "today's dollars (the schedule adds up each year's tax as paid)"
         },
         "sensitivity_notes": [
           "Moderate growth assumption (7%) \u2014 result changes modestly with \u00b12% variation",
           "Large income variation across years creates significant conversion opportunities in low-income years",
           "Long retirement horizon amplifies the tax-free growth benefit of Roth conversions",
           "RMDs begin at age 75 (15 years from now) \u2014 converting before then reduces forced taxable withdrawals in retirement",
-          "State income tax adds approximately 2.6% marginal cost to conversions \u2014 combined federal + state rates are used in optimization"
+          "California income tax adds about 4.0% to conversions (2027); combined federal and state rates are used in optimization",
+          "Arizona income tax adds about 2.5% to conversions (2028 to 2056); combined federal and state rates are used in optimization"
         ],
         "summary_points": {
           "what_to_convert": "Convert $5,200 in 2027, $88,000 in 2028, $88,000 in 2029, $88,000 in 2030, $88,000 in 2031, $82,800 in 2032, $15,500 in 2033, $15,500 in 2034, $15,500 in 2035, $15,500 in 2036, $15,500 in 2037, $10,400 in 2038, $10,400 in 2039, $10,400 in 2040, $5,200 in 2045, $5,200 in 2056",
