@@ -176,7 +176,7 @@
       "sidebar": false,
       "blocks": [
         {
-          "text": "When you choose a state, its income tax is added to the cost of converting in your working years, and your retirement state's tax applies to withdrawals later. Moving from a high-tax state to a no-tax state in retirement makes conversions less attractive before the move and more attractive after it. Without a state selected, the analysis is federal only."
+          "text": "When you choose a state, its income tax is added to the cost of converting in your working years. From your retirement age on, your retirement state's tax applies instead, to conversions and withdrawals alike. Moving from a high-tax state to a no-tax state in retirement makes conversions less attractive before the move and more attractive after it. Without a state selected, the analysis is federal only."
         }
       ]
     },
