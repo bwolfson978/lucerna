@@ -74,6 +74,18 @@ export default function AboutPage() {
               early years of retirement before required minimum distributions begin, it&apos;s meant
               to help you lay out your scenarios, compare them, and see the tradeoffs more clearly.
             </p>
+            <p>
+              I hope you find it valuable in some way. I&apos;d love to hear your feature requests
+              and feedback, and I read every message sent through{" "}
+              <Link href="/support" className="text-pine underline underline-offset-2">
+                Support
+              </Link>{" "}
+              and{" "}
+              <Link href="/feedback" className="text-pine underline underline-offset-2">
+                Feedback
+              </Link>
+              . Enjoy!
+            </p>
           </div>
 
           <div className="flex flex-wrap gap-3">
