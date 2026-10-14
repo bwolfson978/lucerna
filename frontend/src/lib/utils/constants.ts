@@ -37,3 +37,9 @@ export const dataFontStyle = {
   fontFamily: DATA_FONT_FAMILY,
   fontVariantNumeric: "tabular-nums",
 } as const;
+
+// Contact for users, reviewers and security reports (privacy, terms, support pages).
+export const SUPPORT_EMAIL = "support@rothconversionsoptimizer.com";
+
+// Public MCP server URL people add to Claude or ChatGPT (see /connect).
+export const MCP_SERVER_URL = "https://mcp.rothconversionsoptimizer.com/mcp";

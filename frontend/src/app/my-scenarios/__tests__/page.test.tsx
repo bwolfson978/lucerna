@@ -8,5 +8,6 @@ describe("MyScenariosPage", () => {
     render(<MyScenariosPage />);
     expect(screen.getByText("Sign in to see your saved scenarios")).toBeInTheDocument();
     expect(screen.queryByText("No saved scenarios yet")).not.toBeInTheDocument();
+    expect(screen.queryByText("Delete account")).not.toBeInTheDocument();
   });
 });

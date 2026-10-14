@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { SignInButton, useAuth, useUser } from "@/lib/auth";
+import posthog from "posthog-js";
+import { SignInButton, useAuth, useDeleteClerkUser, useUser } from "@/lib/auth";
 import { Header } from "@/components/common/Header";
 import { GlowButton } from "@/components/common/GlowButton";
 import { SignInRequired } from "@/components/common/SignInRequired";
 import { PageFooter } from "@/components/common/PageFooter";
+import { DeleteAccountCard } from "@/components/common/DeleteAccountCard";
 import { createScenariosApi } from "@/lib/api/scenarios";
 import type { SavedScenario } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils/formatting";
@@ -103,6 +105,7 @@ function ScenarioCard({
 export default function MyScenariosPage() {
   const { isLoaded, isSignedIn } = useUser();
   const { getToken } = useAuth();
+  const deleteClerkUser = useDeleteClerkUser();
   const [scenarios, setScenarios] = useState<SavedScenario[]>([]);
   const [loadingList, setLoadingList] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -139,6 +142,14 @@ export default function MyScenariosPage() {
     },
     [getToken]
   );
+
+  // Saved scenarios first: once the Clerk user is gone there's no token to delete them with.
+  const handleDeleteAccount = useCallback(async () => {
+    await createScenariosApi(getToken).deleteAccountData();
+    await deleteClerkUser();
+    posthog.reset();
+    window.location.assign("/");
+  }, [getToken, deleteClerkUser]);
 
   if (!isLoaded) return null;
 
@@ -218,6 +229,8 @@ export default function MyScenariosPage() {
               ))}
             </div>
           )}
+
+          {isSignedIn && <DeleteAccountCard onDelete={handleDeleteAccount} />}
         </div>
       </main>
       <PageFooter />
