@@ -59,6 +59,10 @@ async def test_lists_tools_and_resources():
             assert tool.title, tool.name
             hints = tool.annotations
             assert None not in (hints.readOnlyHint, hints.destructiveHint, hints.openWorldHint)
+            assert hints.title == tool.title, tool.name
+            # Claude's directory check also flags parameters without a "type".
+            for param, schema in tool.inputSchema.get("properties", {}).items():
+                assert "type" in schema or "anyOf" in schema, (tool.name, param)
         uris = {str(r.uri) for r in (await session.list_resources()).resources}
         assert "methodology://rmds" in uris
         resource = await session.read_resource("methodology://irmaa")
