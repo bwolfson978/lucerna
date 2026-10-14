@@ -75,8 +75,8 @@ class HealthcareInput(BaseModel):
         default=None,
         description=(
             "Calendar years when ACA marketplace coverage is needed. "
-            "If not provided, defaults to all years in the income timeline "
-            "where income is below the employer-coverage threshold."
+            "If not provided, defaults to the years before 65 whose income is at or "
+            "below 400% of the federal poverty level (above it there is no subsidy)."
         ),
     )
     has_employer_coverage_after: int | None = Field(

@@ -1,7 +1,12 @@
 import numpy as np
 from scipy.optimize import minimize
 
-from app.engine.aca import calculate_aca_subsidy, find_subsidy_cliff_income
+from app.engine.aca import (
+    aca_coverage_years,
+    calculate_aca_subsidy,
+    calculate_subsidy_loss,
+    find_subsidy_cliff_income,
+)
 from app.engine.constants import (
     IMPROVEMENT_THRESHOLD,
     round_to_resolution,
@@ -17,6 +22,7 @@ from app.engine.irmaa import (
 )
 from app.engine.retirement import (
     account_spending,
+    conversion_magi,
     draw_beyond_rmd,
     post_timeline_start,
     resolve_drawdowns,
@@ -29,7 +35,6 @@ from app.engine.tax_cost import (
     combined_marginal_rate,
     federal_tax_on_conversion,
     state_tax_on_conversion,
-    total_conversion_cost,
 )
 from app.engine.types import (
     AcaSubsidyDetail,
@@ -47,23 +52,8 @@ from app.engine.types import (
 
 
 def _aca_coverage_years(scenario: ScenarioInput) -> set[int]:
-    """Determine which calendar years the user needs ACA marketplace coverage."""
-    hc = scenario.healthcare
-    if hc is None:
-        return set()
-
-    # Medicare replaces marketplace coverage at 65
-    timeline_years = {
-        y.year for t, y in enumerate(scenario.timeline) if scenario.age + t < MEDICARE_START_AGE
-    }
-
-    if hc.aca_coverage_years is not None:
-        return set(hc.aca_coverage_years) & timeline_years
-
-    if hc.has_employer_coverage_after is not None:
-        return {y for y in timeline_years if y < hc.has_employer_coverage_after}
-
-    return timeline_years
+    """Calendar years the household needs ACA marketplace coverage."""
+    return aca_coverage_years(scenario)
 
 
 def _irmaa_exposed_years(scenario: ScenarioInput) -> set[int]:
@@ -74,6 +64,16 @@ def _irmaa_exposed_years(scenario: ScenarioInput) -> set[int]:
     """
     threshold = MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS
     return {t for t in range(len(scenario.timeline)) if scenario.age + t >= threshold}
+
+
+def _income_tax(scenario: ScenarioInput, amount: float, state: str | None) -> float:
+    """Federal plus state income tax on ``amount`` of income."""
+    tax = calculate_federal_tax(amount, scenario.filing_status)
+    if state:
+        tax += calculate_state_tax(
+            amount, state, scenario.filing_status, scenario.custom_state_rate
+        )
+    return tax
 
 
 def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> float:
@@ -137,59 +137,40 @@ def _npv_parts(scenario: ScenarioInput, yearly_conversions: list[float]) -> tupl
             after_tax_rmd = rmd - rmd_tax
             npv += after_tax_rmd * discount_factor
 
-        # Tax cost of conversion (marginal on top of effective_income)
-        conv_cost = total_conversion_cost(
-            effective_income,
-            conversion,
-            filing_status,
-            state=year_state,
-            custom_state_rate=scenario.custom_state_rate,
-            healthcare=hc if is_aca_year else None,
-            is_aca_year=is_aca_year,
-        )
+        # Spending beyond the RMD comes from the traditional account first, so the
+        # conversion is stacked on that withdrawal for tax, ACA and IRMAA.
+        need = draw_beyond_rmd(entry.drawdown, rmd)
+        base, added = conversion_magi(effective_income, available_for_conv, need, conversion)
+        trad_draw = min(need, available_for_conv - conversion)
+
+        def year_tax(amount: float, state: str | None = year_state) -> float:
+            return _income_tax(scenario, amount, state)
+
+        conv_cost = year_tax(base + added) - year_tax(base)
+        if is_aca_year and added > 0:
+            conv_cost += calculate_subsidy_loss(
+                base, added, hc.household_size, hc.monthly_slcsp_premium
+            )
         npv -= conv_cost * discount_factor
         upfront_cost += conv_cost * discount_factor
 
         # IRMAA cost (2-year lag — discounted at the surcharge year, not conversion year)
-        if t in irmaa_exposed and conversion > 0:
-            irmaa_cost = irmaa_surcharge_loss(effective_income, conversion, filing_status)
+        if t in irmaa_exposed and added > 0:
+            irmaa_cost = irmaa_surcharge_loss(base, added, filing_status)
             if irmaa_cost > 0:
                 irmaa_discount = (1 + d) ** (-(t + IRMAA_LOOKBACK_YEARS))
                 npv -= irmaa_cost * irmaa_discount
                 upfront_cost += irmaa_cost * irmaa_discount
 
-        # Update balances: RMD then conversion then growth
-        trad_balance -= rmd
-        trad_balance -= conversion
+        # Spending draws: traditional first (taxed on top of income + RMD), then Roth
+        if base > effective_income:
+            npv += (trad_draw - (year_tax(base) - year_tax(effective_income))) * discount_factor
+        trad_balance -= rmd + conversion + trad_draw
         roth_balance += conversion
-
-        # Per-year drawdown (if set in this PlanYear). The RMD counts toward it.
-        drawdown_needed = draw_beyond_rmd(entry.drawdown, rmd)
-        if drawdown_needed > 0:
-            drawdown_base = effective_income + conversion
-
-            trad_draw = min(drawdown_needed, trad_balance)
-            if trad_draw > 0:
-                trad_draw_tax = calculate_federal_tax(
-                    drawdown_base + trad_draw, filing_status
-                ) - calculate_federal_tax(drawdown_base, filing_status)
-                if year_state:
-                    trad_draw_tax += calculate_state_tax(
-                        drawdown_base + trad_draw,
-                        year_state,
-                        filing_status,
-                        scenario.custom_state_rate,
-                    ) - calculate_state_tax(
-                        drawdown_base, year_state, filing_status, scenario.custom_state_rate
-                    )
-                npv += (trad_draw - trad_draw_tax) * discount_factor
-                trad_balance -= trad_draw
-                drawdown_needed -= trad_draw
-
-            roth_draw = min(drawdown_needed, roth_balance)
-            if roth_draw > 0:
-                npv += roth_draw * discount_factor
-                roth_balance -= roth_draw
+        roth_draw = min(need - trad_draw, roth_balance)
+        if roth_draw > 0:
+            npv += roth_draw * discount_factor
+            roth_balance -= roth_draw
 
         trad_balance *= 1 + g
         roth_balance *= 1 + g
@@ -461,6 +442,7 @@ def _build_year_detail(
 
     owner_rmd_start = rmd_start_age(scenario.age)
     trad_balance = scenario.traditional_ira_balance
+    roth_balance = scenario.roth_ira_balance
 
     from app.engine.aca import federal_poverty_level
 
@@ -477,10 +459,18 @@ def _build_year_detail(
         rmd = min(rmd, trad_balance)
         effective_income = income + rmd
 
-        fed_cost = federal_tax_on_conversion(effective_income, conversion, scenario.filing_status)
+        # The conversion is measured on top of the traditional withdrawal for spending
+        available_for_conv = max(0.0, trad_balance - rmd)
+        actual_conv = min(conversion, available_for_conv)
+        need = draw_beyond_rmd(entry.drawdown, rmd)
+        base, added = conversion_magi(effective_income, available_for_conv, need, actual_conv)
+        trad_draw = min(need, available_for_conv - actual_conv)
+        roth_draw = min(need - trad_draw, roth_balance + actual_conv)
+
+        fed_cost = federal_tax_on_conversion(base, added, scenario.filing_status)
         state_cost = state_tax_on_conversion(
-            effective_income,
-            conversion,
+            base,
+            added,
             year_state,
             scenario.filing_status,
             scenario.custom_state_rate,
@@ -490,33 +480,35 @@ def _build_year_detail(
 
         eff_rate = tax_cost / conversion if conversion > 0 else 0.0
         marginal = combined_marginal_rate(
-            effective_income,
-            conversion,
+            base,
+            added,
             scenario.filing_status,
             state=year_state,
             custom_state_rate=scenario.custom_state_rate,
         )
-        fed_marginal = get_marginal_rate(effective_income + conversion, scenario.filing_status)
+        fed_marginal = get_marginal_rate(base + added, scenario.filing_status)
 
         # IRMAA detail
         irmaa_cost = 0.0
         irmaa_tier = 0
         if t in irmaa_exposed:
-            irmaa_cost = irmaa_surcharge_loss(effective_income, conversion, scenario.filing_status)
-            irmaa_tier = irmaa_tier_index(effective_income + conversion, scenario.filing_status)
+            irmaa_cost = irmaa_surcharge_loss(base, added, scenario.filing_status)
+            irmaa_tier = irmaa_tier_index(base + added, scenario.filing_status)
 
         detail: dict = {
             "year": year,
             "income": income,
             "rmd": round(rmd, 2),
             "conversion": conversion,
+            "spending_from_traditional": round(trad_draw, 2),
+            "spending_from_roth": round(roth_draw, 2),
             "tax_cost": round(tax_cost, 2),
             "federal_tax_cost": round(fed_cost, 2),
             "state_tax_cost": round(state_cost, 2),
             "effective_rate": round(eff_rate, 4),
             "marginal_bracket": f"{fed_marginal:.0%}",
             "state_marginal_rate": round(
-                marginal - get_marginal_rate(effective_income + conversion, scenario.filing_status),
+                marginal - get_marginal_rate(base + added, scenario.filing_status),
                 4,
             ),
             "irmaa_cost": round(irmaa_cost, 2),
@@ -525,12 +517,12 @@ def _build_year_detail(
 
         if hc and year in aca_years:
             subsidy_without = calculate_aca_subsidy(
-                income,
+                base,
                 hc.household_size,
                 hc.monthly_slcsp_premium,
             )
             subsidy_with = calculate_aca_subsidy(
-                income + conversion,
+                base + added,
                 hc.household_size,
                 hc.monthly_slcsp_premium,
             )
@@ -538,7 +530,7 @@ def _build_year_detail(
             combined_cost_val = tax_cost + subsidy_lost
             combined_rate_val = combined_cost_val / conversion if conversion > 0 else 0.0
             fpl = federal_poverty_level(hc.household_size)
-            income_pct_fpl = ((income + conversion) / fpl) * 100
+            income_pct_fpl = ((base + added) / fpl) * 100
             hits_cliff = income_pct_fpl > 400
 
             detail["subsidy_lost"] = round(subsidy_lost, 2)
@@ -548,8 +540,8 @@ def _build_year_detail(
             aca_details.append(
                 AcaSubsidyDetail(
                     year=year,
-                    magi_without_conversion=income,
-                    magi_with_conversion=income + conversion,
+                    magi_without_conversion=base,
+                    magi_with_conversion=base + added,
                     subsidy_without_conversion=round(subsidy_without, 2),
                     subsidy_with_conversion=round(subsidy_with, 2),
                     subsidy_lost=round(subsidy_lost, 2),
@@ -562,15 +554,12 @@ def _build_year_detail(
             )
 
         yearly_detail.append(detail)
-        bracket_fill = analyze_bracket_fill(effective_income, conversion, scenario.filing_status)
+        bracket_fill = analyze_bracket_fill(base, added, scenario.filing_status)
         yearly_bracket_fill.append(bracket_fill)
 
-        # Advance balance for next year's RMD computation
-        available_for_conv = max(0.0, trad_balance - rmd)
-        actual_conv = min(conversion, available_for_conv)
-        trad_balance -= rmd
-        trad_balance -= actual_conv
-        trad_balance -= min(draw_beyond_rmd(entry.drawdown, rmd), trad_balance)
+        # Advance balances for next year's RMD and spending draws
+        trad_balance -= rmd + actual_conv + trad_draw
+        roth_balance = (roth_balance + actual_conv - roth_draw) * (1 + scenario.annual_growth_rate)
         trad_balance *= 1 + scenario.annual_growth_rate
 
     return yearly_detail, yearly_bracket_fill, total_tax, aca_details
@@ -599,10 +588,12 @@ def _build_irmaa_projection(
         available_for_conv = max(0.0, trad_balance - rmd)
         actual_conv = min(conversion, available_for_conv)
 
+        need = draw_beyond_rmd(entry.drawdown, rmd)
+        trad_draw = min(need, available_for_conv - actual_conv)
+
         if t in irmaa_exposed:
-            income = entry.gross_income
-            effective_income = income + rmd
-            magi = effective_income + conversion
+            # Income, RMD, conversion and the traditional withdrawal for spending
+            magi = entry.gross_income + rmd + actual_conv + trad_draw
 
             irmaa_cost = calculate_irmaa(magi, scenario.filing_status)
             tier = irmaa_tier_index(magi, scenario.filing_status)
@@ -619,9 +610,7 @@ def _build_irmaa_projection(
                     )
                 )
 
-        trad_balance -= rmd
-        trad_balance -= actual_conv
-        trad_balance -= min(draw_beyond_rmd(entry.drawdown, rmd), trad_balance)
+        trad_balance -= rmd + actual_conv + trad_draw
         trad_balance *= 1 + g
 
     if not yearly_detail:

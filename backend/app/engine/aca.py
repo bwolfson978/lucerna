@@ -11,9 +11,11 @@ Uses 2026 rules (post-cliff reversion to original ACA percentages) with
 
 import numpy as np
 
-from app.engine.types import FilingStatus
+from app.engine.irmaa import MEDICARE_START_AGE
+from app.engine.types import FilingStatus, ScenarioInput
 
 __all__ = [
+    "aca_coverage_years",
     "federal_poverty_level",
     "calculate_aca_subsidy",
     "calculate_subsidy_loss",
@@ -227,3 +229,31 @@ def calculate_combined_marginal_rate(
     )
 
     return (fed_cost + subsidy_loss) / conversion_amount
+
+
+def aca_coverage_years(scenario: ScenarioInput) -> set[int]:
+    """Calendar years the household buys marketplace coverage.
+
+    Explicit ``aca_coverage_years`` win. With ``has_employer_coverage_after``,
+    every year before employer coverage resumes (a gap that starts now).
+    Otherwise every year whose income alone is at or below 400% of the federal
+    poverty level: a year above it gets no subsidy with or without a conversion
+    (and is usually a working year with employer coverage), so leaving it out
+    changes no result and keeps it out of the ACA summary. Medicare replaces
+    marketplace coverage at 65 in every case.
+    """
+    hc = scenario.healthcare
+    if hc is None:
+        return set()
+
+    before_medicare = {
+        y.year for t, y in enumerate(scenario.timeline) if scenario.age + t < MEDICARE_START_AGE
+    }
+    if hc.aca_coverage_years is not None:
+        return set(hc.aca_coverage_years) & before_medicare
+    if hc.has_employer_coverage_after is not None:
+        return {y for y in before_medicare if y < hc.has_employer_coverage_after}
+    cliff = find_subsidy_cliff_income(hc.household_size)
+    return {
+        y.year for y in scenario.timeline if y.year in before_medicare and y.gross_income <= cliff
+    }

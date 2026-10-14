@@ -11,6 +11,7 @@ from app.engine.constants import (
     ROUNDING_RESOLUTION,
 )
 from app.engine.irmaa import IRMAA_LOOKBACK_YEARS, IRMAA_TIERS, MEDICARE_START_AGE
+from app.engine.retirement import conversion_bases
 from app.engine.rmd import calculate_rmd, rmd_start_age
 from app.engine.state_tax import resolve_state_for_year
 from app.engine.tax import get_marginal_rate
@@ -48,12 +49,17 @@ def generate_reasoning_trace(
     n_years = len(optimal_conversions)
 
     # Find binding constraint
-    binding_constraint = _find_binding_constraint(scenario, optimal_conversions, bracket_fill)
+    # Income before each conversion, counting the traditional withdrawal for spending
+    bases = conversion_bases(scenario, optimal_conversions)
+
+    binding_constraint = _find_binding_constraint(
+        scenario, optimal_conversions, bracket_fill, bases
+    )
 
     # Marginal rates at optimal (combined federal + state)
     marginal_rates = []
     for t in range(n_years):
-        income = scenario.timeline[t].gross_income
+        income = bases[t]
         conversion = optimal_conversions[t]
         yr_state = resolve_state_for_year(scenario.timeline[t].state, scenario.state)
         rate = combined_marginal_rate(
@@ -76,11 +82,11 @@ def generate_reasoning_trace(
         marginal_benefit = npv_at_optimal - npv_at_zero
 
     # Cost/benefit of brackets
-    cost_of_next = _cost_of_next_bracket(scenario, optimal_conversions)
-    benefit_of_current = _benefit_of_current_bracket(scenario, optimal_conversions)
+    cost_of_next = _cost_of_next_bracket(scenario, optimal_conversions, bases)
+    benefit_of_current = _benefit_of_current_bracket(scenario, optimal_conversions, bases)
 
     # Sensitivity notes
-    sensitivity_notes = _build_sensitivity_notes(scenario, optimal_conversions)
+    sensitivity_notes = _build_sensitivity_notes(scenario, optimal_conversions, bases)
 
     # Summary points
     summary_points = _build_summary_points(scenario, optimal_conversions, marginal_benefit)
@@ -109,6 +115,7 @@ def _find_binding_constraint(
     scenario: ScenarioInput,
     conversions: list[float],
     bracket_fill: list[list[BracketFillResult]],
+    bases: list[float] | None = None,
 ) -> str:
     """Determine what's limiting the optimal conversion amount.
 
@@ -134,7 +141,8 @@ def _find_binding_constraint(
         if spilled:
             top = filled[-2]
         rate = f"{top.bracket_rate:.0%}"
-        magi = scenario.timeline[t].gross_income + conversions[t]
+        base = bases[t] if bases else scenario.timeline[t].gross_income
+        magi = base + conversions[t]
         if _just_under_irmaa_threshold(scenario, t, magi):
             reasons.append("Just under the Medicare surcharge (IRMAA) threshold")
         elif spilled or top.remaining_capacity < BRACKET_FULL_THRESHOLD:
@@ -193,12 +201,13 @@ def _just_under_irmaa_threshold(scenario: ScenarioInput, t: int, magi: float) ->
 def _cost_of_next_bracket(
     scenario: ScenarioInput,
     conversions: list[float],
+    bases: list[float] | None = None,
 ) -> dict:
     """What would converting $1,000 more in the first conversion year cost (federal + state)?"""
     extra = 1000
     t = next((i for i, c in enumerate(conversions) if c > 0), 0)
     entry = scenario.timeline[t]
-    income = entry.gross_income
+    income = bases[t] if bases else entry.gross_income
     conversion = conversions[t] if t < len(conversions) else 0.0
     yr_state = resolve_state_for_year(entry.state, scenario.state)
 
@@ -227,11 +236,12 @@ def _cost_of_next_bracket(
 def _benefit_of_current_bracket(
     scenario: ScenarioInput,
     conversions: list[float],
+    bases: list[float] | None = None,
 ) -> dict:
     """What benefit does the current conversion provide (federal + state)?"""
     total_tax_paid = 0.0
     for t in range(len(conversions)):
-        income = scenario.timeline[t].gross_income
+        income = bases[t] if bases else scenario.timeline[t].gross_income
         yr_state = resolve_state_for_year(scenario.timeline[t].state, scenario.state)
         total_tax_paid += total_conversion_cost(
             income,
@@ -263,6 +273,7 @@ def _benefit_of_current_bracket(
 def _build_sensitivity_notes(
     scenario: ScenarioInput,
     conversions: list[float],
+    bases: list[float] | None = None,
 ) -> list[str]:
     """Generate notes about what assumptions the result is sensitive to."""
     notes = []
@@ -329,7 +340,7 @@ def _build_sensitivity_notes(
             if conversions[t] > 0:
                 yr_state = resolve_state_for_year(scenario.timeline[t].state, scenario.state)
                 if yr_state:
-                    income = scenario.timeline[t].gross_income
+                    income = bases[t] if bases else scenario.timeline[t].gross_income
                     # State-only marginal = combined - federal
                     total_rate = combined_marginal_rate(
                         income,

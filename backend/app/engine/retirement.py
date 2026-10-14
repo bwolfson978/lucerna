@@ -62,6 +62,49 @@ def draw_beyond_rmd(drawdown: float | None, rmd: float) -> float:
     return max(0.0, drawdown - rmd)
 
 
+def conversion_magi(income_with_rmd, available_for_conv, need, conversion):
+    """Income before a conversion and the income the conversion adds, counting the
+    traditional withdrawal that funds spending.
+
+    Spending beyond the RMD is drawn from the traditional account first and Roth
+    covers any shortfall, so the year's traditional outflow is
+    ``min(available_for_conv, conversion + need)``. The base is that outflow
+    without a conversion. ACA subsidies, IRMAA and the conversion's own tax and
+    bracket are all measured from this base. Works on floats or numpy arrays.
+    """
+    drawn_anyway = np.minimum(need, available_for_conv)
+    base = income_with_rmd + drawn_anyway
+    added = np.minimum(available_for_conv, conversion + need) - drawn_anyway
+    return base, added
+
+
+def conversion_bases(scenario: ScenarioInput, conversions: list[float]) -> list[float]:
+    """Each timeline year's income before its conversion: income, RMD and the
+    traditional withdrawal for spending (see ``conversion_magi``).
+
+    Walks the balance the way the optimizer does: RMD, conversion and spending
+    draw, then growth.
+    """
+    from app.engine.rmd import calculate_rmd, rmd_start_age
+
+    owner_rmd_start = rmd_start_age(scenario.age)
+    balance = scenario.traditional_ira_balance
+    bases = []
+    for t, entry in enumerate(scenario.timeline):
+        owner_age = scenario.age + t
+        rmd = calculate_rmd(balance, owner_age) if owner_age >= owner_rmd_start else 0.0
+        rmd = min(rmd, balance)
+        available = balance - rmd
+        conversion = min(max(0.0, conversions[t]), available)
+        need = draw_beyond_rmd(entry.drawdown, rmd)
+        base, _ = conversion_magi(entry.gross_income + rmd, available, need, conversion)
+        bases.append(float(base))
+        balance = (available - conversion - min(need, available - conversion)) * (
+            1 + scenario.annual_growth_rate
+        )
+    return bases
+
+
 def resolve_drawdowns(scenario: ScenarioInput) -> ScenarioInput:
     """Fill in spending draws for timeline years once drawdowns have started.
 
