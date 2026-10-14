@@ -52,7 +52,7 @@ export default function AboutPage() {
             </p>
             <p>
               {
-                "So, armed with the wide-eyed optimism of grad school and the knowledge from three of the more intimidating classes at Sloan - Tax Strategy, Managerial Finance, and Data, Models, and Decisions, I set out to weave knowledge of tax brackets, retirement accounts, present value of future cash flows, and constraint optimization problems into a usable product."
+                "So, armed with the wide-eyed optimism of grad school and the knowledge from three of the more intimidating classes at Sloan - Tax Strategy, Managerial Finance, and Data, Models, and Decisions, I set out to weave knowledge of tax brackets, retirement accounts, present value of future cash flows, and constraint optimization problems into a product which can help people save money and increase their overall long term wealth."
               }
             </p>
             <p>
