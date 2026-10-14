@@ -40,7 +40,7 @@ async def test_lists_tools_and_resources():
     async with create_connected_server_and_client_session(mcp) as session:
         tools = (await session.list_tools()).tools
         assert {t.name for t in tools} == {
-            "record_scenario",
+            "prepare_scenario",
             "analyze_roth_conversions",
             "compare_roth_scenarios",
             "get_tax_brackets",
@@ -67,12 +67,12 @@ async def test_lists_tools_and_resources():
 
 async def test_record_then_analyze_with_the_returned_scenario():
     async with create_connected_server_and_client_session(mcp) as session:
-        recorded = await session.call_tool("record_scenario", {"scenario": {"age": 52}})
+        recorded = await session.call_tool("prepare_scenario", {"scenario": {"age": 52}})
         assert not recorded.isError
         assert recorded.structuredContent["ready_to_run"] is False
 
         scenario = {**recorded.structuredContent["scenario"], **SCENARIO}
-        recorded = await session.call_tool("record_scenario", {"scenario": scenario})
+        recorded = await session.call_tool("prepare_scenario", {"scenario": scenario})
         assert recorded.structuredContent["ready_to_run"] is True
 
         analyzed = await session.call_tool(
@@ -151,7 +151,7 @@ async def test_errors_are_tool_errors():
         assert unconfirmed.isError
 
         bad_state = await session.call_tool(
-            "record_scenario", {"scenario": {**SCENARIO, "state": "ZZ"}}
+            "prepare_scenario", {"scenario": {**SCENARIO, "state": "ZZ"}}
         )
         assert bad_state.isError and "Unknown state" in bad_state.structuredContent["error"]
 
@@ -160,7 +160,7 @@ async def test_errors_are_tool_errors():
         )
         assert brackets.isError
 
-        invalid = await session.call_tool("record_scenario", {"scenario": {"age": "old"}})
+        invalid = await session.call_tool("prepare_scenario", {"scenario": {"age": "old"}})
         assert invalid.isError
 
         methodology = await session.call_tool("explain_methodology", {"topic": "aca-subsidies"})
@@ -190,7 +190,7 @@ async def test_http_endpoint_client_and_analysis_limits(monkeypatch):
         # Cached results, and tools that don't run the optimizer, don't count.
         again = await call("analyze_roth_conversions", {"scenario": first, "user_confirmed": True})
         assert not again.isError
-        assert not (await call("record_scenario", {"scenario": SCENARIO})).isError
+        assert not (await call("prepare_scenario", {"scenario": SCENARIO})).isError
 
         # A fresh analysis over the limit gets a message and a way to keep going.
         second = {**SCENARIO, "age": 48}
@@ -283,7 +283,7 @@ async def test_compare_counts_only_fresh_runs(monkeypatch):
 
 async def test_tools_declare_their_views():
     expected = {
-        "record_scenario": server.SCENARIO_SUMMARY_URI,
+        "prepare_scenario": server.SCENARIO_SUMMARY_URI,
         "analyze_roth_conversions": server.RESULT_CARD_URI,
         "compare_roth_scenarios": server.SCENARIO_COMPARE_URI,
     }

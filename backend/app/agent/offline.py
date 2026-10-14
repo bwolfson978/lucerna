@@ -85,7 +85,7 @@ class OfflineModelClient:
         user_text = text.split("</scenario_state>")[-1].strip().lower()
 
         if "what-if as my scenario" in user_text and (what_if := latest_what_if(messages)):
-            return [_tool("record_scenario", {"scenario": what_if})]
+            return [_tool("prepare_scenario", {"scenario": what_if})]
         if "what if" in user_text and (m := re.search(r"retire (?:at|by) (\d{2})", user_text)):
             return [
                 _tool(
@@ -113,7 +113,7 @@ class OfflineModelClient:
                 return [_tool("explain_methodology", {"topic": topic})]
         update = extract_update(user_text)
         if update:
-            return [_tool("record_scenario", {"scenario": {**scenario, **update}})]
+            return [_tool("prepare_scenario", {"scenario": {**scenario, **update}})]
         return [
             _text(
                 "Tell me about your situation: your age, filing status, income this year, "
@@ -129,7 +129,7 @@ class OfflineModelClient:
             name = call.get("name")
             if result.get("is_error"):
                 return [_text(f"Something didn't work: {data.get('error', result['content'])}")]
-            if name == "record_scenario":
+            if name == "prepare_scenario":
                 if data.get("ready_to_run"):
                     return [_tool("show", {"kind": "scenario_summary"})]
                 missing = ", ".join(m.replace("_", " ") for m in data.get("missing_required", []))

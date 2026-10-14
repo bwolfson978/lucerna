@@ -55,21 +55,21 @@
       {
         "description": "Full analysis for a married couple who gave every required input. The scenario card appears first; the analysis runs once the user confirms it.",
         "prompt": "I'm 55, married, earn $90K, and have $800K in a traditional IRA. We retire at 62 in Texas. Could Roth conversions help?",
-        "tools_triggered": "record_scenario, analyze_roth_conversions",
-        "expected_behavior": "Calls record_scenario with age 55, married filing jointly, $90,000 income, $800,000 traditional balance, retirement age 62 and state TX, and shows the scenario card for the user to check. After the user confirms (or presses Run the numbers), calls analyze_roth_conversions and shows the result card: about $168,700 in estimated lifetime tax savings in today's dollars, $580,000 converted over 24 years, a bracket chart, and a link to the full results. Describes the result as scenario analysis, not advice.",
-        "recorded": "2026-10-14, live server: record_scenario ready_to_run true, no missing inputs. analyze_roth_conversions: savings $168,740, converted $580,000, tax on conversions $44,634, 24 years."
+        "tools_triggered": "prepare_scenario, analyze_roth_conversions",
+        "expected_behavior": "Calls prepare_scenario with age 55, married filing jointly, $90,000 income, $800,000 traditional balance, retirement age 62 and state TX, and shows the scenario card for the user to check. After the user confirms (or presses Run the numbers), calls analyze_roth_conversions and shows the result card: about $168,700 in estimated lifetime tax savings in today's dollars, $580,000 converted over 24 years, a bracket chart, and a link to the full results. Describes the result as scenario analysis, not advice.",
+        "recorded": "2026-10-14, live server: prepare_scenario ready_to_run true, no missing inputs. analyze_roth_conversions: savings $168,740, converted $580,000, tax on conversions $44,634, 24 years."
       },
       {
         "description": "A sabbatical year with no income, entered as a one-off income change. The optimizer should put a large conversion in that year.",
         "prompt": "I'm 45, single, earn $150K in California with $400K in my 401(k), and taking 2027 off. How much could I convert that year?",
-        "tools_triggered": "record_scenario, analyze_roth_conversions",
-        "expected_behavior": "The retirement age is required and missing, so it asks when they plan to start drawing on the account instead of guessing. With an answer (for example 60), calls record_scenario with a 2027 income change of $0 labeled as a sabbatical, then analyze_roth_conversions after confirmation. The result card shows the 2027 conversion standing out from the other years. With retirement at 60 the analysis converts $102,500 in 2027 and estimates about $142,300 in lifetime tax savings.",
+        "tools_triggered": "prepare_scenario, analyze_roth_conversions",
+        "expected_behavior": "The retirement age is required and missing, so it asks when they plan to start drawing on the account instead of guessing. With an answer (for example 60), calls prepare_scenario with a 2027 income change of $0 labeled as a sabbatical, then analyze_roth_conversions after confirmation. The result card shows the 2027 conversion standing out from the other years. With retirement at 60 the analysis converts $102,500 in 2027 and estimates about $142,300 in lifetime tax savings.",
         "recorded": "2026-10-14, live server, retirement age 60: 2027 conversion $102,500, savings $142,293, CA state tax included (marginal cost of the next $1,000 is $313 at a combined 31% rate)."
       },
       {
         "description": "A what-if comparison: the same household retiring four years earlier.",
         "prompt": "I'm 55, married, $90K income, $800K IRA, retiring at 62. Compare my Roth conversion savings if I retire at 58 instead.",
-        "tools_triggered": "record_scenario, compare_roth_scenarios",
+        "tools_triggered": "prepare_scenario, compare_roth_scenarios",
         "expected_behavior": "Records the base scenario (asking for the state if it matters, or using federal only), then calls compare_roth_scenarios with retirement_age 58 as the change. Shows the what-if card with both savings figures side by side and the difference, plus buttons to see the full results or apply the change to the scenario.",
         "recorded": "2026-10-14, live server (state TX): current $168,740, what-if $159,665, difference -$9,075; conversions $580,000 vs $502,400."
       },

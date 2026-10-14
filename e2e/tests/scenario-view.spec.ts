@@ -3,14 +3,14 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 // The web app shows its own editable scenario card, so it never mounts the
-// record_scenario View on its own; other MCP hosts do. Seed a stored conversation with
+// prepare_scenario View on its own; other MCP hosts do. Seed a stored conversation with
 // that View's part to check it renders the shared summary from real tool output.
 const fixture = JSON.parse(
   readFileSync(resolve(__dirname, '../../shared/fixtures/view-data.json'), 'utf8')
 )
 
-test('the record_scenario View renders the shared scenario summary', async ({ page }) => {
-  const recorded = fixture.record_scenario.structured_content
+test('the prepare_scenario View renders the shared scenario summary', async ({ page }) => {
+  const recorded = fixture.prepare_scenario.structured_content
   const conversation = {
     messages: [
       {
@@ -20,7 +20,7 @@ test('the record_scenario View renders the shared scenario summary', async ({ pa
           {
             kind: 'mcp_app',
             resource_uri: 'ui://roth-conversions/scenario-summary.html',
-            tool_name: 'record_scenario',
+            tool_name: 'prepare_scenario',
             tool_input: { scenario: fixture.scenario },
             tool_result: {
               content: [{ type: 'text', text: JSON.stringify(recorded) }],

@@ -85,6 +85,6 @@ async def test_view_cannot_call_model_only_tools(async_client, monkeypatch):
 
     monkeypatch.setattr(McpToolbox, "visible_to", lambda self, name, audience: audience == "model")
     response = await async_client.post(
-        "/api/mcp-apps/tools/call", json={"name": "record_scenario", "arguments": {}}
+        "/api/mcp-apps/tools/call", json={"name": "prepare_scenario", "arguments": {}}
     )
     assert response.status_code == 403

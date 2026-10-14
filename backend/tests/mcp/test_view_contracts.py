@@ -41,7 +41,7 @@ def _check_result_card(data: dict) -> None:
 
 async def _live() -> dict:
     async with create_connected_server_and_client_session(mcp) as session:
-        recorded = await session.call_tool("record_scenario", {"scenario": SCENARIO})
+        recorded = await session.call_tool("prepare_scenario", {"scenario": SCENARIO})
         analyzed = await session.call_tool(
             "analyze_roth_conversions", {"scenario": SCENARIO, "user_confirmed": True}
         )
@@ -66,7 +66,7 @@ async def test_live_payloads_match_the_fixture_shapes():
         fixture["compare_roth_scenarios"]["structured_content"]
     )
     assert _shape(live["record"].structuredContent) == _shape(
-        fixture["record_scenario"]["structured_content"]
+        fixture["prepare_scenario"]["structured_content"]
     )
 
 
@@ -80,7 +80,7 @@ def test_fixture_is_consistent():
     assert [y["year"] for y in view["bracket_fill"]["years"]] == [
         r["year"] for r in analysis["structured_content"]["schedule_by_year"]
     ]
-    assert fixture["record_scenario"]["structured_content"]["ready_to_run"] is True
+    assert fixture["prepare_scenario"]["structured_content"]["ready_to_run"] is True
 
 
 def test_card_button_messages_are_ones_the_agents_handle():

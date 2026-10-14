@@ -156,7 +156,7 @@ def test_signed_in_and_chatgpt_ids(posthog):
         properties={},
     )
     analytics.tool_called(
-        "record_scenario",
+        "prepare_scenario",
         client="chatgpt",
         user_id=None,
         request_meta={"openai/subject": "s1", "openai/locale": "en-US"},

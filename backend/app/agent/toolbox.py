@@ -42,7 +42,7 @@ from app.tools.models import DisplayKind, ScenarioUpdate, ShowArgs
 logger = logging.getLogger(__name__)
 
 STATUS = {
-    "record_scenario": "Updating your scenario",
+    "prepare_scenario": "Updating your scenario",
     "analyze_roth_conversions": "Running the optimizer",
     "compare_roth_scenarios": "Comparing scenarios",
     "get_tax_brackets": "Looking up tax brackets",
@@ -54,13 +54,13 @@ STATUS = {
 # equivalent: the scenario summary here edits the live draft and syncs with the form,
 # and is shown with `show` once the scenario is complete. Both use the same shared
 # component (ui/src/ScenarioSummary.tsx), so they look the same.
-RENDERED_NATIVELY = {"record_scenario"}
+RENDERED_NATIVELY = {"prepare_scenario"}
 
 SHOW_TOOL = {
     "name": "show",
     "description": (
         "Display something in the conversation: the scenario summary for the user to confirm "
-        "(after record_scenario reports nothing missing), a balance comparison for a "
+        "(after prepare_scenario reports nothing missing), a balance comparison for a "
         "result, or tappable follow-up questions. Numbers in these displays "
         "come from the engine. Displays appear in the order you produce them, so write your "
         "answer to the user as text first, in the same response, then call show. A display "
@@ -299,7 +299,7 @@ def _set_draft(scenario: dict | None, ctx: ToolContext) -> ScenarioDraft | None:
 
 
 def _emit_ui_events(name: str, data: dict, result: CallToolResult, ctx: ToolContext) -> None:
-    if name == "record_scenario":
+    if name == "prepare_scenario":
         _set_draft(data.get("scenario"), ctx)
         return
 

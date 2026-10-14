@@ -46,7 +46,7 @@ def _slim(result: dict) -> dict:
 async def generate() -> dict:
     ui = {UI_META_KEY: True}
     async with create_connected_server_and_client_session(mcp) as session:
-        recorded = await session.call_tool("record_scenario", {"scenario": SCENARIO})
+        recorded = await session.call_tool("prepare_scenario", {"scenario": SCENARIO})
         analyzed = await session.call_tool(
             "analyze_roth_conversions", {"scenario": SCENARIO, "user_confirmed": True}, meta=ui
         )
@@ -59,7 +59,7 @@ async def generate() -> dict:
     base, variant = compared.meta[RESULTS_META_KEY]
     return {
         "scenario": SCENARIO,
-        "record_scenario": {"structured_content": recorded.structuredContent},
+        "prepare_scenario": {"structured_content": recorded.structuredContent},
         "analyze_roth_conversions": {
             "structured_content": analyzed.structuredContent,
             "view_meta": analyzed.meta[VIEW_META_KEY],

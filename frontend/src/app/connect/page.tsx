@@ -61,7 +61,7 @@ const PROMPTS = [
 
 const TOOLS = [
   [
-    "Record a scenario",
+    "Prepare a scenario",
     "Checks the details you've given so far, shows a summary and lists anything still missing.",
   ],
   [

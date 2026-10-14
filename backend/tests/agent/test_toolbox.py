@@ -22,7 +22,7 @@ async def test_lists_server_tools_plus_show():
     async with open_toolbox() as toolbox:
         names = [t["name"] for t in toolbox.definitions]
         assert names[-1] == "show"
-        assert {"record_scenario", "analyze_roth_conversions", "compare_roth_scenarios"} <= set(
+        assert {"prepare_scenario", "analyze_roth_conversions", "compare_roth_scenarios"} <= set(
             names
         )
         # The website saves scenarios itself; account tools are for other clients.
@@ -35,7 +35,7 @@ async def test_lists_server_tools_plus_show():
 async def test_mcp_results_become_browser_events():
     context = ctx()
     async with open_toolbox() as toolbox:
-        content, is_error = await toolbox.call("record_scenario", {"scenario": SCENARIO}, context)
+        content, is_error = await toolbox.call("prepare_scenario", {"scenario": SCENARIO}, context)
         assert not is_error and content["ready_to_run"]
         assert context.events[-1]["type"] == "draft"
         assert context.draft.age == 52
@@ -72,7 +72,7 @@ async def test_errors_and_show_validation():
     context = ctx()
     async with open_toolbox() as toolbox:
         assert (await toolbox.call("nope", {}, context))[1] is True
-        assert (await toolbox.call("record_scenario", {"scenario": {"age": "x"}}, context))[1]
+        assert (await toolbox.call("prepare_scenario", {"scenario": {"age": "x"}}, context))[1]
         assert (await toolbox.call("show", {"kind": "scenario_summary"}, context))[1]
         assert (await toolbox.call("show", {"kind": "balance_comparison"}, context))[1]
         assert (await toolbox.call("show", {"kind": "bracket_fill"}, context))[1]
@@ -95,12 +95,12 @@ async def test_ui_tool_results_become_mcp_app_parts():
     context = ctx()
     async with open_toolbox() as toolbox:
         assert toolbox.ui_tools == {
-            "record_scenario": "ui://roth-conversions/scenario-summary.html",
+            "prepare_scenario": "ui://roth-conversions/scenario-summary.html",
             "analyze_roth_conversions": "ui://roth-conversions/result-card.html",
             "compare_roth_scenarios": "ui://roth-conversions/scenario-compare.html",
         }
         # This host renders the scenario summary natively, so no View part for it.
-        await toolbox.call("record_scenario", {"scenario": SCENARIO}, context)
+        await toolbox.call("prepare_scenario", {"scenario": SCENARIO}, context)
         assert not [e for e in context.events if e["type"] == "part"]
         content, is_error = await toolbox.call(
             "analyze_roth_conversions", {"scenario": SCENARIO, "user_confirmed": True}, context

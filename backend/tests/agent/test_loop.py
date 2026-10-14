@@ -69,7 +69,7 @@ async def test_text_only_turn_streams_and_returns_history():
 async def test_full_intake_and_run_flow():
     client = ScriptedModelClient(
         [
-            [tool_use("t1", "record_scenario", {"scenario": READY})],
+            [tool_use("t1", "prepare_scenario", {"scenario": READY})],
             [text("Here's your scenario."), tool_use("t2", "show", {"kind": "scenario_summary"})],
             [text("Check it and tap Run the numbers.")],
         ]
@@ -137,7 +137,7 @@ async def test_refusal_drops_the_exchange():
 async def test_truncated_tool_call_gets_an_error_result():
     client = ScriptedModelClient(
         [
-            ([tool_use("t1", "record_scenario", {"scenario": {"age": 5}})], "max_tokens"),
+            ([tool_use("t1", "prepare_scenario", {"scenario": {"age": 5}})], "max_tokens"),
             [text("Sorry, retrying.")],
         ]
     )

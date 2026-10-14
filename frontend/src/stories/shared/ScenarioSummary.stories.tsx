@@ -10,7 +10,7 @@ const meta: Meta<typeof ScenarioSummary> = {
   parameters: {
     docs: {
       description: {
-        component: "The scenario as recorded so far (`record_scenario`).",
+        component: "The scenario as recorded so far (`prepare_scenario`).",
       },
     },
   },

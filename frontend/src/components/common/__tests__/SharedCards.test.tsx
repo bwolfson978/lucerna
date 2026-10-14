@@ -17,7 +17,7 @@ import { MetricCard } from "../MetricCard";
 const card = fixture.analyze_roth_conversions.structured_content as unknown as ResultCardData;
 const details = fixture.analyze_roth_conversions.view_meta as unknown as ResultDetails;
 const compare = fixture.compare_roth_scenarios.structured_content as unknown as ScenarioCompareData;
-const recorded = fixture.record_scenario.structured_content as unknown as ScenarioSummaryData;
+const recorded = fixture.prepare_scenario.structured_content as unknown as ScenarioSummaryData;
 
 it("renders the result card from tool output", () => {
   const open = vi.fn();

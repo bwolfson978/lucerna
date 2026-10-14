@@ -163,7 +163,7 @@ class ScriptedDemoClient:
         if not results:
             if DEMO_MESSAGES[0] in json.dumps(last):
                 scenario = _SCRIPTED_SCENARIO.model_dump(mode="json", exclude_none=True)
-                return [_tool_use("toolu_demo_1", "record_scenario", {"scenario": scenario})]
+                return [_tool_use("toolu_demo_1", "prepare_scenario", {"scenario": scenario})]
             scenario = _last_scenario(messages)
             return [
                 _tool_use(
