@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import threading
 from collections import OrderedDict
 from functools import cache
@@ -353,12 +354,18 @@ def summarize_result(result: OptimizationResult, result_id: str) -> dict:
     return summary
 
 
+def _half_up(value: float) -> int:
+    """JavaScript ``Math.round``: the web app rebuilds comparisons from the same results,
+    so halves must round the same way on both sides (Python's ``round`` rounds to even)."""
+    return math.floor(value + 0.5)
+
+
 def _tax_breakdown(result: OptimizationResult) -> dict:
     """Savings split into what the conversions cost and what they avoid, today's dollars."""
-    paid = round(result.conversion_cost_today)
+    paid = _half_up(result.conversion_cost_today)
     return {
         "paid_now": paid,
-        "avoided_later": paid + round(result.estimated_lifetime_tax_savings),
+        "avoided_later": paid + _half_up(result.estimated_lifetime_tax_savings),
     }
 
 
@@ -375,9 +382,9 @@ def compare_results(
         "base_result_id": base_id,
         "variant_result_id": variant_id,
         "estimated_lifetime_tax_savings": {
-            "current": round(base.estimated_lifetime_tax_savings),
-            "what_if": round(variant.estimated_lifetime_tax_savings),
-            "difference": round(
+            "current": _half_up(base.estimated_lifetime_tax_savings),
+            "what_if": _half_up(variant.estimated_lifetime_tax_savings),
+            "difference": _half_up(
                 variant.estimated_lifetime_tax_savings - base.estimated_lifetime_tax_savings
             ),
         },
@@ -386,18 +393,18 @@ def compare_results(
             "what_if": _tax_breakdown(variant),
         },
         "total_conversion": {
-            "current": round(base.total_conversion),
-            "what_if": round(variant.total_conversion),
+            "current": _half_up(base.total_conversion),
+            "what_if": _half_up(variant.total_conversion),
         },
         "total_tax_on_conversions": {
-            "current": round(base.total_tax_on_conversions),
-            "what_if": round(variant.total_tax_on_conversions),
+            "current": _half_up(base.total_tax_on_conversions),
+            "what_if": _half_up(variant.total_tax_on_conversions),
         },
         "conversions_by_year": [
             {
                 "year": y,
-                "current": round(by_year_base.get(y, 0)),
-                "what_if": round(by_year_variant.get(y, 0)),
+                "current": _half_up(by_year_base.get(y, 0)),
+                "what_if": _half_up(by_year_variant.get(y, 0)),
             }
             for y in years
         ],
