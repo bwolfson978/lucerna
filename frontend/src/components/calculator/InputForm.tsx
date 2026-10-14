@@ -204,7 +204,8 @@ export function InputForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-section">
-      <div className="grid grid-cols-1 gap-default sm:grid-cols-2">
+      {/* Pairs that belong together: you, income, savings, retirement, where you live. */}
+      <div className="grid grid-cols-1 gap-x-default gap-y-5 sm:grid-cols-2">
         <NumericField
           ref={(el) => {
             fieldRefs.current.age = el;
@@ -230,16 +231,6 @@ export function InputForm({
           error={errors.filingStatus}
           onChange={(e) => patch({ filing_status: e.target.value as FilingStatus })}
         />
-        <FormSelect
-          label="State"
-          value={state}
-          options={STATE_OPTIONS}
-          onChange={(e) => {
-            const newState = e.target.value;
-            // Choosing a state also sets the retirement state.
-            patch({ state: newState === "none" ? null : newState });
-          }}
-        />
         <CurrencyInput
           ref={(el) => {
             fieldRefs.current.currentIncome = el;
@@ -253,6 +244,14 @@ export function InputForm({
           helper="Taxable income this year, before tax"
           onChange={(v) => patch({ current_income: v })}
         />
+        <NumericField
+          label="Yearly income growth"
+          value={incomeGrowthRate ?? ""}
+          decimalScale={1}
+          unit="%"
+          tooltip="How much you expect your salary to grow each year before inflation. Most people use 2-4%. Higher growth means more taxable income later, making early conversions more valuable."
+          onChange={(v) => patch({ income_growth_rate_pct: v })}
+        />
         <CurrencyInput
           ref={(el) => {
             fieldRefs.current.traditionalBalance = el;
@@ -263,9 +262,19 @@ export function InputForm({
           min={0}
           required
           error={errors.traditionalBalance}
-          helper="Includes 401k rollovers"
           tooltip="Your total pre-tax retirement savings eligible for Roth conversion. Include traditional IRAs and old 401(k) rollovers. Exclude a current employer 401(k) unless eligible for in-service conversions."
           onChange={(v) => patch({ traditional_balance: v })}
+        />
+        <CurrencyInput
+          ref={(el) => {
+            fieldRefs.current.rothBalance = el;
+          }}
+          label="Roth IRA/401(k) balance"
+          value={rothBalance ?? ""}
+          placeholder="Optional"
+          min={0}
+          error={errors.rothBalance}
+          onChange={(v) => patch({ roth_balance: v })}
         />
         <NumericField
           ref={(el) => {
@@ -280,6 +289,28 @@ export function InputForm({
           error={errors.retirementAge}
           onChange={(v) => patch({ retirement_age: v })}
         />
+        <CurrencyInput
+          ref={(el) => {
+            fieldRefs.current.retirementSpending = el;
+          }}
+          label="Yearly spend in retirement"
+          value={retirementSpending || ""}
+          placeholder="Optional (4% rule)"
+          min={0}
+          error={errors.retirementSpending}
+          helper="Total household spending. Your accounts cover whatever income doesn't."
+          onChange={(val) => patch({ retirement_spending: val || null })}
+        />
+        <FormSelect
+          label="State"
+          value={state}
+          options={STATE_OPTIONS}
+          onChange={(e) => {
+            const newState = e.target.value;
+            // Choosing a state also sets the retirement state.
+            patch({ state: newState === "none" ? null : newState });
+          }}
+        />
         <FormSelect
           label="Retirement state"
           value={retirementState}
@@ -288,60 +319,22 @@ export function InputForm({
             patch({ retirement_state: e.target.value === "none" ? null : e.target.value })
           }
         />
-        <CurrencyInput
-          ref={(el) => {
-            fieldRefs.current.rothBalance = el;
-          }}
-          label="Roth IRA/401(k) balance"
-          value={rothBalance ?? ""}
-          placeholder="Optional"
-          min={0}
-          error={errors.rothBalance}
-          helper="Existing Roth IRA/401(k) balance"
-          onChange={(v) => patch({ roth_balance: v })}
-        />
-      </div>
-
-      {state === "custom" && (
-        <div className="grid grid-cols-1 gap-default sm:grid-cols-2">
+        {state === "custom" && (
           <NumericField
             ref={(el) => {
               fieldRefs.current.customStateRate = el;
             }}
-            label="State tax rate (%)"
+            label="State tax rate"
             value={customStateRate ?? ""}
             decimalScale={2}
             min={0}
             max={20}
+            unit="%"
             error={errors.customStateRate}
-            helper="Flat state income tax rate"
             tooltip="Enter your state's approximate income tax rate. This is applied as a flat rate to your taxable income."
             onChange={(v) => patch({ custom_state_rate_pct: v })}
           />
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 gap-default sm:grid-cols-2">
-        <NumericField
-          label="Income growth rate (%)"
-          value={incomeGrowthRate ?? ""}
-          decimalScale={1}
-          helper="Annual income growth assumption"
-          tooltip="How much you expect your salary to grow each year before inflation. Most people use 2-4%. Higher growth means more taxable income later, making early conversions more valuable."
-          onChange={(v) => patch({ income_growth_rate_pct: v })}
-        />
-        <CurrencyInput
-          ref={(el) => {
-            fieldRefs.current.retirementSpending = el;
-          }}
-          label="Yearly spend in retirement"
-          value={retirementSpending || ""}
-          placeholder="Auto (4% rule)"
-          min={0}
-          error={errors.retirementSpending}
-          helper="Total household spending. Your accounts cover whatever income doesn't. Leave blank to use the 4% rule."
-          onChange={(val) => patch({ retirement_spending: val || null })}
-        />
+        )}
       </div>
 
       {/* Income that runs across years: Social Security, pensions, other */}
@@ -439,30 +432,30 @@ export function InputForm({
         </CollapsibleTrigger>
 
         <CollapsibleContent>
-          <div className="grid grid-cols-1 gap-default pt-default sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-x-default gap-y-5 pt-5 sm:grid-cols-3">
             <NumericField
               ref={(el) => {
                 fieldRefs.current.yearsInRetirement = el;
               }}
-              label="Planning horizon age"
+              label="Plan through age"
               value={planningHorizonAge ?? ""}
               min={1}
               error={errors.yearsInRetirement}
               onChange={(v) => patch({ planning_horizon_age: v })}
             />
             <NumericField
-              label="Investment return (%)"
+              label="Investment return"
               value={growthRate ?? ""}
               decimalScale={1}
-              helper="Expected annual return"
+              unit="%"
               tooltip="Expected annual portfolio return before inflation and fees. Stock-heavy: 7-8%. Balanced: 5-6%. Bond-heavy: 3-4%."
               onChange={(v) => patch({ investment_return_pct: v })}
             />
             <NumericField
-              label="Discount rate (%)"
+              label="Discount rate"
               value={discountRate ?? ""}
               decimalScale={1}
-              helper="Time value of money"
+              unit="%"
               tooltip="The extra return you'd need to accept a dollar next year instead of today. Think of it as your opportunity cost. Roughly match it to your expected investment return. The default of 5% works well for most people."
               onChange={(v) => patch({ discount_rate_pct: v })}
             />
@@ -471,23 +464,27 @@ export function InputForm({
       </Collapsible>
 
       {/* ACA marketplace coverage */}
-      <div className="flex flex-col gap-default">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-5">
+        {/* A settings row: what it is on the left, the switch on the right. */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-0.5">
+            <Label htmlFor="aca-toggle" className="cursor-pointer text-body text-text-primary">
+              I buy health insurance on the ACA marketplace
+            </Label>
+            <p className="text-body-sm text-text-tertiary">
+              Accounts for how Roth conversions affect your premium subsidy
+            </p>
+          </div>
           <Switch
             id="aca-toggle"
+            className="mt-0.5"
             checked={includeAca}
             onCheckedChange={(v) => patch({ include_aca: v })}
           />
-          <Label htmlFor="aca-toggle" className="cursor-pointer text-body text-text-primary">
-            I buy health insurance on the ACA marketplace
-          </Label>
         </div>
-        <p className="-mt-1 text-body-sm text-text-tertiary">
-          Accounts for how Roth conversions affect your premium subsidy
-        </p>
 
         {includeAca && (
-          <div className="grid grid-cols-1 gap-default sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-x-default gap-y-5 sm:grid-cols-3">
             <NumericField
               ref={(el) => {
                 fieldRefs.current.householdSize = el;
@@ -526,7 +523,7 @@ export function InputForm({
 
       {/* Submit */}
       <div className="border-t border-border pt-comfortable">
-        <GlowButton type="submit" loading={loading}>
+        <GlowButton type="submit" loading={loading} className="w-full sm:w-auto">
           {loading && loadingLabel ? loadingLabel : "Run my scenario"}
         </GlowButton>
       </div>

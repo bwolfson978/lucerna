@@ -12,10 +12,12 @@ export function HowItWorksButton() {
     <button
       type="button"
       onClick={() => openSidebar()}
+      aria-label="How does it work?"
       className={cn(
-        "inline-flex items-center gap-1.5",
+        "inline-flex items-center justify-center gap-1.5",
         "text-sm font-medium",
-        "rounded-full px-3.5 py-1.5",
+        // A circle around the icon on narrow phones, a pill once the label fits.
+        "h-9 w-9 rounded-full min-[400px]:w-auto min-[400px]:px-3.5",
         "border transition-all duration-200",
         isOpen
           ? "border-pine-mid/30 bg-accent-light text-pine"

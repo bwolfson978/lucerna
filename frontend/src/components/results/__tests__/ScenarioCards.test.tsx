@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { ScenarioCards } from "../ScenarioCards";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { MethodologyProvider } from "@/components/methodology/MethodologyContext";
@@ -54,31 +54,23 @@ describe("ScenarioCards", () => {
     expect(screen.getByText("Full conversion (year 1)")).toBeInTheDocument();
   });
 
-  it("reorders cards: best first, worst last", () => {
-    const { container } = renderWithProviders(<ScenarioCards scenarios={mockScenarios} />);
-    // Cards are inside the grid; each card's first span.text-h3 is its title
-    const grid = container.querySelector(".grid");
-    const cards = grid!.querySelectorAll(":scope > div");
-    const labels = Array.from(cards).map((card) => card.querySelector(".text-h3")?.textContent);
-    expect(labels[0]).toBe("Highest estimated savings");
-    expect(labels[1]).toBe("Full conversion (year 1)");
-    expect(labels[2]).toBe("No conversion");
+  it("ranks strategies: best first, worst last", () => {
+    renderWithProviders(<ScenarioCards scenarios={mockScenarios} />);
+    const rows = within(screen.getByTestId("scenario-list")).getAllByRole("listitem");
+    expect(rows.map((row) => row.firstElementChild?.firstElementChild?.textContent)).toEqual([
+      "Highest estimated savings",
+      "Full conversion (year 1)",
+      "No conversion",
+    ]);
   });
 
-  it("shows estimated savings when provided", () => {
+  it("shows each strategy's estimated savings, conversion and tax", () => {
     renderWithProviders(<ScenarioCards scenarios={mockScenarios} />);
-    const savingsLabels = screen.getAllByText("Estimated savings");
-    expect(savingsLabels).toHaveLength(3);
-  });
-
-  it("shows per-year conversion schedule for multi-year scenario", () => {
-    renderWithProviders(<ScenarioCards scenarios={mockScenarios} />);
-    const scheduleHeaders = screen.getAllByText("Roth conversion schedule");
-    expect(scheduleHeaders.length).toBeGreaterThanOrEqual(1);
-    // The best scenario shows per-year amounts
-    expect(screen.getByText("$50,000")).toBeInTheDocument();
-    expect(screen.getByText("$45,000")).toBeInTheDocument();
-    expect(screen.getByText("$25,000")).toBeInTheDocument();
+    expect(screen.getByText("Estimated savings")).toBeInTheDocument();
+    expect(screen.getByText("$30,000")).toBeInTheDocument();
+    expect(screen.getByText("$10,000")).toBeInTheDocument();
+    expect(screen.getByText(/Convert \$120K · Tax \$18,000/)).toBeInTheDocument();
+    expect(screen.getByText(/Convert \$210K · Tax \$48,000/)).toBeInTheDocument();
   });
 
   it("does not display 'Recommended' or 'optimal' text", () => {
@@ -87,11 +79,11 @@ describe("ScenarioCards", () => {
     expect(screen.queryByText(/vs\. optimal/)).not.toBeInTheDocument();
   });
 
-  it("shows impact on wealth for non-best scenarios", () => {
+  it("shows how far each other strategy falls short of the highest savings", () => {
     renderWithProviders(<ScenarioCards scenarios={mockScenarios} />);
-    const impactLabels = screen.getAllByText("Impact on long-term wealth");
-    expect(impactLabels).toHaveLength(2);
-    expect(screen.getAllByText(/less than scenario with highest savings/)).toHaveLength(2);
+    expect(screen.getByText(/\u2212\$30,000/)).toBeInTheDocument();
+    expect(screen.getByText(/\u2212\$20,000/)).toBeInTheDocument();
+    expect(screen.getAllByText(/vs\. highest/)).toHaveLength(2);
   });
 
   it("returns null when scenarios is empty", () => {

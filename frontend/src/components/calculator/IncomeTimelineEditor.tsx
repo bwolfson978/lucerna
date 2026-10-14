@@ -6,7 +6,6 @@ import { FormField } from "@/components/common/FormField";
 import { CurrencyInput } from "@/components/common/CurrencyInput";
 import { FormSelect } from "@/components/common/FormSelect";
 import { ChevronDownIcon } from "@/components/common/icons";
-import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import { CURRENT_YEAR } from "@/lib/utils/constants";
 import { Card } from "@/components/ui/card";
@@ -111,45 +110,34 @@ export function IncomeTimelineEditor({
 
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="flex flex-col gap-default">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center justify-between gap-3">
         <CollapsibleTrigger asChild>
           <button
             type="button"
-            className="flex items-center gap-2 text-h3 text-text-primary transition-colors duration-300 hover:text-accent"
+            className="flex min-h-[44px] items-start gap-2 text-left transition-colors duration-300 hover:text-accent"
           >
             <ChevronDownIcon
-              className={`text-text-tertiary transition-transform duration-300 ${open ? "rotate-0" : "-rotate-90"}`}
+              className={`mt-[3px] shrink-0 text-text-tertiary transition-transform duration-300 ${open ? "rotate-0" : "-rotate-90"}`}
             />
-            {title}
-            {!open && (
-              <span className="ml-1 text-body-sm font-normal text-text-tertiary">
-                {yearRange} · {timeline.length} yrs ·{" "}
-                <span className="text-accent/70">click to edit</span>
-              </span>
-            )}
+            <span className="flex flex-col gap-0.5">
+              <span className="text-h3 text-text-primary">{title}</span>
+              {!open && (
+                <span className="text-body-sm text-text-tertiary">
+                  {yearRange} · {timeline.length} {timeline.length === 1 ? "year" : "years"}
+                </span>
+              )}
+            </span>
           </button>
         </CollapsibleTrigger>
-        <div className="flex items-center gap-2 self-end sm:self-auto">
-          {onReset && (
-            <button
-              type="button"
-              onClick={onReset}
-              className="text-body-sm text-text-tertiary transition-colors duration-300 hover:text-text-secondary"
-            >
-              Reset
-            </button>
-          )}
-          {allowAddYear && (
-            <Button
-              variant="outline"
-              onClick={addYear}
-              disabled={timeline.length >= 80}
-              className="text-body-sm"
-            >
-              + Add year
-            </Button>
-          )}
-        </div>
+        {open && onReset && (
+          <button
+            type="button"
+            onClick={onReset}
+            className="min-h-[40px] px-2 text-body-sm text-text-tertiary transition-colors duration-300 hover:text-text-secondary"
+          >
+            Reset
+          </button>
+        )}
       </div>
 
       <CollapsibleContent>
@@ -257,7 +245,7 @@ export function IncomeTimelineEditor({
                 type="button"
                 onClick={addYear}
                 disabled={timeline.length >= 80}
-                className="w-full rounded-md border border-dashed border-border/50 py-2 text-body-sm text-text-tertiary transition-colors duration-300 hover:border-accent/50 hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
+                className="min-h-[44px] w-full rounded-[14px] border border-dashed border-border py-2 text-body-sm font-medium text-text-secondary transition-colors duration-300 hover:border-accent/50 hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
               >
                 + Add year
               </button>

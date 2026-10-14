@@ -17,7 +17,7 @@ beforeAll(() => {
 });
 
 describe("BracketChart", () => {
-  it("draws the bracket lines with rates and the added tax row", () => {
+  it("draws the bracket lines with rates and the convert and tax rows", () => {
     const { getByText, getAllByText } = render(
       <BracketChart
         years={[
@@ -30,9 +30,12 @@ describe("BracketChart", () => {
     );
     expect(getAllByText(/^12%/).length).toBeGreaterThan(0);
     expect(getAllByText(/^0%/).length).toBeGreaterThan(0);
-    expect(getByText("Added tax from conversion")).toBeInTheDocument();
-    // Narrow columns round further ($2K); wide ones keep a decimal ($2.4K).
-    expect(getByText(/^\$2(\.4)?K$/)).toBeInTheDocument();
+    expect(getByText("Convert")).toBeInTheDocument();
+    expect(getByText("Tax")).toBeInTheDocument();
+    // Each year's conversion, then the tax it adds. Narrow columns round further and drop
+    // the dollar sign (2K); wide ones keep both ($2.4K).
+    expect(getByText(/^\$?20K$/)).toBeInTheDocument();
+    expect(getByText(/^\$?2(\.4)?K$/)).toBeInTheDocument();
   });
 
   describe("minimum segment visibility", () => {

@@ -8,9 +8,17 @@ interface InfoTriggerProps {
   sectionId: string;
   triggerId: string;
   className?: string;
+  /** Show the label on phones too (by default it's icon-only below sm, beside a heading). */
+  showLabel?: boolean;
 }
 
-export function InfoTrigger({ label, sectionId, triggerId, className }: InfoTriggerProps) {
+export function InfoTrigger({
+  label,
+  sectionId,
+  triggerId,
+  className,
+  showLabel = false,
+}: InfoTriggerProps) {
   const { activeTrigger, openSidebar } = useMethodology();
   const isActive = activeTrigger === triggerId;
 
@@ -41,7 +49,7 @@ export function InfoTrigger({ label, sectionId, triggerId, className }: InfoTrig
         <circle cx="8" cy="8" r="6.5" />
         <path d="M8 7v4M8 5.5v0" />
       </svg>
-      <span className="hidden sm:inline">{label}</span>
+      <span className={showLabel ? undefined : "hidden sm:inline"}>{label}</span>
     </button>
   );
 }

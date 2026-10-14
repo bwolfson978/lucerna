@@ -13,6 +13,7 @@ import {
 import { BRACKET_COLORS, CHART_COLORS } from "./colors";
 import { formatAxisCurrency, formatCurrency, formatTableCurrency } from "./format";
 import { useContainerWidth, useScrollFade, useViewportHeight } from "./charts/hooks";
+import { cn } from "./cn";
 
 /**
  * The tax bracket chart: each year's income, required withdrawal and Roth conversion
@@ -52,7 +53,10 @@ interface ChartTooltip extends BracketChartYear {
 type YearData = BracketChartYear;
 
 const DATA_FONT_FAMILY = "'Inter', system-ui";
-const dataFontStyle = { fontFamily: DATA_FONT_FAMILY, fontVariantNumeric: "tabular-nums" } as const;
+const dataFontStyle = {
+  fontFamily: DATA_FONT_FAMILY,
+  fontVariantNumeric: "tabular-nums",
+} as const;
 
 function formatPercent(decimal: number): string {
   return `${Math.round(decimal * 100)}%`;
@@ -97,7 +101,11 @@ function buildGrossBrackets(
   ];
   for (const b of raw ?? []) {
     const taxableMax = b.max === null ? b.min + 500000 : b.max;
-    result.push({ rate: b.rate, min: deduction + b.min, max: deduction + taxableMax });
+    result.push({
+      rate: b.rate,
+      min: deduction + b.min,
+      max: deduction + taxableMax,
+    });
   }
   return result;
 }
@@ -105,6 +113,13 @@ function buildGrossBrackets(
 export const BAR_GAP = 10;
 export const MIN_BAR_WIDTH = 24;
 export const DEFAULT_BAR_WIDTH = 48;
+// Phones get tighter bars so a typical plan (up to about nine years) fits without scrolling.
+const BAR_GAP_MOBILE = 6;
+const MIN_BAR_WIDTH_MOBILE = 16;
+/** Below this column width, years print as '26. */
+const SHORT_YEAR_COL_WIDTH = 34;
+/** Below this column width, values under the bars drop the $ ("126K") so neighbors don't touch. */
+const COMPACT_VALUE_COL_WIDTH = 46;
 const MIN_DESKTOP_CHART_HEIGHT = 320;
 const MAX_DESKTOP_CHART_HEIGHT = 480;
 const MOBILE_CHART_HEIGHT = 260;
@@ -114,10 +129,9 @@ const BOTTOM_PADDING = 40;
 const MIN_SEGMENT_HEIGHT = 3;
 const MOBILE_BREAKPOINT = 500;
 const LEFT_AXIS_WIDTH_DESKTOP = 70;
-const LEFT_AXIS_WIDTH_MOBILE = 55;
-const RIGHT_AXIS_WIDTH_DESKTOP = 90;
+const LEFT_AXIS_WIDTH_MOBILE = 56;
+const RIGHT_AXIS_WIDTH_DESKTOP = 96;
 const RIGHT_AXIS_WIDTH_MOBILE = 36;
-const VERTICAL_LABEL_WIDTH = 18;
 
 /** Pick a nice round interval for evenly spaced tick marks. */
 function niceInterval(range: number, targetTicks: number): number {
@@ -189,60 +203,82 @@ export function BracketChart({
 
     const leftAxisWidth = isMobile ? LEFT_AXIS_WIDTH_MOBILE : LEFT_AXIS_WIDTH_DESKTOP;
     const rightAxisWidth = isMobile ? RIGHT_AXIS_WIDTH_MOBILE : RIGHT_AXIS_WIDTH_DESKTOP;
-
-    // Right axis is always inline; vertical labels hidden on mobile
-    const verticalLabelWidth = isMobile ? 0 : VERTICAL_LABEL_WIDTH;
-    const totalOverhead = verticalLabelWidth + leftAxisWidth + rightAxisWidth + verticalLabelWidth;
+    const gap = isMobile ? BAR_GAP_MOBILE : BAR_GAP;
+    const minBarWidth = isMobile ? MIN_BAR_WIDTH_MOBILE : MIN_BAR_WIDTH;
+    const totalOverhead = leftAxisWidth + rightAxisWidth;
 
     let barWidth = DEFAULT_BAR_WIDTH;
     let barsFit = true;
 
     if (containerWidth !== undefined && years.length > 0) {
       const availableForBars = containerWidth - totalOverhead;
-      const computed = Math.floor((availableForBars - BAR_GAP) / years.length) - BAR_GAP;
-      if (computed >= MIN_BAR_WIDTH) {
+      const computed = Math.floor((availableForBars - gap) / years.length) - gap;
+      if (computed >= minBarWidth) {
         // Let bars expand to fill available space — no hard cap
         barWidth = computed;
         barsFit = true;
       } else {
-        barWidth = MIN_BAR_WIDTH;
+        barWidth = minBarWidth;
         barsFit = false;
       }
     }
 
-    const totalBarWidth = years.length > 0 ? years.length * (barWidth + BAR_GAP) - BAR_GAP : 0;
+    const totalBarWidth = years.length > 0 ? years.length * (barWidth + gap) - gap : 0;
 
     return {
       isMobile,
       chartHeight,
       leftAxisWidth,
       rightAxisWidth,
+      gap,
       barWidth,
       totalBarWidth,
       barsFit,
     };
   }, [containerWidth, viewportHeight, fixedHeight, years.length]);
 
-  const { isMobile, chartHeight, leftAxisWidth, rightAxisWidth, barWidth, totalBarWidth, barsFit } =
-    layout;
+  const {
+    isMobile,
+    chartHeight,
+    leftAxisWidth,
+    rightAxisWidth,
+    gap,
+    barWidth,
+    totalBarWidth,
+    barsFit,
+  } = layout;
+  const colWidth = barWidth + gap;
+  const shortYears = colWidth < SHORT_YEAR_COL_WIDTH;
+  const compactValues = colWidth < COMPACT_VALUE_COL_WIDTH;
 
   // Notify parent of bar slot width for table column alignment
   useEffect(() => {
-    onBarWidthChange?.(barWidth + BAR_GAP);
-  }, [barWidth, onBarWidthChange]);
+    onBarWidthChange?.(colWidth);
+  }, [colWidth, onBarWidthChange]);
 
   // Notify parent of fixed-area dimensions so the table can match
-  const verticalLabelWidth = isMobile ? 0 : VERTICAL_LABEL_WIDTH;
   useEffect(() => {
     onLayoutChange?.({
-      leftOffset: verticalLabelWidth + leftAxisWidth,
-      rightOffset: rightAxisWidth + verticalLabelWidth,
-      verticalLabelWidth,
+      leftOffset: leftAxisWidth,
+      rightOffset: rightAxisWidth,
+      verticalLabelWidth: 0,
       // Left edge of right-aligned axis labels (textAnchor="end" at leftAxisWidth - 6).
       // Approximate label width ~30px for "$250K" style text at small size.
-      axisLabelStart: verticalLabelWidth + Math.round(leftAxisWidth * 0.4),
+      axisLabelStart: Math.round(leftAxisWidth * 0.4),
     });
-  }, [onLayoutChange, verticalLabelWidth, leftAxisWidth, rightAxisWidth]);
+  }, [onLayoutChange, leftAxisWidth, rightAxisWidth]);
+
+  // Under the bars: what to convert each year (the answer), then the tax it adds.
+  const rows = addedTax
+    ? [
+        {
+          label: "Convert",
+          values: years.map((y) => y.conversion ?? 0),
+          strong: true,
+        },
+        { label: "Tax", values: addedTax, strong: false },
+      ]
+    : [];
 
   // Tooltip handler: only show if chart is already engaged
   const handleBarInteraction = useCallback(
@@ -349,11 +385,11 @@ export function BracketChart({
               className="h-3 w-3 rounded"
               style={{ backgroundColor: CHART_COLORS.conversion }}
             />
-            Roth Conversion
+            Roth conversion
           </span>
           <span className="flex items-center gap-1.5">
             <span className="border-border bg-bg-hover h-3 w-3 rounded border" />
-            Remaining space in tax bracket
+            Room left in bracket
           </span>
         </div>
       )}
@@ -367,25 +403,6 @@ export function BracketChart({
           setTooltip(null);
         }}
       >
-        {/* Left axis label (desktop only) */}
-        {!isMobile && (
-          <div
-            className="flex flex-shrink-0 items-center self-start"
-            style={{ width: VERTICAL_LABEL_WIDTH, height: chartHeight }}
-          >
-            <span
-              className="text-caption text-text-tertiary tracking-wider uppercase"
-              style={{
-                writingMode: "vertical-rl",
-                transform: "rotate(180deg)",
-                fontFamily: "'Inter', system-ui",
-              }}
-            >
-              Income
-            </span>
-          </div>
-        )}
-
         {/* Fixed left axis: evenly spaced income tick marks + bottom label slot */}
         <div className="flex flex-shrink-0 flex-col" style={{ width: leftAxisWidth }}>
           <svg className="overflow-hidden" width={leftAxisWidth} height={chartHeight}>
@@ -414,13 +431,14 @@ export function BracketChart({
               );
             })}
           </svg>
-          {addedTax && (
-            <div className="border-border flex flex-col border-r">
-              <div className="text-data-xs text-text-tertiary flex h-8 items-center justify-end px-1 text-right leading-tight font-medium">
-                Added tax from conversion
-              </div>
+          {rows.map((row) => (
+            <div
+              key={row.label}
+              className="text-text-tertiary flex h-7 items-center justify-end pr-1.5 text-[12px] font-medium"
+            >
+              {row.label}
             </div>
-          )}
+          ))}
         </div>
 
         {/* Scrollable bar area */}
@@ -467,7 +485,7 @@ export function BracketChart({
                     <stop offset="100%" stopColor="white" stopOpacity="0.3" />
                   </linearGradient>
                   {years.map((yearData, i) => {
-                    const maskX = i * (barWidth + BAR_GAP);
+                    const maskX = i * colWidth;
                     return (
                       <mask key={`mask-${yearData.year}`} id={`barMask-${i}`}>
                         <rect
@@ -502,7 +520,7 @@ export function BracketChart({
 
                 {/* Bars */}
                 {years.map((yearData, i) => {
-                  const x = i * (barWidth + BAR_GAP);
+                  const x = i * colWidth;
                   return (
                     <BracketBar
                       key={yearData.year}
@@ -523,7 +541,7 @@ export function BracketChart({
 
                 {/* X axis: year labels */}
                 {years.map((yearData, i) => {
-                  const x = i * (barWidth + BAR_GAP) + barWidth / 2;
+                  const x = i * colWidth + barWidth / 2;
                   return (
                     <text
                       key={`label-${yearData.year}`}
@@ -533,29 +551,43 @@ export function BracketChart({
                       className={`${barWidth < 36 ? "text-[11px]" : "text-data-xs"} fill-text-tertiary`}
                       fontFamily={DATA_FONT_FAMILY}
                     >
-                      {yearData.year}
+                      {shortYears ? `\u2019${String(yearData.year).slice(-2)}` : yearData.year}
                     </text>
                   );
                 })}
               </svg>
-              {addedTax && (
-                <div className="flex">
+              {rows.map((row) => (
+                <div key={row.label} className="flex">
                   {years.map((yearData, i) => {
-                    const colWidth = barWidth + BAR_GAP;
                     const maxChars = Math.max(4, Math.floor((colWidth - 8) / 6.5));
-                    const tax = addedTax[i];
+                    const value = row.values[i];
+                    const text = value != null ? formatTableCurrency(value, maxChars) : "-";
                     return (
                       <div
                         key={yearData.year}
-                        className="text-data-xs text-text-primary flex h-8 items-center justify-center px-1"
-                        style={{ width: colWidth, minWidth: colWidth, ...dataFontStyle }}
+                        className={cn(
+                          "flex h-7 items-center justify-center whitespace-nowrap",
+                          compactValues ? "text-[11px] tracking-[-0.02em]" : "text-data-xs",
+                          !value
+                            ? "text-text-tertiary font-normal"
+                            : row.strong
+                              ? "text-text-primary font-semibold"
+                              : "text-text-tertiary font-medium"
+                        )}
+                        // Each value centers on its bar (bars start at the slot's left edge).
+                        style={{
+                          width: barWidth,
+                          minWidth: barWidth,
+                          marginRight: gap,
+                          ...dataFontStyle,
+                        }}
                       >
-                        {tax != null ? formatTableCurrency(tax, maxChars) : "-"}
+                        {compactValues ? text.replace("$", "") : text}
                       </div>
                     );
                   })}
                 </div>
-              )}
+              ))}
             </div>
           </div>
         </div>
@@ -594,24 +626,6 @@ export function BracketChart({
             });
           })()}
         </svg>
-
-        {/* Right axis label (desktop only) */}
-        {!isMobile && (
-          <div
-            className="flex flex-shrink-0 items-center self-start"
-            style={{ width: VERTICAL_LABEL_WIDTH, height: chartHeight }}
-          >
-            <span
-              className="text-caption text-text-tertiary tracking-wider uppercase"
-              style={{
-                writingMode: "vertical-rl",
-                fontFamily: "'Inter', system-ui",
-              }}
-            >
-              Tax Brackets
-            </span>
-          </div>
-        )}
 
         {/* Hover tooltip — only shown when chart is engaged */}
         {tooltip && (

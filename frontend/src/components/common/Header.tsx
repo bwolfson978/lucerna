@@ -60,9 +60,12 @@ export function Header() {
               </Link>
             )}
             <HowItWorksButton />
-            <Link href="/calculator" className="btn-dark min-h-[40px] px-6 py-2.5 text-[14.5px]">
-              Run your scenario
-            </Link>
+            {/* Not on the calculator itself, where it would link to the page you're on. */}
+            {pathname !== "/calculator" && (
+              <Link href="/calculator" className="btn-dark min-h-[40px] px-6 py-2.5 text-[14.5px]">
+                Run your scenario
+              </Link>
+            )}
           </nav>
 
           {/* Mobile controls */}
@@ -115,7 +118,7 @@ export function Header() {
                 key={link.href}
                 href={link.href}
                 onClick={() => handleNavClick(link.href)}
-                className="rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-200 hover:bg-paper-warm hover:text-pine"
+                className="-mx-2 rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-200 hover:bg-paper-warm hover:text-pine"
               >
                 {link.label}
               </Link>
@@ -124,7 +127,7 @@ export function Header() {
               <Link
                 href="/my-scenarios"
                 onClick={() => handleNavClick("/my-scenarios")}
-                className="rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-200 hover:bg-paper-warm hover:text-pine"
+                className="-mx-2 rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-200 hover:bg-paper-warm hover:text-pine"
               >
                 My scenarios
               </Link>

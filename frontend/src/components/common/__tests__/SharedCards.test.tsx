@@ -38,11 +38,12 @@ it("shows the tax bracket chart in the result card", () => {
   expect(screen.queryByRole("button", { name: "See full results" })).not.toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /Balances over time/ })).not.toBeInTheDocument();
   // The results page's chart: bracket lines, the 0% standard deduction band and the
-  // added tax row.
+  // rows under the bars (each year's conversion and the tax it adds).
   expect(screen.getByRole("img", { name: /against the tax brackets/ })).toBeInTheDocument();
   expect(screen.getAllByText(/^0%/).length).toBeGreaterThan(0);
-  expect(screen.getByText("Added tax from conversion")).toBeInTheDocument();
-  expect(screen.getByText("Remaining space in tax bracket")).toBeInTheDocument();
+  expect(screen.getByText("Convert")).toBeInTheDocument();
+  expect(screen.getByText("Tax")).toBeInTheDocument();
+  expect(screen.getByText("Room left in bracket")).toBeInTheDocument();
 });
 
 it("renders the previous release's tool output without the chart instead of crashing", () => {
@@ -90,7 +91,10 @@ it("renders the scenario summary read-only or editable", () => {
   expect(screen.getByText("California, then Arizona")).toBeInTheDocument();
   expect(screen.getByText(/Sabbatical/)).toBeInTheDocument();
   expect(screen.getByText("Still needed: age.")).toBeInTheDocument();
-  expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  // Read-only: nothing to edit, only the assumptions disclosure.
+  expect(screen.getAllByRole("button").map((b) => b.getAttribute("aria-expanded"))).toEqual([
+    "false",
+  ]);
 
   rerender(<ScenarioSummary data={recorded} onEdit={onEdit} onRun={vi.fn()} />);
   fireEvent.click(screen.getByRole("button", { name: "60" }));
@@ -98,6 +102,36 @@ it("renders the scenario summary read-only or editable", () => {
   fireEvent.change(input, { target: { value: "61" } });
   fireEvent.blur(input);
   expect(onEdit).toHaveBeenCalledWith({ age: 61 });
+});
+
+it("folds a summary already run to a one-line recap", () => {
+  render(<ScenarioSummary data={recorded} badge="Confirmed" collapsible />);
+  const header = screen.getByRole("button", { name: /Your scenario/ });
+  expect(header).toHaveAttribute("aria-expanded", "false");
+  expect(screen.getByText("Confirmed")).toBeInTheDocument();
+  expect(screen.queryByText("California, then Arizona")).not.toBeInTheDocument();
+  expect(
+    screen.getByText(/^Age \d+ · .+ income · .+ traditional · drawing at \d+$/)
+  ).toBeInTheDocument();
+
+  fireEvent.click(header);
+  expect(header).toHaveAttribute("aria-expanded", "true");
+  expect(screen.getByText("California, then Arizona")).toBeInTheDocument();
+});
+
+it("folds default assumptions into one line until asked for", () => {
+  const onEdit = vi.fn();
+  render(<ScenarioSummary data={recorded} onEdit={onEdit} />);
+  const toggle = screen.getByRole("button", { name: /Assumptions/ });
+  expect(toggle).toHaveAttribute("aria-expanded", "false");
+  expect(toggle).toHaveTextContent(/\d+% growth · \d+% return · age \d+/);
+  expect(screen.queryByText("Plan through age")).not.toBeInTheDocument();
+
+  fireEvent.click(toggle);
+  expect(toggle).toHaveAttribute("aria-expanded", "true");
+  expect(screen.getByText("Plan through age")).toBeInTheDocument();
+  expect(screen.getByText("Investment return")).toBeInTheDocument();
+  expect(screen.getByText("Income growth")).toBeInTheDocument();
 });
 
 it("edits the state row in place with a pair of selects", () => {

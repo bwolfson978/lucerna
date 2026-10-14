@@ -55,14 +55,21 @@ export function MethodologySidebar({ result, mobile }: MethodologySidebarProps) 
       <button
         type="button"
         onClick={closeSidebar}
-        className="absolute right-4 top-4 flex h-7 w-7 items-center justify-center rounded-md text-text-tertiary transition-all duration-200 hover:bg-glass-bg hover:text-text-primary"
+        className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full text-text-secondary transition-colors duration-200 hover:bg-paper-deep hover:text-text-primary"
         aria-label="Close methodology sidebar"
       >
-        &times;
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path
+            d="M4 4l8 8M12 4l-8 8"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+        </svg>
       </button>
 
       {/* Header */}
-      <h2 className="mb-1 pr-8 font-serif text-xl text-text-primary">How It Works</h2>
+      <h2 className="mb-1 pr-10 font-serif text-xl text-text-primary">How It Works</h2>
       <p className="mb-5 text-sm text-text-tertiary">Understand the analysis behind your results</p>
 
       {/* Context badge */}

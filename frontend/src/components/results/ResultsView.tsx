@@ -2,12 +2,10 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { OptimizationResult, ScenarioInput } from "@/lib/types";
-import { MetricCard } from "@/components/common/MetricCard";
-import { Tooltip } from "@/components/common/Tooltip";
 import { ChartLegend } from "@/components/common/ChartLegend";
-import { BracketChart } from "@lucerna/ui";
+import { BracketChart, Stat } from "@lucerna/ui";
 import { formatCurrency, formatSavings } from "@/lib/utils/formatting";
-import { CHART_COLORS, buildResultsDisclaimer, dataFontStyle } from "@/lib/utils/constants";
+import { CHART_COLORS, buildResultsDisclaimer } from "@/lib/utils/constants";
 import { ConversionSlider } from "./ConversionSlider";
 import { ScenarioCards } from "./ScenarioCards";
 import { BalanceProjections } from "./BalanceProjections";
@@ -30,12 +28,6 @@ export function ResultsView({ result }: ResultsViewProps) {
   const chartScrollRef = useRef<HTMLDivElement>(null);
   const taxConfig = useTaxConfig();
   const [tableColWidth, setTableColWidth] = useState(58);
-  const [chartLayout, setChartLayout] = useState({
-    leftOffset: 0,
-    rightOffset: 0,
-    verticalLabelWidth: 0,
-    axisLabelStart: 0,
-  });
   const [isSliderDragging, setIsSliderDragging] = useState(false);
   const handleSliderDragStart = useCallback(() => setIsSliderDragging(true), []);
   const handleSliderDragEnd = useCallback(() => setIsSliderDragging(false), []);
@@ -47,36 +39,10 @@ export function ResultsView({ result }: ResultsViewProps) {
     yearlyConversions,
     yearlyDetail,
     yearlyRmds,
-    displayTotalConversion,
     totalTaxCost,
     conversionYears,
     estimatedSavings,
   } = useConversionSlider({ result });
-
-  // Live "Your selection" card — mirrors whatever the slider is currently set to
-  const currentScenario = useMemo(() => {
-    const calendarYears = result.input.timeline.map((yi) => yi.year);
-    return {
-      label: "Your selection",
-      conversion_amount: displayTotalConversion,
-      npv: estimatedSavings,
-      tax_on_conversion: totalTaxCost,
-      difference_from_optimal: Math.max(
-        0,
-        result.estimated_lifetime_tax_savings - estimatedSavings
-      ),
-      estimated_savings: estimatedSavings,
-      yearly_conversions: yearlyConversions,
-      years: calendarYears,
-    };
-  }, [
-    displayTotalConversion,
-    estimatedSavings,
-    totalTaxCost,
-    yearlyConversions,
-    result.input.timeline,
-    result.estimated_lifetime_tax_savings,
-  ]);
 
   // Auto-scroll bracket chart when a bar activates or deactivates.
   // Disabled during slider drag to prevent chart jumping while scrubbing.
@@ -126,132 +92,110 @@ export function ResultsView({ result }: ResultsViewProps) {
 
   return (
     <div className="flex flex-col gap-section">
-      {/* Summary metrics */}
-      <div className="grid grid-cols-1 gap-tight sm:grid-cols-3 sm:gap-default">
-        <MetricCard label="Total Roth conversion" value={formatCurrency(displayTotalConversion)} />
-        <MetricCard label="Tax on Roth conversions" value={formatCurrency(totalTaxCost)} />
-        <MetricCard label="Conversion years" value={String(conversionYears)} />
-      </div>
-
-      {/* Bracket chart with slider + annotation row */}
-      <div className="flex flex-col gap-default">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-h3 text-text-primary">Roth conversion schedule</h3>
-          <InfoTrigger
-            label="How is this determined?"
-            sectionId="bracket-filling"
-            triggerId="bracket-chart"
-            className="shrink-0"
-          />
-        </div>
-        <Card className="flex flex-col gap-default">
-          {/* Top row: compact hero metric (left) + slider (right, max 1/3) */}
-          {/* Aligned with chart axes: left edge matches income labels, right edge matches bar area */}
-          <div
-            className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
-            style={{
-              paddingLeft: chartLayout.axisLabelStart,
-              paddingRight: chartLayout.rightOffset,
-            }}
-          >
-            <div className="flex min-w-0 flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <span className="metric-label">Estimated lifetime tax savings</span>
-                <InfoTrigger
-                  label="How is this calculated?"
-                  sectionId="savings-number"
-                  triggerId="hero-savings"
-                />
-              </div>
-              <div className="flex flex-wrap items-baseline gap-3">
-                <span className="metric-value-hero text-optimal">
-                  {formatSavings(estimatedSavings)}
-                </span>
-                {!isAtOptimal && (
-                  <span
-                    className="flex items-center gap-1 whitespace-nowrap text-body-sm font-medium text-negative"
-                    style={dataFontStyle}
-                  >
-                    {formatCurrency(Math.max(1, Math.abs(savingsDifference)))} less than highest
-                    savings
-                  </span>
-                )}
-              </div>
-              <span className="text-body-sm text-text-secondary">
-                vs. not converting, in today&apos;s dollars
-                <Tooltip content="This is the difference in after-tax wealth between the selected conversion schedule and doing nothing, expressed in today's dollars using your discount rate." />
-              </span>
-            </div>
-            <div className="w-full sm:w-1/3 sm:min-w-[180px] sm:flex-shrink-0">
-              <ConversionSlider
-                value={sliderValue}
-                min={0}
-                max={Math.max(result.input.traditional_ira_balance, result.total_conversion)}
-                optimalValue={result.total_conversion}
-                onChange={setSliderValue}
-                onDragStart={handleSliderDragStart}
-                onDragEnd={handleSliderDragEnd}
+      {/* The answer: savings at the chosen amount, what it takes, and how it fills each year */}
+      <Card className="flex flex-col gap-comfortable" data-testid="results-hero">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <div className="-my-1 flex items-center gap-1">
+              <span className="eyebrow">Estimated lifetime tax savings</span>
+              <InfoTrigger
+                label="How is this calculated?"
+                sectionId="savings-number"
+                triggerId="hero-savings"
               />
             </div>
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <span className="metric-value-hero text-pine">{formatSavings(estimatedSavings)}</span>
+              {!isAtOptimal && (
+                <span className="font-data text-body-sm font-semibold text-negative">
+                  &minus;{formatCurrency(Math.max(1, Math.abs(savingsDifference)))} vs. highest
+                  savings
+                </span>
+              )}
+            </div>
+            <span className="text-caption text-text-tertiary">
+              In today&apos;s dollars, compared with not converting
+            </span>
           </div>
-          <BracketChart
-            years={chartYears}
-            brackets={taxConfig.brackets[result.input.filing_status]}
-            standardDeduction={taxConfig.standard_deduction[result.input.filing_status]}
-            addedTax={chartYears.map((_, i) => yearlyDetail[i]?.tax_cost)}
-            scrollRef={chartScrollRef}
-            onBarWidthChange={setTableColWidth}
-            onLayoutChange={setChartLayout}
-            hideLegend
-            stableMaxGrossAmount={stableMaxGrossAmount}
-          />
+          <div className="w-full sm:w-[260px] sm:shrink-0">
+            <ConversionSlider
+              value={sliderValue}
+              min={0}
+              max={Math.max(result.input.traditional_ira_balance, result.total_conversion)}
+              optimalValue={result.total_conversion}
+              onChange={setSliderValue}
+              onDragStart={handleSliderDragStart}
+              onDragEnd={handleSliderDragEnd}
+            />
+          </div>
+        </div>
 
-          {/* Series legend */}
+        {/* The amount itself reads out on the slider. */}
+        <div className="flex gap-10">
+          <Stat label="Tax cost" value={formatCurrency(totalTaxCost)} />
+          <Stat label="Years converting" value={String(conversionYears)} />
+        </div>
+
+        <BracketChart
+          years={chartYears}
+          brackets={taxConfig.brackets[result.input.filing_status]}
+          standardDeduction={taxConfig.standard_deduction[result.input.filing_status]}
+          addedTax={chartYears.map((_, i) => yearlyDetail[i]?.tax_cost)}
+          scrollRef={chartScrollRef}
+          onBarWidthChange={setTableColWidth}
+          hideLegend
+          stableMaxGrossAmount={stableMaxGrossAmount}
+        />
+
+        <div className="flex flex-col items-start gap-2 border-t border-border pt-default sm:flex-row sm:items-center sm:justify-between">
           <ChartLegend
+            className="!justify-start"
             items={[
               { color: CHART_COLORS.income, label: "Other income" },
               ...(chartYears.some((y) => (y.rmdAmount ?? 0) > 0)
                 ? [{ color: CHART_COLORS.rmd, label: "Required withdrawal" }]
                 : []),
-              { color: CHART_COLORS.conversion, label: "Roth Conversion" },
-              { color: "", label: "Remaining space in tax bracket", outline: true },
+              { color: CHART_COLORS.conversion, label: "Roth conversion" },
+              { color: "", label: "Room left in bracket", outline: true },
             ]}
           />
-        </Card>
-      </div>
+          <InfoTrigger
+            label="How is this determined?"
+            sectionId="bracket-filling"
+            triggerId="bracket-chart"
+            className="-ml-2.5 shrink-0 sm:ml-0"
+            showLabel
+          />
+        </div>
+      </Card>
 
-      {/* Scenario comparison */}
-      <ScenarioCards scenarios={result.scenarios} currentScenario={currentScenario} />
+      <ScenarioCards scenarios={result.scenarios} />
 
       {/* ACA subsidy impact (only when healthcare inputs provided) */}
       {result.aca_subsidy_impact && <AcaSubsidyImpact result={result} />}
 
-      {/* Balance projections */}
       <BalanceProjections
         traditionalAtRetirement={result.traditional_at_retirement}
         rothAtRetirement={result.roth_at_retirement}
-        npvAtOptimal={result.npv_at_optimal}
-        npvAtZero={result.npv_at_zero}
       />
 
       {/* Assumptions disclaimer */}
-      <div className="border-t border-border pt-section text-body-sm text-text-tertiary">
-        <div className="flex items-start justify-between gap-4">
-          <p>
-            {buildResultsDisclaimer({
-              hasStateTax: !!result.input.state && result.input.state !== "none",
-              acaSentence: result.aca_subsidy_impact
-                ? "ACA marketplace subsidy impact is included based on your healthcare inputs."
-                : "",
-            })}
-          </p>
-          <InfoTrigger
-            label="Are these reasonable?"
-            sectionId="assumptions-limitations"
-            triggerId="assumptions"
-            className="shrink-0"
-          />
-        </div>
+      <div className="flex flex-col items-start gap-2 border-t border-border pt-section text-body-sm text-text-tertiary">
+        <p>
+          {buildResultsDisclaimer({
+            hasStateTax: !!result.input.state && result.input.state !== "none",
+            acaSentence: result.aca_subsidy_impact
+              ? "ACA marketplace subsidy impact is included based on your healthcare inputs."
+              : "",
+          })}
+        </p>
+        <InfoTrigger
+          label="Are these reasonable?"
+          sectionId="assumptions-limitations"
+          triggerId="assumptions"
+          className="-ml-2.5"
+          showLabel
+        />
       </div>
     </div>
   );

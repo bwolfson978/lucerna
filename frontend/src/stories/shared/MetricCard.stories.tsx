@@ -45,3 +45,15 @@ export const Stats: StoryObj = {
     </div>
   ),
 };
+
+/** Stats with a short note under the value, as in the ACA subsidy summary. */
+export const StatsWithNotes: StoryObj = {
+  render: () => (
+    <div className="card grid max-w-xl grid-cols-2 gap-x-3 gap-y-5 sm:grid-cols-4">
+      <Stat label="Subsidy kept" value="$18,400" note="after conversions" />
+      <Stat label="Subsidy reduced by" value="$3,200" tone="negative" note="across 2 years" />
+      <Stat label="True cost of conversions" value="$24,900" note="federal tax + subsidy loss" />
+      <Stat label="Combined rate" value="17.8%" note="tax + subsidy per dollar converted" />
+    </div>
+  ),
+};

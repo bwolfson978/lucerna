@@ -16,6 +16,8 @@ interface NumericFieldProps {
   min?: number;
   max?: number;
   suffix?: string;
+  /** Unit shown inside the right edge of the box, e.g. "%". Not part of the value. */
+  unit?: string;
   decimalScale?: number;
   required?: boolean;
   onChange: (value: number | null) => void;
@@ -35,6 +37,7 @@ const NumericField = React.forwardRef<HTMLInputElement, NumericFieldProps>(
       min,
       max,
       suffix,
+      unit,
       decimalScale = 0,
       required,
       onChange,
@@ -58,41 +61,49 @@ const NumericField = React.forwardRef<HTMLInputElement, NumericFieldProps>(
             {tooltip && <Tooltip content={tooltip} />}
           </div>
         )}
-        <NumericFormat
-          getInputRef={ref}
-          id={inputId}
-          value={value === "" ? "" : value}
-          decimalScale={decimalScale}
-          allowNegative={false}
-          placeholder={placeholder}
-          suffix={suffix}
-          inputMode="decimal"
-          aria-required={required || undefined}
-          aria-invalid={!!error || undefined}
-          isAllowed={(values) => {
-            const v = values.floatValue;
-            if (v === undefined) return true;
-            if (min !== undefined && v < min) return false;
-            if (max !== undefined && v > max) return false;
-            return true;
-          }}
-          onValueChange={(values) => {
-            onChange(values.floatValue ?? null);
-          }}
-          className={cn(
-            "h-9 min-h-[44px] w-full px-3",
-            "rounded-[10px] bg-white",
-            "border border-border",
-            "text-body text-text-primary",
-            "placeholder:text-text-tertiary",
-            "focus:border-accent focus:outline-none focus:ring-2 focus:ring-pine-mid/15",
-            "transition-all duration-300",
-            "disabled:cursor-not-allowed disabled:opacity-50",
-            "font-data",
-            error && "border-negative",
-            className
+        <div className="relative">
+          <NumericFormat
+            getInputRef={ref}
+            id={inputId}
+            value={value === "" ? "" : value}
+            decimalScale={decimalScale}
+            allowNegative={false}
+            placeholder={placeholder}
+            suffix={suffix}
+            inputMode="decimal"
+            aria-required={required || undefined}
+            aria-invalid={!!error || undefined}
+            isAllowed={(values) => {
+              const v = values.floatValue;
+              if (v === undefined) return true;
+              if (min !== undefined && v < min) return false;
+              if (max !== undefined && v > max) return false;
+              return true;
+            }}
+            onValueChange={(values) => {
+              onChange(values.floatValue ?? null);
+            }}
+            className={cn(
+              "h-9 min-h-[44px] w-full px-3",
+              "rounded-[10px] bg-white",
+              "border border-border",
+              "text-body text-text-primary",
+              "placeholder:text-text-tertiary",
+              "focus:border-accent focus:outline-none focus:ring-2 focus:ring-pine-mid/15",
+              "transition-all duration-300",
+              "disabled:cursor-not-allowed disabled:opacity-50",
+              "font-data",
+              unit && "pr-8",
+              error && "border-negative",
+              className
+            )}
+          />
+          {unit && (
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 select-none text-body text-text-tertiary">
+              {unit}
+            </span>
           )}
-        />
+        </div>
         {error && <span className="text-caption text-negative">{error}</span>}
         {helper && !error && <span className="text-caption text-text-tertiary">{helper}</span>}
       </div>

@@ -62,6 +62,9 @@ interface Row {
   formOnly?: boolean;
 }
 
+/** Rows that hold defaults most people keep; they sit behind one "Assumptions" line. */
+const ASSUMPTION_KEYS = new Set(["growth", "horizon", "return"]);
+
 /** Labels for the fields `record_scenario` reports as missing. */
 export const FIELD_LABELS: Record<string, string> = {
   age: "Age",
@@ -183,6 +186,9 @@ interface ScenarioSummaryProps {
   hint?: string;
   /** Required values still missing (field names), listed above the footer. */
   missing?: string[];
+  /** Start folded to a one-line recap that opens from the header, as for a summary
+   * already run, further up a conversation. */
+  collapsible?: boolean;
 }
 
 /** The scenario's values for the user to check before running the numbers. */
@@ -195,72 +201,178 @@ export function ScenarioSummary({
   runDisabled = false,
   hint,
   missing = [],
+  collapsible = false,
 }: ScenarioSummaryProps) {
   const rows = buildRows(data.scenario);
+  const primary = rows.filter((row) => !ASSUMPTION_KEYS.has(row.key));
+  const assumptions = rows.filter((row) => ASSUMPTION_KEYS.has(row.key));
+  const [showAssumptions, setShowAssumptions] = useState(false);
+  const [collapsed, setCollapsed] = useState(collapsible);
   const timeline = data.timeline;
   const notedYears = timeline.filter((y) => y.note);
+  const s = data.scenario;
 
   return (
     <article className="card overflow-hidden !p-0" data-ui="scenario-summary">
-      <div className="border-border bg-paper-warm px-default sm:px-comfortable flex items-center justify-between gap-3 border-b py-3">
-        <span className="eyebrow" data-ui="eyebrow">
-          Your scenario
-        </span>
-        {badge && <span className="badge-positive">{badge}</span>}
-      </div>
-      <dl className="divide-border divide-y">
-        {rows.map((row) => (
-          <SummaryRow
-            key={row.key}
-            row={row}
-            scenario={data.scenario}
-            onEdit={onEdit}
-            onOpenForm={onOpenForm}
-          />
-        ))}
-      </dl>
-      {timeline.length > 0 && (
-        <div className="border-border px-default text-body-sm text-text-secondary sm:px-comfortable border-t py-3">
-          <span className="text-text-primary">
-            {timeline.length}-year income timeline, {timeline[0].year} to{" "}
-            {timeline[timeline.length - 1].year}.
-          </span>
-          {notedYears.length > 0 && (
-            <ul className="mt-1.5 space-y-0.5">
-              {notedYears.map((y) => (
-                <li key={y.year} className="font-data">
-                  <span className="text-text-tertiary font-mono text-[12px]">{y.year}</span>{" "}
-                  {formatCurrency(y.gross_income)}{" "}
-                  <span className="text-text-tertiary">· {y.note}</span>
-                </li>
-              ))}
-            </ul>
+      {collapsible ? (
+        <button
+          type="button"
+          aria-expanded={!collapsed}
+          onClick={() => setCollapsed((c) => !c)}
+          className={cn(
+            "border-border bg-paper-warm px-default sm:px-comfortable flex w-full items-center justify-between gap-3 py-3 text-left",
+            !collapsed && "border-b"
           )}
-        </div>
-      )}
-      {missing.length > 0 && (
-        <div
-          className="border-border px-default text-body-sm text-text-secondary sm:px-comfortable border-t py-3"
-          data-ui="scenario-missing"
         >
-          Still needed: {missing.map((m) => (FIELD_LABELS[m] ?? m).toLowerCase()).join(", ")}.
+          <span className="eyebrow" data-ui="eyebrow">
+            Your scenario
+          </span>
+          <span className="flex items-center gap-2">
+            {badge && <span className="badge-positive">{badge}</span>}
+            <Chevron open={!collapsed} />
+          </span>
+        </button>
+      ) : (
+        <div className="border-border bg-paper-warm px-default sm:px-comfortable flex items-center justify-between gap-3 border-b py-3">
+          <span className="eyebrow" data-ui="eyebrow">
+            Your scenario
+          </span>
+          {badge && <span className="badge-positive">{badge}</span>}
         </div>
       )}
-      {onRun && (
-        <div className="border-border px-default py-default sm:px-comfortable flex flex-col gap-2 border-t sm:flex-row sm:items-center sm:justify-between">
-          {hint && <p className="text-caption text-text-tertiary">{hint}</p>}
-          <button
-            type="button"
-            className="btn-dark"
-            disabled={runDisabled}
-            onClick={onRun}
-            data-ui="cta"
-          >
-            Run the numbers
-          </button>
-        </div>
+      {collapsed ? (
+        <p
+          className="px-default sm:px-comfortable font-data text-body-sm text-text-secondary border-border border-t py-3"
+          data-ui="scenario-recap"
+        >
+          {recap(s)}
+        </p>
+      ) : (
+        <>
+          {/* What the person told us: one column on phones, two from sm. Each row draws its
+          own bottom rule; the list tucks the last one under the next section's top border. */}
+          <dl className="-mb-px grid sm:grid-cols-2">
+            {primary.map((row) => (
+              <SummaryRow
+                key={row.key}
+                row={row}
+                scenario={s}
+                onEdit={onEdit}
+                onOpenForm={onOpenForm}
+                className="sm:odd:border-r"
+              />
+            ))}
+          </dl>
+          {/* Defaults most people keep, folded into one line until asked for. */}
+          <div className="border-border border-t" data-ui="scenario-assumptions">
+            <button
+              type="button"
+              aria-expanded={showAssumptions}
+              onClick={() => setShowAssumptions((open) => !open)}
+              className="px-default sm:px-comfortable hover:bg-paper flex min-h-[44px] w-full items-center justify-between gap-4 py-1 text-left"
+            >
+              <span className="text-body-sm text-text-secondary">Assumptions</span>
+              <span className="font-data text-text-primary sm:text-body-sm flex items-center gap-2 text-right text-[13px]">
+                {`${s.income_growth_rate_pct ?? 0}% growth · ${s.investment_return_pct ?? 7}% return · age ${s.planning_horizon_age ?? 90}`}
+                <Chevron open={showAssumptions} />
+              </span>
+            </button>
+            {showAssumptions && (
+              <dl className="border-border -mb-px grid border-t sm:grid-cols-3">
+                {assumptions.map((row) => (
+                  <SummaryRow
+                    key={row.key}
+                    row={row}
+                    scenario={s}
+                    onEdit={onEdit}
+                    onOpenForm={onOpenForm}
+                    className="sm:[&:not(:last-child)]:border-r"
+                  />
+                ))}
+              </dl>
+            )}
+          </div>
+          {timeline.length > 0 && (
+            <div className="border-border px-default text-body-sm text-text-secondary sm:px-comfortable border-t py-3">
+              <span className="text-text-primary">
+                {timeline.length}-year income timeline, {timeline[0].year} to{" "}
+                {timeline[timeline.length - 1].year}.
+              </span>
+              {notedYears.length > 0 && (
+                <ul className="mt-1.5 space-y-0.5">
+                  {notedYears.map((y) => (
+                    <li key={y.year} className="font-data">
+                      <span className="text-text-tertiary font-mono text-[12px]">{y.year}</span>{" "}
+                      {formatCurrency(y.gross_income)}{" "}
+                      <span className="text-text-tertiary">· {y.note}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+          {missing.length > 0 && (
+            <div
+              className="border-border px-default text-body-sm text-text-secondary sm:px-comfortable border-t py-3"
+              data-ui="scenario-missing"
+            >
+              Still needed: {missing.map((m) => (FIELD_LABELS[m] ?? m).toLowerCase()).join(", ")}.
+            </div>
+          )}
+          {onRun && (
+            <div className="border-border px-default py-default sm:px-comfortable flex flex-col gap-2 border-t sm:flex-row sm:items-center sm:justify-between">
+              {hint && <p className="text-caption text-text-tertiary">{hint}</p>}
+              <button
+                type="button"
+                className="btn-dark"
+                disabled={runDisabled}
+                onClick={onRun}
+                data-ui="cta"
+              >
+                Run the numbers
+              </button>
+            </div>
+          )}
+        </>
       )}
     </article>
+  );
+}
+
+/** The scenario in one line, for a folded summary. */
+function recap(s: ScenarioValues): string {
+  return [
+    s.age != null && `Age ${s.age}`,
+    filingStatusLabel(s.filing_status),
+    s.current_income != null && `${formatCurrency(s.current_income)} income`,
+    s.traditional_balance != null && `${formatCurrency(s.traditional_balance)} traditional`,
+    s.retirement_age != null && `drawing at ${s.retirement_age}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+function Chevron({ open }: { open: boolean }) {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 12 12"
+      fill="none"
+      aria-hidden="true"
+      className={cn(
+        "text-text-tertiary shrink-0 transition-transform duration-200",
+        open && "rotate-180"
+      )}
+    >
+      <path
+        d="M3 4.5 6 7.5l3-3"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 
@@ -269,11 +381,14 @@ function SummaryRow({
   scenario,
   onEdit,
   onOpenForm,
+  className,
 }: {
   row: Row;
   scenario: ScenarioValues;
   onEdit?: (patch: Partial<ScenarioValues>) => void;
   onOpenForm?: () => void;
+  /** Column divider for the grid the row sits in. */
+  className?: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState("");
@@ -305,7 +420,8 @@ function SummaryRow({
   return (
     <div
       className={cn(
-        "px-default sm:px-comfortable flex min-h-[44px] items-center justify-between gap-4 py-2",
+        "px-default sm:px-comfortable border-border flex min-h-[44px] items-center justify-between gap-4 border-b py-1",
+        className,
         editing && row.editState && "bg-paper flex-wrap gap-y-2 pt-3 pb-3"
       )}
     >
@@ -406,7 +522,7 @@ function StateEditor({
         if (e.key === "Escape") onDone();
       }}
     >
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3">
         <label className="flex flex-col gap-1.5">
           <span className="text-caption text-text-secondary">Now</span>
           <select
@@ -442,7 +558,7 @@ function StateEditor({
         </label>
       </div>
       {now === "custom" && (
-        <label className="flex flex-col gap-1.5 sm:w-1/2 sm:pr-1.5">
+        <label className="flex flex-col gap-1.5">
           <span className="text-caption text-text-secondary">State tax rate (%)</span>
           <input
             inputMode="decimal"

@@ -133,6 +133,9 @@ Hover (interactive cards only): translateY(-5px) + shadow-card-hover.
 .card-recommended  2px pine-mid border
 .card-current      2px sage border ("your selection")
 ```
+Conversation cards (result, what-if, scenario summary) use a tighter shadow, `0 14px 28px -22px`, in the thread and in MCP App Views alike: an iframe clips anything wider into a grey box.
+
+Labels above numbers (`.metric-label`) are sentence case ("Tax cost"), 13px Inter in tertiary ink. Uppercase is for mono eyebrows only.
 
 ### Buttons (pills)
 ```

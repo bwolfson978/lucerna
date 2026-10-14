@@ -14,13 +14,19 @@
 
 const MESSAGE = "I'm 52, married, income $90,000 a year, $600k in my 401k, I want to retire at 60"
 
-/** Drive one conversation to a result card and a what-if (same steps as ui-drift.spec.ts). */
-async function converse(page) {
+/**
+ * Drive one conversation to a result card and a what-if (same steps as ui-drift.spec.ts).
+ * `onSummary` runs while the scenario summary waits for Run the numbers.
+ */
+async function converse(page, onSummary = async () => {}) {
   await page.goto('/calculator')
   await page.getByLabel('Message').fill(MESSAGE)
   await page.getByRole('button', { name: 'Send' }).click()
   const summary = page.getByTestId('scenario-summary')
-  await summary.getByRole('button', { name: 'Run the numbers' }).click({ timeout: 30000 })
+  const run = summary.getByRole('button', { name: 'Run the numbers' })
+  await run.waitFor({ timeout: 30000 })
+  await onSummary(summary)
+  await run.click()
   await page.getByTestId('mcp-app').first().waitFor({ timeout: 60000 })
   await page.getByLabel('Message').fill('What if I retire at 58?')
   await page.getByRole('button', { name: 'Send' }).click()
@@ -123,7 +129,12 @@ export const flows = {
       await page.goto('/calculator')
       await page.getByLabel('Message').waitFor()
       await shot('start', 'Calculator, conversation mode, before any message')
-      await converse(page)
+      await converse(page, async (summary) => {
+        // Let a smooth scroll to the sent message settle before the viewport shot.
+        await page.waitForTimeout(1000)
+        await shot('sent', 'Right after sending the first message: what the screen shows')
+        await shot('summary', 'Scenario summary, waiting for Run the numbers', { element: summary })
+      })
       const result = view(page, 0).locator('[data-ui=result-card]')
       await result.waitFor({ timeout: 30000 })
       await result.locator('[data-ui=bracket-fill]').waitFor({ timeout: 30000 })
@@ -134,6 +145,11 @@ export const flows = {
       const compare = view(page, 1).locator('[data-ui=scenario-compare]')
       await compare.waitFor({ timeout: 30000 })
       await shot('what-if', 'What-if card for "retire at 58"', { element: page.getByTestId('mcp-app').nth(1) })
+      // Full results for the scenario, opened from the result card.
+      await view(page, 0).getByRole('button', { name: 'See full results' }).click()
+      await page.getByRole('button', { name: /Back to conversation/ }).waitFor({ timeout: 30000 })
+      await page.waitForTimeout(1500)
+      await shot('full-results', 'Full results (See full results on the result card)', { fullPage: true })
     },
   },
 

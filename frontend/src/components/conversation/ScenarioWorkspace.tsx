@@ -15,7 +15,7 @@ import { Header } from "@/components/common/Header";
 import { PageFooter } from "@/components/common/PageFooter";
 import { InputForm } from "@/components/calculator/InputForm";
 import { ResultsView } from "@/components/results/ResultsView";
-import { MetricCardSkeleton, ChartSkeleton, TableSkeleton } from "@/components/common/Skeleton";
+import { ChartSkeleton, TableSkeleton } from "@/components/common/Skeleton";
 import { Card } from "@/components/ui/card";
 import { GlowButton } from "@/components/common/GlowButton";
 import { SaveResultsBanner, type SaveBannerState } from "@/components/common/SaveResultsBanner";
@@ -170,7 +170,18 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
     onFallback: handleFallback,
     surface: variant,
   });
-  const { state, send, replay, reset, loadResult, addResult } = conversation;
+  const { state, send: sendMessage, replay, reset, loadResult, addResult } = conversation;
+
+  // Everything the person sends from this page goes through here, so the thread can
+  // bring their message to the top (a demo replay adds messages without it).
+  const [followKey, setFollowKey] = useState(0);
+  const send = useCallback(
+    (text: string) => {
+      setFollowKey((k) => k + 1);
+      return sendMessage(text);
+    },
+    [sendMessage]
+  );
 
   // Demo: replay Margaret's conversation unless this tab already has one.
   const [demo, setDemo] = useState<DemoConversation | null>(null);
@@ -469,6 +480,8 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
         )}
         <ConversationThread
           state={state}
+          followKey={followKey}
+          followOnRestore={!isDemo}
           intro={
             isDemo ? (
               <DemoIntro error={demoError} onRetry={() => void startDemo(false)} />
@@ -485,21 +498,19 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
           <DemoCta
             onRestart={() => {
               reset();
+              setFollowKey(0);
               void startDemo(!reducedMotion);
             }}
           />
         )}
         {!isDemo && state.messages.length > 0 && !state.streaming && (
-          <button
-            type="button"
-            onClick={() => {
+          <StartOver
+            onConfirm={() => {
               reset();
+              setFollowKey(0);
               posthog.capture("conversation_reset");
             }}
-            className="self-start text-body-sm text-text-tertiary underline decoration-border underline-offset-4 hover:text-text-primary"
-          >
-            Start over
-          </button>
+          />
         )}
       </>
     );
@@ -534,12 +545,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
         />
         <div ref={formResultsRef} className="scroll-mt-24">
           {formLoading && (
-            <div className="flex flex-col gap-section">
-              <div className="grid grid-cols-2 gap-default sm:grid-cols-4">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <MetricCardSkeleton key={i} />
-                ))}
-              </div>
+            <div className="flex flex-col gap-section" role="status" aria-label="Running">
               <ChartSkeleton />
               <TableSkeleton rows={3} />
             </div>
@@ -588,7 +594,9 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
         <main
           className={cn(
             "flex flex-col px-default sm:px-7",
-            chatShell ? "min-h-[calc(100dvh-69px)] pt-section-lg" : "py-section-lg"
+            chatShell
+              ? "min-h-[calc(100dvh-69px)] pt-section sm:pt-section-lg"
+              : "py-section sm:py-section-lg"
           )}
         >
           <div
@@ -598,7 +606,11 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
             )}
           >
             {!openStored && (
-              <div className={cn(chatShell && "lg:sticky lg:top-[116px] lg:self-start")}>
+              <div
+                className={cn(
+                  chatShell && "[overflow-anchor:none] lg:sticky lg:top-[116px] lg:self-start"
+                )}
+              >
                 <PageIntro
                   isDemo={isDemo}
                   mode={mode}
@@ -623,9 +635,9 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
               disabled={state.streaming || (isDemo && !replayDone)}
               placeholder={
                 isDemo
-                  ? "Ask a follow-up about Margaret's results"
+                  ? "Ask about Margaret's results"
                   : state.messages.length === 0
-                    ? "Describe your situation in a sentence or two"
+                    ? "Describe your situation"
                     : undefined
               }
             />
@@ -669,7 +681,8 @@ function PageIntro({
         <h1 className="display-heading text-display">
           Run <em>your numbers.</em>
         </h1>
-        <p className="max-w-[620px] text-body leading-relaxed text-text-secondary">
+        {/* On phones the heading and the assistant's opening line say enough. */}
+        <p className="hidden max-w-[620px] text-body leading-relaxed text-text-secondary lg:block">
           {mode === "conversation"
             ? "Talk through your situation and the optimizer will find the Roth conversion schedule that maximizes your after-tax wealth."
             : "Enter your details and the optimizer will find the Roth conversion schedule that maximizes your after-tax wealth."}
@@ -732,6 +745,44 @@ function AssistantIntro({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/** Clearing the conversation can't be undone, so it asks once, inline. */
+function StartOver({ onConfirm }: { onConfirm: () => void }) {
+  const [asking, setAsking] = useState(false);
+  const link =
+    "min-h-[36px] text-body-sm underline decoration-border underline-offset-4 transition-colors";
+  if (!asking) {
+    return (
+      <button
+        type="button"
+        onClick={() => setAsking(true)}
+        className={cn(link, "self-start text-text-tertiary hover:text-text-primary")}
+      >
+        Start over
+      </button>
+    );
+  }
+  return (
+    <div className="flex items-center gap-4 self-start text-body-sm" role="group">
+      <span className="text-text-secondary">Clear this conversation?</span>
+      <button
+        type="button"
+        autoFocus
+        onClick={onConfirm}
+        className={cn(link, "font-semibold text-negative hover:decoration-negative")}
+      >
+        Clear
+      </button>
+      <button
+        type="button"
+        onClick={() => setAsking(false)}
+        className={cn(link, "text-text-tertiary hover:text-text-primary")}
+      >
+        Keep it
+      </button>
     </div>
   );
 }

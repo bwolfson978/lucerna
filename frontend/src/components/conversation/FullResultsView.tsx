@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { StoredResult } from "@/lib/agent/types";
 import { ResultsView } from "@/components/results/ResultsView";
-import { ChartSkeleton, MetricCardSkeleton } from "@/components/common/Skeleton";
+import { ChartSkeleton } from "@/components/common/Skeleton";
 
 interface FullResultsViewProps {
   stored: StoredResult;
@@ -18,8 +18,14 @@ export function FullResultsView({ stored, onBack, onApply }: FullResultsViewProp
 
   return (
     <div className="flex flex-col gap-section">
-      <div className="sticky top-[68px] z-30 -mx-default -mt-6 flex items-center justify-between gap-3 border-b border-border bg-paper/90 px-default py-2.5 backdrop-blur-[14px] md:-mx-page md:px-page">
-        <button type="button" onClick={onBack} className="link-arrow min-h-[44px] text-[15px]">
+      {/* Sits flush under the site header and spans the page's gutters. */}
+      <div className="sticky top-[68px] z-30 -mx-default -mb-4 -mt-section flex items-center justify-between gap-3 bg-paper/90 px-default py-1.5 backdrop-blur-[14px] sm:-mx-7 sm:-mt-section-lg sm:px-7">
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label="Back to conversation"
+          className="link-arrow -ml-1 min-h-[44px] text-[15px]"
+        >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
             <path
               d="M10 4 6 8l4 4"
@@ -29,7 +35,9 @@ export function FullResultsView({ stored, onBack, onApply }: FullResultsViewProp
               strokeLinejoin="round"
             />
           </svg>
-          Back to conversation
+          {/* Short on phones so it stays on one line beside "Apply to my scenario". */}
+          <span className="sm:hidden">Back</span>
+          <span className="hidden sm:inline">Back to conversation</span>
         </button>
         {isWhatIf && onApply && (
           <button
@@ -56,12 +64,7 @@ export function FullResultsView({ stored, onBack, onApply }: FullResultsViewProp
       {stored.result ? (
         <ResultsView result={stored.result} />
       ) : (
-        <div className="flex flex-col gap-section" role="status" aria-label="Loading results">
-          <div className="grid grid-cols-2 gap-default sm:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <MetricCardSkeleton key={i} />
-            ))}
-          </div>
+        <div role="status" aria-label="Loading results">
           <ChartSkeleton />
         </div>
       )}

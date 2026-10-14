@@ -81,12 +81,12 @@ export function ResultCard({ data, details, onOpenFullResults }: ResultCardProps
         <ConversionStrip schedule={data.schedule_by_year} />
       )}
       {onOpenFullResults && (
-        <div className="border-border pt-default flex flex-wrap items-center gap-3 border-t">
+        <div className="border-border pt-default flex flex-col gap-3 border-t sm:flex-row sm:items-center">
           <button type="button" className="btn-dark" onClick={onOpenFullResults} data-ui="cta">
             See full results
           </button>
-          <span className="text-caption text-text-tertiary">
-            Slider, scenario comparison, year-by-year table
+          <span className="text-caption text-text-tertiary text-center sm:text-left">
+            Try other amounts and compare schedules
           </span>
         </div>
       )}

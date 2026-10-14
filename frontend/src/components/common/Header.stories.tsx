@@ -13,3 +13,8 @@ export default meta;
 type Story = StoryObj<typeof Header>;
 
 export const Default: Story = {};
+
+/** On the calculator the header drops its "Run your scenario" button. */
+export const OnCalculator: Story = {
+  parameters: { nextjs: { navigation: { pathname: "/calculator" } } },
+};

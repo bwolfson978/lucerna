@@ -1,130 +1,70 @@
 import type { ScenarioComparison } from "@/lib/types";
 import { Card } from "@/components/ui/card";
-import { formatCurrency, formatCompactCurrency, formatSavings } from "@/lib/utils/formatting";
-import { Tooltip } from "@/components/common/Tooltip";
-import { dataFontStyle } from "@/lib/utils/constants";
+import { formatCompactCurrency, formatCurrency, formatSavings } from "@/lib/utils/formatting";
 import { InfoTrigger } from "@/components/methodology/InfoTrigger";
 import { cn } from "@/lib/utils";
 
 interface ScenarioCardsProps {
   scenarios: ScenarioComparison[];
-  currentScenario?: ScenarioComparison;
 }
 
-/**
- * Reorder scenarios: Highest savings → Full conversion → No conversion (best to worst).
- */
+/** Highest savings first, then full conversion, then no conversion (best to worst). */
 function reorderScenarios(scenarios: ScenarioComparison[]): ScenarioComparison[] {
   return [...scenarios].sort((a, b) => (b.estimated_savings ?? 0) - (a.estimated_savings ?? 0));
 }
 
-function ScenarioCardContent({
-  scenario,
-  isCurrent = false,
-}: {
-  scenario: ScenarioComparison;
-  isCurrent?: boolean;
-}) {
-  const isBest = !isCurrent && scenario.difference_from_optimal === 0;
-
+function ScenarioRow({ scenario }: { scenario: ScenarioComparison }) {
+  const isBest = scenario.difference_from_optimal === 0;
   const label = /optimal/i.test(scenario.label) ? "Highest estimated savings" : scenario.label;
-
-  const scheduleRows =
-    scenario.yearly_conversions && scenario.years
-      ? scenario.yearly_conversions
-          .map((amount, i) => ({
-            year: scenario.years![i] ?? i,
-            amount,
-          }))
-          .filter((r) => r.amount > 0)
-      : [];
-
   const hasSavings =
     scenario.estimated_savings != null && !Number.isNaN(scenario.estimated_savings);
 
   return (
-    <Card
-      key={scenario.label}
-      recommended={isBest}
-      current={isCurrent}
-      className="flex flex-col gap-3"
-    >
-      <span className="text-h3 text-text-primary">{label}</span>
-
-      <div className="flex flex-col gap-2">
+    <li className="flex items-start justify-between gap-4 py-3.5 first:pt-0 last:pb-0">
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <span
+          className={cn("text-body-sm font-semibold", isBest ? "text-pine" : "text-text-primary")}
+        >
+          {label}
+        </span>
+        <span className="font-data text-caption text-text-tertiary">
+          Convert {formatCompactCurrency(scenario.conversion_amount)} · Tax{" "}
+          {formatCompactCurrency(scenario.tax_on_conversion)}
+        </span>
+      </div>
+      <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">
         {hasSavings && (
-          <div className="flex justify-between text-body-sm">
-            <span className="text-text-secondary">Estimated savings</span>
-            <span
-              className={`font-data font-medium ${scenario.estimated_savings! > 0 ? "text-optimal" : "text-text-primary"}`}
-            >
-              {formatSavings(Math.round(scenario.estimated_savings!))}
-            </span>
-          </div>
-        )}
-
-        {scheduleRows.length > 0 && (
-          <div className="flex flex-col gap-1 border-t border-border pt-1">
-            <span className="text-caption uppercase tracking-wide text-text-tertiary">
-              Roth conversion schedule
-            </span>
-            {scheduleRows.map((row) => (
-              <div key={row.year} className="flex justify-between text-body-sm">
-                <span className="text-text-secondary">{row.year}</span>
-                <span className="font-data text-text-primary">
-                  {formatCompactCurrency(row.amount)}
-                </span>
-              </div>
-            ))}
-            {scheduleRows.length > 1 && (
-              <div className="flex justify-between border-t border-border pt-1 text-body-sm">
-                <span className="font-medium text-text-secondary">Total</span>
-                <span className="font-data font-medium text-text-primary">
-                  {formatCompactCurrency(scenario.conversion_amount)}
-                </span>
-              </div>
+          <span
+            className={cn(
+              "font-data text-[17px] font-semibold",
+              scenario.estimated_savings! > 0 ? "text-optimal" : "text-text-primary"
             )}
-          </div>
-        )}
-
-        <div className="flex items-start justify-between gap-x-2 text-body-sm">
-          <span className="min-w-0 text-text-secondary">Tax on Roth conversions</span>
-          <span className="font-data flex-shrink-0 whitespace-nowrap text-text-primary">
-            {formatCurrency(scenario.tax_on_conversion)}
+          >
+            {formatSavings(Math.round(scenario.estimated_savings!))}
           </span>
-        </div>
-
-        {scenario.difference_from_optimal !== 0 && (
-          <div className="flex flex-col gap-1 border-t border-border pt-1">
-            <span className="text-caption uppercase tracking-wide text-text-tertiary">
-              Impact on long-term wealth
-            </span>
-            <span
-              className="flex items-center gap-1 text-body-sm font-medium text-negative"
-              style={dataFontStyle}
-            >
-              {formatCurrency(Math.abs(scenario.difference_from_optimal))} less than scenario with
-              highest savings
-            </span>
-          </div>
+        )}
+        {!isBest && scenario.difference_from_optimal !== 0 && (
+          <span className="font-data whitespace-nowrap text-caption text-negative">
+            &minus;{formatCurrency(Math.abs(scenario.difference_from_optimal))}
+            <span className="hidden sm:inline"> vs. highest</span>
+          </span>
         )}
       </div>
-    </Card>
+    </li>
   );
 }
 
-export function ScenarioCards({ scenarios, currentScenario }: ScenarioCardsProps) {
+/** The strategies the optimizer weighed, ranked by estimated lifetime tax savings. */
+export function ScenarioCards({ scenarios }: ScenarioCardsProps) {
   if (!scenarios || scenarios.length === 0) return null;
 
   const ordered = reorderScenarios(scenarios);
+  const showSavings = ordered.some((s) => s.estimated_savings != null);
 
   return (
     <div className="flex flex-col gap-default">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <h3 className="text-h3 text-text-primary">Scenario comparison</h3>
-          <Tooltip content="Compare different Roth conversion schedules to see how they affect your estimated lifetime tax savings." />
-        </div>
+        <h3 className="text-h3 text-text-primary">Compare strategies</h3>
         <InfoTrigger
           label="Why is full conversion worse?"
           sectionId="conversion-tradeoff"
@@ -132,18 +72,18 @@ export function ScenarioCards({ scenarios, currentScenario }: ScenarioCardsProps
           className="shrink-0"
         />
       </div>
-
-      <div
-        className={cn(
-          "grid grid-cols-1 gap-default",
-          currentScenario ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"
+      <Card className="flex flex-col gap-3">
+        {showSavings && (
+          <div className="flex justify-end border-b border-border pb-2 text-caption text-text-tertiary">
+            Estimated savings
+          </div>
         )}
-      >
-        {currentScenario && <ScenarioCardContent scenario={currentScenario} isCurrent={true} />}
-        {ordered.map((scenario) => (
-          <ScenarioCardContent key={scenario.label} scenario={scenario} />
-        ))}
-      </div>
+        <ul className="flex flex-col divide-y divide-border" data-testid="scenario-list">
+          {ordered.map((scenario) => (
+            <ScenarioRow key={scenario.label} scenario={scenario} />
+          ))}
+        </ul>
+      </Card>
     </div>
   );
 }
