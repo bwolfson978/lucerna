@@ -52,10 +52,10 @@ export default function AboutPage() {
               good window to convert, so I looked into it.
             </p>
             <p>
-              What I found was expensive, complicated software built for financial advisors, simple
-              calculators that only modeled one year at a time, and a few detailed spreadsheets
-              built by DIYers in the Bogleheads community. None of them told me how much to convert
-              in each year.
+              What I found was expensive, complicated software built for financial advisors, and
+              simple calculators that only modeled one &ldquo;convert everything or nothing&rdquo;
+              decision for just the current year. None of them told me how much to convert in each
+              year.
             </p>
             <p>But, little did I know, three of my classes had already covered the pieces:</p>
             <ul className="flex flex-col gap-2 border-l-2 border-pine pl-5">
