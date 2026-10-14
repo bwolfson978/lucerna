@@ -147,6 +147,13 @@ export function MethodologyPageClient() {
                   22% bracket. The key insight: lower-income years leave more room in cheaper
                   brackets. That room is the conversion opportunity.
                 </P>
+                <P>
+                  Social Security is only partly taxed: up to 85% of benefits, depending on your
+                  other income. Each converted dollar can make more of your benefits taxable, so in
+                  some years a conversion costs more than its bracket suggests. The engine follows
+                  the IRS worksheet for this, adds the larger standard deduction at 65, and leaves
+                  benefits out of state tax in states that don&apos;t tax them.
+                </P>
                 <BracketFillExplainer />
                 <SubHeading>Where the engine stops converting</SubHeading>
                 <P>
@@ -374,11 +381,11 @@ export function MethodologyPageClient() {
 
                 <SubHeading>What is not modeled</SubHeading>
                 <P>
-                  Social Security is counted as fully taxable income, though only up to 85% of it is
-                  taxed in reality, so tax in those years is somewhat overstated. IRMAA surcharges
-                  are factored into the optimization but are not a direct user input. The net
-                  investment income tax (NIIT) is also not included. Inflation adjustments to future
-                  tax brackets are not modeled: the analysis uses current-year brackets throughout.
+                  The few states that tax Social Security are treated as taxing all of it, without
+                  their own exemptions. IRMAA surcharges are factored into the optimization but are
+                  not a direct user input. The net investment income tax (NIIT) is also not
+                  included. Inflation adjustments to future tax brackets are not modeled: the
+                  analysis uses current-year brackets throughout.
                 </P>
 
                 <SubHeading>Important disclaimer</SubHeading>

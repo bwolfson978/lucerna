@@ -269,6 +269,36 @@ export const flows = {
     },
   },
 
+  'result-single': {
+    title: 'Result card in full results, single filer with Social Security',
+    paths: ['frontend/src/components/results/', 'backend/app/engine/'],
+    async run(page, shot) {
+      // Single, Texas to Oregon at 58, $28,000 of Social Security from 67
+      const scenario = {
+        age: 55,
+        filing_status: 'single',
+        current_income: 95000,
+        traditional_balance: 650000,
+        roth_balance: 40000,
+        retirement_age: 58,
+        retirement_spending: 60000,
+        state: 'TX',
+        retirement_state: 'OR',
+        include_aca: true,
+        household_size: 1,
+        income_sources: [{ kind: 'social_security', amount: 28000, start_age: 67 }],
+      }
+      const encoded = Buffer.from(JSON.stringify(scenario)).toString('base64url')
+      await page.goto(`/calculator?view=results&scenario=${encoded}`)
+      const savings = page.getByText('Estimated lifetime tax savings', { exact: false }).first()
+      await savings.waitFor({ timeout: 90000 })
+      await page.waitForLoadState('networkidle')
+      const card = savings.locator('xpath=ancestor::div[contains(@class, "rounded")][1]')
+      await card.scrollIntoViewIfNeeded()
+      await shot('result', 'Result card for a single filer moving TX to OR at 58', { element: card })
+    },
+  },
+
   conversation: {
     title: 'Conversation to a result',
     paths: [
