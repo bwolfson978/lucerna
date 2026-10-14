@@ -67,7 +67,7 @@ export default function Home() {
         <div className="border-y border-border bg-paper-warm px-default py-8 sm:px-7">
           <Reveal className="mx-auto flex max-w-wide flex-wrap items-center gap-3 sm:gap-[18px]">
             <span className="mr-2 w-full text-[13px] font-semibold uppercase tracking-[0.08em] text-text-tertiary sm:w-auto">
-              Your in-between years are an opportunity
+              For the in-between years
             </span>
             {WINDOW_YEARS.map((label) => (
               <span
