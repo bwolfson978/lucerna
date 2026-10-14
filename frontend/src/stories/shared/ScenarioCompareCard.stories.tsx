@@ -33,3 +33,8 @@ export const ApplyDisabled: Story = {
 export const ReadOnly: Story = {
   args: { onApply: undefined, onOpenFullResults: undefined },
 };
+
+/** A comparison from before the paid vs. avoided breakdown existed: no chart. */
+export const WithoutBreakdown: Story = {
+  args: { data: { ...compare, tax_breakdown: undefined } },
+};

@@ -353,6 +353,15 @@ def summarize_result(result: OptimizationResult, result_id: str) -> dict:
     return summary
 
 
+def _tax_breakdown(result: OptimizationResult) -> dict:
+    """Savings split into what the conversions cost and what they avoid, today's dollars."""
+    paid = round(result.conversion_cost_today)
+    return {
+        "paid_now": paid,
+        "avoided_later": paid + round(result.estimated_lifetime_tax_savings),
+    }
+
+
 def compare_results(
     base: OptimizationResult, variant: OptimizationResult, base_id: str, variant_id: str, label: str
 ) -> dict:
@@ -371,6 +380,10 @@ def compare_results(
             "difference": round(
                 variant.estimated_lifetime_tax_savings - base.estimated_lifetime_tax_savings
             ),
+        },
+        "tax_breakdown": {
+            "current": _tax_breakdown(base),
+            "what_if": _tax_breakdown(variant),
         },
         "total_conversion": {
             "current": round(base.total_conversion),

@@ -419,8 +419,8 @@
         }
       ],
       "balances_at_retirement": {
-        "traditional": 38940,
-        "roth": 3679345
+        "traditional": 1026077,
+        "roth": 137714
       },
       "alternatives": [
         {
@@ -440,12 +440,12 @@
         }
       ],
       "reasoning": {
-        "binding_constraint": "Partway into 10% bracket in 13 years: converting more costs more than it saves",
+        "binding_constraint": "Traditional IRA balance fully converted",
         "marginal_tax_rate_at_optimal": 0.1232,
         "cost_of_next_bracket": {
           "bracket_rate": 0.2,
-          "additional_tax": 1760.0,
-          "net_effect": "Converting $1,000 more would cost $1,760 in additional tax at the 20% rate"
+          "additional_tax": 200.0,
+          "net_effect": "Converting $1,000 more in 2026 would cost $200 in additional tax at the 20% rate"
         },
         "benefit_of_current_bracket": {
           "bracket_rate": 0.0482,
@@ -844,6 +844,7 @@
       "estimated_lifetime_tax_savings": 158129.15,
       "npv_at_optimal": 1353405.09,
       "npv_at_zero": 1195275.95,
+      "conversion_cost_today": 28762.43,
       "yearly_detail": [
         {
           "year": 2026,
@@ -1929,13 +1930,13 @@
         }
       ],
       "reasoning_trace": {
-        "binding_constraint": "Partway into 10% bracket in 13 years: converting more costs more than it saves",
+        "binding_constraint": "Traditional IRA balance fully converted",
         "marginal_tax_rate_at_optimal": 0.1232,
         "marginal_benefit_at_optimal": 158129.15,
         "cost_of_next_bracket": {
           "bracket_rate": 0.2,
-          "additional_tax": 1760.0,
-          "net_effect": "Converting $1,000 more would cost $1,760 in additional tax at the 20% rate"
+          "additional_tax": 200.0,
+          "net_effect": "Converting $1,000 more in 2026 would cost $200 in additional tax at the 20% rate"
         },
         "benefit_of_current_bracket": {
           "bracket_rate": 0.0482,
@@ -1970,8 +1971,8 @@
         },
         "irmaa_summary": null
       },
-      "traditional_at_retirement": 38940.17,
-      "roth_at_retirement": 3679345.4,
+      "traditional_at_retirement": 1026076.55,
+      "roth_at_retirement": 137714.3,
       "timeline_chart": [
         {
           "year": 2026,
@@ -2824,6 +2825,16 @@
         "what_if": 156963,
         "difference": -1166
       },
+      "tax_breakdown": {
+        "current": {
+          "paid_now": 28762,
+          "avoided_later": 186891
+        },
+        "what_if": {
+          "paid_now": 24391,
+          "avoided_later": 181354
+        }
+      },
       "total_conversion": {
         "current": 675600,
         "what_if": 647200
@@ -3061,6 +3072,7 @@
       "estimated_lifetime_tax_savings": 158129.15,
       "npv_at_optimal": 1353405.09,
       "npv_at_zero": 1195275.95,
+      "conversion_cost_today": 28762.43,
       "yearly_detail": [
         {
           "year": 2026,
@@ -4146,13 +4158,13 @@
         }
       ],
       "reasoning_trace": {
-        "binding_constraint": "Partway into 10% bracket in 13 years: converting more costs more than it saves",
+        "binding_constraint": "Traditional IRA balance fully converted",
         "marginal_tax_rate_at_optimal": 0.1232,
         "marginal_benefit_at_optimal": 158129.15,
         "cost_of_next_bracket": {
           "bracket_rate": 0.2,
-          "additional_tax": 1760.0,
-          "net_effect": "Converting $1,000 more would cost $1,760 in additional tax at the 20% rate"
+          "additional_tax": 200.0,
+          "net_effect": "Converting $1,000 more in 2026 would cost $200 in additional tax at the 20% rate"
         },
         "benefit_of_current_bracket": {
           "bracket_rate": 0.0482,
@@ -4187,8 +4199,8 @@
         },
         "irmaa_summary": null
       },
-      "traditional_at_retirement": 38940.17,
-      "roth_at_retirement": 3679345.4,
+      "traditional_at_retirement": 1026076.55,
+      "roth_at_retirement": 137714.3,
       "timeline_chart": [
         {
           "year": 2026,
@@ -5066,6 +5078,7 @@
       "estimated_lifetime_tax_savings": 156963.1,
       "npv_at_optimal": 1348967.84,
       "npv_at_zero": 1192004.74,
+      "conversion_cost_today": 24391.41,
       "yearly_detail": [
         {
           "year": 2026,
@@ -6125,9 +6138,9 @@
         "marginal_tax_rate_at_optimal": 0.1174,
         "marginal_benefit_at_optimal": 156963.1,
         "cost_of_next_bracket": {
-          "bracket_rate": 0.18,
-          "additional_tax": 1348.56,
-          "net_effect": "Converting $1,000 more would cost $1,349 in additional tax at the 18% rate"
+          "bracket_rate": 0.2,
+          "additional_tax": 185.76,
+          "net_effect": "Converting $1,000 more in 2027 would cost $186 in additional tax at the 20% rate"
         },
         "benefit_of_current_bracket": {
           "bracket_rate": 0.0411,
@@ -6162,8 +6175,8 @@
         },
         "irmaa_summary": null
       },
-      "traditional_at_retirement": 41467.88,
-      "roth_at_retirement": 3630265.71,
+      "traditional_at_retirement": 963963.0,
+      "roth_at_retirement": 123692.0,
       "timeline_chart": [
         {
           "year": 2026,
