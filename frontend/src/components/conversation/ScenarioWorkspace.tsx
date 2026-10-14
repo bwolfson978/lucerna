@@ -354,7 +354,8 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
     }
   }, [formLoading]);
 
-  async function handleFormSubmit(input: ScenarioInput) {
+  // `save: false` re-runs an already-saved scenario without saving a copy of it.
+  async function handleFormSubmit(input: ScenarioInput, { save = true } = {}) {
     setFormLoading(true);
     setFormError(null);
     setFormResult(null);
@@ -369,7 +370,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
       setFormResult(optimized);
       posthog.capture("scenario_completed");
       setBannerState("prompt");
-      if (isSignedIn && !isDemo) {
+      if (save && isSignedIn && !isDemo) {
         setBannerDismissed(false);
         setBannerState("saving");
         createScenariosApi(getToken)
@@ -399,7 +400,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
     savedOpened.current = true;
     createScenariosApi(getToken)
       .get(savedId)
-      .then((detail) => handleFormSubmit(detail.inputs))
+      .then((detail) => handleFormSubmit(detail.inputs, { save: false }))
       .catch(() => setFormError("That saved scenario couldn't be loaded."));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDemo, isLoaded, isSignedIn]);
