@@ -47,9 +47,16 @@ export default function PrivacyPage() {
           requested URL, user agent) for operations and security.
         </DocTerm>
         <DocTerm term="Website usage and errors.">
-          On the website we measure which pages and features are used and collect error reports, so
-          we can find bugs and improve the tool. If you are signed in, these are linked to your
-          account ID and email.
+          On the website we measure which pages and features are used, collect error reports and
+          record session replays (a recording of clicks, scrolling and page changes, with what you
+          type in form fields masked), so we can find bugs and improve the tool. If you are signed
+          in, these are linked to your account ID and email.
+        </DocTerm>
+        <DocTerm term="Feedback and problem reports.">
+          If you send feedback or report a problem, on the website or by asking Claude or ChatGPT to
+          send it, we keep what you write and any email address you choose to leave, so we can read
+          it and reply. Reports sent from the website are linked to that visit&apos;s session
+          replay; reports sent from a chat are linked to your account only if you are signed in.
         </DocTerm>
         <DocTerm term="Website chat messages.">
           When you use the chat on the website, your messages are sent to Anthropic&apos;s Claude
@@ -98,8 +105,8 @@ export default function PrivacyPage() {
             <strong>Vercel</strong>: hosts the website and measures page performance.
           </li>
           <li>
-            <strong>PostHog</strong>: website usage analytics and error reports for the website and
-            API.
+            <strong>PostHog</strong>: feedback and problem reports, website usage analytics, session
+            replays, and error reports for the website and API.
           </li>
           <li>
             <strong>Anthropic</strong>: generates replies for the chat on the website.
@@ -117,7 +124,8 @@ export default function PrivacyPage() {
           <li>Account details: until you delete your account.</li>
           <li>Usage-limit counters: reset daily, never written to our database.</li>
           <li>Hosting request logs: kept by our hosting providers for up to 30 days.</li>
-          <li>Usage analytics and error reports: up to 12 months.</li>
+          <li>Usage analytics, session replays and error reports: up to 12 months.</li>
+          <li>Feedback and problem reports: until they are resolved, and at most 12 months.</li>
           <li>Unsaved analysis inputs: not stored after the response is sent.</li>
         </ul>
       </DocSection>
