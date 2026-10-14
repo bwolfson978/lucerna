@@ -47,15 +47,17 @@ export default function AboutPage() {
 
           <div className="flex flex-col gap-5 text-body leading-relaxed text-text-secondary">
             <p>
-              Hi! I&apos;m Barry. My mini side quest into Roth conversions started while I was
-              taking two years off work to do an MBA at MIT Sloan. A friend mentioned that a few
-              low-income years can be a great window to convert, and I couldn&apos;t stop thinking
-              about it.
+              I&apos;m Barry. I first came across Roth conversions while taking two years off work
+              for an MBA at MIT Sloan. A friend pointed out that a few low-income years can be a
+              good window to convert, so I looked into it.
             </p>
             <p>
-              Little did I know that three classes would come together to give me just enough
-              knowledge to be dangerous:
+              What I found was expensive, complicated software built for financial advisors, simple
+              calculators that only modeled one year at a time, and a few detailed spreadsheets
+              built by DIYers in the Bogleheads community. None of them told me how much to convert
+              in each year.
             </p>
+            <p>But, little did I know, three of my classes had already covered the pieces:</p>
             <ul className="flex flex-col gap-2 border-l-2 border-pine pl-5">
               {CLASSES.map(([course, lesson]) => (
                 <li key={course}>
@@ -64,24 +66,13 @@ export default function AboutPage() {
               ))}
             </ul>
             <p>
-              When I started reading about Roth conversions in the Bogleheads community, I checked
-              out every option I could find. There was expensive, complicated software built for
-              financial advisors. There were overly simple calculators that only looked at one year
-              at a time and couldn&apos;t tell me how much to convert in each year. And there were
-              some hardcore spreadsheet DIYers. What I couldn&apos;t find was a general, reusable
-              tool.
+              So initially I took the spreadsheet route. After weeks of modeling, I turned what I
+              learned into this tool, so others don&apos;t have to build their own.
             </p>
             <p>
-              So I took the spreadsheet route. After weeks of brutal modeling, I committed to
-              packaging up what I learned into software that&apos;s easy to use, so fewer people
-              have to go through that in the future.
-            </p>
-            <p>
-              Whether you&apos;re taking a sabbatical, changing careers, starting a business, or in
-              the early years of retirement before required minimum distributions begin, those
-              in-between years can be an opportunity. This tool is meant to help you lay out your
-              scenarios, see them, play with them, and feel more informed about whatever your
-              financial future throws at you.
+              Whether you&apos;re on a sabbatical, changing careers, starting a business, or in the
+              early years of retirement before required minimum distributions begin, it&apos;s meant
+              to help you lay out your scenarios, compare them, and see the tradeoffs more clearly.
             </p>
           </div>
 
