@@ -5,6 +5,10 @@ invisible in PostHog. Each call sends ``mcp_tool_called`` with the tool, the cli
 it came from and how it went. It uses the API's PostHog client
 (``app.error_tracking``), so without ``POSTHOG_PROJECT_TOKEN`` nothing is sent.
 
+It also turns on PostHog MCP Analytics (``instrument``), which sends the standard
+``$mcp_tool_call`` events for PostHog's MCP Analytics views. ``mcp_tool_called`` stays:
+the "Usage by channel" dashboard is built on it and it carries our own properties.
+
 Who the event belongs to:
 - Signed in: the Clerk user id, the same id the website identifies people with, so
   chat and website usage land on one person.
@@ -17,9 +21,15 @@ Who the event belongs to:
 from __future__ import annotations
 
 import logging
+import os
 import uuid
+from collections.abc import Callable
 from contextvars import ContextVar
 from typing import Any
+
+from posthog.mcp import McpAnalytics
+from posthog.mcp import instrument as posthog_instrument
+from posthog.mcp.types import MCPAnalyticsOptions, UserIdentity
 
 from app import error_tracking
 
@@ -106,3 +116,60 @@ def tool_called(
         posthog.capture(EVENT, distinct_id=distinct_id, properties=props)
     except Exception:  # noqa: BLE001
         logger.warning("Could not send an MCP analytics event", exc_info=True)
+
+
+# --------------------------------------------------------------------------
+# PostHog MCP Analytics ($mcp_tool_call)
+# --------------------------------------------------------------------------
+
+# Tool inputs and results hold the user's finances; the privacy policy says unsaved
+# analysis inputs aren't kept, so only the tool name, timing and outcome are sent.
+_DROPPED = ("$mcp_parameters", "$mcp_response")
+
+_handle: McpAnalytics | None = None
+
+
+def _before_send(event: dict[str, Any]) -> dict[str, Any]:
+    properties = event.get("properties") or {}
+    for key in _DROPPED:
+        properties.pop(key, None)
+    return event
+
+
+def instrument(server: Any, signed_in_user: Callable[[], str | None]) -> None:
+    """Send ``$mcp_tool_call`` for every call of ``server``'s tools. Must run before
+    ``server.streamable_http_app()``. No-op without ``POSTHOG_PROJECT_TOKEN``.
+
+    Tool schemas stay as they are: the SDK's injected ``context``, ``llm_model`` and
+    ``conversation_id`` arguments are off. Signed-in callers get their Clerk user id;
+    anyone else is the SDK's per-session id, without a person profile.
+    """
+    global _handle
+    posthog = error_tracking.init()
+    if posthog is None:
+        return
+
+    def identify(_request: Any, _extra: Any) -> UserIdentity | None:
+        user_id = signed_in_user()
+        return UserIdentity(distinct_id=user_id) if user_id else None
+
+    _handle = posthog_instrument(
+        server,
+        posthog,
+        MCPAnalyticsOptions(
+            context=False,
+            capture_model=False,
+            enable_conversation_id=False,
+            identify=identify,
+            before_send=_before_send,
+            server_build=os.environ.get("RAILWAY_GIT_COMMIT_SHA") or None,
+            logger=logger.debug,
+        ),
+    )
+
+
+async def flush() -> None:
+    """Wait for in-flight ``$mcp_tool_call`` captures. Call before the PostHog client
+    shuts down (``error_tracking.shutdown``)."""
+    if _handle is not None:
+        await _handle.flush()

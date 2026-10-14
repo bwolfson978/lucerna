@@ -13,6 +13,7 @@ from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from app import error_tracking
+from app.mcp import analytics as mcp_analytics
 from app.mcp.auth import router as mcp_auth_router
 from app.mcp.server import build_route as build_mcp_route
 from app.mcp.server import mcp as mcp_server
@@ -43,6 +44,7 @@ async def lifespan(app: FastAPI):
         yield
     demo_task.cancel()
     await close_db()
+    await mcp_analytics.flush()
     error_tracking.shutdown()
 
 
