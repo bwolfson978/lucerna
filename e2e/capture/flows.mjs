@@ -81,7 +81,6 @@ export const flows = {
       'frontend/src/app/privacy/',
       'frontend/src/app/terms/',
       'frontend/src/app/support/',
-      'frontend/src/app/connect/',
       'frontend/src/components/legal/',
       'frontend/src/components/common/PageFooter',
     ],
@@ -99,6 +98,28 @@ export const flows = {
         await page.goto(path)
         await page.getByRole('heading', { level: 1 }).waitFor()
         await shot(path.slice(1), caption)
+      }
+    },
+  },
+
+  connect: {
+    title: 'Claude & ChatGPT page and its header link',
+    paths: [
+      'frontend/src/app/connect/',
+      'frontend/src/components/connect/',
+      'frontend/src/components/common/Header',
+      'frontend/src/components/common/CopyField',
+    ],
+    async run(page, shot) {
+      await page.goto('/connect')
+      await page.getByRole('heading', { level: 1 }).waitFor()
+      await shot('header', 'Site header', { element: page.locator('header').first() })
+      await shot('top', 'Claude & ChatGPT page, first screen')
+      await shot('full', 'Claude & ChatGPT page, whole page', { fullPage: true })
+      const toggle = page.getByRole('button', { name: 'Toggle menu' })
+      if (await toggle.isVisible()) {
+        await toggle.click()
+        await shot('menu', 'Phone menu', { element: page.getByRole('navigation', { name: 'Mobile' }) })
       }
     },
   },
