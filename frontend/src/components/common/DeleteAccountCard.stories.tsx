@@ -9,17 +9,16 @@ const meta: Meta<typeof DeleteAccountCard> = {
   },
   args: {
     onDelete: () => new Promise(() => {}),
-    scenarioCount: 8,
   },
 };
 
 export default meta;
 type Story = StoryObj<typeof DeleteAccountCard>;
 
-/** Click "Delete account" for the confirm dialog, which unlocks once the phrase is typed. */
+/** Click "Delete my account" to see the confirm step. */
 export const Default: Story = {};
 
-/** Type the phrase and confirm to see what a failed deletion shows. */
+/** What a failed deletion shows after confirming. */
 export const Failure: Story = {
   args: { onDelete: () => Promise.reject(new Error("Clerk refused")) },
 };

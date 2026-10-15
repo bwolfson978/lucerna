@@ -233,9 +233,7 @@ export default function MyScenariosPage() {
             <SavedScenariosTable scenarios={visible} onDelete={handleDelete} />
           )}
 
-          {isSignedIn && (
-            <DeleteAccountCard onDelete={handleDeleteAccount} scenarioCount={visible.length} />
-          )}
+          {isSignedIn && <DeleteAccountCard onDelete={handleDeleteAccount} />}
         </div>
       </main>
       {toast && (

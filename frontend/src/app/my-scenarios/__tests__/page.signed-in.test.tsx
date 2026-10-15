@@ -79,6 +79,5 @@ describe("MyScenariosPage signed in", () => {
     render(<MyScenariosPage />);
     await deleteBaseline(user);
     expect(screen.getByText("No saved scenarios yet")).toBeInTheDocument();
-    expect(screen.getByText("0 saved scenarios will be deleted with it.")).toBeInTheDocument();
   });
 });
