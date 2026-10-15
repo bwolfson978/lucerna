@@ -29,6 +29,9 @@ export function Header({ isSignedIn: signedInOverride }: HeaderProps = {}) {
   const user = useUser();
   const isSignedIn = signedInOverride ?? user.isSignedIn;
   const signOut = useSignOut();
+  // Signed in, the nav carries two more links, so the full desktop nav only fits from xl;
+  // below that those visitors get the menu button, as on phones.
+  const mobileOnly = isSignedIn ? "xl:hidden" : "lg:hidden";
 
   // Only close the menu explicitly when tapping the current page's link —
   // cross-page navigation unmounts this component, so the menu resets naturally.
@@ -44,13 +47,18 @@ export function Header({ isSignedIn: signedInOverride }: HeaderProps = {}) {
         <div className="mx-auto flex h-[68px] w-full max-w-wide items-center justify-between gap-4">
           <Wordmark />
 
-          {/* Desktop nav: from lg, where the wordmark and every link fit on one line */}
-          <nav className="hidden items-center gap-8 lg:flex" aria-label="Main">
+          {/* Desktop nav: only from the width where the wordmark and every item fit on one
+              line. Labels never wrap; the "How does it work?" pill drops to its icon when
+              space is tight. */}
+          <nav
+            className={cn("hidden items-center gap-5", isSignedIn ? "xl:flex" : "lg:flex xl:gap-8")}
+            aria-label="Main"
+          >
             <Link
               href={ASSISTANT_LINK.href}
               aria-current={pathname === ASSISTANT_LINK.href ? "page" : undefined}
               className={cn(
-                "inline-flex items-center gap-1.5 text-[15px] font-medium transition-colors duration-200 hover:text-text-primary",
+                "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[15px] font-medium transition-colors duration-200 hover:text-text-primary",
                 pathname === ASSISTANT_LINK.href ? "text-pine" : "text-text-secondary"
               )}
             >
@@ -63,7 +71,7 @@ export function Header({ isSignedIn: signedInOverride }: HeaderProps = {}) {
                 href={link.href}
                 aria-current={pathname === link.href ? "page" : undefined}
                 className={cn(
-                  "text-[15px] font-medium transition-colors duration-200 hover:text-text-primary",
+                  "shrink-0 whitespace-nowrap text-[15px] font-medium transition-colors duration-200 hover:text-text-primary",
                   pathname === link.href ? "text-pine" : "text-text-secondary"
                 )}
               >
@@ -75,7 +83,7 @@ export function Header({ isSignedIn: signedInOverride }: HeaderProps = {}) {
                 href="/my-scenarios"
                 aria-current={pathname === "/my-scenarios" ? "page" : undefined}
                 className={cn(
-                  "text-[15px] font-medium transition-colors duration-200 hover:text-text-primary",
+                  "shrink-0 whitespace-nowrap text-[15px] font-medium transition-colors duration-200 hover:text-text-primary",
                   pathname === "/my-scenarios" ? "text-pine" : "text-text-secondary"
                 )}
               >
@@ -86,22 +94,25 @@ export function Header({ isSignedIn: signedInOverride }: HeaderProps = {}) {
               <button
                 type="button"
                 onClick={signOut}
-                className="text-[15px] font-medium text-text-secondary transition-colors duration-200 hover:text-text-primary"
+                className="shrink-0 whitespace-nowrap text-[15px] font-medium text-text-secondary transition-colors duration-200 hover:text-text-primary"
               >
                 Sign out
               </button>
             )}
-            <HowItWorksButton />
+            <HowItWorksButton label={isSignedIn ? "never" : "xl"} />
             {/* Not on the calculator itself, where it would link to the page you're on. */}
             {pathname !== "/calculator" && (
-              <Link href="/calculator" className="btn-dark min-h-[40px] px-6 py-2.5 text-[14.5px]">
+              <Link
+                href="/calculator"
+                className="btn-dark min-h-[40px] shrink-0 whitespace-nowrap px-6 py-2.5 text-[14.5px]"
+              >
                 Run your scenario
               </Link>
             )}
           </nav>
 
           {/* Mobile controls */}
-          <div className="flex items-center gap-2 lg:hidden">
+          <div className={cn("flex items-center gap-2", mobileOnly)}>
             <HowItWorksButton />
             <button
               type="button"
@@ -142,7 +153,10 @@ export function Header({ isSignedIn: signedInOverride }: HeaderProps = {}) {
         {/* Mobile dropdown menu — absolute so it overlays content instead of pushing it down */}
         {mobileMenuOpen && (
           <nav
-            className="absolute left-0 right-0 top-full z-50 flex flex-col gap-1 border-b border-border bg-paper px-default py-3 shadow-elevated lg:hidden"
+            className={cn(
+              "absolute left-0 right-0 top-full z-50 flex flex-col gap-1 border-b border-border bg-paper px-default py-3 shadow-elevated",
+              mobileOnly
+            )}
             aria-label="Mobile"
           >
             <Link
@@ -194,7 +208,7 @@ export function Header({ isSignedIn: signedInOverride }: HeaderProps = {}) {
       {/* Scrim — covers page content behind the mobile menu, closes on tap */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 z-[39] bg-ink/20 backdrop-blur-[2px] lg:hidden"
+          className={cn("fixed inset-0 z-[39] bg-ink/20 backdrop-blur-[2px]", mobileOnly)}
           onClick={() => setMobileMenuOpen(false)}
           aria-hidden="true"
         />
