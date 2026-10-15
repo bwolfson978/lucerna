@@ -384,12 +384,14 @@ export const flows = {
     async run(page, shot) {
       await page.goto('/calculator')
       await page.getByRole('button', { name: 'How does it work?' }).first().click()
-      const sidebar = page.getByRole('complementary', { name: 'How it works' })
-      await sidebar.getByRole('button', { name: /Assumptions & Limitations/ }).click()
+      const section = page.locator('#methodology-assumptions-limitations:visible').first()
+      await section.getByRole('button', { name: /Assumptions & Limitations/ }).click()
       await page.waitForTimeout(600)
-      const section = sidebar.locator('#assumptions-limitations')
-      await section.scrollIntoViewIfNeeded()
-      await shot('assumptions', 'How it works: Assumptions & Limitations', { element: section })
+      // The "What's not included" paragraph, where the limits of the model are listed
+      const limits = section.locator('p', { hasText: 'The few states that tax Social Security' })
+      await limits.scrollIntoViewIfNeeded()
+      await page.waitForTimeout(800)
+      await shot('not-included', "How it works: What's not included", { element: limits })
     },
   },
 }
