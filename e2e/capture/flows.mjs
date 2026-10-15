@@ -64,6 +64,22 @@ export const flows = {
     },
   },
 
+  headerWidths: {
+    title: 'Site header on the Demo page at tight widths',
+    paths: ['frontend/src/components/common/Header', 'frontend/src/components/methodology/HowItWorksButton'],
+    async run(page, shot) {
+      // The Demo page has the fullest signed-out header (every link plus the
+      // "How does it work?" pill), so it is the first to run out of room.
+      const desktop = page.viewportSize().width >= 1000
+      for (const width of desktop ? [1100, 1280] : [440]) {
+        await page.setViewportSize({ width, height: 800 })
+        await page.goto('/demo')
+        await page.locator('header').first().waitFor()
+        await shot(`demo-header-${width}`, `Demo page header at ${width} px`, { element: page.locator('header').first() })
+      }
+    },
+  },
+
   landing: {
     title: 'Landing page',
     paths: ['frontend/src/app/page.tsx', 'frontend/src/components/landing/', 'frontend/src/components/common/'],
