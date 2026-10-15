@@ -75,6 +75,25 @@ export const flows = {
     },
   },
 
+  'landing-margaret': {
+    title: "Landing page: Margaret's schedule and spotlight",
+    paths: ['frontend/src/components/landing/LandingDemo', 'backend/app/engine/demo.py'],
+    async run(page, shot) {
+      await page.goto('/')
+      await page.getByRole('heading', { level: 1 }).waitFor()
+      for (const [id, caption] of [
+        ['schedule', "Margaret's conversion schedule"],
+        ['scenario', 'Margaret spotlight'],
+      ]) {
+        const section = page.locator(`section#${id}`)
+        await section.scrollIntoViewIfNeeded()
+        await page.waitForLoadState('networkidle')
+        await page.waitForTimeout(1500)
+        await shot(id, caption, { element: section })
+      }
+    },
+  },
+
   'policy-pages': {
     title: 'Footer links and policy pages',
     paths: [
