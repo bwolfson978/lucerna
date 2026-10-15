@@ -43,7 +43,7 @@ export function NpvTimeline() {
       pct: 0.12,
       color: "#1b4332",
       opacity: 0.2,
-      note: "Taxed at your\nfinal-year rate",
+      note: "Traditional counted\nafter tax",
     },
   ];
 
@@ -68,7 +68,7 @@ export function NpvTimeline() {
       viewBox="0 0 560 200"
       className="mx-auto w-full max-w-[560px]"
       role="img"
-      aria-label="Timeline showing the four phases of the lifetime financial model: conversion years, growth to retirement, retirement distributions, and money left at the end, valued at your final-year tax rate"
+      aria-label="Timeline showing the four phases of the lifetime financial model: conversion years, growth to retirement, retirement distributions, and money left at the end, counted after tax"
     >
       {/* Phase bars */}
       {phaseRects.map((p, i) => (

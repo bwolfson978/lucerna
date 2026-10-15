@@ -81,9 +81,9 @@ export function MethodologyPageClient() {
       },
       {
         assumption: "Balance left at the end",
-        value: "Final-year rate",
+        value: "After tax",
         rationale:
-          "Traditional money left at the age you plan to is valued after tax at your top federal plus state rate that year. Roth money is not taxed",
+          "Traditional money left at the end is counted after tax, at the rate you'd pay on one more dollar that final year",
       },
       {
         assumption: "State taxes",
@@ -247,9 +247,11 @@ export function MethodologyPageClient() {
                   comes from Roth tax-free. Required Minimum Distributions are enforced.
                 </P>
                 <P>
-                  <strong>Phase 4: Money left at the end.</strong> Any Traditional balance left at
-                  the age you plan to is valued after tax at your top tax rate in that final year,
-                  not taxed all at once in the top brackets. Roth balances are not taxed.
+                  <strong>Phase 4: Money left at the end.</strong> If money is still in your
+                  traditional account at the end of the plan, we count what it would be worth after
+                  tax. We use the tax rate you&apos;d pay on one more dollar of income in that final
+                  year, including Social Security, pensions and required withdrawals. Roth money is
+                  counted in full.
                 </P>
                 <SubHeading>Why &ldquo;today&apos;s dollars&rdquo;?</SubHeading>
                 <P>
