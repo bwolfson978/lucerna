@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import posthog from "posthog-js";
 import { SignInButton, useAuth, useDeleteClerkUser, useUser } from "@/lib/auth";
@@ -9,97 +9,43 @@ import { GlowButton } from "@/components/common/GlowButton";
 import { SignInRequired } from "@/components/common/SignInRequired";
 import { PageFooter } from "@/components/common/PageFooter";
 import { DeleteAccountCard } from "@/components/common/DeleteAccountCard";
+import { SavedScenariosTable } from "@/components/scenarios/SavedScenariosTable";
+import { UndoToast } from "@/components/scenarios/UndoToast";
 import { createScenariosApi } from "@/lib/api/scenarios";
 import type { SavedScenario } from "@/lib/types";
-import { formatCurrency } from "@/lib/utils/formatting";
 
-function ScenarioCard({
-  scenario,
-  onDelete,
-}: {
-  scenario: SavedScenario;
-  onDelete: (id: string) => void;
-}) {
-  const [confirming, setConfirming] = useState(false);
+const UNDO_MS = 8000;
 
-  const date = new Date(scenario.created_at).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-
-  const filingLabel =
-    scenario.filing_status === "married_filing_jointly" ? "Married filing jointly" : "Single";
-
+function EmptyState() {
   return (
-    <div className="card flex flex-col gap-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-1">
-          <span className="text-body font-semibold text-text-primary">{scenario.name}</span>
-          <span className="font-mono text-caption text-text-tertiary">{date}</span>
-        </div>
-        {!confirming ? (
-          <button
-            type="button"
-            onClick={() => setConfirming(true)}
-            className="shrink-0 text-body-sm text-text-tertiary transition-colors duration-200 hover:text-negative"
-            aria-label={`Delete ${scenario.name}`}
-          >
-            Delete
-          </button>
-        ) : (
-          <div className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              onClick={() => onDelete(scenario.id)}
-              className="text-body-sm font-medium text-negative transition-colors duration-200 hover:underline"
-            >
-              Confirm
-            </button>
-            <button
-              type="button"
-              onClick={() => setConfirming(false)}
-              className="text-body-sm text-text-tertiary transition-colors duration-200 hover:text-text-secondary"
-            >
-              Cancel
-            </button>
-          </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 border-t border-border pt-3 sm:grid-cols-4">
-        <div className="flex flex-col gap-0.5">
-          <span className="text-caption text-text-tertiary">Filing status</span>
-          <span className="text-body-sm text-text-primary">{filingLabel}</span>
-        </div>
-        <div className="flex flex-col gap-0.5">
-          <span className="text-caption text-text-tertiary">IRA balance</span>
-          <span className="font-data text-body-sm text-text-primary">
-            {formatCurrency(scenario.ira_balance)}
-          </span>
-        </div>
-        <div className="flex flex-col gap-0.5">
-          <span className="text-caption text-text-tertiary">Horizon</span>
-          <span className="text-body-sm text-text-primary">
-            {scenario.num_years} {scenario.num_years === 1 ? "year" : "years"}
-          </span>
-        </div>
-        <div className="flex flex-col gap-0.5">
-          <span className="text-caption text-text-tertiary">Est. tax savings</span>
-          <span className="font-data text-body-sm font-semibold text-optimal">
-            {formatCurrency(scenario.estimated_savings)}
-          </span>
-        </div>
-      </div>
-
-      <Link
-        href={`/calculator?saved=${scenario.id}`}
-        className="btn-ghost w-full text-center text-body-sm"
+    <div className="flex flex-col items-center gap-4 rounded-md border border-border bg-white px-6 py-16 text-center shadow-[0_24px_60px_-34px_rgba(27,67,50,0.22)]">
+      <div
+        aria-hidden="true"
+        className="flex h-14 w-14 items-end justify-center gap-1 rounded-md bg-paper-warm pb-3.5"
       >
-        Re-run this scenario
+        <span className="h-3 w-[7px] rounded-[2px] bg-pine-mid" />
+        <span className="h-[18px] w-[7px] rounded-[2px] bg-sage" />
+        <span className="h-6 w-[7px] rounded-[2px] bg-pine-haze" />
+        <span className="h-7 w-[7px] rounded-[2px] border-[1.5px] border-dashed border-sage" />
+      </div>
+      <div className="flex flex-col gap-1">
+        <p className="text-[16px] font-semibold text-text-primary">No saved scenarios yet</p>
+        <p className="max-w-[400px] text-body-sm text-text-secondary">
+          Run the optimizer while you are signed in, or save one from Claude or ChatGPT, and it
+          shows up here.
+        </p>
+      </div>
+      <Link href="/calculator" className="btn-dark">
+        Run your scenario
       </Link>
     </div>
   );
+}
+
+function deletedMessage(ids: string[], scenarios: SavedScenario[]) {
+  if (ids.length > 1) return `Deleted ${ids.length} scenarios`;
+  const name = scenarios.find((s) => s.id === ids[0])?.name;
+  return name ? `Deleted “${name}”` : "Deleted 1 scenario";
 }
 
 export default function MyScenariosPage() {
@@ -130,18 +76,74 @@ export default function MyScenariosPage() {
     }
   }, [isLoaded, isSignedIn, fetchScenarios]);
 
-  const handleDelete = useCallback(
-    async (id: string) => {
-      try {
-        const api = createScenariosApi(getToken);
-        await api.delete(id);
-        setScenarios((prev) => prev.filter((s) => s.id !== id));
-      } catch {
-        setLoadError("Could not delete the scenario. Please try again.");
-      }
+  // Deletes wait out an undo window: the rows hide at once and the requests go out when
+  // the toast ends, is dismissed, another delete starts, or the page is left.
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  const [toast, setToast] = useState<{ ids: string[]; message: string } | null>(null);
+  const pending = useRef<{ ids: string[]; timer: ReturnType<typeof setTimeout> } | null>(null);
+  const tokenRef = useRef<string | null>(null);
+
+  const unhide = (ids: string[]) =>
+    setPendingIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
+
+  const commit = useCallback(
+    (opts?: { keepalive?: boolean }) => {
+      const current = pending.current;
+      if (!current) return;
+      clearTimeout(current.timer);
+      pending.current = null;
+      setToast(null);
+      const { ids } = current;
+      // While unloading there's no time to wait for a fresh token, so use the one fetched
+      // when the delete started.
+      const api = createScenariosApi(
+        opts?.keepalive ? async () => tokenRef.current ?? getToken() : getToken
+      );
+      void Promise.allSettled(ids.map((id) => api.delete(id, opts))).then((results) => {
+        const failed = new Set(ids.filter((_, i) => results[i].status === "rejected"));
+        setScenarios((prev) => prev.filter((s) => !ids.includes(s.id) || failed.has(s.id)));
+        unhide(ids);
+        if (failed.size > 0) setLoadError("Could not delete the scenario. Please try again.");
+      });
     },
     [getToken]
   );
+
+  const handleDelete = useCallback(
+    (ids: string[]) => {
+      commit();
+      setPendingIds((prev) => new Set([...prev, ...ids]));
+      void getToken().then((t) => (tokenRef.current = t));
+      pending.current = { ids, timer: setTimeout(() => commit(), UNDO_MS) };
+      setToast({ ids, message: deletedMessage(ids, scenarios) });
+    },
+    [commit, getToken, scenarios]
+  );
+
+  const undo = () => {
+    const current = pending.current;
+    if (!current) return;
+    clearTimeout(current.timer);
+    pending.current = null;
+    setToast(null);
+    unhide(current.ids);
+  };
+
+  useEffect(() => {
+    const flush = () => commit({ keepalive: true });
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      flush();
+    };
+  }, [commit]);
+
+  const visible = scenarios.filter((s) => !pendingIds.has(s.id));
+  const ready = isSignedIn && !loadingList && !loadError;
 
   // Saved scenarios first: once the Clerk user is gone there's no token to delete them with.
   const handleDeleteAccount = useCallback(async () => {
@@ -157,16 +159,29 @@ export default function MyScenariosPage() {
     <>
       <Header />
       <main className="px-default py-section-lg md:px-page">
-        <div className="mx-auto flex max-w-content flex-col gap-section">
-          <div className="flex flex-col gap-3">
-            <span className="eyebrow-pine block">Your history</span>
-            <h1 className="display-heading text-display">
-              Saved <em>scenarios.</em>
-            </h1>
-            <p className="max-w-[560px] text-body leading-relaxed text-text-secondary">
-              Each scenario captures your inputs and results so you can compare strategies and pick
-              up where you left off.
-            </p>
+        <div className="mx-auto flex max-w-content flex-col gap-6 pb-24">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-[30px] font-semibold leading-[1.15] tracking-[-0.01em] text-text-primary">
+                  Saved scenarios
+                </h1>
+                {ready && (
+                  <span className="font-data rounded-full bg-paper-warm px-[9px] py-0.5 text-[12px] font-semibold text-text-secondary">
+                    {visible.length}
+                  </span>
+                )}
+              </div>
+              <p className="max-w-[560px] text-[15px] text-text-secondary">
+                Each scenario keeps your inputs and results, so you can compare strategies and pick
+                up where you left off.
+              </p>
+            </div>
+            {isSignedIn && (
+              <Link href="/calculator" className="btn-dark">
+                New scenario
+              </Link>
+            )}
           </div>
 
           {!isSignedIn && (
@@ -182,12 +197,18 @@ export default function MyScenariosPage() {
           )}
 
           {isSignedIn && loadingList && (
-            <div className="flex flex-col gap-4">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="card animate-pulse">
-                  <div className="h-5 w-1/3 rounded bg-paper-warm" />
-                  <div className="mt-4 h-16 w-full rounded bg-paper-warm" />
-                  <div className="mt-4 h-9 w-full rounded bg-paper-warm" />
+            <div
+              aria-label="Loading your scenarios"
+              className="overflow-hidden rounded-md border border-border bg-white"
+            >
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex h-[60px] animate-pulse items-center gap-4 border-t border-border px-4 first:border-t-0"
+                >
+                  <div className="h-4 w-4 rounded bg-paper-warm" />
+                  <div className="h-4 w-1/3 rounded bg-paper-warm" />
+                  <div className="ml-auto hidden h-4 w-1/4 rounded bg-paper-warm md:block" />
                 </div>
               ))}
             </div>
@@ -206,33 +227,24 @@ export default function MyScenariosPage() {
             </div>
           )}
 
-          {isSignedIn && !loadingList && !loadError && scenarios.length === 0 && (
-            <div className="card flex flex-col items-center gap-4 py-12 text-center">
-              <span className="text-4xl">📊</span>
-              <div className="flex flex-col gap-1">
-                <p className="text-body font-medium text-text-primary">No saved scenarios yet</p>
-                <p className="max-w-[400px] text-body-sm text-text-secondary">
-                  Run the optimizer and your results will be saved automatically when you are signed
-                  in.
-                </p>
-              </div>
-              <Link href="/calculator" className="btn-dark">
-                Run your scenario
-              </Link>
-            </div>
-          )}
+          {ready && visible.length === 0 && <EmptyState />}
 
-          {isSignedIn && !loadingList && !loadError && scenarios.length > 0 && (
-            <div className="flex flex-col gap-4">
-              {scenarios.map((scenario) => (
-                <ScenarioCard key={scenario.id} scenario={scenario} onDelete={handleDelete} />
-              ))}
-            </div>
+          {ready && visible.length > 0 && (
+            <SavedScenariosTable scenarios={visible} onDelete={handleDelete} />
           )}
 
           {isSignedIn && <DeleteAccountCard onDelete={handleDeleteAccount} />}
         </div>
       </main>
+      {toast && (
+        <UndoToast
+          key={toast.ids.join(",")}
+          message={toast.message}
+          onUndo={undo}
+          onDismiss={() => commit()}
+          durationMs={UNDO_MS}
+        />
+      )}
       <PageFooter />
     </>
   );
