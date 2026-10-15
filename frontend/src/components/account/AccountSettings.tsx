@@ -144,7 +144,7 @@ export function AccountSettings({
                   Change your name or email with your sign-in provider.
                 </span>
                 {onManageSignIn && (
-                  <Button variant="outline" size="sm" onClick={onManageSignIn}>
+                  <Button variant="outline" onClick={onManageSignIn}>
                     Manage sign-in
                   </Button>
                 )}
@@ -178,7 +178,7 @@ export function AccountSettings({
                 <span className="text-caption font-normal text-text-tertiary">
                   A CSV with each scenario&apos;s name, date and headline results.
                 </span>
-                <Button variant="outline" size="sm" onClick={onDownload} disabled={!canDownload}>
+                <Button variant="outline" onClick={onDownload} disabled={!canDownload}>
                   Download scenarios
                 </Button>
               </>

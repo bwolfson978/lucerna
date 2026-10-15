@@ -69,7 +69,7 @@ export function DeleteAccountCard({
             ? "Want to keep your work? Download your scenarios first."
             : "You'll be signed out everywhere."}
         </span>
-        <Button variant="destructive" size="sm" onClick={() => setOpen(true)}>
+        <Button variant="destructive" onClick={() => setOpen(true)}>
           Delete account
         </Button>
       </div>
