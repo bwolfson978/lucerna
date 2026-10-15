@@ -8,8 +8,7 @@
  */
 
 import type { McpToolResult } from "@/lib/agent/types";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { API_URL } from "@/lib/utils/constants";
 
 export interface McpView {
   uri: string;
@@ -26,7 +25,7 @@ const viewCache = new Map<string, Promise<McpView>>();
 export function fetchView(uri: string): Promise<McpView> {
   let pending = viewCache.get(uri);
   if (!pending) {
-    pending = fetch(`${API_BASE}/api/mcp-apps/resource?uri=${encodeURIComponent(uri)}`).then(
+    pending = fetch(`${API_URL}/api/mcp-apps/resource?uri=${encodeURIComponent(uri)}`).then(
       async (res) => {
         if (!res.ok) throw new Error(`Could not load the view (${res.status})`);
         return (await res.json()) as McpView;
@@ -40,14 +39,14 @@ export function fetchView(uri: string): Promise<McpView> {
 
 /** Sandbox proxy on the API's origin, which differs from this page's (spec requirement). */
 export function sandboxUrl(csp: McpView["csp"]): string {
-  const url = new URL("/mcp-apps/sandbox", API_BASE);
+  const url = new URL("/mcp-apps/sandbox", API_URL);
   url.searchParams.set("csp", JSON.stringify(csp ?? {}));
   if (typeof window !== "undefined") url.searchParams.set("host", window.location.origin);
   return url.toString();
 }
 
 export function sandboxOrigin(): string {
-  return new URL(API_BASE).origin;
+  return new URL(API_URL).origin;
 }
 
 /** A View's tools/call, brokered by the backend (only tools visible to apps). */
@@ -55,7 +54,7 @@ export async function callAppTool(
   name: string,
   args: Record<string, unknown> | undefined
 ): Promise<McpToolResult> {
-  const res = await fetch(`${API_BASE}/api/mcp-apps/tools/call`, {
+  const res = await fetch(`${API_URL}/api/mcp-apps/tools/call`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, arguments: args ?? {} }),

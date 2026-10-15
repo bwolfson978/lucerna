@@ -4,8 +4,7 @@ import type {
   SavedScenarioDetail,
   ScenarioInput,
 } from "@/lib/types";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { API_URL } from "@/lib/utils/constants";
 
 async function authedRequest<T>(
   path: string,
@@ -13,7 +12,7 @@ async function authedRequest<T>(
   options?: RequestInit
 ): Promise<T> {
   const token = await getToken();
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${API_URL}${path}`, {
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),

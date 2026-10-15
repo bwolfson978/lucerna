@@ -29,3 +29,10 @@ async def test_openai_apps_challenge_missing_without_token(async_client, monkeyp
     monkeypatch.delenv("OPENAI_APPS_CHALLENGE", raising=False)
     response = await async_client.get("/.well-known/openai-apps-challenge")
     assert response.status_code == 404
+
+
+async def test_root_redirects_to_website(async_client):
+    for method in ("GET", "HEAD"):
+        response = await async_client.request(method, "/")
+        assert response.status_code == 308
+        assert response.headers["location"] == "https://www.rothconversionsoptimizer.com/"

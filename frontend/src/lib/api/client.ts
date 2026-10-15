@@ -1,5 +1,6 @@
 import type { ScenarioDraft } from "@/lib/scenario/draft";
 import type { OptimizationResult } from "@/lib/types";
+import { API_URL } from "@/lib/utils/constants";
 
 export interface ScenarioLinkResult {
   result_id: string;
@@ -8,10 +9,8 @@ export interface ScenarioLinkResult {
   result: OptimizationResult;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${API_URL}${path}`, {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
@@ -59,7 +58,7 @@ export const apiClient = {
     distinct_id?: string;
     session_id?: string;
   }) {
-    const res = await fetch(`${API_BASE}/api/feedback`, {
+    const res = await fetch(`${API_URL}/api/feedback`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(input),

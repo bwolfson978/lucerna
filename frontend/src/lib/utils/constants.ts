@@ -38,6 +38,9 @@ export const dataFontStyle = {
   fontVariantNumeric: "tabular-nums",
 } as const;
 
+// Backend (FastAPI) origin. Set NEXT_PUBLIC_API_URL per environment (Vercel); local default.
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 // Canonical origin for SEO metadata, robots.txt and the sitemap. The bare domain redirects here.
 export const SITE_URL = "https://www.rothconversionsoptimizer.com";
 

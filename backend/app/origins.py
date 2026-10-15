@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
-import os
 import re
+
+from app.config import settings
 
 DEFAULT_ORIGINS = ["http://localhost:3000"]
 ORIGIN_REGEX = r"https://(lucerna-.*\.vercel\.app|(www\.)?rothconversionsoptimizer\.com)"
 
 
 def allowed_origins() -> list[str]:
-    configured = os.environ.get("ALLOWED_ORIGINS", "")
-    if configured:
-        return [o.strip() for o in configured.split(",") if o.strip()]
-    return list(DEFAULT_ORIGINS)
+    return settings().allowed_origin_list or list(DEFAULT_ORIGINS)
 
 
 def is_allowed_origin(origin: str) -> bool:

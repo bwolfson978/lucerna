@@ -11,15 +11,16 @@ from __future__ import annotations
 import base64
 import binascii
 import json
-import os
 from urllib.parse import urlencode
+
+from app.config import settings
 
 # Encoded scenarios are a few hundred characters; anything far beyond is not ours.
 MAX_PARAM_LENGTH = 8000
 
 
 def site_url() -> str:
-    return os.environ.get("SITE_URL", "https://rothconversionsoptimizer.com").rstrip("/")
+    return settings().site_origin
 
 
 def encode_scenario(scenario: dict) -> str:

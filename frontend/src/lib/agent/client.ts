@@ -1,8 +1,7 @@
 import posthog from "posthog-js";
 import type { ScenarioDraft } from "@/lib/scenario/draft";
 import type { AgentEvent, DemoConversation } from "./types";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { API_URL } from "@/lib/utils/constants";
 
 export interface AgentRequest {
   message: string;
@@ -63,7 +62,7 @@ export async function streamAgent(
     onEvent(event);
   };
   try {
-    const res = await fetch(`${API_BASE}/api/agent`, {
+    const res = await fetch(`${API_URL}/api/agent`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -102,7 +101,7 @@ export async function streamAgent(
 }
 
 export async function fetchDemoConversation(): Promise<DemoConversation> {
-  const res = await fetch(`${API_BASE}/api/agent/demo`);
+  const res = await fetch(`${API_URL}/api/agent/demo`);
   if (!res.ok) throw new Error(`API error: ${res.status}`);
   return res.json();
 }

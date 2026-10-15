@@ -1,5 +1,4 @@
 import asyncio
-import os
 import secrets
 import threading
 from contextlib import asynccontextmanager
@@ -7,17 +6,21 @@ from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Response, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from app import error_tracking
+from app.config import settings
 from app.mcp import analytics as mcp_analytics
 from app.mcp.auth import router as mcp_auth_router
 from app.mcp.server import build_route as build_mcp_route
 from app.mcp.server import mcp as mcp_server
 from app.origins import ORIGIN_REGEX, allowed_origins
+
+# Read the environment once now: a variable that doesn't parse stops startup here.
+settings()
 
 
 @asynccontextmanager
@@ -59,7 +62,7 @@ _metrics_bearer = HTTPBearer(auto_error=False)
 def _verify_metrics_token(
     credentials: HTTPAuthorizationCredentials | None = Depends(_metrics_bearer),
 ) -> None:
-    token = os.environ.get("METRICS_TOKEN", "")
+    token = settings().metrics_token
     if not token:
         return  # no token configured — allow in local dev
     if credentials is None or not secrets.compare_digest(credentials.credentials, token):
@@ -116,6 +119,15 @@ app.router.routes.append(build_mcp_route())
 FAVICON = Path(__file__).parent / "static" / "favicon.ico"
 
 
+# This service's hosts (mcp.rothconversionsoptimizer.com among them) have no page of their
+# own. Send the root to the website so crawlers and favicon lookups find the site's icon.
+@app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
+async def root():
+    return RedirectResponse(
+        f"{settings().site_origin}/", status_code=status.HTTP_308_PERMANENT_REDIRECT
+    )
+
+
 # Clients that show the MCP server's domain (connector lists, browser tabs) look here.
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
@@ -126,7 +138,7 @@ async def favicon():
 # token the portal shows into OPENAI_APPS_CHALLENGE (Railway); unset, the path is a 404.
 @app.get("/.well-known/openai-apps-challenge", include_in_schema=False)
 async def openai_apps_challenge():
-    token = os.environ.get("OPENAI_APPS_CHALLENGE", "").strip()
+    token = settings().openai_apps_challenge
     if not token:
         raise HTTPException(status_code=404)
     return PlainTextResponse(token)

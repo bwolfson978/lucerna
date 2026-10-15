@@ -22,7 +22,6 @@ from __future__ import annotations
 import base64
 import json
 import logging
-import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
@@ -33,6 +32,7 @@ from mcp.shared.exceptions import McpError
 from mcp.types import CallToolResult
 from pydantic import ValidationError
 
+from app.config import settings
 from app.mcp.auth import ACCOUNT_TOOLS
 from app.mcp.server import APP_MIME_TYPE, RESULTS_META_KEY, UI_META_KEY
 from app.tools import core
@@ -211,7 +211,7 @@ def _warn_once(message: str) -> None:
 @asynccontextmanager
 async def open_toolbox() -> AsyncIterator[McpToolbox]:
     """Connect to the MCP server (in process, or over HTTP when AGENT_MCP_URL is set)."""
-    url = os.environ.get("AGENT_MCP_URL")
+    url = settings().agent_mcp_url
     if url:
         from mcp.client.streamable_http import streamable_http_client
         from mcp.shared._httpx_utils import create_mcp_http_client

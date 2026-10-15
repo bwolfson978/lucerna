@@ -1,10 +1,11 @@
 """asyncpg connection pool — initialised in the FastAPI lifespan."""
 
 import json
-import os
 from pathlib import Path
 
 import asyncpg
+
+from app.config import settings
 
 _pool: asyncpg.Pool | None = None
 
@@ -13,7 +14,7 @@ _SCHEMA = Path(__file__).with_name("schema.sql")
 
 async def init_db() -> None:
     global _pool
-    database_url = os.environ.get("DATABASE_URL")
+    database_url = settings().database_url
     if not database_url:
         return  # no DB configured; scenario endpoints will return 503
 
