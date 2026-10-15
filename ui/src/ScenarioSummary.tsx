@@ -65,7 +65,7 @@ interface Row {
 }
 
 /** Rows that hold defaults most people keep; they sit behind one "Assumptions" line. */
-const ASSUMPTION_KEYS = new Set(["growth", "horizon", "return"]);
+const ASSUMPTION_KEYS = new Set(["growth", "horizon", "return", "inflation"]);
 
 /** Labels for the fields `prepare_scenario` reports as missing. */
 export const FIELD_LABELS: Record<string, string> = {
@@ -286,7 +286,7 @@ export function ScenarioSummary({
               </span>
             </button>
             {showAssumptions && (
-              <dl className="border-border -mb-px grid border-t sm:grid-cols-3">
+              <dl className="border-border -mb-px grid border-t sm:grid-cols-2">
                 {assumptions.map((row) => (
                   <SummaryRow
                     key={row.key}
@@ -294,7 +294,7 @@ export function ScenarioSummary({
                     scenario={s}
                     onEdit={onEdit}
                     onOpenForm={onOpenForm}
-                    className="sm:[&:not(:last-child)]:border-r"
+                    className="sm:odd:border-r"
                   />
                 ))}
               </dl>

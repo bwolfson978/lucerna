@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react";
 import { ScenarioSummary, type ScenarioValues } from "@lucerna/ui";
-import { fn } from "storybook/test";
+import { fn, userEvent, within } from "storybook/test";
 import { recordedScenario } from "../fixtures";
 
 const meta: Meta<typeof ScenarioSummary> = {
@@ -90,4 +90,12 @@ export const Interactive: Story = {
 /** A summary already run, further up the conversation: one line until opened. */
 export const Collapsed: Story = {
   args: { badge: "Confirmed", collapsible: true },
+};
+
+/** The assumptions row opened: income growth, plan horizon, return and inflation. */
+export const AssumptionsOpen: Story = {
+  args: { onEdit: fn() },
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole("button", { name: /Assumptions/ }));
+  },
 };

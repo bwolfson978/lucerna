@@ -393,7 +393,7 @@ export function InputForm({
                 Your income, year by year
               </h3>
               <span className="text-caption text-text-tertiary">
-                {age} to {age + timeline.length - 1} · in today&apos;s dollars
+                {`${age} to ${age + timeline.length - 1} · in today's dollars`}
               </span>
             </div>
             <IncomePreviewChart

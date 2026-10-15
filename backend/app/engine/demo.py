@@ -37,6 +37,7 @@ DEMO_SCENARIO = ScenarioInput(
     planning_horizon_age=93,
     annual_growth_rate=0.07,
     discount_rate=0.05,
+    inflation_rate=0.025,
 )
 
 DEMO_PERSONA = {
@@ -57,7 +58,7 @@ DEMO_PERSONA = {
     "career_arc": "35 years as a registered nurse, saving consistently in her employer 401(k). Roth contributions started in her final decade once pre-tax balance grew large. No earned income planned; income rises sharply at 73 when mandatory distributions begin.",
     "ira_balance": "$1,400,000 traditional 401(k) + $52,000 Roth, from 35 years of consistent saving",
     "filing_status": "Married Filing Jointly",
-    "key_insight": "The 10-year window between retirement and mandatory distributions lets Margaret convert at 12-22% today. Once RMDs begin on a balance that may exceed $2.7M, combined income could push her marginal rate significantly higher.",
+    "key_insight": "The 10-year window between retirement and mandatory distributions lets Margaret convert at 12-22% today. Once RMDs begin on a balance that may exceed $2M in today's dollars, combined income could push her marginal rate significantly higher.",
 }
 
 

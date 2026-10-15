@@ -163,7 +163,7 @@ export const sampleDemoResponse: DemoResponse = {
     ira_balance: "$1,400,000 traditional + $52,000 Roth",
     filing_status: "Married Filing Jointly",
     key_insight:
-      "The 10-year window between retirement and mandatory distributions lets Margaret convert at 12-22% today. Once RMDs begin on a balance that may exceed $2.7M, combined income could push her marginal rate significantly higher.",
+      "The 10-year window between retirement and mandatory distributions lets Margaret convert at 12-22% today. Once RMDs begin on a balance that may exceed $2M in today's dollars, combined income could push her marginal rate significantly higher.",
   },
   input: sampleOptimizationResult.input,
   result: sampleOptimizationResult,
