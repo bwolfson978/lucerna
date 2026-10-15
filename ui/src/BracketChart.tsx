@@ -14,6 +14,7 @@ import { BRACKET_COLORS, CHART_COLORS } from "./colors";
 import { formatAxisCurrency, formatCurrency, formatTableCurrency } from "./format";
 import { useContainerWidth, useScrollFade, useViewportHeight } from "./charts/hooks";
 import { cn } from "./cn";
+import { ScrollTrack, usePrefersReducedMotion } from "./charts/primitives";
 
 /**
  * The tax bracket chart: each year's income, required withdrawal and Roth conversion
@@ -174,6 +175,7 @@ export function BracketChart({
   const containerWidth = useContainerWidth(containerRef);
   const viewportHeight = useViewportHeight();
   const { hasScrolled } = useScrollFade(scrollRef, fadeRef);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   // Dismiss tooltip and disengage when clicking outside the chart
   useEffect(() => {
@@ -256,6 +258,12 @@ export function BracketChart({
     barsFit,
   } = layout;
   const colWidth = barWidth + gap;
+  // Years past the right edge before any scrolling, for the scroll hint.
+  const visibleCols =
+    containerWidth !== undefined
+      ? Math.max(1, Math.floor((containerWidth - leftAxisWidth - rightAxisWidth) / colWidth))
+      : years.length;
+  const hiddenYears = barsFit ? 0 : Math.max(0, years.length - visibleCols);
   const shortYears = colWidth < SHORT_YEAR_COL_WIDTH;
   const compactValues = colWidth < COMPACT_VALUE_COL_WIDTH;
 
@@ -450,18 +458,35 @@ export function BracketChart({
         </div>
 
         {/* Scrollable bar area */}
-        <div ref={fadeRef} className={`min-w-0 flex-1 ${!barsFit ? "scroll-fade mb-2" : ""}`}>
-          {/* Scroll hint pill — shown until first scroll */}
-          {!barsFit && !hasScrolled && (
-            <div className="animate-fade-out-delayed pointer-events-none absolute inset-0 z-10 flex items-center justify-end pr-3">
-              <div className="bg-card/80 text-data-xs text-accent/70 flex items-center gap-1 rounded-full px-2.5 py-1 backdrop-blur-sm">
-                <span>Scroll</span>
+        <div
+          ref={fadeRef}
+          className={`min-w-0 flex-1 ${!barsFit ? "scroll-fade scroll-fade-wide mb-2" : ""}`}
+        >
+          {/* Scroll hint: says how many years are off to the right, nudges toward them, and
+              scrolls one screen on click. Stays until the first scroll. */}
+          {!barsFit && !hasScrolled && hiddenYears > 0 && (
+            <div className="pointer-events-none absolute inset-y-0 right-0 z-10 flex items-center pr-2">
+              <button
+                type="button"
+                onClick={() =>
+                  scrollRef.current?.scrollBy({
+                    left: scrollRef.current.clientWidth * 0.8,
+                    behavior: prefersReducedMotion ? "auto" : "smooth",
+                  })
+                }
+                className="bg-pine-deep shadow-elevated pointer-events-auto flex items-center gap-1.5 rounded-full py-1.5 pr-2.5 pl-3 text-[12px] font-medium text-[#f5f2ea]"
+                aria-label={`Scroll to see ${hiddenYears} more ${hiddenYears === 1 ? "year" : "years"}`}
+              >
+                <span>
+                  {hiddenYears} more {hiddenYears === 1 ? "year" : "years"}
+                </span>
                 <svg
                   width="12"
                   height="12"
                   viewBox="0 0 12 12"
                   fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                  className="scroll-hint-nudge"
                 >
                   <path
                     d="M4.5 2.5L8 6L4.5 9.5"
@@ -471,12 +496,14 @@ export function BracketChart({
                     strokeLinejoin="round"
                   />
                 </svg>
-              </div>
+              </button>
             </div>
           )}
           <div
             ref={scrollRef}
-            className={!barsFit ? "bracket-chart-scroll overflow-x-auto pb-2" : ""}
+            className={
+              !barsFit ? "bracket-chart-scroll scroll-native-hidden overflow-x-auto pb-2" : ""
+            }
           >
             <div style={!barsFit ? { width: Math.max(totalBarWidth, 200) } : undefined}>
               <svg
@@ -598,6 +625,7 @@ export function BracketChart({
               ))}
             </div>
           </div>
+          {!barsFit && <ScrollTrack scrollRef={scrollRef} />}
         </div>
 
         {/* Fixed right axis: bracket rates at gross-scale positions */}
