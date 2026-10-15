@@ -20,9 +20,28 @@ export const OnCalculator: Story = {
   parameters: { nextjs: { navigation: { pathname: "/calculator" } } },
 };
 
-/** Signed in: "My scenarios" and "Sign out" join the nav (and the phone menu). */
+/**
+ * Signed in: "My scenarios" joins the nav and the account avatar sits at the end, with
+ * Account settings and Sign out (both also in the phone menu).
+ */
 export const SignedIn: Story = {
-  args: { isSignedIn: true },
+  args: { isSignedIn: true, account: { name: "Barry", email: "you@example.com" } },
+};
+
+/** The account menu open. */
+export const AccountMenuOpen: Story = {
+  args: {
+    isSignedIn: true,
+    account: { name: "Barry", email: "you@example.com" },
+    accountMenuOpen: true,
+  },
+  decorators: [
+    (Story) => (
+      <div className="min-h-[320px]">
+        <Story />
+      </div>
+    ),
+  ],
 };
 
 /**
@@ -30,7 +49,7 @@ export const SignedIn: Story = {
  * The desktop nav waits for xl and the pill shows only its icon, so no label wraps.
  */
 export const SignedInOnDemo: Story = {
-  args: { isSignedIn: true },
+  args: { isSignedIn: true, account: { name: "Barry", email: "you@example.com" } },
   parameters: { nextjs: { navigation: { pathname: "/demo" } } },
   decorators: [
     (Story) => (

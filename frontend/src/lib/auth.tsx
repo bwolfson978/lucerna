@@ -29,11 +29,49 @@ export const useAuth: () => Pick<ReturnType<typeof useClerkAuth>, "getToken"> = 
   ? useClerkAuth
   : () => signedOutAuth;
 
+export interface AccountProfile {
+  name: string;
+  email: string;
+  /** How they sign in, in words: "Google", "Email and password". */
+  signIn: string;
+}
+
+const PROVIDER_LABELS: Record<string, string> = {
+  google: "Google",
+  apple: "Apple",
+  github: "GitHub",
+  microsoft: "Microsoft",
+};
+
+/** The signed-in person's name, email and sign-in method, or null when signed out. */
+export function useAccountProfile(): AccountProfile | null {
+  const { user } = useUser();
+  if (!user) return null;
+  const provider = user.externalAccounts?.[0]?.provider?.replace(/^oauth_/, "");
+  return {
+    name: user.fullName || user.firstName || "",
+    email: user.primaryEmailAddress?.emailAddress ?? "",
+    signIn: provider
+      ? (PROVIDER_LABELS[provider] ?? provider.charAt(0).toUpperCase() + provider.slice(1))
+      : user.passwordEnabled
+        ? "Email and password"
+        : "Email code",
+  };
+}
+
 /** Signs the visitor out and returns them to the home page. A no-op without Clerk. */
 export const useSignOut: () => () => void = AUTH_ENABLED
   ? () => {
       const { signOut } = useClerk();
       return () => void signOut({ redirectUrl: "/" });
+    }
+  : () => () => {};
+
+/** Opens Clerk's account modal (name, email, connected sign-ins). A no-op without Clerk. */
+export const useOpenUserProfile: () => () => void = AUTH_ENABLED
+  ? () => {
+      const { openUserProfile } = useClerk();
+      return () => openUserProfile();
     }
   : () => () => {};
 

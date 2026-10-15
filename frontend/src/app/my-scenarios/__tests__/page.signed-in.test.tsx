@@ -8,7 +8,6 @@ vi.mock("next/navigation", () => ({ usePathname: () => "/my-scenarios" }));
 const api = {
   list: vi.fn(),
   delete: vi.fn(),
-  deleteAccountData: vi.fn(),
 };
 vi.mock("@/lib/api/scenarios", () => ({ createScenariosApi: () => api }));
 // Clerk's getToken is stable across renders; a new one each render would refetch the list.
@@ -16,8 +15,8 @@ const auth = { getToken: async () => "token" };
 vi.mock("@/lib/auth", () => ({
   useUser: () => ({ isLoaded: true, isSignedIn: true, user: null }),
   useAuth: () => auth,
-  useDeleteClerkUser: () => async () => {},
   useSignOut: () => () => {},
+  useAccountProfile: () => ({ name: "Barry", email: "you@example.com", signIn: "Google" }),
   SignInButton: () => null,
   AUTH_ENABLED: true,
 }));

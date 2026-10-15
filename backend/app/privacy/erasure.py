@@ -2,7 +2,7 @@
 
 Used by ``scripts/delete_user_data.py`` for emailed deletion requests and clean-ups,
 and (the PostHog part only) by ``DELETE /api/account`` after someone deletes their own
-account on My scenarios.
+account in Account settings (/account).
 
 Where a person's data lives:
 
