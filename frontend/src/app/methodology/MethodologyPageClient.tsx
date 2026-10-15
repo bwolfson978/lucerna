@@ -249,7 +249,7 @@ export function MethodologyPageClient() {
                 <P>
                   <strong>Phase 4: Money left at the end.</strong> If money is still in your
                   traditional account at the end of the plan, we count what it would be worth after
-                  tax. We use the tax rate you&apos;d pay on one more dollar of income in that final
+                  tax. We use the tax rate you’d pay on one more dollar of income in that final
                   year, including Social Security, pensions and required withdrawals. Roth money is
                   counted in full.
                 </P>
