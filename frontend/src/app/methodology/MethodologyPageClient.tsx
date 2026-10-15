@@ -400,8 +400,8 @@ export function MethodologyPageClient() {
                   The few states that tax Social Security are treated as taxing all of it, without
                   their own exemptions. IRMAA surcharges are factored into the optimization but are
                   not a direct user input. The net investment income tax (NIIT) is also not
-                  included. Inflation adjustments to future tax brackets are not modeled: the
-                  analysis uses current-year brackets throughout.
+                  included. Every pension is treated as fixed, though some government pensions get
+                  cost-of-living raises.
                 </P>
 
                 <SubHeading>Important disclaimer</SubHeading>
