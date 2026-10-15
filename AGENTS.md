@@ -8,6 +8,8 @@ This file is the single set of instructions for any coding agent (Codex, Cursor,
 
 ## Before you start
 
+On a fresh clone or machine, or when `node`, `npm`, `python` or a `node_modules` folder is missing, run the `setup-lucerna` skill (`.agents/skills/setup-lucerna/scripts/setup.sh`) before anything else, then `source .agents/skills/setup-lucerna/scripts/env.sh` in each new shell.
+
 Read the current execution plan in `docs/planning/` and the project brief before starting work.
 Ask the user which workstream or task they're picking up.
 
@@ -127,7 +129,7 @@ lucerna/
 │   ├── capture/           # Before/after capture flows (pr-evidence skill)
 │   ├── fixtures/          # test.ts: the `test` every spec imports (fails on uncaught page errors)
 │   └── tests/
-├── .agents/skills/         # Repo skills (Agent Skills format): run-lucerna, pr-evidence
+├── .agents/skills/         # Repo skills (Agent Skills format): setup-lucerna, run-lucerna, pr-evidence
 ├── .claude/skills          # Symlink to .agents/skills, for Claude Code
 ├── docs/
 │   ├── design-aesthetic.md    # Visual language, colors, typography, components
