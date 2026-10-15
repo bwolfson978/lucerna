@@ -178,10 +178,10 @@
   "analyze_roth_conversions": {
     "structured_content": {
       "result_id": "r_64b46d806b",
-      "estimated_lifetime_tax_savings_todays_dollars": 158617,
-      "total_conversion": 609100,
-      "total_tax_on_conversions": 85023,
-      "average_tax_rate_on_conversions": 0.1396,
+      "estimated_lifetime_tax_savings_todays_dollars": 117871,
+      "total_conversion": 620300,
+      "total_tax_on_conversions": 86535,
+      "average_tax_rate_on_conversions": 0.1395,
       "years_with_conversions": 18,
       "schedule_by_year": [
         {
@@ -248,8 +248,8 @@
         {
           "year": 2034,
           "income": 0,
-          "conversion": 33200,
-          "tax_on_conversion": 4539,
+          "conversion": 38800,
+          "tax_on_conversion": 5351,
           "marginal_bracket": "12%",
           "spending_from_traditional": 46552
         },
@@ -307,17 +307,17 @@
           "conversion": 11100,
           "tax_on_conversion": 1388,
           "marginal_bracket": "10%",
-          "rmd": 20640,
-          "spending_from_traditional": 25912
+          "rmd": 20275,
+          "spending_from_traditional": 26277
         },
         {
           "year": 2042,
           "income": 0,
-          "conversion": 5500,
-          "tax_on_conversion": 688,
+          "conversion": 11100,
+          "tax_on_conversion": 1388,
           "marginal_bracket": "10%",
-          "rmd": 20321,
-          "spending_from_traditional": 26231
+          "rmd": 19915,
+          "spending_from_traditional": 26637
         },
         {
           "year": 2043,
@@ -325,8 +325,8 @@
           "conversion": 0,
           "tax_on_conversion": 0,
           "marginal_bracket": "10%",
-          "rmd": 20071,
-          "spending_from_traditional": 26481
+          "rmd": 19359,
+          "spending_from_traditional": 27192
         },
         {
           "year": 2044,
@@ -334,26 +334,26 @@
           "conversion": 0,
           "tax_on_conversion": 0,
           "marginal_bracket": "10%",
-          "rmd": 20090,
-          "spending_from_traditional": 26462
+          "rmd": 19298,
+          "spending_from_traditional": 27254
         },
         {
           "year": 2045,
           "income": 0,
-          "conversion": 5500,
-          "tax_on_conversion": 688,
+          "conversion": 0,
+          "tax_on_conversion": 0,
           "marginal_bracket": "10%",
-          "rmd": 20053,
-          "spending_from_traditional": 26499
+          "rmd": 19169,
+          "spending_from_traditional": 27383
         },
         {
           "year": 2046,
           "income": 0,
-          "conversion": 0,
-          "tax_on_conversion": 0,
+          "conversion": 5500,
+          "tax_on_conversion": 688,
           "marginal_bracket": "10%",
-          "rmd": 19655,
-          "spending_from_traditional": 26897
+          "rmd": 18959,
+          "spending_from_traditional": 27593
         },
         {
           "year": 2047,
@@ -361,8 +361,8 @@
           "conversion": 0,
           "tax_on_conversion": 0,
           "marginal_bracket": "10%",
-          "rmd": 19331,
-          "spending_from_traditional": 27221
+          "rmd": 18251,
+          "spending_from_traditional": 28300
         },
         {
           "year": 2048,
@@ -370,8 +370,8 @@
           "conversion": 0,
           "tax_on_conversion": 0,
           "marginal_bracket": "10%",
-          "rmd": 18998,
-          "spending_from_traditional": 27554
+          "rmd": 17787,
+          "spending_from_traditional": 28765
         },
         {
           "year": 2049,
@@ -379,17 +379,17 @@
           "conversion": 0,
           "tax_on_conversion": 0,
           "marginal_bracket": "10%",
-          "rmd": 18432,
-          "spending_from_traditional": 28120
+          "rmd": 17078,
+          "spending_from_traditional": 29474
         },
         {
           "year": 2050,
           "income": 0,
-          "conversion": 0,
-          "tax_on_conversion": 0,
+          "conversion": 5500,
+          "tax_on_conversion": 688,
           "marginal_bracket": "10%",
-          "rmd": 17814,
-          "spending_from_traditional": 28738
+          "rmd": 16287,
+          "spending_from_traditional": 30264
         },
         {
           "year": 2051,
@@ -397,17 +397,17 @@
           "conversion": 0,
           "tax_on_conversion": 0,
           "marginal_bracket": "10%",
-          "rmd": 16901,
-          "spending_from_traditional": 29651
+          "rmd": 14818,
+          "spending_from_traditional": 31734
         },
         {
           "year": 2052,
           "income": 0,
-          "conversion": 5500,
-          "tax_on_conversion": 688,
+          "conversion": 0,
+          "tax_on_conversion": 0,
           "marginal_bracket": "10%",
-          "rmd": 15759,
-          "spending_from_traditional": 30793
+          "rmd": 13412,
+          "spending_from_traditional": 33139
         },
         {
           "year": 2053,
@@ -415,8 +415,8 @@
           "conversion": 0,
           "tax_on_conversion": 0,
           "marginal_bracket": "10%",
-          "rmd": 13931,
-          "spending_from_traditional": 32621
+          "rmd": 11690,
+          "spending_from_traditional": 34862
         },
         {
           "year": 2054,
@@ -424,26 +424,27 @@
           "conversion": 0,
           "tax_on_conversion": 0,
           "marginal_bracket": "10%",
-          "rmd": 12032,
-          "spending_from_traditional": 34520
+          "rmd": 9511,
+          "spending_from_traditional": 37040
         },
         {
           "year": 2055,
           "income": 0,
-          "conversion": 0,
-          "tax_on_conversion": 0,
+          "conversion": 5500,
+          "tax_on_conversion": 688,
           "marginal_bracket": "10%",
-          "rmd": 9811,
-          "spending_from_traditional": 36740
+          "rmd": 6947,
+          "spending_from_traditional": 39605
         },
         {
           "year": 2056,
           "income": 0,
-          "conversion": 5500,
-          "tax_on_conversion": 688,
+          "conversion": 0,
+          "tax_on_conversion": 0,
           "marginal_bracket": "10%",
-          "rmd": 7018,
-          "spending_from_traditional": 39534
+          "rmd": 3294,
+          "spending_from_traditional": 36898,
+          "spending_from_roth": 6360
         }
       ],
       "balances_at_retirement": {
@@ -458,17 +459,17 @@
         },
         {
           "label": "Highest estimated savings",
-          "total_conversion": 609100,
-          "estimated_lifetime_tax_savings": 158617
+          "total_conversion": 620300,
+          "estimated_lifetime_tax_savings": 117871
         },
         {
           "label": "Full conversion (year 1)",
           "total_conversion": 900000,
-          "estimated_lifetime_tax_savings": -125064
+          "estimated_lifetime_tax_savings": -165223
         }
       ],
       "reasoning": {
-        "binding_constraint": "Converts nearly all of the traditional balance by 2056",
+        "binding_constraint": "Converts nearly all of the traditional balance by 2055",
         "marginal_tax_rate_at_optimal": 0.1361,
         "cost_of_next_bracket": {
           "bracket_rate": 0.16,
@@ -476,15 +477,15 @@
           "net_effect": "Converting $1,000 more in 2027 would cost $160 in additional tax at the 16% rate"
         },
         "benefit_of_current_bracket": {
-          "bracket_rate": 0.1396,
-          "tax_paid": 63135.6,
-          "future_tax_avoided": 221753.06,
+          "bracket_rate": 0.1395,
+          "tax_paid": 64020.69,
+          "future_tax_avoided": 181892.01,
           "dollars": "today's dollars (the schedule adds up each year's tax as paid)"
         },
         "summary_points": {
-          "what_to_convert": "Convert $27,700 in 2027, $83,100 in 2029, $83,100 in 2030, $88,600 in 2031, $88,600 in 2032, $88,600 in 2033, $33,200 in 2034, $16,600 in 2035, $16,600 in 2036, $16,600 in 2037, $11,100 in 2038, $11,100 in 2039, $11,100 in 2040, $11,100 in 2041, $5,500 in 2042, $5,500 in 2045, $5,500 in 2052, $5,500 in 2056",
+          "what_to_convert": "Convert $27,700 in 2027, $83,100 in 2029, $83,100 in 2030, $88,600 in 2031, $88,600 in 2032, $88,600 in 2033, $38,800 in 2034, $16,600 in 2035, $16,600 in 2036, $16,600 in 2037, $11,100 in 2038, $11,100 in 2039, $11,100 in 2040, $11,100 in 2041, $11,100 in 2042, $5,500 in 2046, $5,500 in 2050, $5,500 in 2055",
           "why_this_amount": "Fills lower tax brackets during low-income years without pushing into expensive higher brackets",
-          "how_much_you_save": "Estimated $158,617 in lifetime tax savings (in today's dollars)",
+          "how_much_you_save": "Estimated $117,871 in lifetime tax savings (in today's dollars)",
           "key_tradeoff": "Pay tax now at lower rates to avoid higher rates on forced withdrawals in retirement. Converting more enters higher brackets where the cost exceeds the benefit."
         },
         "sensitivity_notes": [
@@ -493,18 +494,18 @@
           "Long retirement horizon amplifies the tax-free growth benefit of Roth conversions",
           "RMDs begin at age 75 (15 years from now) \u2014 converting before then reduces forced taxable withdrawals in retirement",
           "California income tax adds about 4.0% to conversions (2027); combined federal and state rates are used in optimization",
-          "Arizona income tax adds about 2.5% to conversions (2029 to 2056); combined federal and state rates are used in optimization"
+          "Arizona income tax adds about 2.5% to conversions (2029 to 2055); combined federal and state rates are used in optimization"
         ],
         "rmd_summary": {
           "rmd_start_age": 75,
           "total_rmd_taxes_no_conversion": 157649.4,
           "peak_rmd_no_conversion": 151726.88,
           "peak_rmd_year_no_conversion": 2056,
-          "total_rmd_taxes_with_conversion": 24303.26,
-          "peak_rmd_with_conversion": 20640.13,
-          "rmd_tax_savings": 133346.14,
-          "peak_rmd_reduction": 131086.75,
-          "explanation": "Converting now reduces your future Required Minimum Distributions. Without conversion, RMDs starting at age 75 would peak at $151,727/year. With the recommended conversions, peak RMDs drop to $20,640/year, saving an estimated $133,346 in total RMD taxes over retirement."
+          "total_rmd_taxes_with_conversion": 23508.32,
+          "peak_rmd_with_conversion": 20274.58,
+          "rmd_tax_savings": 134141.08,
+          "peak_rmd_reduction": 131452.3,
+          "explanation": "Converting now reduces your future Required Minimum Distributions. Without conversion, RMDs starting at age 75 would peak at $151,727/year. With the recommended conversions, peak RMDs drop to $20,275/year, saving an estimated $134,141 in total RMD taxes over retirement."
         }
       },
       "assumptions": {
@@ -613,8 +614,8 @@
             "age": 68,
             "income": 0,
             "rmd": 0,
-            "conversion": 33200,
-            "tax": 3775
+            "conversion": 38800,
+            "tax": 4447
           },
           {
             "year": 2035,
@@ -668,7 +669,7 @@
             "year": 2041,
             "age": 75,
             "income": 0,
-            "rmd": 20640,
+            "rmd": 20275,
             "conversion": 11100,
             "tax": 1123
           },
@@ -676,15 +677,15 @@
             "year": 2042,
             "age": 76,
             "income": 0,
-            "rmd": 20321,
-            "conversion": 5500,
-            "tax": 550
+            "rmd": 19915,
+            "conversion": 11100,
+            "tax": 1123
           },
           {
             "year": 2043,
             "age": 77,
             "income": 0,
-            "rmd": 20071,
+            "rmd": 19359,
             "conversion": 0,
             "tax": 0
           },
@@ -692,7 +693,7 @@
             "year": 2044,
             "age": 78,
             "income": 0,
-            "rmd": 20090,
+            "rmd": 19298,
             "conversion": 0,
             "tax": 0
           },
@@ -700,23 +701,23 @@
             "year": 2045,
             "age": 79,
             "income": 0,
-            "rmd": 20053,
-            "conversion": 5500,
-            "tax": 550
+            "rmd": 19169,
+            "conversion": 0,
+            "tax": 0
           },
           {
             "year": 2046,
             "age": 80,
             "income": 0,
-            "rmd": 19655,
-            "conversion": 0,
-            "tax": 0
+            "rmd": 18959,
+            "conversion": 5500,
+            "tax": 550
           },
           {
             "year": 2047,
             "age": 81,
             "income": 0,
-            "rmd": 19331,
+            "rmd": 18251,
             "conversion": 0,
             "tax": 0
           },
@@ -724,7 +725,7 @@
             "year": 2048,
             "age": 82,
             "income": 0,
-            "rmd": 18998,
+            "rmd": 17787,
             "conversion": 0,
             "tax": 0
           },
@@ -732,7 +733,7 @@
             "year": 2049,
             "age": 83,
             "income": 0,
-            "rmd": 18432,
+            "rmd": 17078,
             "conversion": 0,
             "tax": 0
           },
@@ -740,15 +741,15 @@
             "year": 2050,
             "age": 84,
             "income": 0,
-            "rmd": 17814,
-            "conversion": 0,
-            "tax": 0
+            "rmd": 16287,
+            "conversion": 5500,
+            "tax": 550
           },
           {
             "year": 2051,
             "age": 85,
             "income": 0,
-            "rmd": 16901,
+            "rmd": 14818,
             "conversion": 0,
             "tax": 0
           },
@@ -756,15 +757,15 @@
             "year": 2052,
             "age": 86,
             "income": 0,
-            "rmd": 15759,
-            "conversion": 5500,
-            "tax": 550
+            "rmd": 13412,
+            "conversion": 0,
+            "tax": 0
           },
           {
             "year": 2053,
             "age": 87,
             "income": 0,
-            "rmd": 13931,
+            "rmd": 11690,
             "conversion": 0,
             "tax": 0
           },
@@ -772,7 +773,7 @@
             "year": 2054,
             "age": 88,
             "income": 0,
-            "rmd": 12032,
+            "rmd": 9511,
             "conversion": 0,
             "tax": 0
           },
@@ -780,17 +781,17 @@
             "year": 2055,
             "age": 89,
             "income": 0,
-            "rmd": 9811,
-            "conversion": 0,
-            "tax": 0
+            "rmd": 6947,
+            "conversion": 5500,
+            "tax": 550
           },
           {
             "year": 2056,
             "age": 90,
             "income": 0,
-            "rmd": 7018,
-            "conversion": 5500,
-            "tax": 550
+            "rmd": 3294,
+            "conversion": 0,
+            "tax": 0
           }
         ],
         "brackets": [
@@ -844,7 +845,7 @@
         88600.0,
         88600.0,
         88600.0,
-        33200.0,
+        38800.0,
         16600.0,
         16600.0,
         16600.0,
@@ -852,13 +853,7 @@
         11100.0,
         11100.0,
         11100.0,
-        5500.0,
-        0.0,
-        0.0,
-        5500.0,
-        0.0,
-        0.0,
-        0.0,
+        11100.0,
         0.0,
         0.0,
         0.0,
@@ -866,15 +861,21 @@
         0.0,
         0.0,
         0.0,
-        5500.0
+        5500.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        5500.0,
+        0.0
       ],
-      "total_conversion": 609100.0,
-      "total_tax_on_conversions": 85022.73,
-      "overall_effective_rate": 0.1396,
-      "estimated_lifetime_tax_savings": 158617.46,
-      "npv_at_optimal": 1364081.3,
-      "npv_at_zero": 1205463.84,
-      "conversion_cost_today": 63135.6,
+      "total_conversion": 620300.0,
+      "total_tax_on_conversions": 86534.73,
+      "overall_effective_rate": 0.1395,
+      "estimated_lifetime_tax_savings": 117871.32,
+      "npv_at_optimal": 1363494.52,
+      "npv_at_zero": 1245623.2,
+      "conversion_cost_today": 64020.69,
       "yearly_detail": [
         {
           "year": 2026,
@@ -1008,13 +1009,13 @@
           "year": 2034,
           "income": 0.0,
           "rmd": 0.0,
-          "conversion": 33200,
+          "conversion": 38800,
           "spending_from_traditional": 46551.63,
           "spending_from_roth": 0.0,
-          "tax_cost": 4539.03,
-          "federal_tax_cost": 3709.03,
-          "state_tax_cost": 830.0,
-          "effective_rate": 0.1367,
+          "tax_cost": 5351.03,
+          "federal_tax_cost": 4381.03,
+          "state_tax_cost": 970.0,
+          "effective_rate": 0.1379,
           "marginal_bracket": "12%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -1119,9 +1120,9 @@
         {
           "year": 2041,
           "income": 0.0,
-          "rmd": 20640.13,
+          "rmd": 20274.58,
           "conversion": 11100,
-          "spending_from_traditional": 25911.5,
+          "spending_from_traditional": 26277.05,
           "spending_from_roth": 0.0,
           "tax_cost": 1387.5,
           "federal_tax_cost": 1110.0,
@@ -1135,13 +1136,13 @@
         {
           "year": 2042,
           "income": 0.0,
-          "rmd": 20320.77,
-          "conversion": 5500,
-          "spending_from_traditional": 26230.86,
+          "rmd": 19914.78,
+          "conversion": 11100,
+          "spending_from_traditional": 26636.85,
           "spending_from_roth": 0.0,
-          "tax_cost": 687.5,
-          "federal_tax_cost": 550.0,
-          "state_tax_cost": 137.5,
+          "tax_cost": 1387.5,
+          "federal_tax_cost": 1110.0,
+          "state_tax_cost": 277.5,
           "effective_rate": 0.125,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
@@ -1151,9 +1152,9 @@
         {
           "year": 2043,
           "income": 0.0,
-          "rmd": 20070.7,
+          "rmd": 19359.46,
           "conversion": 0,
-          "spending_from_traditional": 26480.93,
+          "spending_from_traditional": 27192.17,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -1167,9 +1168,9 @@
         {
           "year": 2044,
           "income": 0.0,
-          "rmd": 20090.1,
+          "rmd": 19297.94,
           "conversion": 0,
-          "spending_from_traditional": 26461.53,
+          "spending_from_traditional": 27253.69,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -1183,25 +1184,9 @@
         {
           "year": 2045,
           "income": 0.0,
-          "rmd": 20052.64,
-          "conversion": 5500,
-          "spending_from_traditional": 26498.99,
-          "spending_from_roth": 0.0,
-          "tax_cost": 687.5,
-          "federal_tax_cost": 550.0,
-          "state_tax_cost": 137.5,
-          "effective_rate": 0.125,
-          "marginal_bracket": "10%",
-          "state_marginal_rate": 0.025,
-          "irmaa_cost": 0.0,
-          "irmaa_tier": 0
-        },
-        {
-          "year": 2046,
-          "income": 0.0,
-          "rmd": 19655.11,
+          "rmd": 19168.88,
           "conversion": 0,
-          "spending_from_traditional": 26896.52,
+          "spending_from_traditional": 27382.75,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -1213,11 +1198,27 @@
           "irmaa_tier": 0
         },
         {
+          "year": 2046,
+          "income": 0.0,
+          "rmd": 18958.69,
+          "conversion": 5500,
+          "spending_from_traditional": 27592.94,
+          "spending_from_roth": 0.0,
+          "tax_cost": 687.5,
+          "federal_tax_cost": 550.0,
+          "state_tax_cost": 137.5,
+          "effective_rate": 0.125,
+          "marginal_bracket": "10%",
+          "state_marginal_rate": 0.025,
+          "irmaa_cost": 0.0,
+          "irmaa_tier": 0
+        },
+        {
           "year": 2047,
           "income": 0.0,
-          "rmd": 19330.69,
+          "rmd": 18251.43,
           "conversion": 0,
-          "spending_from_traditional": 27220.94,
+          "spending_from_traditional": 28300.2,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -1231,9 +1232,9 @@
         {
           "year": 2048,
           "income": 0.0,
-          "rmd": 18997.63,
+          "rmd": 17786.65,
           "conversion": 0,
-          "spending_from_traditional": 27554.0,
+          "spending_from_traditional": 28764.98,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -1247,9 +1248,9 @@
         {
           "year": 2049,
           "income": 0.0,
-          "rmd": 18432.08,
+          "rmd": 17077.77,
           "conversion": 0,
-          "spending_from_traditional": 28119.55,
+          "spending_from_traditional": 29473.86,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -1263,14 +1264,14 @@
         {
           "year": 2050,
           "income": 0.0,
-          "rmd": 17813.98,
-          "conversion": 0,
-          "spending_from_traditional": 28737.65,
+          "rmd": 16287.24,
+          "conversion": 5500,
+          "spending_from_traditional": 30264.39,
           "spending_from_roth": 0.0,
-          "tax_cost": 0.0,
-          "federal_tax_cost": 0.0,
-          "state_tax_cost": 0.0,
-          "effective_rate": 0.0,
+          "tax_cost": 687.5,
+          "federal_tax_cost": 550.0,
+          "state_tax_cost": 137.5,
+          "effective_rate": 0.125,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -1279,9 +1280,9 @@
         {
           "year": 2051,
           "income": 0.0,
-          "rmd": 16900.87,
+          "rmd": 14817.76,
           "conversion": 0,
-          "spending_from_traditional": 29650.76,
+          "spending_from_traditional": 31733.87,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -1295,14 +1296,14 @@
         {
           "year": 2052,
           "income": 0.0,
-          "rmd": 15758.73,
-          "conversion": 5500,
-          "spending_from_traditional": 30792.9,
+          "rmd": 13412.49,
+          "conversion": 0,
+          "spending_from_traditional": 33139.14,
           "spending_from_roth": 0.0,
-          "tax_cost": 687.5,
-          "federal_tax_cost": 550.0,
-          "state_tax_cost": 137.5,
-          "effective_rate": 0.125,
+          "tax_cost": 0.0,
+          "federal_tax_cost": 0.0,
+          "state_tax_cost": 0.0,
+          "effective_rate": 0.0,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -1311,9 +1312,9 @@
         {
           "year": 2053,
           "income": 0.0,
-          "rmd": 13930.88,
+          "rmd": 11689.62,
           "conversion": 0,
-          "spending_from_traditional": 32620.75,
+          "spending_from_traditional": 34862.01,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -1327,9 +1328,9 @@
         {
           "year": 2054,
           "income": 0.0,
-          "rmd": 12031.88,
+          "rmd": 9511.19,
           "conversion": 0,
-          "spending_from_traditional": 34519.75,
+          "spending_from_traditional": 37040.44,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -1343,14 +1344,14 @@
         {
           "year": 2055,
           "income": 0.0,
-          "rmd": 9811.25,
-          "conversion": 0,
-          "spending_from_traditional": 36740.38,
+          "rmd": 6946.85,
+          "conversion": 5500,
+          "spending_from_traditional": 39604.78,
           "spending_from_roth": 0.0,
-          "tax_cost": 0.0,
-          "federal_tax_cost": 0.0,
-          "state_tax_cost": 0.0,
-          "effective_rate": 0.0,
+          "tax_cost": 687.5,
+          "federal_tax_cost": 550.0,
+          "state_tax_cost": 137.5,
+          "effective_rate": 0.125,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -1359,14 +1360,14 @@
         {
           "year": 2056,
           "income": 0.0,
-          "rmd": 7017.58,
-          "conversion": 5500,
-          "spending_from_traditional": 39534.05,
-          "spending_from_roth": 0.0,
-          "tax_cost": 687.5,
-          "federal_tax_cost": 550.0,
-          "state_tax_cost": 137.5,
-          "effective_rate": 0.125,
+          "rmd": 3294.43,
+          "conversion": 0,
+          "spending_from_traditional": 36897.66,
+          "spending_from_roth": 6359.53,
+          "tax_cost": 0.0,
+          "federal_tax_cost": 0.0,
+          "state_tax_cost": 0.0,
+          "effective_rate": 0.0,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -1597,9 +1598,9 @@
             "bracket_max": 100800.0,
             "bracket_capacity": 76000.0,
             "filled_by_income": 0.0,
-            "filled_by_conversion": 22751.630000000005,
-            "remaining_capacity": 53248.369999999995,
-            "tax_in_bracket": 2730.1956000000005
+            "filled_by_conversion": 28351.630000000005,
+            "remaining_capacity": 47648.369999999995,
+            "tax_in_bracket": 3402.1956000000005
           }
         ],
         [
@@ -1763,57 +1764,19 @@
             "bracket_max": 24800.0,
             "bracket_capacity": 24800.0,
             "filled_by_income": 14351.629999999997,
-            "filled_by_conversion": 5500.0,
-            "remaining_capacity": 4948.370000000003,
-            "tax_in_bracket": 1985.1629999999998
-          }
-        ],
-        [
+            "filled_by_conversion": 10448.370000000003,
+            "remaining_capacity": 0.0,
+            "tax_in_bracket": 2480.0
+          },
           {
-            "bracket_rate": 0.1,
-            "bracket_min": 0.0,
-            "bracket_max": 24800.0,
-            "bracket_capacity": 24800.0,
-            "filled_by_income": 14351.629999999997,
-            "filled_by_conversion": 0.0,
-            "remaining_capacity": 10448.370000000003,
-            "tax_in_bracket": 1435.1629999999998
-          }
-        ],
-        [
-          {
-            "bracket_rate": 0.1,
-            "bracket_min": 0.0,
-            "bracket_max": 24800.0,
-            "bracket_capacity": 24800.0,
-            "filled_by_income": 14351.629999999997,
-            "filled_by_conversion": 0.0,
-            "remaining_capacity": 10448.370000000003,
-            "tax_in_bracket": 1435.1629999999998
-          }
-        ],
-        [
-          {
-            "bracket_rate": 0.1,
-            "bracket_min": 0.0,
-            "bracket_max": 24800.0,
-            "bracket_capacity": 24800.0,
-            "filled_by_income": 14351.629999999997,
-            "filled_by_conversion": 5500.0,
-            "remaining_capacity": 4948.370000000003,
-            "tax_in_bracket": 1985.1629999999998
-          }
-        ],
-        [
-          {
-            "bracket_rate": 0.1,
-            "bracket_min": 0.0,
-            "bracket_max": 24800.0,
-            "bracket_capacity": 24800.0,
-            "filled_by_income": 14351.629999999997,
-            "filled_by_conversion": 0.0,
-            "remaining_capacity": 10448.370000000003,
-            "tax_in_bracket": 1435.1629999999998
+            "bracket_rate": 0.12,
+            "bracket_min": 24800.0,
+            "bracket_max": 100800.0,
+            "bracket_capacity": 76000.0,
+            "filled_by_income": 0.0,
+            "filled_by_conversion": 651.6299999999974,
+            "remaining_capacity": 75348.37,
+            "tax_in_bracket": 78.19559999999969
           }
         ],
         [
@@ -1859,33 +1822,9 @@
             "bracket_max": 24800.0,
             "bracket_capacity": 24800.0,
             "filled_by_income": 14351.629999999997,
-            "filled_by_conversion": 0.0,
-            "remaining_capacity": 10448.370000000003,
-            "tax_in_bracket": 1435.1629999999998
-          }
-        ],
-        [
-          {
-            "bracket_rate": 0.1,
-            "bracket_min": 0.0,
-            "bracket_max": 24800.0,
-            "bracket_capacity": 24800.0,
-            "filled_by_income": 14351.629999999997,
-            "filled_by_conversion": 0.0,
-            "remaining_capacity": 10448.370000000003,
-            "tax_in_bracket": 1435.1629999999998
-          }
-        ],
-        [
-          {
-            "bracket_rate": 0.1,
-            "bracket_min": 0.0,
-            "bracket_max": 24800.0,
-            "bracket_capacity": 24800.0,
-            "filled_by_income": 14351.629999999997,
-            "filled_by_conversion": 5500.0,
-            "remaining_capacity": 4948.370000000003,
-            "tax_in_bracket": 1985.1629999999998
+            "filled_by_conversion": 5499.999999999993,
+            "remaining_capacity": 4948.37000000001,
+            "tax_in_bracket": 1985.162999999999
           }
         ],
         [
@@ -1934,6 +1873,78 @@
             "filled_by_conversion": 5500.0,
             "remaining_capacity": 4948.370000000003,
             "tax_in_bracket": 1985.1629999999998
+          }
+        ],
+        [
+          {
+            "bracket_rate": 0.1,
+            "bracket_min": 0.0,
+            "bracket_max": 24800.0,
+            "bracket_capacity": 24800.0,
+            "filled_by_income": 14351.629999999997,
+            "filled_by_conversion": 0.0,
+            "remaining_capacity": 10448.370000000003,
+            "tax_in_bracket": 1435.1629999999998
+          }
+        ],
+        [
+          {
+            "bracket_rate": 0.1,
+            "bracket_min": 0.0,
+            "bracket_max": 24800.0,
+            "bracket_capacity": 24800.0,
+            "filled_by_income": 14351.629999999997,
+            "filled_by_conversion": 0.0,
+            "remaining_capacity": 10448.370000000003,
+            "tax_in_bracket": 1435.1629999999998
+          }
+        ],
+        [
+          {
+            "bracket_rate": 0.1,
+            "bracket_min": 0.0,
+            "bracket_max": 24800.0,
+            "bracket_capacity": 24800.0,
+            "filled_by_income": 14351.629999999997,
+            "filled_by_conversion": 0.0,
+            "remaining_capacity": 10448.370000000003,
+            "tax_in_bracket": 1435.1629999999998
+          }
+        ],
+        [
+          {
+            "bracket_rate": 0.1,
+            "bracket_min": 0.0,
+            "bracket_max": 24800.0,
+            "bracket_capacity": 24800.0,
+            "filled_by_income": 14351.629999999997,
+            "filled_by_conversion": 0.0,
+            "remaining_capacity": 10448.370000000003,
+            "tax_in_bracket": 1435.1629999999998
+          }
+        ],
+        [
+          {
+            "bracket_rate": 0.1,
+            "bracket_min": 0.0,
+            "bracket_max": 24800.0,
+            "bracket_capacity": 24800.0,
+            "filled_by_income": 14351.629999999997,
+            "filled_by_conversion": 5500.0,
+            "remaining_capacity": 4948.370000000003,
+            "tax_in_bracket": 1985.1629999999998
+          }
+        ],
+        [
+          {
+            "bracket_rate": 0.1,
+            "bracket_min": 0.0,
+            "bracket_max": 24800.0,
+            "bracket_capacity": 24800.0,
+            "filled_by_income": 7992.09565020055,
+            "filled_by_conversion": 0.0,
+            "remaining_capacity": 16807.90434979945,
+            "tax_in_bracket": 799.209565020055
           }
         ]
       ],
@@ -1941,9 +1952,9 @@
         {
           "label": "No conversion",
           "conversion_amount": 0.0,
-          "npv": 1205463.8448295668,
+          "npv": 1245623.2003866131,
           "tax_on_conversion": 0.0,
-          "difference_from_optimal": -158617.45802360447,
+          "difference_from_optimal": -117871.31747423671,
           "estimated_savings": 0.0,
           "yearly_conversions": [
             0.0,
@@ -2014,11 +2025,11 @@
         },
         {
           "label": "Highest estimated savings",
-          "conversion_amount": 609100.0,
-          "npv": 1364081.3028531712,
-          "tax_on_conversion": 85022.73340000003,
+          "conversion_amount": 620300.0,
+          "npv": 1363494.5178608499,
+          "tax_on_conversion": 86534.73340000003,
           "difference_from_optimal": 0.0,
-          "estimated_savings": 158617.45802360447,
+          "estimated_savings": 117871.31747423671,
           "yearly_conversions": [
             0.0,
             27700.0,
@@ -2028,7 +2039,7 @@
             88600.0,
             88600.0,
             88600.0,
-            33200.0,
+            38800.0,
             16600.0,
             16600.0,
             16600.0,
@@ -2036,13 +2047,7 @@
             11100.0,
             11100.0,
             11100.0,
-            5500.0,
-            0.0,
-            0.0,
-            5500.0,
-            0.0,
-            0.0,
-            0.0,
+            11100.0,
             0.0,
             0.0,
             0.0,
@@ -2050,7 +2055,13 @@
             0.0,
             0.0,
             0.0,
-            5500.0
+            5500.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            5500.0,
+            0.0
           ],
           "years": [
             2026,
@@ -2091,8 +2102,8 @@
           "conversion_amount": 900000.0,
           "npv": 1080400.317397987,
           "tax_on_conversion": 368013.204,
-          "difference_from_optimal": -283680.98545518424,
-          "estimated_savings": -125063.52743157977,
+          "difference_from_optimal": -283094.20046286285,
+          "estimated_savings": -165222.88298862614,
           "yearly_conversions": [
             900000.0,
             0.0,
@@ -2162,18 +2173,18 @@
         }
       ],
       "reasoning_trace": {
-        "binding_constraint": "Converts nearly all of the traditional balance by 2056",
+        "binding_constraint": "Converts nearly all of the traditional balance by 2055",
         "marginal_tax_rate_at_optimal": 0.1361,
-        "marginal_benefit_at_optimal": 158617.46,
+        "marginal_benefit_at_optimal": 117871.32,
         "cost_of_next_bracket": {
           "bracket_rate": 0.16,
           "additional_tax": 160.0,
           "net_effect": "Converting $1,000 more in 2027 would cost $160 in additional tax at the 16% rate"
         },
         "benefit_of_current_bracket": {
-          "bracket_rate": 0.1396,
-          "tax_paid": 63135.6,
-          "future_tax_avoided": 221753.06,
+          "bracket_rate": 0.1395,
+          "tax_paid": 64020.69,
+          "future_tax_avoided": 181892.01,
           "dollars": "today's dollars (the schedule adds up each year's tax as paid)"
         },
         "sensitivity_notes": [
@@ -2182,12 +2193,12 @@
           "Long retirement horizon amplifies the tax-free growth benefit of Roth conversions",
           "RMDs begin at age 75 (15 years from now) \u2014 converting before then reduces forced taxable withdrawals in retirement",
           "California income tax adds about 4.0% to conversions (2027); combined federal and state rates are used in optimization",
-          "Arizona income tax adds about 2.5% to conversions (2029 to 2056); combined federal and state rates are used in optimization"
+          "Arizona income tax adds about 2.5% to conversions (2029 to 2055); combined federal and state rates are used in optimization"
         ],
         "summary_points": {
-          "what_to_convert": "Convert $27,700 in 2027, $83,100 in 2029, $83,100 in 2030, $88,600 in 2031, $88,600 in 2032, $88,600 in 2033, $33,200 in 2034, $16,600 in 2035, $16,600 in 2036, $16,600 in 2037, $11,100 in 2038, $11,100 in 2039, $11,100 in 2040, $11,100 in 2041, $5,500 in 2042, $5,500 in 2045, $5,500 in 2052, $5,500 in 2056",
+          "what_to_convert": "Convert $27,700 in 2027, $83,100 in 2029, $83,100 in 2030, $88,600 in 2031, $88,600 in 2032, $88,600 in 2033, $38,800 in 2034, $16,600 in 2035, $16,600 in 2036, $16,600 in 2037, $11,100 in 2038, $11,100 in 2039, $11,100 in 2040, $11,100 in 2041, $11,100 in 2042, $5,500 in 2046, $5,500 in 2050, $5,500 in 2055",
           "why_this_amount": "Fills lower tax brackets during low-income years without pushing into expensive higher brackets",
-          "how_much_you_save": "Estimated $158,617 in lifetime tax savings (in today's dollars)",
+          "how_much_you_save": "Estimated $117,871 in lifetime tax savings (in today's dollars)",
           "key_tradeoff": "Pay tax now at lower rates to avoid higher rates on forced withdrawals in retirement. Converting more enters higher brackets where the cost exceeds the benefit."
         },
         "aca_impact": null,
@@ -2197,11 +2208,11 @@
           "total_rmd_taxes_no_conversion": 157649.4,
           "peak_rmd_no_conversion": 151726.88,
           "peak_rmd_year_no_conversion": 2056,
-          "total_rmd_taxes_with_conversion": 24303.26,
-          "peak_rmd_with_conversion": 20640.13,
-          "rmd_tax_savings": 133346.14,
-          "peak_rmd_reduction": 131086.75,
-          "explanation": "Converting now reduces your future Required Minimum Distributions. Without conversion, RMDs starting at age 75 would peak at $151,727/year. With the recommended conversions, peak RMDs drop to $20,640/year, saving an estimated $133,346 in total RMD taxes over retirement."
+          "total_rmd_taxes_with_conversion": 23508.32,
+          "peak_rmd_with_conversion": 20274.58,
+          "rmd_tax_savings": 134141.08,
+          "peak_rmd_reduction": 131452.3,
+          "explanation": "Converting now reduces your future Required Minimum Distributions. Without conversion, RMDs starting at age 75 would peak at $151,727/year. With the recommended conversions, peak RMDs drop to $20,275/year, saving an estimated $134,141 in total RMD taxes over retirement."
         },
         "irmaa_summary": null
       },
@@ -2295,7 +2306,7 @@
           "year": 2034,
           "income": 0.0,
           "rmd": 0.0,
-          "conversion": 33200,
+          "conversion": 38800,
           "bracket_boundaries": [
             24800.0,
             100800.0
@@ -2364,7 +2375,7 @@
         {
           "year": 2041,
           "income": 0.0,
-          "rmd": 20640.13,
+          "rmd": 20274.58,
           "conversion": 11100,
           "bracket_boundaries": [
             24800.0,
@@ -2374,16 +2385,17 @@
         {
           "year": 2042,
           "income": 0.0,
-          "rmd": 20320.77,
-          "conversion": 5500,
+          "rmd": 19914.78,
+          "conversion": 11100,
           "bracket_boundaries": [
-            24800.0
+            24800.0,
+            100800.0
           ]
         },
         {
           "year": 2043,
           "income": 0.0,
-          "rmd": 20070.7,
+          "rmd": 19359.46,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -2392,7 +2404,7 @@
         {
           "year": 2044,
           "income": 0.0,
-          "rmd": 20090.1,
+          "rmd": 19297.94,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -2401,8 +2413,8 @@
         {
           "year": 2045,
           "income": 0.0,
-          "rmd": 20052.64,
-          "conversion": 5500,
+          "rmd": 19168.88,
+          "conversion": 0,
           "bracket_boundaries": [
             24800.0
           ]
@@ -2410,8 +2422,8 @@
         {
           "year": 2046,
           "income": 0.0,
-          "rmd": 19655.11,
-          "conversion": 0,
+          "rmd": 18958.69,
+          "conversion": 5500,
           "bracket_boundaries": [
             24800.0
           ]
@@ -2419,7 +2431,7 @@
         {
           "year": 2047,
           "income": 0.0,
-          "rmd": 19330.69,
+          "rmd": 18251.43,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -2428,7 +2440,7 @@
         {
           "year": 2048,
           "income": 0.0,
-          "rmd": 18997.63,
+          "rmd": 17786.65,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -2437,7 +2449,7 @@
         {
           "year": 2049,
           "income": 0.0,
-          "rmd": 18432.08,
+          "rmd": 17077.77,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -2446,8 +2458,8 @@
         {
           "year": 2050,
           "income": 0.0,
-          "rmd": 17813.98,
-          "conversion": 0,
+          "rmd": 16287.24,
+          "conversion": 5500,
           "bracket_boundaries": [
             24800.0
           ]
@@ -2455,7 +2467,7 @@
         {
           "year": 2051,
           "income": 0.0,
-          "rmd": 16900.87,
+          "rmd": 14817.76,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -2464,8 +2476,8 @@
         {
           "year": 2052,
           "income": 0.0,
-          "rmd": 15758.73,
-          "conversion": 5500,
+          "rmd": 13412.49,
+          "conversion": 0,
           "bracket_boundaries": [
             24800.0
           ]
@@ -2473,7 +2485,7 @@
         {
           "year": 2053,
           "income": 0.0,
-          "rmd": 13930.88,
+          "rmd": 11689.62,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -2482,7 +2494,7 @@
         {
           "year": 2054,
           "income": 0.0,
-          "rmd": 12031.88,
+          "rmd": 9511.19,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -2491,8 +2503,8 @@
         {
           "year": 2055,
           "income": 0.0,
-          "rmd": 9811.25,
-          "conversion": 0,
+          "rmd": 6946.85,
+          "conversion": 5500,
           "bracket_boundaries": [
             24800.0
           ]
@@ -2500,8 +2512,8 @@
         {
           "year": 2056,
           "income": 0.0,
-          "rmd": 7017.58,
-          "conversion": 5500,
+          "rmd": 3294.43,
+          "conversion": 0,
           "bracket_boundaries": [
             24800.0
           ]
@@ -2521,8 +2533,8 @@
           {
             "year": 2041,
             "age": 75,
-            "trad_balance_start": 507747.15,
-            "rmd_amount": 20640.13,
+            "trad_balance_start": 498754.77,
+            "rmd_amount": 20274.58,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -2530,8 +2542,8 @@
           {
             "year": 2042,
             "age": 76,
-            "trad_balance_start": 481602.2,
-            "rmd_amount": 20320.77,
+            "trad_balance_start": 471980.36,
+            "rmd_amount": 19914.78,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -2539,8 +2551,8 @@
           {
             "year": 2043,
             "age": 77,
-            "trad_balance_start": 459619.11,
-            "rmd_amount": 20070.7,
+            "trad_balance_start": 443331.74,
+            "rmd_amount": 19359.46,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -2548,8 +2560,8 @@
           {
             "year": 2044,
             "age": 78,
-            "trad_balance_start": 441982.21,
-            "rmd_amount": 20090.1,
+            "trad_balance_start": 424554.72,
+            "rmd_amount": 19297.94,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -2557,8 +2569,8 @@
           {
             "year": 2045,
             "age": 79,
-            "trad_balance_start": 423110.72,
-            "rmd_amount": 20052.64,
+            "trad_balance_start": 404463.31,
+            "rmd_amount": 19168.88,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -2566,8 +2578,8 @@
           {
             "year": 2046,
             "age": 80,
-            "trad_balance_start": 397033.22,
-            "rmd_amount": 19655.11,
+            "trad_balance_start": 382965.49,
+            "rmd_amount": 18958.69,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -2575,8 +2587,8 @@
           {
             "year": 2047,
             "age": 81,
-            "trad_balance_start": 375015.31,
-            "rmd_amount": 19330.69,
+            "trad_balance_start": 354077.83,
+            "rmd_amount": 18251.43,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -2584,8 +2596,8 @@
           {
             "year": 2048,
             "age": 82,
-            "trad_balance_start": 351456.13,
-            "rmd_amount": 18997.63,
+            "trad_balance_start": 329053.04,
+            "rmd_amount": 17786.65,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -2593,8 +2605,8 @@
           {
             "year": 2049,
             "age": 83,
-            "trad_balance_start": 326247.82,
-            "rmd_amount": 18432.08,
+            "trad_balance_start": 302276.51,
+            "rmd_amount": 17077.77,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -2602,8 +2614,8 @@
           {
             "year": 2050,
             "age": 84,
-            "trad_balance_start": 299274.92,
-            "rmd_amount": 17813.98,
+            "trad_balance_start": 273625.62,
+            "rmd_amount": 16287.24,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -2611,8 +2623,8 @@
           {
             "year": 2051,
             "age": 85,
-            "trad_balance_start": 270413.92,
-            "rmd_amount": 16900.87,
+            "trad_balance_start": 237084.17,
+            "rmd_amount": 14817.76,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -2620,8 +2632,8 @@
           {
             "year": 2052,
             "age": 86,
-            "trad_balance_start": 239532.65,
-            "rmd_amount": 15758.73,
+            "trad_balance_start": 203869.82,
+            "rmd_amount": 13412.49,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -2629,8 +2641,8 @@
           {
             "year": 2053,
             "age": 87,
-            "trad_balance_start": 200604.69,
-            "rmd_amount": 13930.88,
+            "trad_balance_start": 168330.46,
+            "rmd_amount": 11689.62,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -2638,8 +2650,8 @@
           {
             "year": 2054,
             "age": 88,
-            "trad_balance_start": 164836.78,
-            "rmd_amount": 12031.88,
+            "trad_balance_start": 130303.35,
+            "rmd_amount": 9511.19,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -2647,8 +2659,8 @@
           {
             "year": 2055,
             "age": 89,
-            "trad_balance_start": 126565.11,
-            "rmd_amount": 9811.25,
+            "trad_balance_start": 89614.34,
+            "rmd_amount": 6946.85,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -2656,15 +2668,15 @@
           {
             "year": 2056,
             "age": 90,
-            "trad_balance_start": 85614.42,
-            "rmd_amount": 7017.58,
-            "actual_distribution": 46551.63,
-            "tax_on_distribution": 1518.95,
-            "effective_rate": 0.0326
+            "trad_balance_start": 40192.1,
+            "rmd_amount": 3294.43,
+            "actual_distribution": 40192.1,
+            "tax_on_distribution": 724.01,
+            "effective_rate": 0.018
           }
         ],
-        "total_rmd_taxes": 24303.26,
-        "peak_rmd_amount": 20640.13,
+        "total_rmd_taxes": 23508.32,
+        "peak_rmd_amount": 20274.58,
         "peak_rmd_year": 2041
       },
       "rmd_projection_no_conversion": {
@@ -3100,27 +3112,27 @@
       "base_result_id": "r_64b46d806b",
       "variant_result_id": "r_02367785a5",
       "estimated_lifetime_tax_savings": {
-        "current": 158617,
-        "what_if": 156871,
-        "difference": -1747
+        "current": 117871,
+        "what_if": 117883,
+        "difference": 12
       },
       "tax_breakdown": {
         "current": {
-          "paid_now": 63136,
-          "avoided_later": 221753
+          "paid_now": 64021,
+          "avoided_later": 181892
         },
         "what_if": {
-          "paid_now": 60302,
-          "avoided_later": 217173
+          "paid_now": 61204,
+          "avoided_later": 179087
         }
       },
       "total_conversion": {
-        "current": 609100,
-        "what_if": 564200
+        "current": 620300,
+        "what_if": 579700
       },
       "total_tax_on_conversions": {
-        "current": 85023,
-        "what_if": 77726
+        "current": 86535,
+        "what_if": 79690
       },
       "conversions_by_year": [
         {
@@ -3156,7 +3168,7 @@
         {
           "year": 2032,
           "current": 88600,
-          "what_if": 67300
+          "what_if": 72500
         },
         {
           "year": 2033,
@@ -3165,8 +3177,8 @@
         },
         {
           "year": 2034,
-          "current": 33200,
-          "what_if": 20700
+          "current": 38800,
+          "what_if": 15500
         },
         {
           "year": 2035,
@@ -3196,7 +3208,7 @@
         {
           "year": 2040,
           "current": 11100,
-          "what_if": 5200
+          "what_if": 15500
         },
         {
           "year": 2041,
@@ -3205,7 +3217,7 @@
         },
         {
           "year": 2042,
-          "current": 5500,
+          "current": 11100,
           "what_if": 0
         },
         {
@@ -3220,12 +3232,12 @@
         },
         {
           "year": 2045,
-          "current": 5500,
+          "current": 0,
           "what_if": 0
         },
         {
           "year": 2046,
-          "current": 0,
+          "current": 5500,
           "what_if": 0
         },
         {
@@ -3245,7 +3257,7 @@
         },
         {
           "year": 2050,
-          "current": 0,
+          "current": 5500,
           "what_if": 0
         },
         {
@@ -3255,13 +3267,13 @@
         },
         {
           "year": 2052,
-          "current": 5500,
+          "current": 0,
           "what_if": 0
         },
         {
           "year": 2053,
           "current": 0,
-          "what_if": 0
+          "what_if": 5200
         },
         {
           "year": 2054,
@@ -3270,19 +3282,19 @@
         },
         {
           "year": 2055,
-          "current": 0,
-          "what_if": 0
+          "current": 5500,
+          "what_if": 5200
         },
         {
           "year": 2056,
-          "current": 5500,
-          "what_if": 5200
+          "current": 0,
+          "what_if": 0
         }
       ],
       "what_if_reasoning": {
-        "what_to_convert": "Convert $5,200 in 2027, $88,000 in 2028, $88,000 in 2029, $88,000 in 2030, $88,000 in 2031, $67,300 in 2032, $20,700 in 2033, $20,700 in 2034, $15,500 in 2035, $15,500 in 2036, $15,500 in 2037, $15,500 in 2038, $15,500 in 2039, $5,200 in 2040, $5,200 in 2041, $5,200 in 2048, $5,200 in 2056",
+        "what_to_convert": "Convert $5,200 in 2027, $88,000 in 2028, $88,000 in 2029, $88,000 in 2030, $88,000 in 2031, $72,500 in 2032, $20,700 in 2033, $15,500 in 2034, $15,500 in 2035, $15,500 in 2036, $15,500 in 2037, $15,500 in 2038, $15,500 in 2039, $15,500 in 2040, $5,200 in 2041, $5,200 in 2048, $5,200 in 2053, $5,200 in 2055",
         "why_this_amount": "Fills lower tax brackets during low-income years without pushing into expensive higher brackets",
-        "how_much_you_save": "Estimated $156,871 in lifetime tax savings (in today's dollars)",
+        "how_much_you_save": "Estimated $117,883 in lifetime tax savings (in today's dollars)",
         "key_tradeoff": "Pay tax now at lower rates to avoid higher rates on forced withdrawals in retirement. Converting more enters higher brackets where the cost exceeds the benefit."
       },
       "what_if_scenario": {
@@ -3321,7 +3333,7 @@
         88600.0,
         88600.0,
         88600.0,
-        33200.0,
+        38800.0,
         16600.0,
         16600.0,
         16600.0,
@@ -3329,13 +3341,7 @@
         11100.0,
         11100.0,
         11100.0,
-        5500.0,
-        0.0,
-        0.0,
-        5500.0,
-        0.0,
-        0.0,
-        0.0,
+        11100.0,
         0.0,
         0.0,
         0.0,
@@ -3343,15 +3349,21 @@
         0.0,
         0.0,
         0.0,
-        5500.0
+        5500.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        5500.0,
+        0.0
       ],
-      "total_conversion": 609100.0,
-      "total_tax_on_conversions": 85022.73,
-      "overall_effective_rate": 0.1396,
-      "estimated_lifetime_tax_savings": 158617.46,
-      "npv_at_optimal": 1364081.3,
-      "npv_at_zero": 1205463.84,
-      "conversion_cost_today": 63135.6,
+      "total_conversion": 620300.0,
+      "total_tax_on_conversions": 86534.73,
+      "overall_effective_rate": 0.1395,
+      "estimated_lifetime_tax_savings": 117871.32,
+      "npv_at_optimal": 1363494.52,
+      "npv_at_zero": 1245623.2,
+      "conversion_cost_today": 64020.69,
       "yearly_detail": [
         {
           "year": 2026,
@@ -3485,13 +3497,13 @@
           "year": 2034,
           "income": 0.0,
           "rmd": 0.0,
-          "conversion": 33200,
+          "conversion": 38800,
           "spending_from_traditional": 46551.63,
           "spending_from_roth": 0.0,
-          "tax_cost": 4539.03,
-          "federal_tax_cost": 3709.03,
-          "state_tax_cost": 830.0,
-          "effective_rate": 0.1367,
+          "tax_cost": 5351.03,
+          "federal_tax_cost": 4381.03,
+          "state_tax_cost": 970.0,
+          "effective_rate": 0.1379,
           "marginal_bracket": "12%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -3596,9 +3608,9 @@
         {
           "year": 2041,
           "income": 0.0,
-          "rmd": 20640.13,
+          "rmd": 20274.58,
           "conversion": 11100,
-          "spending_from_traditional": 25911.5,
+          "spending_from_traditional": 26277.05,
           "spending_from_roth": 0.0,
           "tax_cost": 1387.5,
           "federal_tax_cost": 1110.0,
@@ -3612,13 +3624,13 @@
         {
           "year": 2042,
           "income": 0.0,
-          "rmd": 20320.77,
-          "conversion": 5500,
-          "spending_from_traditional": 26230.86,
+          "rmd": 19914.78,
+          "conversion": 11100,
+          "spending_from_traditional": 26636.85,
           "spending_from_roth": 0.0,
-          "tax_cost": 687.5,
-          "federal_tax_cost": 550.0,
-          "state_tax_cost": 137.5,
+          "tax_cost": 1387.5,
+          "federal_tax_cost": 1110.0,
+          "state_tax_cost": 277.5,
           "effective_rate": 0.125,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
@@ -3628,9 +3640,9 @@
         {
           "year": 2043,
           "income": 0.0,
-          "rmd": 20070.7,
+          "rmd": 19359.46,
           "conversion": 0,
-          "spending_from_traditional": 26480.93,
+          "spending_from_traditional": 27192.17,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -3644,9 +3656,9 @@
         {
           "year": 2044,
           "income": 0.0,
-          "rmd": 20090.1,
+          "rmd": 19297.94,
           "conversion": 0,
-          "spending_from_traditional": 26461.53,
+          "spending_from_traditional": 27253.69,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -3660,25 +3672,9 @@
         {
           "year": 2045,
           "income": 0.0,
-          "rmd": 20052.64,
-          "conversion": 5500,
-          "spending_from_traditional": 26498.99,
-          "spending_from_roth": 0.0,
-          "tax_cost": 687.5,
-          "federal_tax_cost": 550.0,
-          "state_tax_cost": 137.5,
-          "effective_rate": 0.125,
-          "marginal_bracket": "10%",
-          "state_marginal_rate": 0.025,
-          "irmaa_cost": 0.0,
-          "irmaa_tier": 0
-        },
-        {
-          "year": 2046,
-          "income": 0.0,
-          "rmd": 19655.11,
+          "rmd": 19168.88,
           "conversion": 0,
-          "spending_from_traditional": 26896.52,
+          "spending_from_traditional": 27382.75,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -3690,11 +3686,27 @@
           "irmaa_tier": 0
         },
         {
+          "year": 2046,
+          "income": 0.0,
+          "rmd": 18958.69,
+          "conversion": 5500,
+          "spending_from_traditional": 27592.94,
+          "spending_from_roth": 0.0,
+          "tax_cost": 687.5,
+          "federal_tax_cost": 550.0,
+          "state_tax_cost": 137.5,
+          "effective_rate": 0.125,
+          "marginal_bracket": "10%",
+          "state_marginal_rate": 0.025,
+          "irmaa_cost": 0.0,
+          "irmaa_tier": 0
+        },
+        {
           "year": 2047,
           "income": 0.0,
-          "rmd": 19330.69,
+          "rmd": 18251.43,
           "conversion": 0,
-          "spending_from_traditional": 27220.94,
+          "spending_from_traditional": 28300.2,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -3708,9 +3720,9 @@
         {
           "year": 2048,
           "income": 0.0,
-          "rmd": 18997.63,
+          "rmd": 17786.65,
           "conversion": 0,
-          "spending_from_traditional": 27554.0,
+          "spending_from_traditional": 28764.98,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -3724,9 +3736,9 @@
         {
           "year": 2049,
           "income": 0.0,
-          "rmd": 18432.08,
+          "rmd": 17077.77,
           "conversion": 0,
-          "spending_from_traditional": 28119.55,
+          "spending_from_traditional": 29473.86,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -3740,14 +3752,14 @@
         {
           "year": 2050,
           "income": 0.0,
-          "rmd": 17813.98,
-          "conversion": 0,
-          "spending_from_traditional": 28737.65,
+          "rmd": 16287.24,
+          "conversion": 5500,
+          "spending_from_traditional": 30264.39,
           "spending_from_roth": 0.0,
-          "tax_cost": 0.0,
-          "federal_tax_cost": 0.0,
-          "state_tax_cost": 0.0,
-          "effective_rate": 0.0,
+          "tax_cost": 687.5,
+          "federal_tax_cost": 550.0,
+          "state_tax_cost": 137.5,
+          "effective_rate": 0.125,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -3756,9 +3768,9 @@
         {
           "year": 2051,
           "income": 0.0,
-          "rmd": 16900.87,
+          "rmd": 14817.76,
           "conversion": 0,
-          "spending_from_traditional": 29650.76,
+          "spending_from_traditional": 31733.87,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -3772,14 +3784,14 @@
         {
           "year": 2052,
           "income": 0.0,
-          "rmd": 15758.73,
-          "conversion": 5500,
-          "spending_from_traditional": 30792.9,
+          "rmd": 13412.49,
+          "conversion": 0,
+          "spending_from_traditional": 33139.14,
           "spending_from_roth": 0.0,
-          "tax_cost": 687.5,
-          "federal_tax_cost": 550.0,
-          "state_tax_cost": 137.5,
-          "effective_rate": 0.125,
+          "tax_cost": 0.0,
+          "federal_tax_cost": 0.0,
+          "state_tax_cost": 0.0,
+          "effective_rate": 0.0,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -3788,9 +3800,9 @@
         {
           "year": 2053,
           "income": 0.0,
-          "rmd": 13930.88,
+          "rmd": 11689.62,
           "conversion": 0,
-          "spending_from_traditional": 32620.75,
+          "spending_from_traditional": 34862.01,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -3804,9 +3816,9 @@
         {
           "year": 2054,
           "income": 0.0,
-          "rmd": 12031.88,
+          "rmd": 9511.19,
           "conversion": 0,
-          "spending_from_traditional": 34519.75,
+          "spending_from_traditional": 37040.44,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -3820,14 +3832,14 @@
         {
           "year": 2055,
           "income": 0.0,
-          "rmd": 9811.25,
-          "conversion": 0,
-          "spending_from_traditional": 36740.38,
+          "rmd": 6946.85,
+          "conversion": 5500,
+          "spending_from_traditional": 39604.78,
           "spending_from_roth": 0.0,
-          "tax_cost": 0.0,
-          "federal_tax_cost": 0.0,
-          "state_tax_cost": 0.0,
-          "effective_rate": 0.0,
+          "tax_cost": 687.5,
+          "federal_tax_cost": 550.0,
+          "state_tax_cost": 137.5,
+          "effective_rate": 0.125,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -3836,14 +3848,14 @@
         {
           "year": 2056,
           "income": 0.0,
-          "rmd": 7017.58,
-          "conversion": 5500,
-          "spending_from_traditional": 39534.05,
-          "spending_from_roth": 0.0,
-          "tax_cost": 687.5,
-          "federal_tax_cost": 550.0,
-          "state_tax_cost": 137.5,
-          "effective_rate": 0.125,
+          "rmd": 3294.43,
+          "conversion": 0,
+          "spending_from_traditional": 36897.66,
+          "spending_from_roth": 6359.53,
+          "tax_cost": 0.0,
+          "federal_tax_cost": 0.0,
+          "state_tax_cost": 0.0,
+          "effective_rate": 0.0,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -4074,9 +4086,9 @@
             "bracket_max": 100800.0,
             "bracket_capacity": 76000.0,
             "filled_by_income": 0.0,
-            "filled_by_conversion": 22751.630000000005,
-            "remaining_capacity": 53248.369999999995,
-            "tax_in_bracket": 2730.1956000000005
+            "filled_by_conversion": 28351.630000000005,
+            "remaining_capacity": 47648.369999999995,
+            "tax_in_bracket": 3402.1956000000005
           }
         ],
         [
@@ -4240,57 +4252,19 @@
             "bracket_max": 24800.0,
             "bracket_capacity": 24800.0,
             "filled_by_income": 14351.629999999997,
-            "filled_by_conversion": 5500.0,
-            "remaining_capacity": 4948.370000000003,
-            "tax_in_bracket": 1985.1629999999998
-          }
-        ],
-        [
+            "filled_by_conversion": 10448.370000000003,
+            "remaining_capacity": 0.0,
+            "tax_in_bracket": 2480.0
+          },
           {
-            "bracket_rate": 0.1,
-            "bracket_min": 0.0,
-            "bracket_max": 24800.0,
-            "bracket_capacity": 24800.0,
-            "filled_by_income": 14351.629999999997,
-            "filled_by_conversion": 0.0,
-            "remaining_capacity": 10448.370000000003,
-            "tax_in_bracket": 1435.1629999999998
-          }
-        ],
-        [
-          {
-            "bracket_rate": 0.1,
-            "bracket_min": 0.0,
-            "bracket_max": 24800.0,
-            "bracket_capacity": 24800.0,
-            "filled_by_income": 14351.629999999997,
-            "filled_by_conversion": 0.0,
-            "remaining_capacity": 10448.370000000003,
-            "tax_in_bracket": 1435.1629999999998
-          }
-        ],
-        [
-          {
-            "bracket_rate": 0.1,
-            "bracket_min": 0.0,
-            "bracket_max": 24800.0,
-            "bracket_capacity": 24800.0,
-            "filled_by_income": 14351.629999999997,
-            "filled_by_conversion": 5500.0,
-            "remaining_capacity": 4948.370000000003,
-            "tax_in_bracket": 1985.1629999999998
-          }
-        ],
-        [
-          {
-            "bracket_rate": 0.1,
-            "bracket_min": 0.0,
-            "bracket_max": 24800.0,
-            "bracket_capacity": 24800.0,
-            "filled_by_income": 14351.629999999997,
-            "filled_by_conversion": 0.0,
-            "remaining_capacity": 10448.370000000003,
-            "tax_in_bracket": 1435.1629999999998
+            "bracket_rate": 0.12,
+            "bracket_min": 24800.0,
+            "bracket_max": 100800.0,
+            "bracket_capacity": 76000.0,
+            "filled_by_income": 0.0,
+            "filled_by_conversion": 651.6299999999974,
+            "remaining_capacity": 75348.37,
+            "tax_in_bracket": 78.19559999999969
           }
         ],
         [
@@ -4336,33 +4310,9 @@
             "bracket_max": 24800.0,
             "bracket_capacity": 24800.0,
             "filled_by_income": 14351.629999999997,
-            "filled_by_conversion": 0.0,
-            "remaining_capacity": 10448.370000000003,
-            "tax_in_bracket": 1435.1629999999998
-          }
-        ],
-        [
-          {
-            "bracket_rate": 0.1,
-            "bracket_min": 0.0,
-            "bracket_max": 24800.0,
-            "bracket_capacity": 24800.0,
-            "filled_by_income": 14351.629999999997,
-            "filled_by_conversion": 0.0,
-            "remaining_capacity": 10448.370000000003,
-            "tax_in_bracket": 1435.1629999999998
-          }
-        ],
-        [
-          {
-            "bracket_rate": 0.1,
-            "bracket_min": 0.0,
-            "bracket_max": 24800.0,
-            "bracket_capacity": 24800.0,
-            "filled_by_income": 14351.629999999997,
-            "filled_by_conversion": 5500.0,
-            "remaining_capacity": 4948.370000000003,
-            "tax_in_bracket": 1985.1629999999998
+            "filled_by_conversion": 5499.999999999993,
+            "remaining_capacity": 4948.37000000001,
+            "tax_in_bracket": 1985.162999999999
           }
         ],
         [
@@ -4411,6 +4361,78 @@
             "filled_by_conversion": 5500.0,
             "remaining_capacity": 4948.370000000003,
             "tax_in_bracket": 1985.1629999999998
+          }
+        ],
+        [
+          {
+            "bracket_rate": 0.1,
+            "bracket_min": 0.0,
+            "bracket_max": 24800.0,
+            "bracket_capacity": 24800.0,
+            "filled_by_income": 14351.629999999997,
+            "filled_by_conversion": 0.0,
+            "remaining_capacity": 10448.370000000003,
+            "tax_in_bracket": 1435.1629999999998
+          }
+        ],
+        [
+          {
+            "bracket_rate": 0.1,
+            "bracket_min": 0.0,
+            "bracket_max": 24800.0,
+            "bracket_capacity": 24800.0,
+            "filled_by_income": 14351.629999999997,
+            "filled_by_conversion": 0.0,
+            "remaining_capacity": 10448.370000000003,
+            "tax_in_bracket": 1435.1629999999998
+          }
+        ],
+        [
+          {
+            "bracket_rate": 0.1,
+            "bracket_min": 0.0,
+            "bracket_max": 24800.0,
+            "bracket_capacity": 24800.0,
+            "filled_by_income": 14351.629999999997,
+            "filled_by_conversion": 0.0,
+            "remaining_capacity": 10448.370000000003,
+            "tax_in_bracket": 1435.1629999999998
+          }
+        ],
+        [
+          {
+            "bracket_rate": 0.1,
+            "bracket_min": 0.0,
+            "bracket_max": 24800.0,
+            "bracket_capacity": 24800.0,
+            "filled_by_income": 14351.629999999997,
+            "filled_by_conversion": 0.0,
+            "remaining_capacity": 10448.370000000003,
+            "tax_in_bracket": 1435.1629999999998
+          }
+        ],
+        [
+          {
+            "bracket_rate": 0.1,
+            "bracket_min": 0.0,
+            "bracket_max": 24800.0,
+            "bracket_capacity": 24800.0,
+            "filled_by_income": 14351.629999999997,
+            "filled_by_conversion": 5500.0,
+            "remaining_capacity": 4948.370000000003,
+            "tax_in_bracket": 1985.1629999999998
+          }
+        ],
+        [
+          {
+            "bracket_rate": 0.1,
+            "bracket_min": 0.0,
+            "bracket_max": 24800.0,
+            "bracket_capacity": 24800.0,
+            "filled_by_income": 7992.09565020055,
+            "filled_by_conversion": 0.0,
+            "remaining_capacity": 16807.90434979945,
+            "tax_in_bracket": 799.209565020055
           }
         ]
       ],
@@ -4418,9 +4440,9 @@
         {
           "label": "No conversion",
           "conversion_amount": 0.0,
-          "npv": 1205463.8448295668,
+          "npv": 1245623.2003866131,
           "tax_on_conversion": 0.0,
-          "difference_from_optimal": -158617.45802360447,
+          "difference_from_optimal": -117871.31747423671,
           "estimated_savings": 0.0,
           "yearly_conversions": [
             0.0,
@@ -4491,11 +4513,11 @@
         },
         {
           "label": "Highest estimated savings",
-          "conversion_amount": 609100.0,
-          "npv": 1364081.3028531712,
-          "tax_on_conversion": 85022.73340000003,
+          "conversion_amount": 620300.0,
+          "npv": 1363494.5178608499,
+          "tax_on_conversion": 86534.73340000003,
           "difference_from_optimal": 0.0,
-          "estimated_savings": 158617.45802360447,
+          "estimated_savings": 117871.31747423671,
           "yearly_conversions": [
             0.0,
             27700.0,
@@ -4505,7 +4527,7 @@
             88600.0,
             88600.0,
             88600.0,
-            33200.0,
+            38800.0,
             16600.0,
             16600.0,
             16600.0,
@@ -4513,13 +4535,7 @@
             11100.0,
             11100.0,
             11100.0,
-            5500.0,
-            0.0,
-            0.0,
-            5500.0,
-            0.0,
-            0.0,
-            0.0,
+            11100.0,
             0.0,
             0.0,
             0.0,
@@ -4527,7 +4543,13 @@
             0.0,
             0.0,
             0.0,
-            5500.0
+            5500.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            5500.0,
+            0.0
           ],
           "years": [
             2026,
@@ -4568,8 +4590,8 @@
           "conversion_amount": 900000.0,
           "npv": 1080400.317397987,
           "tax_on_conversion": 368013.204,
-          "difference_from_optimal": -283680.98545518424,
-          "estimated_savings": -125063.52743157977,
+          "difference_from_optimal": -283094.20046286285,
+          "estimated_savings": -165222.88298862614,
           "yearly_conversions": [
             900000.0,
             0.0,
@@ -4639,18 +4661,18 @@
         }
       ],
       "reasoning_trace": {
-        "binding_constraint": "Converts nearly all of the traditional balance by 2056",
+        "binding_constraint": "Converts nearly all of the traditional balance by 2055",
         "marginal_tax_rate_at_optimal": 0.1361,
-        "marginal_benefit_at_optimal": 158617.46,
+        "marginal_benefit_at_optimal": 117871.32,
         "cost_of_next_bracket": {
           "bracket_rate": 0.16,
           "additional_tax": 160.0,
           "net_effect": "Converting $1,000 more in 2027 would cost $160 in additional tax at the 16% rate"
         },
         "benefit_of_current_bracket": {
-          "bracket_rate": 0.1396,
-          "tax_paid": 63135.6,
-          "future_tax_avoided": 221753.06,
+          "bracket_rate": 0.1395,
+          "tax_paid": 64020.69,
+          "future_tax_avoided": 181892.01,
           "dollars": "today's dollars (the schedule adds up each year's tax as paid)"
         },
         "sensitivity_notes": [
@@ -4659,12 +4681,12 @@
           "Long retirement horizon amplifies the tax-free growth benefit of Roth conversions",
           "RMDs begin at age 75 (15 years from now) \u2014 converting before then reduces forced taxable withdrawals in retirement",
           "California income tax adds about 4.0% to conversions (2027); combined federal and state rates are used in optimization",
-          "Arizona income tax adds about 2.5% to conversions (2029 to 2056); combined federal and state rates are used in optimization"
+          "Arizona income tax adds about 2.5% to conversions (2029 to 2055); combined federal and state rates are used in optimization"
         ],
         "summary_points": {
-          "what_to_convert": "Convert $27,700 in 2027, $83,100 in 2029, $83,100 in 2030, $88,600 in 2031, $88,600 in 2032, $88,600 in 2033, $33,200 in 2034, $16,600 in 2035, $16,600 in 2036, $16,600 in 2037, $11,100 in 2038, $11,100 in 2039, $11,100 in 2040, $11,100 in 2041, $5,500 in 2042, $5,500 in 2045, $5,500 in 2052, $5,500 in 2056",
+          "what_to_convert": "Convert $27,700 in 2027, $83,100 in 2029, $83,100 in 2030, $88,600 in 2031, $88,600 in 2032, $88,600 in 2033, $38,800 in 2034, $16,600 in 2035, $16,600 in 2036, $16,600 in 2037, $11,100 in 2038, $11,100 in 2039, $11,100 in 2040, $11,100 in 2041, $11,100 in 2042, $5,500 in 2046, $5,500 in 2050, $5,500 in 2055",
           "why_this_amount": "Fills lower tax brackets during low-income years without pushing into expensive higher brackets",
-          "how_much_you_save": "Estimated $158,617 in lifetime tax savings (in today's dollars)",
+          "how_much_you_save": "Estimated $117,871 in lifetime tax savings (in today's dollars)",
           "key_tradeoff": "Pay tax now at lower rates to avoid higher rates on forced withdrawals in retirement. Converting more enters higher brackets where the cost exceeds the benefit."
         },
         "aca_impact": null,
@@ -4674,11 +4696,11 @@
           "total_rmd_taxes_no_conversion": 157649.4,
           "peak_rmd_no_conversion": 151726.88,
           "peak_rmd_year_no_conversion": 2056,
-          "total_rmd_taxes_with_conversion": 24303.26,
-          "peak_rmd_with_conversion": 20640.13,
-          "rmd_tax_savings": 133346.14,
-          "peak_rmd_reduction": 131086.75,
-          "explanation": "Converting now reduces your future Required Minimum Distributions. Without conversion, RMDs starting at age 75 would peak at $151,727/year. With the recommended conversions, peak RMDs drop to $20,640/year, saving an estimated $133,346 in total RMD taxes over retirement."
+          "total_rmd_taxes_with_conversion": 23508.32,
+          "peak_rmd_with_conversion": 20274.58,
+          "rmd_tax_savings": 134141.08,
+          "peak_rmd_reduction": 131452.3,
+          "explanation": "Converting now reduces your future Required Minimum Distributions. Without conversion, RMDs starting at age 75 would peak at $151,727/year. With the recommended conversions, peak RMDs drop to $20,275/year, saving an estimated $134,141 in total RMD taxes over retirement."
         },
         "irmaa_summary": null
       },
@@ -4772,7 +4794,7 @@
           "year": 2034,
           "income": 0.0,
           "rmd": 0.0,
-          "conversion": 33200,
+          "conversion": 38800,
           "bracket_boundaries": [
             24800.0,
             100800.0
@@ -4841,7 +4863,7 @@
         {
           "year": 2041,
           "income": 0.0,
-          "rmd": 20640.13,
+          "rmd": 20274.58,
           "conversion": 11100,
           "bracket_boundaries": [
             24800.0,
@@ -4851,16 +4873,17 @@
         {
           "year": 2042,
           "income": 0.0,
-          "rmd": 20320.77,
-          "conversion": 5500,
+          "rmd": 19914.78,
+          "conversion": 11100,
           "bracket_boundaries": [
-            24800.0
+            24800.0,
+            100800.0
           ]
         },
         {
           "year": 2043,
           "income": 0.0,
-          "rmd": 20070.7,
+          "rmd": 19359.46,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -4869,7 +4892,7 @@
         {
           "year": 2044,
           "income": 0.0,
-          "rmd": 20090.1,
+          "rmd": 19297.94,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -4878,8 +4901,8 @@
         {
           "year": 2045,
           "income": 0.0,
-          "rmd": 20052.64,
-          "conversion": 5500,
+          "rmd": 19168.88,
+          "conversion": 0,
           "bracket_boundaries": [
             24800.0
           ]
@@ -4887,8 +4910,8 @@
         {
           "year": 2046,
           "income": 0.0,
-          "rmd": 19655.11,
-          "conversion": 0,
+          "rmd": 18958.69,
+          "conversion": 5500,
           "bracket_boundaries": [
             24800.0
           ]
@@ -4896,7 +4919,7 @@
         {
           "year": 2047,
           "income": 0.0,
-          "rmd": 19330.69,
+          "rmd": 18251.43,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -4905,7 +4928,7 @@
         {
           "year": 2048,
           "income": 0.0,
-          "rmd": 18997.63,
+          "rmd": 17786.65,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -4914,7 +4937,7 @@
         {
           "year": 2049,
           "income": 0.0,
-          "rmd": 18432.08,
+          "rmd": 17077.77,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -4923,8 +4946,8 @@
         {
           "year": 2050,
           "income": 0.0,
-          "rmd": 17813.98,
-          "conversion": 0,
+          "rmd": 16287.24,
+          "conversion": 5500,
           "bracket_boundaries": [
             24800.0
           ]
@@ -4932,7 +4955,7 @@
         {
           "year": 2051,
           "income": 0.0,
-          "rmd": 16900.87,
+          "rmd": 14817.76,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -4941,8 +4964,8 @@
         {
           "year": 2052,
           "income": 0.0,
-          "rmd": 15758.73,
-          "conversion": 5500,
+          "rmd": 13412.49,
+          "conversion": 0,
           "bracket_boundaries": [
             24800.0
           ]
@@ -4950,7 +4973,7 @@
         {
           "year": 2053,
           "income": 0.0,
-          "rmd": 13930.88,
+          "rmd": 11689.62,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -4959,7 +4982,7 @@
         {
           "year": 2054,
           "income": 0.0,
-          "rmd": 12031.88,
+          "rmd": 9511.19,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -4968,8 +4991,8 @@
         {
           "year": 2055,
           "income": 0.0,
-          "rmd": 9811.25,
-          "conversion": 0,
+          "rmd": 6946.85,
+          "conversion": 5500,
           "bracket_boundaries": [
             24800.0
           ]
@@ -4977,8 +5000,8 @@
         {
           "year": 2056,
           "income": 0.0,
-          "rmd": 7017.58,
-          "conversion": 5500,
+          "rmd": 3294.43,
+          "conversion": 0,
           "bracket_boundaries": [
             24800.0
           ]
@@ -4998,8 +5021,8 @@
           {
             "year": 2041,
             "age": 75,
-            "trad_balance_start": 507747.15,
-            "rmd_amount": 20640.13,
+            "trad_balance_start": 498754.77,
+            "rmd_amount": 20274.58,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -5007,8 +5030,8 @@
           {
             "year": 2042,
             "age": 76,
-            "trad_balance_start": 481602.2,
-            "rmd_amount": 20320.77,
+            "trad_balance_start": 471980.36,
+            "rmd_amount": 19914.78,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -5016,8 +5039,8 @@
           {
             "year": 2043,
             "age": 77,
-            "trad_balance_start": 459619.11,
-            "rmd_amount": 20070.7,
+            "trad_balance_start": 443331.74,
+            "rmd_amount": 19359.46,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -5025,8 +5048,8 @@
           {
             "year": 2044,
             "age": 78,
-            "trad_balance_start": 441982.21,
-            "rmd_amount": 20090.1,
+            "trad_balance_start": 424554.72,
+            "rmd_amount": 19297.94,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -5034,8 +5057,8 @@
           {
             "year": 2045,
             "age": 79,
-            "trad_balance_start": 423110.72,
-            "rmd_amount": 20052.64,
+            "trad_balance_start": 404463.31,
+            "rmd_amount": 19168.88,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -5043,8 +5066,8 @@
           {
             "year": 2046,
             "age": 80,
-            "trad_balance_start": 397033.22,
-            "rmd_amount": 19655.11,
+            "trad_balance_start": 382965.49,
+            "rmd_amount": 18958.69,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -5052,8 +5075,8 @@
           {
             "year": 2047,
             "age": 81,
-            "trad_balance_start": 375015.31,
-            "rmd_amount": 19330.69,
+            "trad_balance_start": 354077.83,
+            "rmd_amount": 18251.43,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -5061,8 +5084,8 @@
           {
             "year": 2048,
             "age": 82,
-            "trad_balance_start": 351456.13,
-            "rmd_amount": 18997.63,
+            "trad_balance_start": 329053.04,
+            "rmd_amount": 17786.65,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -5070,8 +5093,8 @@
           {
             "year": 2049,
             "age": 83,
-            "trad_balance_start": 326247.82,
-            "rmd_amount": 18432.08,
+            "trad_balance_start": 302276.51,
+            "rmd_amount": 17077.77,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -5079,8 +5102,8 @@
           {
             "year": 2050,
             "age": 84,
-            "trad_balance_start": 299274.92,
-            "rmd_amount": 17813.98,
+            "trad_balance_start": 273625.62,
+            "rmd_amount": 16287.24,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -5088,8 +5111,8 @@
           {
             "year": 2051,
             "age": 85,
-            "trad_balance_start": 270413.92,
-            "rmd_amount": 16900.87,
+            "trad_balance_start": 237084.17,
+            "rmd_amount": 14817.76,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -5097,8 +5120,8 @@
           {
             "year": 2052,
             "age": 86,
-            "trad_balance_start": 239532.65,
-            "rmd_amount": 15758.73,
+            "trad_balance_start": 203869.82,
+            "rmd_amount": 13412.49,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -5106,8 +5129,8 @@
           {
             "year": 2053,
             "age": 87,
-            "trad_balance_start": 200604.69,
-            "rmd_amount": 13930.88,
+            "trad_balance_start": 168330.46,
+            "rmd_amount": 11689.62,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -5115,8 +5138,8 @@
           {
             "year": 2054,
             "age": 88,
-            "trad_balance_start": 164836.78,
-            "rmd_amount": 12031.88,
+            "trad_balance_start": 130303.35,
+            "rmd_amount": 9511.19,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -5124,8 +5147,8 @@
           {
             "year": 2055,
             "age": 89,
-            "trad_balance_start": 126565.11,
-            "rmd_amount": 9811.25,
+            "trad_balance_start": 89614.34,
+            "rmd_amount": 6946.85,
             "actual_distribution": 46551.63,
             "tax_on_distribution": 1518.95,
             "effective_rate": 0.0326
@@ -5133,15 +5156,15 @@
           {
             "year": 2056,
             "age": 90,
-            "trad_balance_start": 85614.42,
-            "rmd_amount": 7017.58,
-            "actual_distribution": 46551.63,
-            "tax_on_distribution": 1518.95,
-            "effective_rate": 0.0326
+            "trad_balance_start": 40192.1,
+            "rmd_amount": 3294.43,
+            "actual_distribution": 40192.1,
+            "tax_on_distribution": 724.01,
+            "effective_rate": 0.018
           }
         ],
-        "total_rmd_taxes": 24303.26,
-        "peak_rmd_amount": 20640.13,
+        "total_rmd_taxes": 23508.32,
+        "peak_rmd_amount": 20274.58,
         "peak_rmd_year": 2041
       },
       "rmd_projection_no_conversion": {
@@ -5574,22 +5597,15 @@
         88000.0,
         88000.0,
         88000.0,
-        67300.0,
+        72500.0,
         20700.0,
-        20700.0,
         15500.0,
         15500.0,
         15500.0,
         15500.0,
         15500.0,
-        5200.0,
-        5200.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-        0.0,
+        15500.0,
+        15500.0,
         5200.0,
         0.0,
         0.0,
@@ -5597,16 +5613,23 @@
         0.0,
         0.0,
         0.0,
+        5200.0,
         0.0,
-        5200.0
+        0.0,
+        0.0,
+        0.0,
+        5200.0,
+        0.0,
+        5200.0,
+        0.0
       ],
-      "total_conversion": 564200.0,
-      "total_tax_on_conversions": 77726.31,
-      "overall_effective_rate": 0.1378,
-      "estimated_lifetime_tax_savings": 156870.69,
-      "npv_at_optimal": 1358683.56,
-      "npv_at_zero": 1201812.87,
-      "conversion_cost_today": 60302.47,
+      "total_conversion": 579700.0,
+      "total_tax_on_conversions": 79689.68,
+      "overall_effective_rate": 0.1375,
+      "estimated_lifetime_tax_savings": 117883.11,
+      "npv_at_optimal": 1358098.01,
+      "npv_at_zero": 1240214.9,
+      "conversion_cost_today": 61204.19,
       "yearly_detail": [
         {
           "year": 2026,
@@ -5708,13 +5731,13 @@
           "year": 2032,
           "income": 0.0,
           "rmd": 0.0,
-          "conversion": 67300,
+          "conversion": 72500,
           "spending_from_traditional": 43506.2,
           "spending_from_roth": 0.0,
-          "tax_cost": 9422.62,
-          "federal_tax_cost": 7740.12,
-          "state_tax_cost": 1682.5,
-          "effective_rate": 0.14,
+          "tax_cost": 10176.62,
+          "federal_tax_cost": 8364.12,
+          "state_tax_cost": 1812.5,
+          "effective_rate": 0.1404,
           "marginal_bracket": "12%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5740,14 +5763,14 @@
           "year": 2034,
           "income": 0.0,
           "rmd": 0.0,
-          "conversion": 20700,
+          "conversion": 15500,
           "spending_from_traditional": 43506.2,
           "spending_from_roth": 0.0,
-          "tax_cost": 2665.62,
-          "federal_tax_cost": 2148.12,
-          "state_tax_cost": 517.5,
-          "effective_rate": 0.1288,
-          "marginal_bracket": "12%",
+          "tax_cost": 1937.5,
+          "federal_tax_cost": 1550.0,
+          "state_tax_cost": 387.5,
+          "effective_rate": 0.125,
+          "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
           "irmaa_tier": 0
@@ -5836,12 +5859,12 @@
           "year": 2040,
           "income": 0.0,
           "rmd": 0.0,
-          "conversion": 5200,
+          "conversion": 15500,
           "spending_from_traditional": 43506.2,
           "spending_from_roth": 0.0,
-          "tax_cost": 650.0,
-          "federal_tax_cost": 520.0,
-          "state_tax_cost": 130.0,
+          "tax_cost": 1937.5,
+          "federal_tax_cost": 1550.0,
+          "state_tax_cost": 387.5,
           "effective_rate": 0.125,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
@@ -5851,9 +5874,9 @@
         {
           "year": 2041,
           "income": 0.0,
-          "rmd": 18837.15,
+          "rmd": 18339.96,
           "conversion": 5200,
-          "spending_from_traditional": 24669.05,
+          "spending_from_traditional": 25166.24,
           "spending_from_roth": 0.0,
           "tax_cost": 650.0,
           "federal_tax_cost": 520.0,
@@ -5867,9 +5890,9 @@
         {
           "year": 2042,
           "income": 0.0,
-          "rmd": 18722.19,
+          "rmd": 18169.99,
           "conversion": 0,
-          "spending_from_traditional": 24784.01,
+          "spending_from_traditional": 25336.21,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -5883,9 +5906,9 @@
         {
           "year": 2043,
           "income": 0.0,
-          "rmd": 18699.75,
+          "rmd": 18088.26,
           "conversion": 0,
-          "spending_from_traditional": 24806.45,
+          "spending_from_traditional": 25417.94,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -5899,9 +5922,9 @@
         {
           "year": 2044,
           "income": 0.0,
-          "rmd": 18711.29,
+          "rmd": 18030.23,
           "conversion": 0,
-          "spending_from_traditional": 24794.91,
+          "spending_from_traditional": 25475.97,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -5915,9 +5938,9 @@
         {
           "year": 2045,
           "income": 0.0,
-          "rmd": 18668.82,
+          "rmd": 17909.0,
           "conversion": 0,
-          "spending_from_traditional": 24837.38,
+          "spending_from_traditional": 25597.2,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -5931,9 +5954,9 @@
         {
           "year": 2046,
           "income": 0.0,
-          "rmd": 18561.11,
+          "rmd": 17711.87,
           "conversion": 0,
-          "spending_from_traditional": 24945.09,
+          "spending_from_traditional": 25794.33,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -5947,9 +5970,9 @@
         {
           "year": 2047,
           "income": 0.0,
-          "rmd": 18279.8,
+          "rmd": 17333.65,
           "conversion": 0,
-          "spending_from_traditional": 25226.4,
+          "spending_from_traditional": 26172.55,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -5963,9 +5986,9 @@
         {
           "year": 2048,
           "income": 0.0,
-          "rmd": 17994.62,
+          "rmd": 16932.99,
           "conversion": 5200,
-          "spending_from_traditional": 25511.58,
+          "spending_from_traditional": 26573.21,
           "spending_from_roth": 0.0,
           "tax_cost": 650.0,
           "federal_tax_cost": 520.0,
@@ -5979,9 +6002,9 @@
         {
           "year": 2049,
           "income": 0.0,
-          "rmd": 17180.1,
+          "rmd": 15992.82,
           "conversion": 0,
-          "spending_from_traditional": 26326.1,
+          "spending_from_traditional": 27513.38,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -5995,9 +6018,9 @@
         {
           "year": 2050,
           "income": 0.0,
-          "rmd": 16596.57,
+          "rmd": 15258.11,
           "conversion": 0,
-          "spending_from_traditional": 26909.63,
+          "spending_from_traditional": 28248.09,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -6011,9 +6034,9 @@
         {
           "year": 2051,
           "income": 0.0,
-          "rmd": 15736.77,
+          "rmd": 14233.01,
           "conversion": 0,
-          "spending_from_traditional": 27769.43,
+          "spending_from_traditional": 29273.19,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -6027,9 +6050,9 @@
         {
           "year": 2052,
           "income": 0.0,
-          "rmd": 14661.96,
+          "rmd": 12968.26,
           "conversion": 0,
-          "spending_from_traditional": 28844.24,
+          "spending_from_traditional": 30537.94,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -6043,14 +6066,14 @@
         {
           "year": 2053,
           "income": 0.0,
-          "rmd": 13327.12,
-          "conversion": 0,
-          "spending_from_traditional": 30179.08,
+          "rmd": 11414.18,
+          "conversion": 5200,
+          "spending_from_traditional": 32092.02,
           "spending_from_roth": 0.0,
-          "tax_cost": 0.0,
-          "federal_tax_cost": 0.0,
-          "state_tax_cost": 0.0,
-          "effective_rate": 0.0,
+          "tax_cost": 650.0,
+          "federal_tax_cost": 520.0,
+          "state_tax_cost": 130.0,
+          "effective_rate": 0.125,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -6059,9 +6082,9 @@
         {
           "year": 2054,
           "income": 0.0,
-          "rmd": 11590.7,
+          "rmd": 9033.14,
           "conversion": 0,
-          "spending_from_traditional": 31915.5,
+          "spending_from_traditional": 34473.06,
           "spending_from_roth": 0.0,
           "tax_cost": 0.0,
           "federal_tax_cost": 0.0,
@@ -6075,14 +6098,14 @@
         {
           "year": 2055,
           "income": 0.0,
-          "rmd": 9562.52,
-          "conversion": 0,
-          "spending_from_traditional": 33943.68,
+          "rmd": 6656.21,
+          "conversion": 5200,
+          "spending_from_traditional": 36849.99,
           "spending_from_roth": 0.0,
-          "tax_cost": 0.0,
-          "federal_tax_cost": 0.0,
-          "state_tax_cost": 0.0,
-          "effective_rate": 0.0,
+          "tax_cost": 650.0,
+          "federal_tax_cost": 520.0,
+          "state_tax_cost": 130.0,
+          "effective_rate": 0.125,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -6091,14 +6114,14 @@
         {
           "year": 2056,
           "income": 0.0,
-          "rmd": 7003.26,
-          "conversion": 5200,
-          "spending_from_traditional": 36502.94,
-          "spending_from_roth": 0.0,
-          "tax_cost": 650.0,
-          "federal_tax_cost": 520.0,
-          "state_tax_cost": 130.0,
-          "effective_rate": 0.125,
+          "rmd": 3259.02,
+          "conversion": 0,
+          "spending_from_traditional": 36501.07,
+          "spending_from_roth": 3746.11,
+          "tax_cost": 0.0,
+          "federal_tax_cost": 0.0,
+          "state_tax_cost": 0.0,
+          "effective_rate": 0.0,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -6255,9 +6278,9 @@
             "bracket_max": 100800.0,
             "bracket_capacity": 76000.0,
             "filled_by_income": 0.0,
-            "filled_by_conversion": 53806.2,
-            "remaining_capacity": 22193.800000000003,
-            "tax_in_bracket": 6456.744
+            "filled_by_conversion": 59006.2,
+            "remaining_capacity": 16993.800000000003,
+            "tax_in_bracket": 7080.744
           }
         ],
         [
@@ -6299,9 +6322,31 @@
             "bracket_max": 100800.0,
             "bracket_capacity": 76000.0,
             "filled_by_income": 0.0,
-            "filled_by_conversion": 7206.199999999997,
-            "remaining_capacity": 68793.8,
-            "tax_in_bracket": 864.7439999999996
+            "filled_by_conversion": 2006.199999999997,
+            "remaining_capacity": 73993.8,
+            "tax_in_bracket": 240.74399999999963
+          }
+        ],
+        [
+          {
+            "bracket_rate": 0.1,
+            "bracket_min": 0.0,
+            "bracket_max": 24800.0,
+            "bracket_capacity": 24800.0,
+            "filled_by_income": 11306.199999999997,
+            "filled_by_conversion": 13493.800000000003,
+            "remaining_capacity": 0.0,
+            "tax_in_bracket": 2480.0
+          },
+          {
+            "bracket_rate": 0.12,
+            "bracket_min": 24800.0,
+            "bracket_max": 100800.0,
+            "bracket_capacity": 76000.0,
+            "filled_by_income": 0.0,
+            "filled_by_conversion": 2006.199999999997,
+            "remaining_capacity": 73993.8,
+            "tax_in_bracket": 240.74399999999963
           }
         ],
         [
@@ -6433,18 +6478,6 @@
             "bracket_max": 24800.0,
             "bracket_capacity": 24800.0,
             "filled_by_income": 11306.199999999997,
-            "filled_by_conversion": 5200.0,
-            "remaining_capacity": 8293.800000000003,
-            "tax_in_bracket": 1650.62
-          }
-        ],
-        [
-          {
-            "bracket_rate": 0.1,
-            "bracket_min": 0.0,
-            "bracket_max": 24800.0,
-            "bracket_capacity": 24800.0,
-            "filled_by_income": 11306.199999999997,
             "filled_by_conversion": 0.0,
             "remaining_capacity": 13493.800000000003,
             "tax_in_bracket": 1130.6199999999997
@@ -6577,21 +6610,9 @@
             "bracket_max": 24800.0,
             "bracket_capacity": 24800.0,
             "filled_by_income": 11306.199999999997,
-            "filled_by_conversion": 0.0,
-            "remaining_capacity": 13493.800000000003,
-            "tax_in_bracket": 1130.6199999999997
-          }
-        ],
-        [
-          {
-            "bracket_rate": 0.1,
-            "bracket_min": 0.0,
-            "bracket_max": 24800.0,
-            "bracket_capacity": 24800.0,
-            "filled_by_income": 11306.199999999997,
-            "filled_by_conversion": 0.0,
-            "remaining_capacity": 13493.800000000003,
-            "tax_in_bracket": 1130.6199999999997
+            "filled_by_conversion": 5200.0,
+            "remaining_capacity": 8293.800000000003,
+            "tax_in_bracket": 1650.62
           }
         ],
         [
@@ -6616,6 +6637,18 @@
             "filled_by_conversion": 5200.0,
             "remaining_capacity": 8293.800000000003,
             "tax_in_bracket": 1650.62
+          }
+        ],
+        [
+          {
+            "bracket_rate": 0.1,
+            "bracket_min": 0.0,
+            "bracket_max": 24800.0,
+            "bracket_capacity": 24800.0,
+            "filled_by_income": 7560.090733327597,
+            "filled_by_conversion": 0.0,
+            "remaining_capacity": 17239.909266672403,
+            "tax_in_bracket": 756.0090733327597
           }
         ]
       ],
@@ -6623,9 +6656,9 @@
         {
           "label": "No conversion",
           "conversion_amount": 0.0,
-          "npv": 1201812.8679129188,
+          "npv": 1240214.8966021899,
           "tax_on_conversion": 0.0,
-          "difference_from_optimal": -156870.6883111652,
+          "difference_from_optimal": -117883.11148159555,
           "estimated_savings": 0.0,
           "yearly_conversions": [
             0.0,
@@ -6696,11 +6729,11 @@
         },
         {
           "label": "Highest estimated savings",
-          "conversion_amount": 564200.0,
-          "npv": 1358683.556224084,
-          "tax_on_conversion": 77726.308,
+          "conversion_amount": 579700.0,
+          "npv": 1358098.0080837854,
+          "tax_on_conversion": 79689.68400000001,
           "difference_from_optimal": 0.0,
-          "estimated_savings": 156870.6883111652,
+          "estimated_savings": 117883.11148159555,
           "yearly_conversions": [
             0.0,
             5200.0,
@@ -6708,22 +6741,15 @@
             88000.0,
             88000.0,
             88000.0,
-            67300.0,
+            72500.0,
             20700.0,
-            20700.0,
             15500.0,
             15500.0,
             15500.0,
             15500.0,
             15500.0,
-            5200.0,
-            5200.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
-            0.0,
+            15500.0,
+            15500.0,
             5200.0,
             0.0,
             0.0,
@@ -6731,8 +6757,15 @@
             0.0,
             0.0,
             0.0,
+            5200.0,
             0.0,
-            5200.0
+            0.0,
+            0.0,
+            0.0,
+            5200.0,
+            0.0,
+            5200.0,
+            0.0
           ],
           "years": [
             2026,
@@ -6773,8 +6806,8 @@
           "conversion_amount": 900000.0,
           "npv": 1068450.5343377055,
           "tax_on_conversion": 368013.204,
-          "difference_from_optimal": -290233.0218863785,
-          "estimated_savings": -133362.33357521333,
+          "difference_from_optimal": -289647.47374607995,
+          "estimated_savings": -171764.3622644844,
           "yearly_conversions": [
             900000.0,
             0.0,
@@ -6844,18 +6877,18 @@
         }
       ],
       "reasoning_trace": {
-        "binding_constraint": "Converts nearly all of the traditional balance by 2056",
-        "marginal_tax_rate_at_optimal": 0.1324,
-        "marginal_benefit_at_optimal": 156870.69,
+        "binding_constraint": "Converts nearly all of the traditional balance by 2055",
+        "marginal_tax_rate_at_optimal": 0.1318,
+        "marginal_benefit_at_optimal": 117883.11,
         "cost_of_next_bracket": {
           "bracket_rate": 0.16,
           "additional_tax": 160.0,
           "net_effect": "Converting $1,000 more in 2027 would cost $160 in additional tax at the 16% rate"
         },
         "benefit_of_current_bracket": {
-          "bracket_rate": 0.1378,
-          "tax_paid": 60302.47,
-          "future_tax_avoided": 217173.16,
+          "bracket_rate": 0.1375,
+          "tax_paid": 61204.19,
+          "future_tax_avoided": 179087.3,
           "dollars": "today's dollars (the schedule adds up each year's tax as paid)"
         },
         "sensitivity_notes": [
@@ -6864,12 +6897,12 @@
           "Long retirement horizon amplifies the tax-free growth benefit of Roth conversions",
           "RMDs begin at age 75 (15 years from now) \u2014 converting before then reduces forced taxable withdrawals in retirement",
           "California income tax adds about 4.0% to conversions (2027); combined federal and state rates are used in optimization",
-          "Arizona income tax adds about 2.5% to conversions (2028 to 2056); combined federal and state rates are used in optimization"
+          "Arizona income tax adds about 2.5% to conversions (2028 to 2055); combined federal and state rates are used in optimization"
         ],
         "summary_points": {
-          "what_to_convert": "Convert $5,200 in 2027, $88,000 in 2028, $88,000 in 2029, $88,000 in 2030, $88,000 in 2031, $67,300 in 2032, $20,700 in 2033, $20,700 in 2034, $15,500 in 2035, $15,500 in 2036, $15,500 in 2037, $15,500 in 2038, $15,500 in 2039, $5,200 in 2040, $5,200 in 2041, $5,200 in 2048, $5,200 in 2056",
+          "what_to_convert": "Convert $5,200 in 2027, $88,000 in 2028, $88,000 in 2029, $88,000 in 2030, $88,000 in 2031, $72,500 in 2032, $20,700 in 2033, $15,500 in 2034, $15,500 in 2035, $15,500 in 2036, $15,500 in 2037, $15,500 in 2038, $15,500 in 2039, $15,500 in 2040, $5,200 in 2041, $5,200 in 2048, $5,200 in 2053, $5,200 in 2055",
           "why_this_amount": "Fills lower tax brackets during low-income years without pushing into expensive higher brackets",
-          "how_much_you_save": "Estimated $156,871 in lifetime tax savings (in today's dollars)",
+          "how_much_you_save": "Estimated $117,883 in lifetime tax savings (in today's dollars)",
           "key_tradeoff": "Pay tax now at lower rates to avoid higher rates on forced withdrawals in retirement. Converting more enters higher brackets where the cost exceeds the benefit."
         },
         "aca_impact": null,
@@ -6879,11 +6912,11 @@
           "total_rmd_taxes_no_conversion": 149501.46,
           "peak_rmd_no_conversion": 147290.51,
           "peak_rmd_year_no_conversion": 2056,
-          "total_rmd_taxes_with_conversion": 18212.4,
-          "peak_rmd_with_conversion": 18837.15,
-          "rmd_tax_savings": 131289.06,
-          "peak_rmd_reduction": 128453.36,
-          "explanation": "Converting now reduces your future Required Minimum Distributions. Without conversion, RMDs starting at age 75 would peak at $147,291/year. With the recommended conversions, peak RMDs drop to $18,837/year, saving an estimated $131,289 in total RMD taxes over retirement."
+          "total_rmd_taxes_with_conversion": 17744.14,
+          "peak_rmd_with_conversion": 18339.96,
+          "rmd_tax_savings": 131757.32,
+          "peak_rmd_reduction": 128950.55,
+          "explanation": "Converting now reduces your future Required Minimum Distributions. Without conversion, RMDs starting at age 75 would peak at $147,291/year. With the recommended conversions, peak RMDs drop to $18,340/year, saving an estimated $131,757 in total RMD taxes over retirement."
         },
         "irmaa_summary": null
       },
@@ -6954,7 +6987,7 @@
           "year": 2032,
           "income": 0.0,
           "rmd": 0.0,
-          "conversion": 67300,
+          "conversion": 72500,
           "bracket_boundaries": [
             24800.0,
             100800.0
@@ -6974,7 +7007,7 @@
           "year": 2034,
           "income": 0.0,
           "rmd": 0.0,
-          "conversion": 20700,
+          "conversion": 15500,
           "bracket_boundaries": [
             24800.0,
             100800.0
@@ -7034,15 +7067,16 @@
           "year": 2040,
           "income": 0.0,
           "rmd": 0.0,
-          "conversion": 5200,
+          "conversion": 15500,
           "bracket_boundaries": [
-            24800.0
+            24800.0,
+            100800.0
           ]
         },
         {
           "year": 2041,
           "income": 0.0,
-          "rmd": 18837.15,
+          "rmd": 18339.96,
           "conversion": 5200,
           "bracket_boundaries": [
             24800.0
@@ -7051,7 +7085,7 @@
         {
           "year": 2042,
           "income": 0.0,
-          "rmd": 18722.19,
+          "rmd": 18169.99,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -7060,7 +7094,7 @@
         {
           "year": 2043,
           "income": 0.0,
-          "rmd": 18699.75,
+          "rmd": 18088.26,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -7069,7 +7103,7 @@
         {
           "year": 2044,
           "income": 0.0,
-          "rmd": 18711.29,
+          "rmd": 18030.23,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -7078,7 +7112,7 @@
         {
           "year": 2045,
           "income": 0.0,
-          "rmd": 18668.82,
+          "rmd": 17909.0,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -7087,7 +7121,7 @@
         {
           "year": 2046,
           "income": 0.0,
-          "rmd": 18561.11,
+          "rmd": 17711.87,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -7096,7 +7130,7 @@
         {
           "year": 2047,
           "income": 0.0,
-          "rmd": 18279.8,
+          "rmd": 17333.65,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -7105,7 +7139,7 @@
         {
           "year": 2048,
           "income": 0.0,
-          "rmd": 17994.62,
+          "rmd": 16932.99,
           "conversion": 5200,
           "bracket_boundaries": [
             24800.0
@@ -7114,7 +7148,7 @@
         {
           "year": 2049,
           "income": 0.0,
-          "rmd": 17180.1,
+          "rmd": 15992.82,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -7123,7 +7157,7 @@
         {
           "year": 2050,
           "income": 0.0,
-          "rmd": 16596.57,
+          "rmd": 15258.11,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -7132,7 +7166,7 @@
         {
           "year": 2051,
           "income": 0.0,
-          "rmd": 15736.77,
+          "rmd": 14233.01,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -7141,7 +7175,7 @@
         {
           "year": 2052,
           "income": 0.0,
-          "rmd": 14661.96,
+          "rmd": 12968.26,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -7150,8 +7184,8 @@
         {
           "year": 2053,
           "income": 0.0,
-          "rmd": 13327.12,
-          "conversion": 0,
+          "rmd": 11414.18,
+          "conversion": 5200,
           "bracket_boundaries": [
             24800.0
           ]
@@ -7159,7 +7193,7 @@
         {
           "year": 2054,
           "income": 0.0,
-          "rmd": 11590.7,
+          "rmd": 9033.14,
           "conversion": 0,
           "bracket_boundaries": [
             24800.0
@@ -7168,8 +7202,8 @@
         {
           "year": 2055,
           "income": 0.0,
-          "rmd": 9562.52,
-          "conversion": 0,
+          "rmd": 6656.21,
+          "conversion": 5200,
           "bracket_boundaries": [
             24800.0
           ]
@@ -7177,8 +7211,8 @@
         {
           "year": 2056,
           "income": 0.0,
-          "rmd": 7003.26,
-          "conversion": 5200,
+          "rmd": 3259.02,
+          "conversion": 0,
           "bracket_boundaries": [
             24800.0
           ]
@@ -7198,8 +7232,8 @@
           {
             "year": 2041,
             "age": 75,
-            "trad_balance_start": 463393.9,
-            "rmd_amount": 18837.15,
+            "trad_balance_start": 451162.98,
+            "rmd_amount": 18339.96,
             "actual_distribution": 43506.2,
             "tax_on_distribution": 1138.27,
             "effective_rate": 0.0262
@@ -7207,8 +7241,8 @@
           {
             "year": 2042,
             "age": 76,
-            "trad_balance_start": 443715.84,
-            "rmd_amount": 18722.19,
+            "trad_balance_start": 430628.75,
+            "rmd_amount": 18169.99,
             "actual_distribution": 43506.2,
             "tax_on_distribution": 1138.27,
             "effective_rate": 0.0262
@@ -7216,8 +7250,8 @@
           {
             "year": 2043,
             "age": 77,
-            "trad_balance_start": 428224.31,
-            "rmd_amount": 18699.75,
+            "trad_balance_start": 414221.13,
+            "rmd_amount": 18088.26,
             "actual_distribution": 43506.2,
             "tax_on_distribution": 1138.27,
             "effective_rate": 0.0262
@@ -7225,8 +7259,8 @@
           {
             "year": 2044,
             "age": 78,
-            "trad_balance_start": 411648.38,
-            "rmd_amount": 18711.29,
+            "trad_balance_start": 396664.97,
+            "rmd_amount": 18030.23,
             "actual_distribution": 43506.2,
             "tax_on_distribution": 1138.27,
             "effective_rate": 0.0262
@@ -7234,8 +7268,8 @@
           {
             "year": 2045,
             "age": 79,
-            "trad_balance_start": 393912.14,
-            "rmd_amount": 18668.82,
+            "trad_balance_start": 377879.89,
+            "rmd_amount": 17909.0,
             "actual_distribution": 43506.2,
             "tax_on_distribution": 1138.27,
             "effective_rate": 0.0262
@@ -7243,8 +7277,8 @@
           {
             "year": 2046,
             "age": 80,
-            "trad_balance_start": 374934.35,
-            "rmd_amount": 18561.11,
+            "trad_balance_start": 357779.85,
+            "rmd_amount": 17711.87,
             "actual_distribution": 43506.2,
             "tax_on_distribution": 1138.27,
             "effective_rate": 0.0262
@@ -7252,8 +7286,8 @@
           {
             "year": 2047,
             "age": 81,
-            "trad_balance_start": 354628.12,
-            "rmd_amount": 18279.8,
+            "trad_balance_start": 336272.8,
+            "rmd_amount": 17333.65,
             "actual_distribution": 43506.2,
             "tax_on_distribution": 1138.27,
             "effective_rate": 0.0262
@@ -7261,8 +7295,8 @@
           {
             "year": 2048,
             "age": 82,
-            "trad_balance_start": 332900.46,
-            "rmd_amount": 17994.62,
+            "trad_balance_start": 313260.26,
+            "rmd_amount": 16932.99,
             "actual_distribution": 43506.2,
             "tax_on_distribution": 1138.27,
             "effective_rate": 0.0262
@@ -7270,8 +7304,8 @@
           {
             "year": 2049,
             "age": 83,
-            "trad_balance_start": 304087.85,
-            "rmd_amount": 17180.1,
+            "trad_balance_start": 283072.85,
+            "rmd_amount": 15992.82,
             "actual_distribution": 43506.2,
             "tax_on_distribution": 1138.27,
             "effective_rate": 0.0262
@@ -7279,8 +7313,8 @@
           {
             "year": 2050,
             "age": 84,
-            "trad_balance_start": 278822.37,
-            "rmd_amount": 16596.57,
+            "trad_balance_start": 256336.31,
+            "rmd_amount": 15258.11,
             "actual_distribution": 43506.2,
             "tax_on_distribution": 1138.27,
             "effective_rate": 0.0262
@@ -7288,8 +7322,8 @@
           {
             "year": 2051,
             "age": 85,
-            "trad_balance_start": 251788.3,
-            "rmd_amount": 15736.77,
+            "trad_balance_start": 227728.22,
+            "rmd_amount": 14233.01,
             "actual_distribution": 43506.2,
             "tax_on_distribution": 1138.27,
             "effective_rate": 0.0262
@@ -7297,8 +7331,8 @@
           {
             "year": 2052,
             "age": 86,
-            "trad_balance_start": 222861.85,
-            "rmd_amount": 14661.96,
+            "trad_balance_start": 197117.56,
+            "rmd_amount": 12968.26,
             "actual_distribution": 43506.2,
             "tax_on_distribution": 1138.27,
             "effective_rate": 0.0262
@@ -7306,8 +7340,8 @@
           {
             "year": 2053,
             "age": 87,
-            "trad_balance_start": 191910.54,
-            "rmd_amount": 13327.12,
+            "trad_balance_start": 164364.16,
+            "rmd_amount": 11414.18,
             "actual_distribution": 43506.2,
             "tax_on_distribution": 1138.27,
             "effective_rate": 0.0262
@@ -7315,8 +7349,8 @@
           {
             "year": 2054,
             "age": 88,
-            "trad_balance_start": 158792.65,
-            "rmd_amount": 11590.7,
+            "trad_balance_start": 123754.02,
+            "rmd_amount": 9033.14,
             "actual_distribution": 43506.2,
             "tax_on_distribution": 1138.27,
             "effective_rate": 0.0262
@@ -7324,8 +7358,8 @@
           {
             "year": 2055,
             "age": 89,
-            "trad_balance_start": 123356.5,
-            "rmd_amount": 9562.52,
+            "trad_balance_start": 85865.16,
+            "rmd_amount": 6656.21,
             "actual_distribution": 43506.2,
             "tax_on_distribution": 1138.27,
             "effective_rate": 0.0262
@@ -7333,15 +7367,15 @@
           {
             "year": 2056,
             "age": 90,
-            "trad_balance_start": 85439.82,
-            "rmd_amount": 7003.26,
-            "actual_distribution": 43506.2,
-            "tax_on_distribution": 1138.27,
-            "effective_rate": 0.0262
+            "trad_balance_start": 39760.09,
+            "rmd_amount": 3259.02,
+            "actual_distribution": 39760.09,
+            "tax_on_distribution": 670.01,
+            "effective_rate": 0.0169
           }
         ],
-        "total_rmd_taxes": 18212.4,
-        "peak_rmd_amount": 18837.15,
+        "total_rmd_taxes": 17744.14,
+        "peak_rmd_amount": 18339.96,
         "peak_rmd_year": 2041
       },
       "rmd_projection_no_conversion": {

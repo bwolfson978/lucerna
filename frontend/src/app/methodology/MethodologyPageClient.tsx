@@ -80,6 +80,12 @@ export function MethodologyPageClient() {
           "Total household spending, with accounts covering what income doesn't. 4% of total balance at retirement if not specified",
       },
       {
+        assumption: "Balance left at the end",
+        value: "After tax",
+        rationale:
+          "Traditional money left at the end is counted after tax, at the rate you'd pay on one more dollar that final year",
+      },
+      {
         assumption: "State taxes",
         value: "Optional",
         rationale: "Included when a state is selected, otherwise federal only",
@@ -241,8 +247,11 @@ export function MethodologyPageClient() {
                   comes from Roth tax-free. Required Minimum Distributions are enforced.
                 </P>
                 <P>
-                  <strong>Phase 4: Final liquidation.</strong> Any remaining balances are
-                  distributed. Traditional balances are taxed; Roth balances are not.
+                  <strong>Phase 4: Money left at the end.</strong> If money is still in your
+                  traditional account at the end of the plan, we count what it would be worth after
+                  tax. We use the tax rate you’d pay on one more dollar of income in that final
+                  year, including Social Security, pensions and required withdrawals. Roth money is
+                  counted in full.
                 </P>
                 <SubHeading>Why &ldquo;today&apos;s dollars&rdquo;?</SubHeading>
                 <P>

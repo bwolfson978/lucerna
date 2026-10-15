@@ -3,7 +3,9 @@
 After the timeline ends (or at ``drawdown_start_age`` if that is later), the
 engine funds spending from the accounts until ``planning_horizon_age``. Each
 year runs in the same order as a timeline year: RMD and withdrawal on the
-start-of-year balance, then growth.
+start-of-year balance, then growth. The traditional balance left at the
+planning horizon is valued at the household's marginal rate in the final plan
+year (see ``terminal_value``).
 """
 
 import numpy as np
@@ -12,6 +14,10 @@ from app.engine.constants import RETIREMENT_SPENDING_RATE
 from app.engine.state_tax import calculate_state_tax, vectorized_state_tax
 from app.engine.tax import calculate_federal_tax, vectorized_federal_tax
 from app.engine.types import ScenarioInput
+from app.engine.year_tax import year_tax
+
+# Step used to measure the marginal rate: tax on the next $1,000 of income
+_MARGINAL_STEP = 1_000.0
 
 
 def post_timeline_start(scenario: ScenarioInput) -> int:
@@ -53,6 +59,94 @@ def vectorized_withdrawal_tax(scenario: ScenarioInput, amounts: np.ndarray) -> n
             amounts, state, scenario.filing_status, scenario.custom_state_rate
         )
     return tax
+
+
+def terminal_tax_rate(scenario: ScenarioInput) -> float:
+    """Combined federal and state marginal rate in the final plan year.
+
+    Measured on the next $1,000 of income on top of that year's income without
+    any conversions: Social Security, pensions and other income, the RMD and the
+    traditional withdrawal for spending. It is fixed for the scenario, so every
+    conversion schedule values its leftover balance at the same rate.
+    """
+    cached = _rate_cache.get(id(scenario))
+    if cached is not None and cached[0] is scenario:
+        return cached[1]
+
+    from app.engine.rmd import calculate_rmd, rmd_start_age
+
+    n_years = len(scenario.timeline)
+    last_year = scenario.planning_horizon_age - scenario.age
+    phase3_start = post_timeline_start(scenario)
+
+    if phase3_start > last_year:
+        # The final plan year is a timeline year
+        income = conversion_bases(scenario, [0.0] * n_years)[-1]
+        yt = year_tax(scenario, n_years - 1)
+        rate = (yt.total(income + _MARGINAL_STEP) - yt.total(income)) / _MARGINAL_STEP
+    else:
+        # The final plan year is in the post-timeline phase: walk there without conversions
+        g = scenario.annual_growth_rate
+        owner_rmd_start = rmd_start_age(scenario.age)
+        trad = scenario.traditional_ira_balance
+        roth = scenario.roth_ira_balance
+        for t, entry in enumerate(scenario.timeline):
+            owner_age = scenario.age + t
+            rmd = calculate_rmd(trad, owner_age) if owner_age >= owner_rmd_start else 0.0
+            rmd = min(rmd, trad)
+            need = draw_beyond_rmd(entry.drawdown, rmd)
+            trad_draw = min(need, trad - rmd)
+            trad -= rmd + trad_draw
+            roth -= min(need - trad_draw, roth)
+            trad *= 1 + g
+            roth *= 1 + g
+        extra_growth = phase3_start - n_years
+        if extra_growth > 0:
+            trad *= (1 + g) ** extra_growth
+            roth *= (1 + g) ** extra_growth
+        spending = account_spending(scenario, trad + roth)
+        distribution = 0.0
+        for year in range(phase3_start, last_year + 1):
+            owner_age = scenario.age + year
+            rmd = calculate_rmd(trad, owner_age) if owner_age >= owner_rmd_start else 0.0
+            distribution = min(max(rmd, min(spending, trad)), trad)
+            trad -= distribution
+            roth -= min(max(0.0, spending - distribution), roth)
+            trad *= 1 + g
+            roth *= 1 + g
+        rate = (
+            withdrawal_tax(scenario, distribution + _MARGINAL_STEP)
+            - withdrawal_tax(scenario, distribution)
+        ) / _MARGINAL_STEP
+
+    rate = min(max(float(rate), 0.0), 0.99)
+    if len(_rate_cache) >= 64:
+        _rate_cache.pop(next(iter(_rate_cache)))
+    _rate_cache[id(scenario)] = (scenario, rate)
+    return rate
+
+
+# Scenario id -> (scenario, rate). Holding the scenario keeps its id from being reused.
+_rate_cache: dict[int, tuple[ScenarioInput, float]] = {}
+
+
+def terminal_value(scenario: ScenarioInput, trad: float, roth: float, year: int) -> float:
+    """Today's value of the balances left at the planning horizon, in plan ``year``.
+
+    The traditional balance is worth ``1 - terminal_tax_rate`` per dollar, the
+    household's marginal rate in the final plan year, rather than being taxed as
+    one large single-year withdrawal. The Roth balance is tax-free.
+    """
+    after_tax = max(0.0, trad) * (1 - terminal_tax_rate(scenario)) + max(0.0, roth)
+    return after_tax * (1 + scenario.discount_rate) ** (-year)
+
+
+def vectorized_terminal_value(
+    scenario: ScenarioInput, trad: np.ndarray, roth: np.ndarray, year: int
+) -> np.ndarray:
+    """Vectorized ``terminal_value``."""
+    after_tax = np.maximum(0.0, trad) * (1 - terminal_tax_rate(scenario)) + np.maximum(0.0, roth)
+    return after_tax * (1 + scenario.discount_rate) ** (-year)
 
 
 def draw_beyond_rmd(drawdown: float | None, rmd: float) -> float:

@@ -27,6 +27,7 @@ from app.engine.retirement import (
     post_timeline_start,
     resolve_drawdowns,
     resolve_states,
+    terminal_value,
     withdrawal_tax,
 )
 from app.engine.rmd import calculate_rmd, rmd_start_age
@@ -82,7 +83,8 @@ def _npv_parts(scenario: ScenarioInput, yearly_conversions: list[float]) -> tupl
 
     Unified timeline loop: every year can have conversions, RMDs, and drawdowns.
     A post-timeline fallback handles years beyond the timeline until
-    planning_horizon_age. Terminal liquidation at planning_horizon_age.
+    planning_horizon_age. The traditional balance left after that is valued at
+    the final plan year's marginal rate (``terminal_value``).
     """
     n_years = len(scenario.timeline)
     g = scenario.annual_growth_rate
@@ -201,14 +203,8 @@ def _npv_parts(scenario: ScenarioInput, yearly_conversions: list[float]) -> tupl
         trad_balance *= 1 + g
         roth_balance *= 1 + g
 
-    # ── Terminal liquidation ─────────────────────────────────────────────────
-    liquidation_year = total_plan_years + 1
-    discount_factor = (1 + d) ** (-liquidation_year)
-
-    if trad_balance > 0:
-        npv += (trad_balance - withdrawal_tax(scenario, trad_balance)) * discount_factor
-
-    npv += roth_balance * discount_factor
+    # ── Leftover balances, traditional at the final year's marginal rate ────
+    npv += terminal_value(scenario, trad_balance, roth_balance, total_plan_years + 1)
 
     return npv, upfront_cost
 

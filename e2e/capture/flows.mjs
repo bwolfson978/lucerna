@@ -374,6 +374,8 @@ export const flows = {
       await page.goto('/methodology')
       await page.getByRole('heading', { level: 1 }).waitFor()
       await shot('top', 'Methodology, first screen')
+      await shot('lifetime-model', 'The Lifetime Model section', { element: page.locator('section#npv-model') })
+      await shot('assumptions', 'Assumptions & Limitations section', { element: page.locator('section#assumptions') })
       await shot('full', 'Methodology, whole page', { fullPage: true })
     },
   },
