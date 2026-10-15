@@ -40,7 +40,9 @@ BASE_SHA="$(git rev-parse --short "$BASE")"
 RUN_DIR="${RUN_DIR:-$ROOT/.qa-runs/$(date +%Y%m%d-%H%M%S)}"
 mkdir -p "$RUN_DIR"
 RUN_DIR="$(cd "$RUN_DIR" && pwd)"
-export PW_CHROMIUM_PATH="${PW_CHROMIUM_PATH:-$( [[ -x /opt/pw-browsers/chromium ]] && echo /opt/pw-browsers/chromium )}"
+# Toolchain from setup-lucerna (Node, backend venv with Pillow) and PW_CHROMIUM_PATH:
+# Chromium in cloud sessions, Google Chrome on macOS.
+source "$ROOT/.agents/skills/setup-lucerna/scripts/env.sh"
 
 # Repo git hooks are branch-controlled code; never run them while checking out refs.
 git_nohooks() { git -c core.hooksPath=/dev/null "$@"; }
@@ -61,7 +63,9 @@ checkout() {
   git_nohooks worktree add --detach "$dir" "$ref" >/dev/null
   WORKTREES+=("$dir")
   if cmp -s "$dir/frontend/package-lock.json" "$ROOT/frontend/package-lock.json"; then
+    # Hard links on Linux, copy-on-write clones on macOS (APFS), a plain copy otherwise.
     cp -al "$ROOT/frontend/node_modules" "$dir/frontend/node_modules" 2>/dev/null \
+      || cp -cR "$ROOT/frontend/node_modules" "$dir/frontend/node_modules" 2>/dev/null \
       || cp -a "$ROOT/frontend/node_modules" "$dir/frontend/node_modules"
   else
     echo "frontend lockfile differs at $ref: running npm ci (slow)" >&2

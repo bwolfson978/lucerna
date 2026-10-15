@@ -62,8 +62,10 @@ Margaret, 63, married filing jointly. Retired early with a large traditional IRA
 ## Development
 
 ```bash
-# Install dependencies and set up git hooks
-npm install
+# First time on a machine (or after pulling a lockfile change): Node 20, Python 3.11,
+# backend/.venv, npm packages and git hooks. No sudo; skips what's already there.
+.agents/skills/setup-lucerna/scripts/setup.sh
+source .agents/skills/setup-lucerna/scripts/env.sh   # tools on PATH in this shell
 
 # Run both services in parallel
 npm run dev

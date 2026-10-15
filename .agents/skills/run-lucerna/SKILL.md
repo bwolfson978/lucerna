@@ -25,8 +25,8 @@ run side by side on different ports. Always stop what you started.
 
 If it fails, read `backend.log` and `frontend.log` in the logs dir. Common causes:
 
-- `frontend/node_modules` missing: `cd frontend && npm ci`.
-- Backend import errors: `cd backend && pip install -r requirements.txt && pip install -e .`.
+- Missing tools or packages (`node_modules`, backend imports, `python` or `npx` not found):
+  run the `setup-lucerna` skill. `start.sh` sources its `env.sh`, so nothing else is needed.
 - Port in use: another stack is running; pick other ports or stop it.
 
 The first request to each page compiles it (Next dev), so the first load can take 10 to 30

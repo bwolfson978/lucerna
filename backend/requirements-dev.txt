@@ -5,3 +5,4 @@ pytest-cov
 pytest-mock
 httpx
 ruff
+pillow  # pr-evidence screenshot pairs (.agents/skills/pr-evidence/scripts/annotate.py)

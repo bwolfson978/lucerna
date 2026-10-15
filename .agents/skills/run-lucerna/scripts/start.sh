@@ -9,6 +9,19 @@
 # Prints the web and API URLs on success; stop.sh with the same --log-dir stops both.
 set -euo pipefail
 
+# Toolchain from setup-lucerna (backend venv, Node in ~/.local) and a Playwright browser.
+source "$(dirname "${BASH_SOURCE[0]}")/../../setup-lucerna/scripts/env.sh"
+
+# Run a command in its own session so stop.sh can stop its whole process group.
+# macOS has no setsid(1); Perl's POSIX::setsid does the same and ships with macOS.
+detach() {
+  if command -v setsid >/dev/null; then
+    exec setsid nohup "$@"
+  else
+    exec nohup perl -MPOSIX -e 'POSIX::setsid(); exec @ARGV or die "exec: $!"' "$@"
+  fi
+}
+
 DIR="$(git rev-parse --show-toplevel)"
 WEB_PORT=3000
 API_PORT=8000
@@ -27,7 +40,11 @@ mkdir -p "$LOG_DIR"
 LOG_DIR="$(cd "$LOG_DIR" && pwd)"
 
 if [[ ! -d "$DIR/frontend/node_modules" ]]; then
-  echo "frontend/node_modules missing in $DIR: run 'npm ci' in frontend/ first" >&2
+  echo "frontend/node_modules missing in $DIR: run .agents/skills/setup-lucerna/scripts/setup.sh" >&2
+  exit 1
+fi
+if ! python -c 'import fastapi' 2>/dev/null; then
+  echo "no Python with the backend's packages on PATH: run .agents/skills/setup-lucerna/scripts/setup.sh" >&2
   exit 1
 fi
 
@@ -39,7 +56,7 @@ fi
   MCP_INTERNAL_TOKEN=local-internal \
   ALLOWED_ORIGINS="http://localhost:$WEB_PORT" \
   SITE_URL="http://localhost:$WEB_PORT" \
-    setsid nohup python -m uvicorn app.main:app --port "$API_PORT" >"$LOG_DIR/backend.log" 2>&1 &
+    detach python -m uvicorn app.main:app --port "$API_PORT" >"$LOG_DIR/backend.log" 2>&1 &
   echo $! >"$LOG_DIR/backend.pid"
 )
 (
@@ -47,7 +64,7 @@ fi
   NEXT_PUBLIC_API_URL="http://localhost:$API_PORT" \
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="" \
   NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN="" \
-    setsid nohup npx next dev -p "$WEB_PORT" >"$LOG_DIR/frontend.log" 2>&1 &
+    detach npx next dev -p "$WEB_PORT" >"$LOG_DIR/frontend.log" 2>&1 &
   echo $! >"$LOG_DIR/frontend.pid"
 )
 
