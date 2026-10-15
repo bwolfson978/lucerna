@@ -99,7 +99,7 @@
         },
         {
           "heading": "What's not included",
-          "text": "The few states that tax Social Security are treated as taxing all of it, without their own exemptions. State retirement exemptions that leave out Roth conversions (Maine, Maryland, Delaware, Rhode Island), state credits and age deductions are not included, and pension exclusions are not applied to pension income. IRMAA surcharges are factored in during optimization but are not a direct user input. The net investment income tax is not included, and future tax brackets are not adjusted for inflation. These simplifications could shift the optimal amount depending on your situation."
+          "text": "The few states that tax Social Security are treated as taxing all of it, without their own exemptions. Maine, Maryland, Delaware and Rhode Island exempt some retirement withdrawals but not Roth conversions; those breaks are not included. State credits and age deductions are not included either, and pension exclusions are not applied to pension income. IRMAA surcharges are factored in during optimization but are not a direct user input. The net investment income tax is not included, and future tax brackets are not adjusted for inflation. These simplifications could shift the optimal amount depending on your situation."
         }
       ]
     },
