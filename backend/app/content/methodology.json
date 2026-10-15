@@ -99,7 +99,7 @@
         },
         {
           "heading": "What's not included",
-          "text": "The few states that tax Social Security are treated as taxing all of it, without their own exemptions. IRMAA surcharges are factored in during optimization but are not a direct user input. The net investment income tax is not included, and future tax brackets are not adjusted for inflation. These simplifications could shift the optimal amount depending on your situation."
+          "text": "The few states that tax Social Security are treated as taxing all of it, without their own exemptions. State retirement exemptions that leave out Roth conversions (Maine, Maryland, Delaware, Rhode Island), state credits and age deductions are not included, and pension exclusions are not applied to pension income. IRMAA surcharges are factored in during optimization but are not a direct user input. The net investment income tax is not included, and future tax brackets are not adjusted for inflation. These simplifications could shift the optimal amount depending on your situation."
         }
       ]
     },
@@ -180,7 +180,7 @@
       "sidebar": false,
       "blocks": [
         {
-          "text": "When you choose a state, its income tax is added to the cost of converting in your working years. From your retirement age on, your retirement state's tax applies instead, to conversions and withdrawals alike. Moving from a high-tax state to a no-tax state in retirement makes conversions less attractive before the move and more attractive after it. Without a state selected, the analysis is federal only."
+          "text": "When you choose a state, its income tax is added to the cost of converting in your working years. From your retirement age on, your retirement state's tax applies instead, to conversions and withdrawals alike. Moving from a high-tax state to a no-tax state in retirement makes conversions less attractive before the move and more attractive after it. Some states exempt part or all of IRA and 401(k) money: Illinois, Iowa (from 55), Mississippi and Pennsylvania exempt it in full, and states like New York, Georgia, Colorado and Michigan exempt a yearly amount from a set age. Where the exemption covers Roth conversions, it is applied to conversions and withdrawals alike. Without a state selected, the analysis is federal only."
         }
       ]
     },

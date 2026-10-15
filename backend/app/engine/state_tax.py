@@ -25,6 +25,8 @@ __all__ = [
     "get_supported_states",
     "get_all_states",
     "get_tax_data_metadata",
+    "retirement_rule",
+    "retirement_exclusion",
 ]
 
 
@@ -237,6 +239,63 @@ def vectorized_state_tax(
         tax += in_bracket * bracket["rate"]
 
     return tax
+
+
+# ==============================================
+# Retirement income rules
+# ==============================================
+#
+# Some states exempt part or all of traditional IRA and 401(k) money: what is
+# withdrawn and, in most of them, what is converted to a Roth. Each rule lives
+# in the state's ``retirement_income`` entry in the JSON, with its sources:
+#
+#   tiers     [{min_age, amount}]: the highest tier the age reaches applies.
+#             amount null means unlimited; a dict gives it per filing status.
+#   phaseout  {filing_status: [start, end]}: the exclusion shrinks linearly to
+#             zero as federal AGI goes from start to end.
+#
+# Only rules that cover Roth conversions are modeled, because the engine taxes
+# a year's IRA money as one amount. A per-person amount is counted once, for
+# the account owner, since the engine tracks one combined traditional balance.
+
+
+def retirement_rule(state: str | None) -> dict | None:
+    """The state's retirement income rule, or None when IRA money is fully taxed."""
+    data = _get_state_data(state) if state else None
+    return data.get("retirement_income") if data else None
+
+
+def retirement_exclusion(
+    state: str | None,
+    filing_status: FilingStatus,
+    age: float,
+    ira_income,
+    phaseout_income=0.0,
+):
+    """Part of ``ira_income`` (IRA and 401(k) withdrawals and conversions) the
+    state leaves untaxed at ``age``. ``phaseout_income`` is the income the
+    rule's phase-out is measured on. Scalars or numpy arrays.
+    """
+    rule = retirement_rule(state)
+    ira = np.maximum(0.0, np.asarray(ira_income, dtype=float))
+    scalar = not np.ndim(ira_income)
+    if rule is None:
+        return 0.0 if scalar else np.zeros_like(ira)
+    fs_key = _FILING_STATUS_KEY[filing_status]
+    cap = 0.0
+    for tier in rule["tiers"]:
+        if age >= tier["min_age"]:
+            amount = tier["amount"]
+            if isinstance(amount, dict):
+                amount = amount[fs_key]
+            cap = float("inf") if amount is None else float(amount)
+    excluded = np.minimum(ira, cap)
+    phaseout = rule.get("phaseout")
+    if phaseout and cap > 0:
+        start, end = phaseout[fs_key]
+        measure = np.asarray(phaseout_income, dtype=float)
+        excluded = excluded * np.clip((end - measure) / (end - start), 0.0, 1.0)
+    return float(excluded) if scalar else excluded
 
 
 def get_supported_states() -> list[dict]:

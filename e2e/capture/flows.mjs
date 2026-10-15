@@ -377,4 +377,19 @@ export const flows = {
       await shot('full', 'Methodology, whole page', { fullPage: true })
     },
   },
+
+  'methodology-sidebar': {
+    title: 'How it works sidebar (Assumptions & Limitations)',
+    paths: ['frontend/src/components/methodology/', 'frontend/src/content/'],
+    async run(page, shot) {
+      await page.goto('/calculator')
+      await page.getByRole('button', { name: 'How does it work?' }).first().click()
+      const sidebar = page.getByRole('complementary', { name: 'How it works' })
+      await sidebar.getByRole('button', { name: /Assumptions & Limitations/ }).click()
+      await page.waitForTimeout(600)
+      const section = sidebar.locator('#assumptions-limitations')
+      await section.scrollIntoViewIfNeeded()
+      await shot('assumptions', 'How it works: Assumptions & Limitations', { element: section })
+    },
+  },
 }

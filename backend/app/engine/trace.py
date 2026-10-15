@@ -13,7 +13,7 @@ from app.engine.constants import (
 from app.engine.irmaa import IRMAA_LOOKBACK_YEARS, IRMAA_TIERS, MEDICARE_START_AGE
 from app.engine.retirement import conversion_bases
 from app.engine.rmd import calculate_rmd, rmd_start_age
-from app.engine.state_tax import resolve_state_for_year, state_name
+from app.engine.state_tax import resolve_state_for_year, retirement_rule, state_name
 from app.engine.tax_cost import (
     combined_marginal_rate,
     total_conversion_cost,
@@ -372,12 +372,16 @@ def _build_sensitivity_notes(
         avg_state = sum(r for _, r in rows) / len(rows)
         name = state_name(code)
         if avg_state < MIN_STATE_RATE:
-            notes.append(f"{name} adds no state income tax to conversions ({span})")
+            note = f"{name} adds no state income tax to conversions ({span})"
         else:
-            notes.append(
+            note = (
                 f"{name} income tax adds about {avg_state:.1%} to conversions ({span}); "
                 f"combined federal and state rates are used in optimization"
             )
+        rule = retirement_rule(code)
+        if rule:
+            note += f". {rule['summary'].rstrip('.')}"
+        notes.append(note)
 
     return notes
 

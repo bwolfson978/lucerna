@@ -9,7 +9,11 @@ start-of-year balance, then growth.
 import numpy as np
 
 from app.engine.constants import RETIREMENT_SPENDING_RATE
-from app.engine.state_tax import calculate_state_tax, vectorized_state_tax
+from app.engine.state_tax import (
+    calculate_state_tax,
+    retirement_exclusion,
+    vectorized_state_tax,
+)
 from app.engine.tax import calculate_federal_tax, vectorized_federal_tax
 from app.engine.types import ScenarioInput
 
@@ -33,13 +37,22 @@ def account_spending(scenario: ScenarioInput, account_balance):
     return scenario.default_drawdown
 
 
+def _state_taxed_withdrawal(scenario: ScenarioInput, state: str, amount):
+    """The part of a post-timeline withdrawal the retirement state taxes."""
+    age = scenario.age + post_timeline_start(scenario)
+    return amount - retirement_exclusion(state, scenario.filing_status, age, amount, amount)
+
+
 def withdrawal_tax(scenario: ScenarioInput, amount: float) -> float:
     """Federal and retirement-state tax on an account withdrawal."""
     tax = calculate_federal_tax(amount, scenario.filing_status)
     state = scenario.retirement_state or scenario.state
     if state:
         tax += calculate_state_tax(
-            amount, state, scenario.filing_status, scenario.custom_state_rate
+            _state_taxed_withdrawal(scenario, state, amount),
+            state,
+            scenario.filing_status,
+            scenario.custom_state_rate,
         )
     return tax
 
@@ -50,7 +63,10 @@ def vectorized_withdrawal_tax(scenario: ScenarioInput, amounts: np.ndarray) -> n
     state = scenario.retirement_state or scenario.state
     if state:
         tax = tax + vectorized_state_tax(
-            amounts, state, scenario.filing_status, scenario.custom_state_rate
+            _state_taxed_withdrawal(scenario, state, amounts),
+            state,
+            scenario.filing_status,
+            scenario.custom_state_rate,
         )
     return tax
 
