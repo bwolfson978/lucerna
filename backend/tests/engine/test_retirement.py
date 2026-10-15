@@ -10,6 +10,8 @@ from app.engine.retirement import (
     draw_beyond_rmd,
     post_timeline_start,
     resolve_drawdowns,
+    terminal_value,
+    vectorized_terminal_value,
     vectorized_withdrawal_tax,
     withdrawal_tax,
 )
@@ -51,6 +53,38 @@ def _margaret(**overrides) -> ScenarioInput:
     return ScenarioInput(**{**base, **overrides})
 
 
+class TestTerminalValue:
+    def test_spreads_withdrawals_over_ten_years(self):
+        """Each year withdraws balance / years left, still growing, taxed on its own."""
+        s = _scenario()
+        g, d = s.annual_growth_rate, s.discount_rate
+        balance, expected = 500_000.0, 0.0
+        for k in range(10):
+            w = balance / (10 - k)
+            balance = (balance - w) * (1 + g)
+            expected += (w - calculate_federal_tax(w, s.filing_status)) / (1 + d) ** (5 + k)
+        assert terminal_value(s, 500_000, 0.0, 5) == pytest.approx(expected)
+        assert balance == pytest.approx(0.0, abs=1e-6)
+
+    def test_less_tax_than_one_lump_sum(self):
+        s = _scenario(discount_rate=0.0, annual_growth_rate=0.0)
+        lump = 800_000 - withdrawal_tax(s, 800_000)
+        assert terminal_value(s, 800_000, 0.0, 0) > lump
+
+    def test_roth_counted_tax_free_in_start_year(self):
+        s = _scenario()
+        assert terminal_value(s, 0.0, 100_000, 3) == pytest.approx(
+            100_000 / (1 + s.discount_rate) ** 3
+        )
+
+    def test_vectorized_matches_scalar(self):
+        s = _scenario(state="NY")
+        trad = np.array([0.0, 50_000, 400_000, 2_000_000])
+        roth = np.array([10_000, 0.0, 250_000, 0.0])
+        expected = [terminal_value(s, t, r, 7) for t, r in zip(trad, roth, strict=True)]
+        np.testing.assert_allclose(vectorized_terminal_value(s, trad, roth, 7), expected)
+
+
 class TestPhaseTiming:
     def test_starts_at_drawdown_age_after_short_timeline(self):
         assert post_timeline_start(_scenario(drawdown_start_age=65)) == 5
@@ -60,15 +94,14 @@ class TestPhaseTiming:
         assert post_timeline_start(_scenario(timeline=timeline, drawdown_start_age=63)) == 8
 
     def test_first_drawdown_year_is_funded(self):
-        """One drawdown year at 61: spend, grow, then liquidate at 62."""
+        """One drawdown year at 61: spend, grow, then draw the rest out from 62."""
         s = _scenario()
         g, d = s.annual_growth_rate, s.discount_rate
         trad = s.traditional_ira_balance * (1 + g)  # after the timeline year
         spend = 80_000
         tax = calculate_federal_tax(spend, s.filing_status)
         remaining = (trad - spend) * (1 + g)
-        liquidation = remaining - calculate_federal_tax(remaining, s.filing_status)
-        expected = (spend - tax) / (1 + d) + liquidation / (1 + d) ** 2
+        expected = (spend - tax) / (1 + d) + terminal_value(s, remaining, 0.0, 2)
 
         assert calculate_npv(s, [0.0]) == pytest.approx(expected)
 

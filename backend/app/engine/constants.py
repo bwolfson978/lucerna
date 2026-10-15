@@ -7,6 +7,7 @@ scattered across multiple modules.
 __all__ = [
     "ROUNDING_RESOLUTION",
     "RETIREMENT_SPENDING_RATE",
+    "TERMINAL_SPREAD_YEARS",
     "DISPLAY_BRACKET_CAP",
     "NUMERIC_INFINITY",
     "IMPROVEMENT_THRESHOLD",
@@ -27,6 +28,10 @@ ROUNDING_RESOLUTION = 100  # dollars
 # Default retirement spending as a fraction of total retirement balance
 # (the "4% rule").
 RETIREMENT_SPENDING_RATE = 0.04
+
+# Years over which the traditional balance left at the planning horizon is
+# withdrawn and taxed, instead of all at once in a single year.
+TERMINAL_SPREAD_YEARS = 10
 
 # Display cap for the infinite top tax bracket in visualizations.
 # Used in bracket fill analysis and chart rendering.

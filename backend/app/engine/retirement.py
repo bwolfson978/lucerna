@@ -3,12 +3,14 @@
 After the timeline ends (or at ``drawdown_start_age`` if that is later), the
 engine funds spending from the accounts until ``planning_horizon_age``. Each
 year runs in the same order as a timeline year: RMD and withdrawal on the
-start-of-year balance, then growth.
+start-of-year balance, then growth. At the planning horizon, the traditional
+balance that is left is withdrawn over ``TERMINAL_SPREAD_YEARS`` (see
+``terminal_value``).
 """
 
 import numpy as np
 
-from app.engine.constants import RETIREMENT_SPENDING_RATE
+from app.engine.constants import RETIREMENT_SPENDING_RATE, TERMINAL_SPREAD_YEARS
 from app.engine.state_tax import calculate_state_tax, vectorized_state_tax
 from app.engine.tax import calculate_federal_tax, vectorized_federal_tax
 from app.engine.types import ScenarioInput
@@ -53,6 +55,47 @@ def vectorized_withdrawal_tax(scenario: ScenarioInput, amounts: np.ndarray) -> n
             amounts, state, scenario.filing_status, scenario.custom_state_rate
         )
     return tax
+
+
+def terminal_value(scenario: ScenarioInput, trad: float, roth: float, start_year: int) -> float:
+    """Today's value of the balances left at the planning horizon.
+
+    The traditional balance is drawn out evenly over ``TERMINAL_SPREAD_YEARS``
+    (remaining balance / years left, still growing) and each withdrawal is taxed
+    on its own, so leftover money is valued at the rates a retiree would actually
+    pay rather than as one large single-year distribution. The Roth balance is
+    tax-free and counted in ``start_year``.
+    """
+    g = scenario.annual_growth_rate
+    d = scenario.discount_rate
+    value = max(0.0, roth) * (1 + d) ** (-start_year)
+    balance = max(0.0, trad)
+    for k in range(TERMINAL_SPREAD_YEARS):
+        if balance <= 0:
+            break
+        withdrawal = balance / (TERMINAL_SPREAD_YEARS - k)
+        balance -= withdrawal
+        after_tax = withdrawal - withdrawal_tax(scenario, withdrawal)
+        value += after_tax * (1 + d) ** (-(start_year + k))
+        balance *= 1 + g
+    return value
+
+
+def vectorized_terminal_value(
+    scenario: ScenarioInput, trad: np.ndarray, roth: np.ndarray, start_year: int
+) -> np.ndarray:
+    """Vectorized ``terminal_value``."""
+    g = scenario.annual_growth_rate
+    d = scenario.discount_rate
+    value = np.maximum(0.0, roth) * (1 + d) ** (-start_year)
+    balance = np.maximum(0.0, trad)
+    for k in range(TERMINAL_SPREAD_YEARS):
+        withdrawal = balance / (TERMINAL_SPREAD_YEARS - k)
+        balance = balance - withdrawal
+        after_tax = withdrawal - vectorized_withdrawal_tax(scenario, withdrawal)
+        value = value + after_tax * (1 + d) ** (-(start_year + k))
+        balance = balance * (1 + g)
+    return value
 
 
 def draw_beyond_rmd(drawdown: float | None, rmd: float) -> float:

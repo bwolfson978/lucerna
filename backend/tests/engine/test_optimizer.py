@@ -203,12 +203,15 @@ class TestConversionPreferences:
             assert detail["tax_cost"] <= 5000 + 50  # tolerance for $100 rounding
 
     def test_max_annual_tax_cost_reduces_conversions(self):
-        """A tight tax cap should produce smaller conversions than unconstrained."""
+        """A tight tax cap should shrink the largest year's conversion.
+
+        The total can still rise: the cap pushes conversions into later years.
+        """
         unconstrained = self._alex_scenario()
         constrained = self._alex_scenario(max_annual_tax_cost=5000)
         r_free = optimize(unconstrained)
         r_cap = optimize(constrained)
-        assert r_cap.total_conversion <= r_free.total_conversion
+        assert max(r_cap.yearly_conversions) < max(r_free.yearly_conversions)
 
     def test_max_conversion_per_year_respected(self):
         """No single year should exceed the per-year conversion cap."""

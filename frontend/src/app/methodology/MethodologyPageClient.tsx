@@ -80,6 +80,12 @@ export function MethodologyPageClient() {
           "Total household spending, with accounts covering what income doesn't. 4% of total balance at retirement if not specified",
       },
       {
+        assumption: "Balance left at the end",
+        value: "10 years",
+        rationale:
+          "Traditional money left at the age you plan to is withdrawn evenly over 10 years and taxed each year. Roth money is not taxed",
+      },
+      {
         assumption: "State taxes",
         value: "Optional",
         rationale: "Included when a state is selected, otherwise federal only",
@@ -241,8 +247,10 @@ export function MethodologyPageClient() {
                   comes from Roth tax-free. Required Minimum Distributions are enforced.
                 </P>
                 <P>
-                  <strong>Phase 4: Final liquidation.</strong> Any remaining balances are
-                  distributed. Traditional balances are taxed; Roth balances are not.
+                  <strong>Phase 4: Money left at the end.</strong> Any Traditional balance left at
+                  the age you plan to is withdrawn evenly over the next 10 years and taxed each
+                  year, so it is not pushed into the top brackets all at once. Roth balances are not
+                  taxed.
                 </P>
                 <SubHeading>Why &ldquo;today&apos;s dollars&rdquo;?</SubHeading>
                 <P>

@@ -136,7 +136,7 @@ class ScenarioInput(BaseModel):
         default=90,
         ge=50,
         le=120,
-        description="Age at end of plan (terminal liquidation year).",
+        description="Age at end of plan. Traditional money left is withdrawn over 10 years.",
     )
 
     # Growth/discount rates (with defaults)

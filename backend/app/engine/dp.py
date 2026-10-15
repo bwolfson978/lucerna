@@ -93,6 +93,7 @@ from app.engine.retirement import (
     conversion_magi,
     draw_beyond_rmd,
     post_timeline_start,
+    vectorized_terminal_value,
     vectorized_withdrawal_tax,
 )
 from app.engine.rmd import calculate_rmd, rmd_start_age, vectorized_rmd
@@ -162,7 +163,7 @@ def _compute_retirement_values(
 
     For each (trad, roth) pair, simulates:
     - Annual withdrawals (traditional first, then Roth) with tax
-    - Terminal liquidation of remaining balances
+    - Leftover traditional balance withdrawn over 10 years (``terminal_value``)
 
     Returns an array of NPV values, one per grid point.
     """
@@ -212,12 +213,8 @@ def _compute_retirement_values(
         trad *= 1 + g
         roth *= 1 + g
 
-    # Terminal liquidation
-    discount_factor = (1 + d) ** (-(last_year + 1))
-
-    final_trad = np.maximum(0.0, trad)
-    npv += (final_trad - vectorized_withdrawal_tax(scenario, final_trad)) * discount_factor
-    npv += np.maximum(0.0, roth) * discount_factor
+    # Leftover balances: traditional withdrawn over 10 years, Roth tax-free
+    npv += vectorized_terminal_value(scenario, trad, roth, last_year + 1)
 
     return npv
 
