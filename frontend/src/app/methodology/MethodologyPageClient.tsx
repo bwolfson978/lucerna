@@ -81,9 +81,9 @@ export function MethodologyPageClient() {
       },
       {
         assumption: "Balance left at the end",
-        value: "10 years",
+        value: "Final-year rate",
         rationale:
-          "Traditional money left at the age you plan to is withdrawn evenly over 10 years and taxed each year. Roth money is not taxed",
+          "Traditional money left at the age you plan to is valued after tax at your top federal plus state rate that year. Roth money is not taxed",
       },
       {
         assumption: "State taxes",
@@ -248,9 +248,8 @@ export function MethodologyPageClient() {
                 </P>
                 <P>
                   <strong>Phase 4: Money left at the end.</strong> Any Traditional balance left at
-                  the age you plan to is withdrawn evenly over the next 10 years and taxed each
-                  year, so it is not pushed into the top brackets all at once. Roth balances are not
-                  taxed.
+                  the age you plan to is valued after tax at your top tax rate in that final year,
+                  not taxed all at once in the top brackets. Roth balances are not taxed.
                 </P>
                 <SubHeading>Why &ldquo;today&apos;s dollars&rdquo;?</SubHeading>
                 <P>

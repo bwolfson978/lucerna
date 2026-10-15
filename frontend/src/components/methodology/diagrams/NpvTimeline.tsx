@@ -4,7 +4,7 @@ import { DATA_FONT_FAMILY } from "@/lib/utils/constants";
 
 /**
  * Horizontal timeline showing the 4 phases of the NPV lifetime model:
- * 1. Conversion years, 2. Growth to retirement, 3. Retirement, 4. Final withdrawals
+ * 1. Conversion years, 2. Growth to retirement, 3. Retirement, 4. Money left at the end
  */
 export function NpvTimeline() {
   const labelFont = "'Inter', system-ui, sans-serif";
@@ -39,11 +39,11 @@ export function NpvTimeline() {
       note: "Traditional taxed,\nRoth tax-free",
     },
     {
-      label: "Final\nwithdrawals",
+      label: "Money left\nat the end",
       pct: 0.12,
       color: "#1b4332",
       opacity: 0.2,
-      note: "Leftover drawn\nover 10 years",
+      note: "Taxed at your\nfinal-year rate",
     },
   ];
 
@@ -68,7 +68,7 @@ export function NpvTimeline() {
       viewBox="0 0 560 200"
       className="mx-auto w-full max-w-[560px]"
       role="img"
-      aria-label="Timeline showing the four phases of the lifetime financial model: conversion years, growth to retirement, retirement distributions, and final withdrawals over 10 years"
+      aria-label="Timeline showing the four phases of the lifetime financial model: conversion years, growth to retirement, retirement distributions, and money left at the end, valued at your final-year tax rate"
     >
       {/* Phase bars */}
       {phaseRects.map((p, i) => (

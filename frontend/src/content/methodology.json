@@ -99,7 +99,7 @@
         },
         {
           "heading": "Money left at the end of the plan",
-          "text": "Traditional money still in the account at the age you plan to is valued as if it were withdrawn evenly over the next 10 years, each withdrawal taxed on its own at federal and retirement-state rates. That reflects a gradual drawdown rather than emptying the account in one year, which would push it into the top brackets. Roth money left over is counted tax-free."
+          "text": "Traditional money still in the account at the age you plan to is valued after tax at your top federal plus state rate in that final year, counting that year's Social Security, pensions, required distributions and spending withdrawals. That reflects the rate you would actually pay on further withdrawals, rather than emptying the account in one year, which would push it into the top brackets. Roth money left over is counted tax-free."
         },
         {
           "heading": "What's not included",
@@ -130,7 +130,7 @@
         },
         {
           "heading": "Four phases",
-          "text": "1) Conversion years: tax is paid on conversions and money moves from Traditional to Roth while both accounts grow. 2) Growth to retirement: both accounts compound until retirement age. 3) Retirement distributions: Traditional withdrawals are taxed, Roth withdrawals are not, and Required Minimum Distributions are enforced. 4) After the age you plan to: any Traditional balance that is left is withdrawn evenly over the next 10 years and taxed each year, and any Roth balance that is left is counted tax-free."
+          "text": "1) Conversion years: tax is paid on conversions and money moves from Traditional to Roth while both accounts grow. 2) Growth to retirement: both accounts compound until retirement age. 3) Retirement distributions: Traditional withdrawals are taxed, Roth withdrawals are not, and Required Minimum Distributions are enforced. 4) At the age you plan to: any Traditional balance that is left is valued after tax at your top tax rate in that final year, and any Roth balance that is left is counted tax-free."
         },
         {
           "heading": "Two-stage search",

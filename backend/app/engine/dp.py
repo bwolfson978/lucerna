@@ -163,7 +163,7 @@ def _compute_retirement_values(
 
     For each (trad, roth) pair, simulates:
     - Annual withdrawals (traditional first, then Roth) with tax
-    - Leftover traditional balance withdrawn over 10 years (``terminal_value``)
+    - Leftover traditional balance at the final year's marginal rate (``terminal_value``)
 
     Returns an array of NPV values, one per grid point.
     """
@@ -213,7 +213,7 @@ def _compute_retirement_values(
         trad *= 1 + g
         roth *= 1 + g
 
-    # Leftover balances: traditional withdrawn over 10 years, Roth tax-free
+    # Leftover balances: traditional at the final year's marginal rate, Roth tax-free
     npv += vectorized_terminal_value(scenario, trad, roth, last_year + 1)
 
     return npv
