@@ -43,36 +43,42 @@ def account_spending(scenario: ScenarioInput, account_balance):
     return scenario.default_drawdown
 
 
-def _state_taxed_withdrawal(scenario: ScenarioInput, state: str, amount):
+def _state_taxed_withdrawal(scenario: ScenarioInput, state: str, amount, t: float = 0):
     """The part of a post-timeline withdrawal the retirement state taxes."""
     age = scenario.age + post_timeline_start(scenario)
-    return amount - retirement_exclusion(state, scenario.filing_status, age, amount, amount)
+    return amount - retirement_exclusion(
+        state, scenario.filing_status, age, amount, amount, scenario.fixed_dollar_scale(t)
+    )
 
 
-def withdrawal_tax(scenario: ScenarioInput, amount: float) -> float:
-    """Federal and retirement-state tax on an account withdrawal."""
+def withdrawal_tax(scenario: ScenarioInput, amount: float, t: float = 0) -> float:
+    """Federal and retirement-state tax on an account withdrawal in plan year ``t``."""
     tax = calculate_federal_tax(amount, scenario.filing_status)
     state = scenario.retirement_state or scenario.state
     if state:
         tax += calculate_state_tax(
-            _state_taxed_withdrawal(scenario, state, amount),
+            _state_taxed_withdrawal(scenario, state, amount, t),
             state,
             scenario.filing_status,
             scenario.custom_state_rate,
+            scenario.fixed_dollar_scale(t),
         )
     return tax
 
 
-def vectorized_withdrawal_tax(scenario: ScenarioInput, amounts: np.ndarray) -> np.ndarray:
+def vectorized_withdrawal_tax(
+    scenario: ScenarioInput, amounts: np.ndarray, t: float = 0
+) -> np.ndarray:
     """Vectorized ``withdrawal_tax``."""
     tax = vectorized_federal_tax(amounts, scenario.filing_status)
     state = scenario.retirement_state or scenario.state
     if state:
         tax = tax + vectorized_state_tax(
-            _state_taxed_withdrawal(scenario, state, amounts),
+            _state_taxed_withdrawal(scenario, state, amounts, t),
             state,
             scenario.filing_status,
             scenario.custom_state_rate,
+            scenario.fixed_dollar_scale(t),
         )
     return tax
 
@@ -102,7 +108,7 @@ def terminal_tax_rate(scenario: ScenarioInput) -> float:
         rate = (yt.total(income + _MARGINAL_STEP) - yt.total(income)) / _MARGINAL_STEP
     else:
         # The final plan year is in the post-timeline phase: walk there without conversions
-        g = scenario.annual_growth_rate
+        g = scenario.real_growth_rate
         owner_rmd_start = rmd_start_age(scenario.age)
         trad = scenario.traditional_ira_balance
         roth = scenario.roth_ira_balance
@@ -131,8 +137,8 @@ def terminal_tax_rate(scenario: ScenarioInput) -> float:
             trad *= 1 + g
             roth *= 1 + g
         rate = (
-            withdrawal_tax(scenario, distribution + _MARGINAL_STEP)
-            - withdrawal_tax(scenario, distribution)
+            withdrawal_tax(scenario, distribution + _MARGINAL_STEP, last_year)
+            - withdrawal_tax(scenario, distribution, last_year)
         ) / _MARGINAL_STEP
 
     rate = min(max(float(rate), 0.0), 0.99)
@@ -154,7 +160,7 @@ def terminal_value(scenario: ScenarioInput, trad: float, roth: float, year: int)
     one large single-year withdrawal. The Roth balance is tax-free.
     """
     after_tax = max(0.0, trad) * (1 - terminal_tax_rate(scenario)) + max(0.0, roth)
-    return after_tax * (1 + scenario.discount_rate) ** (-year)
+    return after_tax * (1 + scenario.real_discount_rate) ** (-year)
 
 
 def vectorized_terminal_value(
@@ -162,7 +168,7 @@ def vectorized_terminal_value(
 ) -> np.ndarray:
     """Vectorized ``terminal_value``."""
     after_tax = np.maximum(0.0, trad) * (1 - terminal_tax_rate(scenario)) + np.maximum(0.0, roth)
-    return after_tax * (1 + scenario.discount_rate) ** (-year)
+    return after_tax * (1 + scenario.real_discount_rate) ** (-year)
 
 
 def draw_beyond_rmd(drawdown: float | None, rmd: float) -> float:
@@ -230,7 +236,7 @@ def conversion_bases(scenario: ScenarioInput, conversions: list[float]) -> list[
         base, _ = conversion_magi(entry.gross_income + rmd, available, need, conversion)
         bases.append(float(base))
         balance = (available - conversion - min(need, available - conversion)) * (
-            1 + scenario.annual_growth_rate
+            1 + scenario.real_growth_rate
         )
     return bases
 
@@ -251,7 +257,7 @@ def resolve_drawdowns(scenario: ScenarioInput) -> ScenarioInput:
 
     if scenario.default_drawdown is None:
         projected = (scenario.traditional_ira_balance + scenario.roth_ira_balance) * (
-            1 + scenario.annual_growth_rate
+            1 + scenario.real_growth_rate
         ) ** max(0, start_offset)
         four_percent = projected * RETIREMENT_SPENDING_RATE
 

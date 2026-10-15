@@ -15,6 +15,7 @@ from collections import OrderedDict
 from functools import cache
 from pathlib import Path
 
+from app.engine.inflation import nominal_scale
 from app.engine.optimizer import optimize
 from app.engine.state_tax import _TAX_DATA
 from app.engine.tax import BRACKETS, STANDARD_DEDUCTION
@@ -150,12 +151,19 @@ def scenario_from_draft(draft: ScenarioDraft, start_year: int) -> dict:
 def scenario_from_input(inputs: ScenarioInput, start_year: int) -> dict:
     """An approximate stateless scenario for engine input saved on the website, which
     keeps only the engine's form of it. Years before ``start_year`` are dropped and the
-    income growth rate is read off the first two years."""
+    income growth rate is read off the first two years.
+
+    Input saved before inflation was modeled has no ``inflation_rate``: its per-year
+    incomes are compared with a projection without inflation, so only the years the
+    user changed carry over, and the scenario then uses the default inflation."""
     timeline = inputs.timeline
+    legacy = "inflation_rate" not in inputs.model_fields_set
+    inflation_pct = 0.0 if legacy else inputs.inflation_rate * 100
     first = timeline[0].gross_income
     growth = 0.0
     if len(timeline) > 1 and first > 0:
-        growth = round((timeline[1].gross_income / first - 1) * 100, 1)
+        ratio = timeline[1].gross_income / first * (1 + inflation_pct / 100)
+        growth = round((ratio - 1) * 100, 1)
     healthcare = inputs.healthcare
     draft = ScenarioDraft(
         age=inputs.age + max(0, start_year - timeline[0].year),
@@ -174,6 +182,7 @@ def scenario_from_input(inputs: ScenarioInput, start_year: int) -> dict:
         planning_horizon_age=inputs.planning_horizon_age,
         investment_return_pct=round(inputs.annual_growth_rate * 100, 2),
         discount_rate_pct=round(inputs.discount_rate * 100, 2),
+        inflation_pct=round(inflation_pct, 2),
         include_aca=healthcare is not None,
         household_size=healthcare.household_size if healthcare else 1,
         monthly_slcsp_premium=healthcare.monthly_slcsp_premium if healthcare else 620,
@@ -181,6 +190,8 @@ def scenario_from_input(inputs: ScenarioInput, start_year: int) -> dict:
         timeline=[row for row in timeline if row.year >= start_year],
     )
     scenario = scenario_from_draft(draft, start_year)
+    if legacy:
+        del scenario["inflation_pct"]
     if "income_changes" in scenario:
         # Keep the per-year incomes only if they still fit this year's timeline.
         try:
@@ -290,14 +301,27 @@ def run_draft(draft: ScenarioDraft) -> tuple[ScenarioInput, OptimizationResult]:
     return scenario, run_optimization(scenario)
 
 
+def _in_that_years_dollars(result: OptimizationResult, t: int, amount: float) -> dict:
+    """The amount in plan year ``t``'s own dollars, when inflation makes it differ."""
+    scale = nominal_scale(result.input.inflation_rate, t)
+    if scale == 1.0 or not amount:
+        return {}
+    return {"conversion_in_that_years_dollars": round(amount * scale)}
+
+
 def summarize_result(result: OptimizationResult, result_id: str) -> dict:
-    """Everything a model needs to explain a result, without the chart payloads."""
+    """Everything a model needs to explain a result, without the chart payloads.
+
+    Amounts are in today's dollars; each later conversion also comes in that
+    year's own dollars, the amount that would actually be converted then.
+    """
     trace = result.reasoning_trace
     schedule = [
         {
             "year": d["year"],
             "income": round(d["income"]),
             "conversion": round(d["conversion"]),
+            **_in_that_years_dollars(result, t, d["conversion"]),
             "tax_on_conversion": round(d["tax_cost"]),
             "marginal_bracket": d.get("marginal_bracket"),
             **({"rmd": round(d["rmd"])} if d.get("rmd") else {}),
@@ -312,7 +336,7 @@ def summarize_result(result: OptimizationResult, result_id: str) -> dict:
                 else {}
             ),
         }
-        for d in result.yearly_detail
+        for t, d in enumerate(result.yearly_detail)
     ]
     summary = {
         "result_id": result_id,
@@ -345,8 +369,10 @@ def summarize_result(result: OptimizationResult, result_id: str) -> dict:
             "sensitivity_notes": trace.sensitivity_notes,
         },
         "assumptions": {
+            "amounts_in": "today's dollars",
             "investment_return": result.input.annual_growth_rate,
             "discount_rate": result.input.discount_rate,
+            "inflation": result.input.inflation_rate,
             "planning_horizon_age": result.input.planning_horizon_age,
             "retirement_spending": result.input.default_drawdown or "4% rule",
             "state": result.input.state or "federal only",

@@ -42,9 +42,11 @@ _TIMELINE_BASE_FIELDS = (
     "current_income_end_age",
     "planning_horizon_age",
     "income_sources",
+    "inflation_pct",
 )
 
 DEFAULT_PLANNING_HORIZON_AGE = 90
+DEFAULT_INFLATION_PCT = 2.5
 
 
 def current_year() -> int:
@@ -89,6 +91,7 @@ class ScenarioDraft(BaseModel):
     planning_horizon_age: int | None = Field(default=90, ge=50, le=120)
     investment_return_pct: float | None = 7
     discount_rate_pct: float | None = 5
+    inflation_pct: float | None = Field(default=DEFAULT_INFLATION_PCT, ge=0, le=10)
     include_aca: bool = False
     household_size: int | None = Field(default=1, ge=1)
     monthly_slcsp_premium: float | None = Field(default=620, ge=0)
@@ -106,26 +109,34 @@ def generate_timeline(
     planning_horizon_age: int = DEFAULT_PLANNING_HORIZON_AGE,
     sources: list[IncomeSource] | None = None,
     base_end_age: int | None = None,
+    inflation_pct: float = 0.0,
 ) -> list[PlanYear]:
     """Project income from today through the plan's last year (port of ``generateTimeline``).
 
-    Current income (growing at ``growth_pct``) runs until ``base_end_age``: by default the
-    year before retirement, or the whole plan for someone already retired. Each income
-    source adds its amount for the ages it covers, and Social Security is also
+    Every amount is in today's dollars (see ``app.engine.inflation``). Current income
+    runs until ``base_end_age``: by default the year before retirement, or the whole
+    plan for someone already retired. It gets raises of ``growth_pct``, so it grows by
+    the raise less inflation. Each income source adds its amount for the ages it
+    covers: Social Security and other income keep up with inflation, and a pension
+    stays at its stated amount, so it shrinks by inflation. Social Security is also
     recorded on its own so only its taxable part is taxed.
     """
     length = max(1, planning_horizon_age - age + 1)
     if base_end_age is None:
         base_end_age = retirement_age - 1 if retirement_age > age else planning_horizon_age
+    real_growth = (1 + growth_pct / 100) / (1 + inflation_pct / 100)
     rows = []
     for i in range(length):
         year_age = age + i
-        income = base_income * (1 + growth_pct / 100) ** i if year_age <= base_end_age else 0.0
+        income = base_income * real_growth**i if year_age <= base_end_age else 0.0
         social_security = 0.0
         for src in sources or []:
             end = planning_horizon_age if src.end_age is None else src.end_age
             if src.start_age <= year_age <= end:
-                income += src.amount
+                if src.kind == "pension":
+                    income += src.amount / (1 + inflation_pct / 100) ** i
+                else:
+                    income += src.amount
                 if src.kind == "social_security":
                     social_security += src.amount
         row = PlanYear(year=start_year + i, gross_income=_js_round(income))
@@ -155,6 +166,7 @@ def projected_timeline(draft: ScenarioDraft, start_year: int) -> list[PlanYear]:
         _or(draft.planning_horizon_age, DEFAULT_PLANNING_HORIZON_AGE),
         draft.income_sources,
         draft.current_income_end_age,
+        _or(draft.inflation_pct, DEFAULT_INFLATION_PCT),
     )
 
 
@@ -241,6 +253,7 @@ def build_scenario_input(draft: ScenarioDraft) -> ScenarioInput:
         default_drawdown=draft.retirement_spending or None,
         annual_growth_rate=_or(draft.investment_return_pct, 7) / 100,
         discount_rate=_or(draft.discount_rate_pct, 5) / 100,
+        inflation_rate=_or(draft.inflation_pct, DEFAULT_INFLATION_PCT) / 100,
         healthcare=healthcare,
         state=draft.state,
         retirement_state=retirement_state,

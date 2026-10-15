@@ -54,14 +54,20 @@ export function MethodologyPageClient() {
   const assumptionsData = useMemo(
     () => [
       {
-        assumption: "Annual growth rate",
+        assumption: "Investment return",
         value: "7%",
-        rationale: "Historical average real return of a diversified stock portfolio",
+        rationale: "A typical long-run return for a diversified portfolio, before inflation",
+      },
+      {
+        assumption: "Inflation",
+        value: "2.5%",
+        rationale:
+          "Amounts are in today's dollars. Spending, Social Security and tax brackets keep up with prices; pensions stay fixed",
       },
       {
         assumption: "Discount rate",
         value: "5%",
-        rationale: "Moderate rate that avoids overstating future benefits",
+        rationale: "Moderate rate that avoids overstating future benefits, before inflation",
       },
       {
         assumption: "Tax brackets",
@@ -255,11 +261,12 @@ export function MethodologyPageClient() {
                 </P>
                 <SubHeading>Why &ldquo;today&apos;s dollars&rdquo;?</SubHeading>
                 <P>
-                  A dollar 25 years from now buys less than a dollar today. The 5% discount rate
-                  converts future savings into present value, preventing the analysis from
-                  overstating benefits that are decades away. The &ldquo;estimated lifetime tax
-                  savings&rdquo; number in your results reflects real purchasing power, not an
-                  inflated future amount.
+                  A dollar 25 years from now buys less than a dollar today. Every amount you enter
+                  and every result is in today&apos;s dollars, and the 5% discount rate converts
+                  future savings into present value, preventing the analysis from overstating
+                  benefits that are decades away. The &ldquo;estimated lifetime tax savings&rdquo;
+                  number in your results reflects real purchasing power, not an inflated future
+                  amount.
                 </P>
               </MethodologySection>
 
@@ -393,8 +400,8 @@ export function MethodologyPageClient() {
                   The few states that tax Social Security are treated as taxing all of it, without
                   their own exemptions. IRMAA surcharges are factored into the optimization but are
                   not a direct user input. The net investment income tax (NIIT) is also not
-                  included. Inflation adjustments to future tax brackets are not modeled: the
-                  analysis uses current-year brackets throughout.
+                  included. Every pension is treated as fixed, though some government pensions get
+                  cost-of-living raises.
                 </P>
 
                 <SubHeading>Important disclaimer</SubHeading>

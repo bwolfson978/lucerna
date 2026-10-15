@@ -75,6 +75,25 @@ export const flows = {
     },
   },
 
+  'landing-margaret': {
+    title: "Landing page: Margaret's schedule and spotlight",
+    paths: ['frontend/src/components/landing/LandingDemo', 'backend/app/engine/demo.py'],
+    async run(page, shot) {
+      await page.goto('/')
+      await page.getByRole('heading', { level: 1 }).waitFor()
+      for (const [id, caption] of [
+        ['schedule', "Margaret's conversion schedule"],
+        ['scenario', 'Margaret spotlight'],
+      ]) {
+        const section = page.locator(`section#${id}`)
+        await section.scrollIntoViewIfNeeded()
+        await page.waitForLoadState('networkidle')
+        await page.waitForTimeout(1500)
+        await shot(id, caption, { element: section })
+      }
+    },
+  },
+
   'policy-pages': {
     title: 'Footer links and policy pages',
     paths: [
@@ -364,6 +383,65 @@ export const flows = {
       await page.mouse.click(box.x + box.width * 0.7, box.y + box.height / 2)
       await page.waitForTimeout(800)
       await shot('results-hero-moved', 'Full results after moving the slider below the optimum', { element: hero })
+    },
+  },
+
+  inflation: {
+    title: 'Inflation: a 40-year-old earning $70,000 with 3% raises',
+    paths: [
+      'backend/app/engine/inflation.py',
+      'frontend/src/lib/utils/timeline.ts',
+      'frontend/src/components/calculator/IncomePreviewChart',
+      'ui/src/ScenarioSummary',
+    ],
+    async run(page, shot) {
+      // The income preview and the additional settings in the form
+      await page.goto('/calculator')
+      await page.getByRole('radio', { name: 'My numbers' }).click()
+      await page.getByRole('heading', { level: 1 }).waitFor()
+      const fill = (label, value) => page.getByLabel(label, { exact: true }).first().fill(String(value))
+      await fill('Age', 40)
+      await fill('Current income', 70000)
+      await fill('Traditional IRA/401(k) balance', 150000)
+      await fill('Retirement age', 65)
+      const preview = page.locator('section[aria-labelledby=income-preview-heading]')
+      await preview.waitFor({ timeout: 30000 })
+      await page.waitForTimeout(800)
+      await shot('income-preview', 'Income preview for $70,000 with 3% raises, age 40 to 65', {
+        element: preview,
+      })
+      await page.getByRole('button', { name: 'Additional settings' }).click()
+      await page.waitForTimeout(600)
+      const settings = page.getByLabel('Plan through age', { exact: true }).locator('xpath=ancestor::div[contains(@class, "grid")][1]')
+      await shot('settings', 'Additional settings', { element: settings })
+
+      // Full results for the same numbers, opened from a results link
+      const scenario = {
+        age: 40,
+        filing_status: 'single',
+        current_income: 70000,
+        traditional_balance: 150000,
+        retirement_age: 65,
+      }
+      const encoded = Buffer.from(JSON.stringify(scenario)).toString('base64url')
+      await page.goto(`/calculator?view=results&scenario=${encoded}`)
+      const hero = page.getByTestId('results-hero')
+      await hero.waitFor({ timeout: 90000 })
+      await page.waitForLoadState('networkidle')
+      await page.waitForTimeout(1500)
+      await shot('results', 'Results for the same numbers', { element: hero })
+
+      // The scenario card's assumptions, as the conversation shows them
+      await page.goto('/calculator')
+      await page.evaluate(() => window.localStorage.clear())
+      await page.goto('/calculator')
+      await page.getByLabel('Message').fill(MESSAGE)
+      await page.getByRole('button', { name: 'Send' }).click()
+      const summary = page.getByTestId('scenario-summary')
+      await summary.getByRole('button', { name: 'Run the numbers' }).waitFor({ timeout: 30000 })
+      await summary.getByRole('button', { name: /Assumptions/ }).click()
+      await page.waitForTimeout(600)
+      await shot('scenario-card', 'Scenario card with its assumptions open', { element: summary })
     },
   },
 

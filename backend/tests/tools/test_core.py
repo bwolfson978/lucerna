@@ -6,7 +6,7 @@ import pytest
 
 from app.engine.types import FilingStatus, ScenarioInput
 from app.tools import core
-from app.tools.draft import ScenarioDraft
+from app.tools.draft import ScenarioDraft, generate_timeline
 from app.tools.models import MethodologyTopic, ScenarioUpdate
 
 REPO = Path(__file__).resolve().parents[3]
@@ -122,6 +122,35 @@ def test_plain_projection_needs_no_income_changes():
     assert "income_changes" not in core.scenario_from_draft(ready_draft(), 2026)
 
 
+def test_website_input_round_trips_with_inflation():
+    inputs = core.scenario_input(ready_draft())
+    scenario = core.scenario_from_input(inputs, 2026)
+    assert scenario["inflation_pct"] == 2.5
+    assert scenario["income_growth_rate_pct"] == 3
+    assert "income_changes" not in scenario
+
+
+def test_website_input_saved_before_inflation_gets_the_default():
+    """Its incomes were projected without inflation: only real edits carry over."""
+    timeline = generate_timeline(52, 60, 90000, 3, 2026)
+    timeline[3] = timeline[3].model_copy(update={"gross_income": 10, "notes": "Leave"})
+    inputs = ScenarioInput.model_validate(
+        {
+            "age": 52,
+            "filing_status": "married_filing_jointly",
+            "timeline": [row.model_dump() for row in timeline],
+            "traditional_ira_balance": 600000,
+            "drawdown_start_age": 60,
+        }
+    )
+    scenario = core.scenario_from_input(inputs, 2026)
+    assert "inflation_pct" not in scenario
+    assert scenario["income_growth_rate_pct"] == 3
+    assert [c["year"] for c in scenario["income_changes"]] == [2029]
+    draft = core.draft_from_scenario(ScenarioUpdate.model_validate(scenario), 2026)
+    assert draft.inflation_pct == 2.5
+
+
 # --------------------------------------------------------------------------
 # Results and reference data
 # --------------------------------------------------------------------------
@@ -134,6 +163,21 @@ def test_run_draft_and_summary():
     assert summary["estimated_lifetime_tax_savings_todays_dollars"] > 0
     with pytest.raises(core.ToolError, match="missing"):
         core.run_draft(ScenarioDraft())
+
+
+def test_summary_gives_later_conversions_in_that_years_dollars():
+    scenario, result = core.run_draft(ready_draft())
+    summary = core.summarize_result(result, core.result_id_for(scenario))
+    assert summary["assumptions"]["inflation"] == pytest.approx(0.025)
+    assert summary["assumptions"]["amounts_in"] == "today's dollars"
+    later = [
+        (t, row) for t, row in enumerate(summary["schedule_by_year"]) if t > 0 and row["conversion"]
+    ]
+    assert later
+    for t, row in later:
+        want = round(result.yearly_conversions[t] * 1.025**t)
+        assert row["conversion_in_that_years_dollars"] == want
+    assert "conversion_in_that_years_dollars" not in summary["schedule_by_year"][0]
 
 
 def test_compare_results():

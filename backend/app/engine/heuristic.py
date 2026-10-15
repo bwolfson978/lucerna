@@ -22,9 +22,7 @@ def _estimate_retirement_rate(scenario: ScenarioInput) -> float:
         total_balance = scenario.traditional_ira_balance + scenario.roth_ira_balance
         # Estimate retirement spending: balance grows to retirement, then 4% rule
         years_to_retire = max(0, scenario.drawdown_start_age - scenario.age)
-        future_balance = total_balance * (1 + scenario.annual_growth_rate) ** max(
-            1, years_to_retire
-        )
+        future_balance = total_balance * (1 + scenario.real_growth_rate) ** max(1, years_to_retire)
         spending = future_balance * RETIREMENT_SPENDING_RATE
     rate = get_marginal_rate(spending, scenario.filing_status)
 
@@ -115,7 +113,7 @@ def _global_bracket_fill_for_cap(
 
     brackets = BRACKETS[scenario.filing_status]
     deduction = STANDARD_DEDUCTION[scenario.filing_status]
-    g = scenario.annual_growth_rate
+    g = scenario.real_growth_rate
 
     # Pre-compute balance available at each year if nothing else is converted
     # before it.  The real constraint is sequential, enforced after filling.

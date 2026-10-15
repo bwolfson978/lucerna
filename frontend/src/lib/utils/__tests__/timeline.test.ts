@@ -20,6 +20,23 @@ describe("generateTimeline", () => {
     expect(timeline[1].gross_income).toBe(110_000);
   });
 
+  it("works in today's dollars: raises less inflation, pensions shrink, the rest keeps up", () => {
+    const timeline = generateTimeline(60, 62, 100_000, 3, 2026, {
+      planningHorizonAge: 63,
+      inflationPct: 2.5,
+      sources: [
+        { kind: "social_security", owner: "you", amount: 30_000, start_age: 62 },
+        { kind: "pension", owner: "you", amount: 20_000, start_age: 62 },
+      ],
+    });
+    // 100,000 x (1.03 / 1.025)
+    expect(timeline[1].gross_income).toBe(100_488);
+    // Social Security 30,000 plus a pension of 20,000 / 1.025^2 and 20,000 / 1.025^3
+    expect(timeline[2].gross_income).toBe(49_036);
+    expect(timeline[3].gross_income).toBe(48_572);
+    expect(timeline[3].social_security).toBe(30_000);
+  });
+
   it("handles zero growth rate", () => {
     const timeline = generateTimeline(40, 45, 80_000, 0, 2026, { planningHorizonAge: 44 });
     expect(timeline).toHaveLength(5);

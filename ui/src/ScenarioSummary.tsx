@@ -28,6 +28,8 @@ export interface ScenarioValues {
   planning_horizon_age?: number | null;
   investment_return_pct?: number | null;
   discount_rate_pct?: number | null;
+  /** Yearly inflation, percent. Every amount is in today's dollars. */
+  inflation_pct?: number | null;
   include_aca?: boolean;
   household_size?: number | null;
   monthly_slcsp_premium?: number | null;
@@ -63,7 +65,7 @@ interface Row {
 }
 
 /** Rows that hold defaults most people keep; they sit behind one "Assumptions" line. */
-const ASSUMPTION_KEYS = new Set(["growth", "horizon", "return"]);
+const ASSUMPTION_KEYS = new Set(["growth", "horizon", "return", "inflation"]);
 
 /** Labels for the fields `prepare_scenario` reports as missing. */
 export const FIELD_LABELS: Record<string, string> = {
@@ -167,6 +169,12 @@ function buildRows(s: ScenarioValues): Row[] {
       label: "Investment return",
       value: `${s.investment_return_pct ?? 7}%`,
       edit: "investment_return_pct",
+    },
+    {
+      key: "inflation",
+      label: "Inflation",
+      value: `${s.inflation_pct ?? 2.5}% a year`,
+      edit: "inflation_pct",
     },
   ];
 }
@@ -278,7 +286,7 @@ export function ScenarioSummary({
               </span>
             </button>
             {showAssumptions && (
-              <dl className="border-border -mb-px grid border-t sm:grid-cols-3">
+              <dl className="border-border -mb-px grid border-t sm:grid-cols-2">
                 {assumptions.map((row) => (
                   <SummaryRow
                     key={row.key}
@@ -286,7 +294,7 @@ export function ScenarioSummary({
                     scenario={s}
                     onEdit={onEdit}
                     onOpenForm={onOpenForm}
-                    className="sm:[&:not(:last-child)]:border-r"
+                    className="sm:odd:border-r"
                   />
                 ))}
               </dl>

@@ -38,6 +38,8 @@ export interface ScenarioInput {
   planning_horizon_age?: number; // was years_in_retirement (now absolute age)
   annual_growth_rate?: number;
   discount_rate?: number;
+  /** Yearly inflation; every amount is in today's dollars. Omitted means none. */
+  inflation_rate?: number;
   conversion_preferences?: ConversionPreferences | null;
   healthcare?: HealthcareInput | null;
   state?: string | null;

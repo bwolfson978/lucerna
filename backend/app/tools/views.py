@@ -9,10 +9,17 @@ shared/fixtures/view-data.json keeps the two in step.
 
 from __future__ import annotations
 
+import math
+
 from app.engine.tax import BRACKETS, STANDARD_DEDUCTION
 from app.engine.types import OptimizationResult
 
 VIEW_META_KEY = "lucerna/view"
+
+
+def _round(value: float) -> int:
+    """JavaScript ``Math.round`` (halves round up), as the web app rounds the same data."""
+    return math.floor(value + 0.5)
 
 
 def bracket_fill_view(result: OptimizationResult) -> dict:
@@ -33,25 +40,25 @@ def bracket_fill_view(result: OptimizationResult) -> dict:
             {
                 "year": plan_year.year,
                 "age": result.input.age + i,
-                "income": round(plan_year.gross_income),
-                "rmd": round(rmd_by_year.get(plan_year.year, 0)),
-                "conversion": round(conversion),
-                "tax": round(sum(b.bracket_rate * b.filled_by_conversion for b in fill)),
+                "income": _round(plan_year.gross_income),
+                "rmd": _round(rmd_by_year.get(plan_year.year, 0)),
+                "conversion": _round(conversion),
+                "tax": _round(sum(b.bracket_rate * b.filled_by_conversion for b in fill)),
             }
         )
     filing_status = result.input.filing_status
     brackets = [
         {
             "rate": b["rate"],
-            "min": round(b["min"]),
-            "max": None if b["max"] == float("inf") else round(b["max"]),
+            "min": _round(b["min"]),
+            "max": None if b["max"] == float("inf") else _round(b["max"]),
         }
         for b in BRACKETS[filing_status]
     ]
     return {
         "years": years,
         "brackets": brackets,
-        "standard_deduction": round(STANDARD_DEDUCTION[filing_status]),
+        "standard_deduction": _round(STANDARD_DEDUCTION[filing_status]),
     }
 
 

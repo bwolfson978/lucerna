@@ -10,6 +10,7 @@ Verified against official state department of revenue publications.
 """
 
 import json
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -92,14 +93,34 @@ def state_name(state: str) -> str:
     return data["name"] if data and data.get("name") else state
 
 
-def _get_deduction(state: str, filing_status: FilingStatus) -> float:
-    """Get the standard deduction for a state."""
+def _load_indexing() -> dict[str, dict]:
+    """Which states index their brackets and deduction (data/state_inflation_indexing.json)."""
+    with open(_DATA_DIR / "state_inflation_indexing.json") as f:
+        return json.load(f)["states"]
+
+
+_INDEXING = _load_indexing()
+
+
+def _indexed(state: str, part: str) -> bool:
+    """Whether the state adjusts ``part`` ("brackets" or "deduction") for inflation.
+    Unknown counts as not indexed."""
+    return bool(_INDEXING.get(state, {}).get(part))
+
+
+def _get_deduction(state: str, filing_status: FilingStatus, fixed_scale: float = 1.0) -> float:
+    """Get the standard deduction for a state, in today's dollars.
+
+    A deduction fixed in law is worth ``fixed_scale`` of its face value
+    (see ``app.engine.inflation``).
+    """
     state_data = _get_state_data(state)
     if not state_data:
         return _get_federal_deduction(filing_status)
     deductions = state_data.get("standard_deduction", {})
     fs_key = _FILING_STATUS_KEY[filing_status]
-    return deductions.get(fs_key, _get_federal_deduction(filing_status))
+    deduction = deductions.get(fs_key, _get_federal_deduction(filing_status))
+    return deduction if _indexed(state, "deduction") else deduction * fixed_scale
 
 
 def _get_federal_deduction(filing_status: FilingStatus) -> float:
@@ -108,14 +129,31 @@ def _get_federal_deduction(filing_status: FilingStatus) -> float:
     return _TAX_DATA["federal"]["standard_deduction"][fs_key]
 
 
-def _get_brackets(state: str, filing_status: FilingStatus) -> list[dict] | None:
-    """Get the bracket list for a state and filing status."""
+def _get_brackets(
+    state: str, filing_status: FilingStatus, fixed_scale: float = 1.0
+) -> list[dict] | None:
+    """Get the bracket list for a state and filing status, in today's dollars.
+
+    Thresholds fixed in law are worth ``fixed_scale`` of their face value.
+    """
     state_data = _get_state_data(state)
     if not state_data or not state_data.get("has_income_tax", False):
         return None
     brackets = state_data.get("brackets", {})
     fs_key = _FILING_STATUS_KEY[filing_status]
-    return brackets.get(fs_key)
+    bracket_list = brackets.get(fs_key)
+    if bracket_list is None or fixed_scale == 1.0 or _indexed(state, "brackets"):
+        return bracket_list
+    return _scaled_brackets(state, fs_key, fixed_scale)
+
+
+@lru_cache(maxsize=4096)
+def _scaled_brackets(state: str, fs_key: str, fixed_scale: float) -> list[dict]:
+    """A state's bracket thresholds multiplied by ``fixed_scale``."""
+    return [
+        {**b, "min": b["min"] * fixed_scale, "max": b["max"] * fixed_scale}
+        for b in _TAX_DATA["states"][state]["brackets"][fs_key]
+    ]
 
 
 # ==============================================
@@ -139,11 +177,14 @@ def calculate_state_tax(
     state: str,
     filing_status: FilingStatus = FilingStatus.SINGLE,
     custom_rate: float | None = None,
+    fixed_scale: float = 1.0,
 ) -> float:
     """Calculate state income tax using progressive brackets.
 
     For "custom" state, applies a flat rate to income above the federal
     standard deduction. Returns 0.0 for None or unknown states.
+    ``fixed_scale`` shrinks thresholds the state doesn't index for inflation
+    (see ``app.engine.inflation``).
     """
     if not state or state == "none":
         return 0.0
@@ -155,11 +196,11 @@ def calculate_state_tax(
         taxable = max(0.0, gross_income - deduction)
         return taxable * custom_rate
 
-    brackets = _get_brackets(state, filing_status)
+    brackets = _get_brackets(state, filing_status, fixed_scale)
     if brackets is None:
         return 0.0
 
-    deduction = _get_deduction(state, filing_status)
+    deduction = _get_deduction(state, filing_status, fixed_scale)
     taxable_income = max(0.0, gross_income - deduction)
 
     tax = 0.0
@@ -177,6 +218,7 @@ def get_state_marginal_rate(
     state: str,
     filing_status: FilingStatus = FilingStatus.SINGLE,
     custom_rate: float | None = None,
+    fixed_scale: float = 1.0,
 ) -> float:
     """Get the state marginal tax rate at a given gross income level."""
     if not state or state == "none":
@@ -188,11 +230,11 @@ def get_state_marginal_rate(
         deduction = _get_federal_deduction(filing_status)
         return custom_rate if gross_income > deduction else 0.0
 
-    brackets = _get_brackets(state, filing_status)
+    brackets = _get_brackets(state, filing_status, fixed_scale)
     if brackets is None:
         return 0.0
 
-    deduction = _get_deduction(state, filing_status)
+    deduction = _get_deduction(state, filing_status, fixed_scale)
     taxable_income = max(0.0, gross_income - deduction)
 
     for bracket in brackets:
@@ -207,6 +249,7 @@ def vectorized_state_tax(
     state: str,
     filing_status: FilingStatus = FilingStatus.SINGLE,
     custom_rate: float | None = None,
+    fixed_scale: float = 1.0,
 ) -> np.ndarray:
     """Calculate state income tax for an array of gross incomes.
 
@@ -222,11 +265,11 @@ def vectorized_state_tax(
         taxable = np.maximum(0.0, gross_incomes - deduction)
         return taxable * custom_rate
 
-    brackets = _get_brackets(state, filing_status)
+    brackets = _get_brackets(state, filing_status, fixed_scale)
     if brackets is None:
         return np.zeros_like(gross_incomes)
 
-    deduction = _get_deduction(state, filing_status)
+    deduction = _get_deduction(state, filing_status, fixed_scale)
     taxable = np.maximum(0.0, gross_incomes - deduction)
 
     tax = np.zeros_like(taxable)
@@ -273,10 +316,14 @@ def retirement_exclusion(
     age: float,
     ira_income,
     phaseout_income=0.0,
+    fixed_scale: float = 1.0,
 ):
     """Part of ``ira_income`` (IRA and 401(k) withdrawals and conversions) the
     state leaves untaxed at ``age``. ``phaseout_income`` is the income the
     rule's phase-out is measured on. Scalars or numpy arrays.
+
+    ``fixed_scale`` is today's value of a dollar fixed in law that year: amounts
+    of a rule that isn't ``indexed`` shrink by it as prices rise.
     """
     rule = retirement_rule(state)
     ira = np.maximum(0.0, np.asarray(ira_income, dtype=float))
@@ -284,17 +331,18 @@ def retirement_exclusion(
     if rule is None:
         return 0.0 if scalar else np.zeros_like(ira)
     fs_key = _FILING_STATUS_KEY[filing_status]
+    scale = 1.0 if rule.get("indexed") else fixed_scale
     cap = 0.0
     for tier in rule["tiers"]:
         if age >= tier["min_age"]:
             amount = tier["amount"]
             if isinstance(amount, dict):
                 amount = amount[fs_key]
-            cap = float("inf") if amount is None else float(amount)
+            cap = float("inf") if amount is None else float(amount) * scale
     excluded = np.minimum(ira, cap)
     phaseout = rule.get("phaseout")
     if phaseout and cap > 0:
-        start, end = phaseout[fs_key]
+        start, end = (bound * scale for bound in phaseout[fs_key])
         measure = np.asarray(phaseout_income, dtype=float)
         excluded = excluded * np.clip((end - measure) / (end - start), 0.0, 1.0)
     return float(excluded) if scalar else excluded

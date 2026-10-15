@@ -16,6 +16,7 @@ from app.engine.types import FilingStatus
 
 __all__ = [
     "IRMAA_TIERS",
+    "lookback_threshold_scale",
     "MEDICARE_START_AGE",
     "IRMAA_LOOKBACK_YEARS",
     "calculate_irmaa",
@@ -58,20 +59,36 @@ _SINGLE_THRESHOLDS = np.array([t["single_max"] for t in IRMAA_TIERS])
 _PER_PERSON_COSTS = np.array([t["annual_per_person"] for t in IRMAA_TIERS])
 
 
-def irmaa_tier_index(magi: float, filing_status: FilingStatus) -> int:
+def lookback_threshold_scale(inflation_rate: float) -> float:
+    """IRMAA tiers in the surcharge year, relative to the MAGI year that sets them.
+
+    Amounts are in today's dollars (see ``app.engine.inflation``). The tiers rise
+    with inflation, and a year's MAGI is compared with the tiers two years later,
+    so in that year's dollars they sit two years of inflation higher.
+    """
+    return (1 + inflation_rate) ** IRMAA_LOOKBACK_YEARS
+
+
+# Every function takes ``threshold_scale`` (see ``lookback_threshold_scale``): the
+# tiers are multiplied by it before MAGI is compared with them.
+
+
+def irmaa_tier_index(magi: float, filing_status: FilingStatus, threshold_scale: float = 1.0) -> int:
     """Return the 0-based IRMAA tier index for a given MAGI."""
     thresholds = _MFJ_THRESHOLDS if filing_status == FilingStatus.MFJ else _SINGLE_THRESHOLDS
-    idx = int(np.searchsorted(thresholds, magi, side="left"))
+    idx = int(np.searchsorted(thresholds, magi / threshold_scale, side="left"))
     return min(idx, len(IRMAA_TIERS) - 1)
 
 
-def calculate_irmaa(magi: float, filing_status: FilingStatus) -> float:
+def calculate_irmaa(
+    magi: float, filing_status: FilingStatus, threshold_scale: float = 1.0
+) -> float:
     """Annual IRMAA household surcharge for a given MAGI.
 
     Returns the total annual surcharge for the household (both spouses for MFJ,
     one person for SINGLE). Part B and Part D.
     """
-    idx = irmaa_tier_index(magi, filing_status)
+    idx = irmaa_tier_index(magi, filing_status, threshold_scale)
     return IRMAA_TIERS[idx]["annual_per_person"] * _PERSONS[filing_status]
 
 
@@ -79,20 +96,22 @@ def irmaa_surcharge_loss(
     base_magi: float,
     conversion: float,
     filing_status: FilingStatus,
+    threshold_scale: float = 1.0,
 ) -> float:
     """Marginal IRMAA cost of adding `conversion` on top of `base_magi`.
 
     Step-function: zero unless the conversion crosses an IRMAA tier boundary.
     """
-    return calculate_irmaa(base_magi + conversion, filing_status) - calculate_irmaa(
-        base_magi, filing_status
-    )
+    return calculate_irmaa(
+        base_magi + conversion, filing_status, threshold_scale
+    ) - calculate_irmaa(base_magi, filing_status, threshold_scale)
 
 
 def vectorized_irmaa_surcharge_loss(
     base_magi: float,
     conversions: np.ndarray,
     filing_status: FilingStatus,
+    threshold_scale: float = 1.0,
 ) -> np.ndarray:
     """Vectorized marginal IRMAA cost for an array of conversion amounts.
 
@@ -100,9 +119,11 @@ def vectorized_irmaa_surcharge_loss(
     surcharge costs, one per conversion amount.
     """
     thresholds = _MFJ_THRESHOLDS if filing_status == FilingStatus.MFJ else _SINGLE_THRESHOLDS
+    thresholds = thresholds * threshold_scale
     persons = _PERSONS[filing_status]
 
-    base_cost = IRMAA_TIERS[irmaa_tier_index(base_magi, filing_status)]["annual_per_person"]
+    base_tier = irmaa_tier_index(base_magi, filing_status, threshold_scale)
+    base_cost = IRMAA_TIERS[base_tier]["annual_per_person"]
 
     total_magi = base_magi + conversions
     tier_indices = np.searchsorted(thresholds, total_magi, side="left")

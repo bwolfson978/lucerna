@@ -18,79 +18,79 @@
         },
         {
           "year": 2027,
-          "gross_income": 87550.0
+          "gross_income": 85415.0
         },
         {
           "year": 2028,
-          "gross_income": 90177.0
+          "gross_income": 85831.0
         },
         {
           "year": 2029,
-          "gross_income": 92882.0
+          "gross_income": 86250.0
         },
         {
           "year": 2030,
-          "gross_income": 95668.0
+          "gross_income": 86671.0
         },
         {
           "year": 2031,
-          "gross_income": 98538.0
+          "gross_income": 87093.0
         },
         {
           "year": 2032,
-          "gross_income": 101494.0
+          "gross_income": 87518.0
         },
         {
           "year": 2033,
-          "gross_income": 104539.0
+          "gross_income": 87945.0
         },
         {
           "year": 2034,
-          "gross_income": 107675.0
+          "gross_income": 88374.0
         },
         {
           "year": 2035,
-          "gross_income": 110906.0
+          "gross_income": 88805.0
         },
         {
           "year": 2036,
-          "gross_income": 114233.0
+          "gross_income": 89239.0
         },
         {
           "year": 2037,
-          "gross_income": 117660.0
+          "gross_income": 89674.0
         },
         {
           "year": 2038,
-          "gross_income": 121190.0
+          "gross_income": 90111.0
         },
         {
           "year": 2039,
-          "gross_income": 124825.0
+          "gross_income": 90551.0
         },
         {
           "year": 2040,
-          "gross_income": 128570.0
+          "gross_income": 90993.0
         },
         {
           "year": 2041,
-          "gross_income": 132427.0
+          "gross_income": 91436.0
         },
         {
           "year": 2042,
-          "gross_income": 136400.0
+          "gross_income": 91882.0
         },
         {
           "year": 2043,
-          "gross_income": 140492.0
+          "gross_income": 92331.0
         },
         {
           "year": 2044,
-          "gross_income": 144707.0
+          "gross_income": 92781.0
         },
         {
           "year": 2045,
-          "gross_income": 149048.0
+          "gross_income": 93234.0
         },
         {
           "year": 2046,
@@ -208,97 +208,97 @@
           },
           {
             "year": 2027,
-            "gross_income": 87550.0,
+            "gross_income": 85415.0,
             "notes": ""
           },
           {
             "year": 2028,
-            "gross_income": 90177.0,
+            "gross_income": 85831.0,
             "notes": ""
           },
           {
             "year": 2029,
-            "gross_income": 92882.0,
+            "gross_income": 86250.0,
             "notes": ""
           },
           {
             "year": 2030,
-            "gross_income": 95668.0,
+            "gross_income": 86671.0,
             "notes": ""
           },
           {
             "year": 2031,
-            "gross_income": 98538.0,
+            "gross_income": 87093.0,
             "notes": ""
           },
           {
             "year": 2032,
-            "gross_income": 101494.0,
+            "gross_income": 87518.0,
             "notes": ""
           },
           {
             "year": 2033,
-            "gross_income": 104539.0,
+            "gross_income": 87945.0,
             "notes": ""
           },
           {
             "year": 2034,
-            "gross_income": 107675.0,
+            "gross_income": 88374.0,
             "notes": ""
           },
           {
             "year": 2035,
-            "gross_income": 110906.0,
+            "gross_income": 88805.0,
             "notes": ""
           },
           {
             "year": 2036,
-            "gross_income": 114233.0,
+            "gross_income": 89239.0,
             "notes": ""
           },
           {
             "year": 2037,
-            "gross_income": 117660.0,
+            "gross_income": 89674.0,
             "notes": ""
           },
           {
             "year": 2038,
-            "gross_income": 121190.0,
+            "gross_income": 90111.0,
             "notes": ""
           },
           {
             "year": 2039,
-            "gross_income": 124825.0,
+            "gross_income": 90551.0,
             "notes": ""
           },
           {
             "year": 2040,
-            "gross_income": 128570.0,
+            "gross_income": 90993.0,
             "notes": ""
           },
           {
             "year": 2041,
-            "gross_income": 132427.0,
+            "gross_income": 91436.0,
             "notes": ""
           },
           {
             "year": 2042,
-            "gross_income": 136400.0,
+            "gross_income": 91882.0,
             "notes": ""
           },
           {
             "year": 2043,
-            "gross_income": 140492.0,
+            "gross_income": 92331.0,
             "notes": ""
           },
           {
             "year": 2044,
-            "gross_income": 144707.0,
+            "gross_income": 92781.0,
             "notes": ""
           },
           {
             "year": 2045,
-            "gross_income": 149048.0,
+            "gross_income": 93234.0,
             "notes": ""
           },
           {
@@ -437,7 +437,8 @@
         "drawdown_start_age": 65,
         "planning_horizon_age": 90,
         "annual_growth_rate": 0.07,
-        "discount_rate": 0.05
+        "discount_rate": 0.05,
+        "inflation_rate": 0.025
       }
     },
     {
@@ -465,31 +466,31 @@
         },
         {
           "year": 2027,
-          "gross_income": 92250.0
+          "gross_income": 90000.0
         },
         {
           "year": 2028,
-          "gross_income": 94556.0
+          "gross_income": 90000.0
         },
         {
           "year": 2029,
-          "gross_income": 96920.0
+          "gross_income": 90000.0
         },
         {
           "year": 2030,
-          "gross_income": 99343.0
+          "gross_income": 90000.0
         },
         {
           "year": 2031,
-          "gross_income": 101827.0
+          "gross_income": 90000.0
         },
         {
           "year": 2032,
-          "gross_income": 104372.0
+          "gross_income": 90000.0
         },
         {
           "year": 2033,
-          "gross_income": 106982.0
+          "gross_income": 90000.0
         },
         {
           "year": 2034,
@@ -647,37 +648,37 @@
           },
           {
             "year": 2027,
-            "gross_income": 92250.0,
+            "gross_income": 90000.0,
             "notes": ""
           },
           {
             "year": 2028,
-            "gross_income": 94556.0,
+            "gross_income": 90000.0,
             "notes": ""
           },
           {
             "year": 2029,
-            "gross_income": 96920.0,
+            "gross_income": 90000.0,
             "notes": ""
           },
           {
             "year": 2030,
-            "gross_income": 99343.0,
+            "gross_income": 90000.0,
             "notes": ""
           },
           {
             "year": 2031,
-            "gross_income": 101827.0,
+            "gross_income": 90000.0,
             "notes": ""
           },
           {
             "year": 2032,
-            "gross_income": 104372.0,
+            "gross_income": 90000.0,
             "notes": ""
           },
           {
             "year": 2033,
-            "gross_income": 106982.0,
+            "gross_income": 90000.0,
             "notes": ""
           },
           {
@@ -868,6 +869,7 @@
         "planning_horizon_age": 95,
         "annual_growth_rate": 0.06,
         "discount_rate": 0.04,
+        "inflation_rate": 0.025,
         "state": "CA",
         "retirement_state": "TX"
       }
@@ -891,59 +893,59 @@
         },
         {
           "year": 2027,
-          "gross_income": 123600.0
+          "gross_income": 120585.0
         },
         {
           "year": 2028,
-          "gross_income": 127308.0
+          "gross_income": 121174.0
         },
         {
           "year": 2029,
-          "gross_income": 131127.0
+          "gross_income": 121765.0
         },
         {
           "year": 2030,
-          "gross_income": 135061.0
+          "gross_income": 122359.0
         },
         {
           "year": 2031,
-          "gross_income": 139113.0
+          "gross_income": 122956.0
         },
         {
           "year": 2032,
-          "gross_income": 143286.0
+          "gross_income": 123555.0
         },
         {
           "year": 2033,
-          "gross_income": 147585.0
+          "gross_income": 124158.0
         },
         {
           "year": 2034,
-          "gross_income": 152012.0
+          "gross_income": 124764.0
         },
         {
           "year": 2035,
-          "gross_income": 156573.0
+          "gross_income": 125372.0
         },
         {
           "year": 2036,
-          "gross_income": 161270.0
+          "gross_income": 125984.0
         },
         {
           "year": 2037,
-          "gross_income": 166108.0
+          "gross_income": 126598.0
         },
         {
           "year": 2038,
-          "gross_income": 171091.0
+          "gross_income": 127216.0
         },
         {
           "year": 2039,
-          "gross_income": 176224.0
+          "gross_income": 127837.0
         },
         {
           "year": 2040,
-          "gross_income": 181511.0
+          "gross_income": 128460.0
         },
         {
           "year": 2041,
@@ -1101,72 +1103,72 @@
           },
           {
             "year": 2027,
-            "gross_income": 123600.0,
+            "gross_income": 120585.0,
             "notes": ""
           },
           {
             "year": 2028,
-            "gross_income": 127308.0,
+            "gross_income": 121174.0,
             "notes": ""
           },
           {
             "year": 2029,
-            "gross_income": 131127.0,
+            "gross_income": 121765.0,
             "notes": ""
           },
           {
             "year": 2030,
-            "gross_income": 135061.0,
+            "gross_income": 122359.0,
             "notes": ""
           },
           {
             "year": 2031,
-            "gross_income": 139113.0,
+            "gross_income": 122956.0,
             "notes": ""
           },
           {
             "year": 2032,
-            "gross_income": 143286.0,
+            "gross_income": 123555.0,
             "notes": ""
           },
           {
             "year": 2033,
-            "gross_income": 147585.0,
+            "gross_income": 124158.0,
             "notes": ""
           },
           {
             "year": 2034,
-            "gross_income": 152012.0,
+            "gross_income": 124764.0,
             "notes": ""
           },
           {
             "year": 2035,
-            "gross_income": 156573.0,
+            "gross_income": 125372.0,
             "notes": ""
           },
           {
             "year": 2036,
-            "gross_income": 161270.0,
+            "gross_income": 125984.0,
             "notes": ""
           },
           {
             "year": 2037,
-            "gross_income": 166108.0,
+            "gross_income": 126598.0,
             "notes": ""
           },
           {
             "year": 2038,
-            "gross_income": 171091.0,
+            "gross_income": 127216.0,
             "notes": ""
           },
           {
             "year": 2039,
-            "gross_income": 176224.0,
+            "gross_income": 127837.0,
             "notes": ""
           },
           {
             "year": 2040,
-            "gross_income": 181511.0,
+            "gross_income": 128460.0,
             "notes": ""
           },
           {
@@ -1356,6 +1358,7 @@
         "planning_horizon_age": 90,
         "annual_growth_rate": 0.07,
         "discount_rate": 0.05,
+        "inflation_rate": 0.025,
         "state": "NY"
       }
     },
@@ -1377,99 +1380,99 @@
         },
         {
           "year": 2027,
-          "gross_income": 30000.0
+          "gross_income": 29268.0
         },
         {
           "year": 2028,
-          "gross_income": 30000.0
+          "gross_income": 28554.0
         },
         {
           "year": 2029,
-          "gross_income": 30000.0
+          "gross_income": 27858.0
         },
         {
           "year": 2030,
-          "gross_income": 30000.0
+          "gross_income": 27179.0
         },
         {
           "year": 2031,
-          "gross_income": 30000.0
+          "gross_income": 26516.0
         },
         {
           "year": 2032,
-          "gross_income": 30000.0
+          "gross_income": 25869.0
         },
         {
           "year": 2033,
-          "gross_income": 30000.0
+          "gross_income": 25238.0
         },
         {
           "year": 2034,
-          "gross_income": 30000.0
+          "gross_income": 24622.0
         },
         {
           "year": 2035,
-          "gross_income": 30000.0
+          "gross_income": 24022.0
         },
         {
           "year": 2036,
-          "gross_income": 30000.0
+          "gross_income": 23436.0
         },
         {
           "year": 2037,
-          "gross_income": 30000.0
+          "gross_income": 22864.0
         },
         {
           "year": 2038,
-          "gross_income": 30000.0
+          "gross_income": 22307.0
         },
         {
           "year": 2039,
-          "gross_income": 30000.0
+          "gross_income": 21763.0
         },
         {
           "year": 2040,
-          "gross_income": 30000.0
+          "gross_income": 21232.0
         },
         {
           "year": 2041,
-          "gross_income": 30000.0
+          "gross_income": 20714.0
         },
         {
           "year": 2042,
-          "gross_income": 30000.0
+          "gross_income": 20209.0
         },
         {
           "year": 2043,
-          "gross_income": 30000.0
+          "gross_income": 19716.0
         },
         {
           "year": 2044,
-          "gross_income": 30000.0
+          "gross_income": 19235.0
         },
         {
           "year": 2045,
-          "gross_income": 30000.0
+          "gross_income": 18766.0
         },
         {
           "year": 2046,
-          "gross_income": 30000.0
+          "gross_income": 18308.0
         },
         {
           "year": 2047,
-          "gross_income": 30000.0
+          "gross_income": 17862.0
         },
         {
           "year": 2048,
-          "gross_income": 30000.0
+          "gross_income": 17426.0
         },
         {
           "year": 2049,
-          "gross_income": 30000.0
+          "gross_income": 17001.0
         },
         {
           "year": 2050,
-          "gross_income": 30000.0
+          "gross_income": 16586.0
         }
       ],
       "scenario": {
@@ -1483,122 +1486,122 @@
           },
           {
             "year": 2027,
-            "gross_income": 30000.0,
+            "gross_income": 29268.0,
             "notes": ""
           },
           {
             "year": 2028,
-            "gross_income": 30000.0,
+            "gross_income": 28554.0,
             "notes": ""
           },
           {
             "year": 2029,
-            "gross_income": 30000.0,
+            "gross_income": 27858.0,
             "notes": ""
           },
           {
             "year": 2030,
-            "gross_income": 30000.0,
+            "gross_income": 27179.0,
             "notes": ""
           },
           {
             "year": 2031,
-            "gross_income": 30000.0,
+            "gross_income": 26516.0,
             "notes": ""
           },
           {
             "year": 2032,
-            "gross_income": 30000.0,
+            "gross_income": 25869.0,
             "notes": ""
           },
           {
             "year": 2033,
-            "gross_income": 30000.0,
+            "gross_income": 25238.0,
             "notes": ""
           },
           {
             "year": 2034,
-            "gross_income": 30000.0,
+            "gross_income": 24622.0,
             "notes": ""
           },
           {
             "year": 2035,
-            "gross_income": 30000.0,
+            "gross_income": 24022.0,
             "notes": ""
           },
           {
             "year": 2036,
-            "gross_income": 30000.0,
+            "gross_income": 23436.0,
             "notes": ""
           },
           {
             "year": 2037,
-            "gross_income": 30000.0,
+            "gross_income": 22864.0,
             "notes": ""
           },
           {
             "year": 2038,
-            "gross_income": 30000.0,
+            "gross_income": 22307.0,
             "notes": ""
           },
           {
             "year": 2039,
-            "gross_income": 30000.0,
+            "gross_income": 21763.0,
             "notes": ""
           },
           {
             "year": 2040,
-            "gross_income": 30000.0,
+            "gross_income": 21232.0,
             "notes": ""
           },
           {
             "year": 2041,
-            "gross_income": 30000.0,
+            "gross_income": 20714.0,
             "notes": ""
           },
           {
             "year": 2042,
-            "gross_income": 30000.0,
+            "gross_income": 20209.0,
             "notes": ""
           },
           {
             "year": 2043,
-            "gross_income": 30000.0,
+            "gross_income": 19716.0,
             "notes": ""
           },
           {
             "year": 2044,
-            "gross_income": 30000.0,
+            "gross_income": 19235.0,
             "notes": ""
           },
           {
             "year": 2045,
-            "gross_income": 30000.0,
+            "gross_income": 18766.0,
             "notes": ""
           },
           {
             "year": 2046,
-            "gross_income": 30000.0,
+            "gross_income": 18308.0,
             "notes": ""
           },
           {
             "year": 2047,
-            "gross_income": 30000.0,
+            "gross_income": 17862.0,
             "notes": ""
           },
           {
             "year": 2048,
-            "gross_income": 30000.0,
+            "gross_income": 17426.0,
             "notes": ""
           },
           {
             "year": 2049,
-            "gross_income": 30000.0,
+            "gross_income": 17001.0,
             "notes": ""
           },
           {
             "year": 2050,
-            "gross_income": 30000.0,
+            "gross_income": 16586.0,
             "notes": ""
           }
         ],
@@ -1607,7 +1610,8 @@
         "drawdown_start_age": 62,
         "planning_horizon_age": 90,
         "annual_growth_rate": 0.07,
-        "discount_rate": 0.05
+        "discount_rate": 0.05,
+        "inflation_rate": 0.025
       }
     },
     {
@@ -1633,19 +1637,19 @@
         },
         {
           "year": 2027,
-          "gross_income": 46350.0
+          "gross_income": 45220.0
         },
         {
           "year": 2028,
-          "gross_income": 47741.0
+          "gross_income": 45440.0
         },
         {
           "year": 2029,
-          "gross_income": 49173.0
+          "gross_income": 45662.0
         },
         {
           "year": 2030,
-          "gross_income": 50648.0
+          "gross_income": 45884.0
         },
         {
           "year": 2031,
@@ -1771,22 +1775,22 @@
           },
           {
             "year": 2027,
-            "gross_income": 46350.0,
+            "gross_income": 45220.0,
             "notes": ""
           },
           {
             "year": 2028,
-            "gross_income": 47741.0,
+            "gross_income": 45440.0,
             "notes": ""
           },
           {
             "year": 2029,
-            "gross_income": 49173.0,
+            "gross_income": 45662.0,
             "notes": ""
           },
           {
             "year": 2030,
-            "gross_income": 50648.0,
+            "gross_income": 45884.0,
             "notes": ""
           },
           {
@@ -1936,6 +1940,7 @@
         "planning_horizon_age": 90,
         "annual_growth_rate": 0.07,
         "discount_rate": 0.05,
+        "inflation_rate": 0.025,
         "healthcare": {
           "household_size": 2,
           "monthly_slcsp_premium": 900.0,
@@ -1963,39 +1968,39 @@
         },
         {
           "year": 2027,
-          "gross_income": 51501.0
+          "gross_income": 50245.0
         },
         {
           "year": 2028,
-          "gross_income": 53046.0
+          "gross_income": 50490.0
         },
         {
           "year": 2029,
-          "gross_income": 54637.0
+          "gross_income": 50736.0
         },
         {
           "year": 2030,
-          "gross_income": 56277.0
+          "gross_income": 50984.0
         },
         {
           "year": 2031,
-          "gross_income": 57965.0
+          "gross_income": 51232.0
         },
         {
           "year": 2032,
-          "gross_income": 59704.0
+          "gross_income": 51482.0
         },
         {
           "year": 2033,
-          "gross_income": 61495.0
+          "gross_income": 51734.0
         },
         {
           "year": 2034,
-          "gross_income": 63340.0
+          "gross_income": 51986.0
         },
         {
           "year": 2035,
-          "gross_income": 65240.0
+          "gross_income": 52239.0
         },
         {
           "year": 2036,
@@ -2213,47 +2218,47 @@
           },
           {
             "year": 2027,
-            "gross_income": 51501.0,
+            "gross_income": 50245.0,
             "notes": ""
           },
           {
             "year": 2028,
-            "gross_income": 53046.0,
+            "gross_income": 50490.0,
             "notes": ""
           },
           {
             "year": 2029,
-            "gross_income": 54637.0,
+            "gross_income": 50736.0,
             "notes": ""
           },
           {
             "year": 2030,
-            "gross_income": 56277.0,
+            "gross_income": 50984.0,
             "notes": ""
           },
           {
             "year": 2031,
-            "gross_income": 57965.0,
+            "gross_income": 51232.0,
             "notes": ""
           },
           {
             "year": 2032,
-            "gross_income": 59704.0,
+            "gross_income": 51482.0,
             "notes": ""
           },
           {
             "year": 2033,
-            "gross_income": 61495.0,
+            "gross_income": 51734.0,
             "notes": ""
           },
           {
             "year": 2034,
-            "gross_income": 63340.0,
+            "gross_income": 51986.0,
             "notes": ""
           },
           {
             "year": 2035,
-            "gross_income": 65240.0,
+            "gross_income": 52239.0,
             "notes": ""
           },
           {
@@ -2517,7 +2522,8 @@
         "drawdown_start_age": 40,
         "planning_horizon_age": 90,
         "annual_growth_rate": 0.07,
-        "discount_rate": 0.05
+        "discount_rate": 0.05,
+        "inflation_rate": 0.025
       }
     },
     {
@@ -2564,15 +2570,15 @@
         },
         {
           "year": 2027,
-          "gross_income": 25001.0
+          "gross_income": 24391.0
         },
         {
           "year": 2028,
-          "gross_income": 25001.0
+          "gross_income": 23796.0
         },
         {
           "year": 2029,
-          "gross_income": 25001.0
+          "gross_income": 23215.0
         },
         {
           "year": 2030,
@@ -2721,17 +2727,17 @@
           },
           {
             "year": 2027,
-            "gross_income": 25001.0,
+            "gross_income": 24391.0,
             "notes": ""
           },
           {
             "year": 2028,
-            "gross_income": 25001.0,
+            "gross_income": 23796.0,
             "notes": ""
           },
           {
             "year": 2029,
-            "gross_income": 25001.0,
+            "gross_income": 23215.0,
             "notes": ""
           },
           {
@@ -2903,7 +2909,743 @@
         "default_drawdown": 95000.0,
         "planning_horizon_age": 93,
         "annual_growth_rate": 0.07,
-        "discount_rate": 0.05
+        "discount_rate": 0.05,
+        "inflation_rate": 0.025
+      }
+    },
+    {
+      "name": "inflation: raises less inflation, pension shrinks, Social Security keeps up",
+      "start_year": 2026,
+      "draft": {
+        "age": 55,
+        "filing_status": "single",
+        "current_income": 100000,
+        "income_growth_rate_pct": 3,
+        "inflation_pct": 3.5,
+        "traditional_balance": 800000,
+        "retirement_age": 62,
+        "income_sources": [
+          {
+            "kind": "social_security",
+            "owner": "you",
+            "amount": 30000,
+            "start_age": 67
+          },
+          {
+            "kind": "pension",
+            "owner": "you",
+            "amount": 24000.5,
+            "start_age": 62
+          },
+          {
+            "kind": "other",
+            "owner": "you",
+            "amount": 6000,
+            "start_age": 60,
+            "end_age": 70
+          }
+        ]
+      },
+      "timeline": [
+        {
+          "year": 2026,
+          "gross_income": 100000.0
+        },
+        {
+          "year": 2027,
+          "gross_income": 99517.0
+        },
+        {
+          "year": 2028,
+          "gross_income": 99036.0
+        },
+        {
+          "year": 2029,
+          "gross_income": 98558.0
+        },
+        {
+          "year": 2030,
+          "gross_income": 98082.0
+        },
+        {
+          "year": 2031,
+          "gross_income": 103608.0
+        },
+        {
+          "year": 2032,
+          "gross_income": 103136.0
+        },
+        {
+          "year": 2033,
+          "gross_income": 24864.0
+        },
+        {
+          "year": 2034,
+          "gross_income": 24226.0
+        },
+        {
+          "year": 2035,
+          "gross_income": 23610.0
+        },
+        {
+          "year": 2036,
+          "gross_income": 23014.0
+        },
+        {
+          "year": 2037,
+          "gross_income": 22439.0
+        },
+        {
+          "year": 2038,
+          "gross_income": 51883.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2039,
+          "gross_income": 51346.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2040,
+          "gross_income": 50827.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2041,
+          "gross_income": 50326.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2042,
+          "gross_income": 43841.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2043,
+          "gross_income": 43373.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2044,
+          "gross_income": 42921.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2045,
+          "gross_income": 42484.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2046,
+          "gross_income": 42062.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2047,
+          "gross_income": 41654.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2048,
+          "gross_income": 41260.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2049,
+          "gross_income": 40879.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2050,
+          "gross_income": 40511.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2051,
+          "gross_income": 40156.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2052,
+          "gross_income": 39812.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2053,
+          "gross_income": 39480.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2054,
+          "gross_income": 39160.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2055,
+          "gross_income": 38850.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2056,
+          "gross_income": 38551.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2057,
+          "gross_income": 38262.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2058,
+          "gross_income": 37982.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2059,
+          "gross_income": 37712.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2060,
+          "gross_income": 37452.0,
+          "social_security": 30000.0
+        },
+        {
+          "year": 2061,
+          "gross_income": 37200.0,
+          "social_security": 30000.0
+        }
+      ],
+      "scenario": {
+        "age": 55,
+        "filing_status": "single",
+        "timeline": [
+          {
+            "year": 2026,
+            "gross_income": 100000.0,
+            "notes": ""
+          },
+          {
+            "year": 2027,
+            "gross_income": 99517.0,
+            "notes": ""
+          },
+          {
+            "year": 2028,
+            "gross_income": 99036.0,
+            "notes": ""
+          },
+          {
+            "year": 2029,
+            "gross_income": 98558.0,
+            "notes": ""
+          },
+          {
+            "year": 2030,
+            "gross_income": 98082.0,
+            "notes": ""
+          },
+          {
+            "year": 2031,
+            "gross_income": 103608.0,
+            "notes": ""
+          },
+          {
+            "year": 2032,
+            "gross_income": 103136.0,
+            "notes": ""
+          },
+          {
+            "year": 2033,
+            "gross_income": 24864.0,
+            "notes": ""
+          },
+          {
+            "year": 2034,
+            "gross_income": 24226.0,
+            "notes": ""
+          },
+          {
+            "year": 2035,
+            "gross_income": 23610.0,
+            "notes": ""
+          },
+          {
+            "year": 2036,
+            "gross_income": 23014.0,
+            "notes": ""
+          },
+          {
+            "year": 2037,
+            "gross_income": 22439.0,
+            "notes": ""
+          },
+          {
+            "year": 2038,
+            "gross_income": 51883.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2039,
+            "gross_income": 51346.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2040,
+            "gross_income": 50827.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2041,
+            "gross_income": 50326.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2042,
+            "gross_income": 43841.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2043,
+            "gross_income": 43373.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2044,
+            "gross_income": 42921.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2045,
+            "gross_income": 42484.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2046,
+            "gross_income": 42062.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2047,
+            "gross_income": 41654.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2048,
+            "gross_income": 41260.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2049,
+            "gross_income": 40879.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2050,
+            "gross_income": 40511.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2051,
+            "gross_income": 40156.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2052,
+            "gross_income": 39812.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2053,
+            "gross_income": 39480.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2054,
+            "gross_income": 39160.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2055,
+            "gross_income": 38850.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2056,
+            "gross_income": 38551.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2057,
+            "gross_income": 38262.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2058,
+            "gross_income": 37982.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2059,
+            "gross_income": 37712.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2060,
+            "gross_income": 37452.0,
+            "notes": "",
+            "social_security": 30000.0
+          },
+          {
+            "year": 2061,
+            "gross_income": 37200.0,
+            "notes": "",
+            "social_security": 30000.0
+          }
+        ],
+        "traditional_ira_balance": 800000.0,
+        "roth_ira_balance": 0.0,
+        "drawdown_start_age": 62,
+        "planning_horizon_age": 90,
+        "annual_growth_rate": 0.07,
+        "discount_rate": 0.05,
+        "inflation_rate": 0.035
+      }
+    },
+    {
+      "name": "no inflation",
+      "start_year": 2026,
+      "draft": {
+        "age": 60,
+        "filing_status": "single",
+        "current_income": 80000,
+        "inflation_pct": 0,
+        "traditional_balance": 400000,
+        "retirement_age": 65,
+        "income_sources": [
+          {
+            "kind": "pension",
+            "owner": "you",
+            "amount": 12000,
+            "start_age": 65
+          }
+        ]
+      },
+      "timeline": [
+        {
+          "year": 2026,
+          "gross_income": 80000.0
+        },
+        {
+          "year": 2027,
+          "gross_income": 82400.0
+        },
+        {
+          "year": 2028,
+          "gross_income": 84872.0
+        },
+        {
+          "year": 2029,
+          "gross_income": 87418.0
+        },
+        {
+          "year": 2030,
+          "gross_income": 90041.0
+        },
+        {
+          "year": 2031,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2032,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2033,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2034,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2035,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2036,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2037,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2038,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2039,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2040,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2041,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2042,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2043,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2044,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2045,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2046,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2047,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2048,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2049,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2050,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2051,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2052,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2053,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2054,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2055,
+          "gross_income": 12000.0
+        },
+        {
+          "year": 2056,
+          "gross_income": 12000.0
+        }
+      ],
+      "scenario": {
+        "age": 60,
+        "filing_status": "single",
+        "timeline": [
+          {
+            "year": 2026,
+            "gross_income": 80000.0,
+            "notes": ""
+          },
+          {
+            "year": 2027,
+            "gross_income": 82400.0,
+            "notes": ""
+          },
+          {
+            "year": 2028,
+            "gross_income": 84872.0,
+            "notes": ""
+          },
+          {
+            "year": 2029,
+            "gross_income": 87418.0,
+            "notes": ""
+          },
+          {
+            "year": 2030,
+            "gross_income": 90041.0,
+            "notes": ""
+          },
+          {
+            "year": 2031,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2032,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2033,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2034,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2035,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2036,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2037,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2038,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2039,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2040,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2041,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2042,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2043,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2044,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2045,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2046,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2047,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2048,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2049,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2050,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2051,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2052,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2053,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2054,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2055,
+            "gross_income": 12000.0,
+            "notes": ""
+          },
+          {
+            "year": 2056,
+            "gross_income": 12000.0,
+            "notes": ""
+          }
+        ],
+        "traditional_ira_balance": 400000.0,
+        "roth_ira_balance": 0.0,
+        "drawdown_start_age": 65,
+        "planning_horizon_age": 90,
+        "annual_growth_rate": 0.07,
+        "discount_rate": 0.05,
+        "inflation_rate": 0.0
       }
     },
     {
@@ -2924,39 +3666,39 @@
         },
         {
           "year": 2027,
-          "gross_income": 72100.0
+          "gross_income": 70341.0
         },
         {
           "year": 2028,
-          "gross_income": 74263.0
+          "gross_income": 70685.0
         },
         {
           "year": 2029,
-          "gross_income": 76491.0
+          "gross_income": 71029.0
         },
         {
           "year": 2030,
-          "gross_income": 78786.0
+          "gross_income": 71376.0
         },
         {
           "year": 2031,
-          "gross_income": 81149.0
+          "gross_income": 71724.0
         },
         {
           "year": 2032,
-          "gross_income": 83584.0
+          "gross_income": 72074.0
         },
         {
           "year": 2033,
-          "gross_income": 86091.0
+          "gross_income": 72426.0
         },
         {
           "year": 2034,
-          "gross_income": 88674.0
+          "gross_income": 72779.0
         },
         {
           "year": 2035,
-          "gross_income": 91334.0
+          "gross_income": 73134.0
         },
         {
           "year": 2036,
@@ -3094,47 +3836,47 @@
           },
           {
             "year": 2027,
-            "gross_income": 72100.0,
+            "gross_income": 70341.0,
             "notes": ""
           },
           {
             "year": 2028,
-            "gross_income": 74263.0,
+            "gross_income": 70685.0,
             "notes": ""
           },
           {
             "year": 2029,
-            "gross_income": 76491.0,
+            "gross_income": 71029.0,
             "notes": ""
           },
           {
             "year": 2030,
-            "gross_income": 78786.0,
+            "gross_income": 71376.0,
             "notes": ""
           },
           {
             "year": 2031,
-            "gross_income": 81149.0,
+            "gross_income": 71724.0,
             "notes": ""
           },
           {
             "year": 2032,
-            "gross_income": 83584.0,
+            "gross_income": 72074.0,
             "notes": ""
           },
           {
             "year": 2033,
-            "gross_income": 86091.0,
+            "gross_income": 72426.0,
             "notes": ""
           },
           {
             "year": 2034,
-            "gross_income": 88674.0,
+            "gross_income": 72779.0,
             "notes": ""
           },
           {
             "year": 2035,
-            "gross_income": 91334.0,
+            "gross_income": 73134.0,
             "notes": ""
           },
           {
@@ -3298,7 +4040,8 @@
         "drawdown_start_age": 60,
         "planning_horizon_age": 90,
         "annual_growth_rate": 0.07,
-        "discount_rate": 0.05
+        "discount_rate": 0.05,
+        "inflation_rate": 0.025
       }
     }
   ],

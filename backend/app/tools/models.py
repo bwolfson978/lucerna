@@ -16,7 +16,9 @@ class IncomeChange(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     year: int = Field(description="Calendar year within the timeline")
-    gross_income: float = Field(ge=0, description="Total gross income that year, in dollars")
+    gross_income: float = Field(
+        ge=0, description="Total gross income that year, in today's dollars"
+    )
     note: str = Field(
         min_length=1,
         max_length=60,
@@ -41,7 +43,13 @@ class IncomeSourceInput(BaseModel):
     label: str | None = Field(
         default=None, max_length=40, description="Short name for 'other' income, e.g. 'Rental'"
     )
-    amount: float = Field(ge=0, description="Yearly amount in dollars (monthly x 12)")
+    amount: float = Field(
+        ge=0,
+        description=(
+            "Yearly amount in dollars (monthly x 12) as on their statement: Social Security "
+            "statements show today's dollars, pensions the amount paid"
+        ),
+    )
     start_age: int = Field(ge=0, le=120, description="The user's age in the year it starts")
     end_age: int | None = Field(
         default=None,
@@ -96,14 +104,14 @@ class ScenarioUpdate(BaseModel):
         default=None,
         ge=-10,
         le=20,
-        description="Expected annual income growth until retirement, percent. Default 3.",
+        description="Expected yearly raises until retirement, percent. Default 3.",
     )
     retirement_spending: float | None = Field(
         default=None,
         ge=0,
         description=(
             "Total yearly household spending once they start drawing on the accounts, in "
-            "dollars. Income that year (Social Security, pensions) covers part of it and the "
+            "today's dollars. Income that year (Social Security, pensions) covers part of it and the "
             "accounts cover the rest. Omit to use the 4% rule on the accounts."
         ),
     )
@@ -133,13 +141,19 @@ class ScenarioUpdate(BaseModel):
         default=None,
         ge=-10,
         le=30,
-        description="Expected annual investment return, percent. Default 7.",
+        description="Expected yearly investment return, percent, as usually quoted. Default 7.",
     )
     discount_rate_pct: float | None = Field(
         default=None,
         ge=0,
         le=30,
-        description="Discount rate for today's dollars, percent. Default 5.",
+        description="Yearly rate future amounts are discounted at, percent. Default 5.",
+    )
+    inflation_pct: float | None = Field(
+        default=None,
+        ge=0,
+        le=10,
+        description="Expected yearly inflation, percent. Default 2.5.",
     )
     include_aca: bool | None = Field(
         default=None,
