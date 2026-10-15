@@ -268,6 +268,16 @@
   display: none;
 }
 
+/* The bracket chart draws its own always-visible track (ScrollTrack), so it hides the
+   native bar (see .scroll-fade-wide below for its wider edge fade). */
+.scroll-native-hidden {
+  scrollbar-width: none;
+}
+
+.scroll-native-hidden::-webkit-scrollbar {
+  display: none;
+}
+
 /* Horizontal scroll fade indicators — signal more content off-screen */
 .scroll-fade {
   position: relative;
@@ -284,6 +294,12 @@
   background: linear-gradient(to right, transparent, hsl(var(--card)));
   pointer-events: none;
   z-index: 1;
+}
+
+/* Wider, stronger right fade for the bracket chart, so its clipped bars read as cut off */
+.scroll-fade-wide::after {
+  width: 56px;
+  background: linear-gradient(to right, transparent, hsl(var(--card)) 85%);
 }
 
 .scroll-fade[data-scrolled-end]::after {
@@ -306,6 +322,27 @@
 
 .scroll-fade:not([data-scrolled-start])::before {
   display: block;
+}
+
+/* Scroll hint arrow: a small nudge toward the hidden years */
+@keyframes scroll-hint-nudge {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+}
+
+.scroll-hint-nudge {
+  animation: scroll-hint-nudge 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-hint-nudge {
+    animation: none;
+  }
 }
 
 /* Scroll hint pill animation */

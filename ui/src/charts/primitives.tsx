@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+  type RefObject,
+} from "react";
 
 /** Chart width in viewBox units; charts scale to their container. */
 export const W = 600;
@@ -127,5 +134,81 @@ export function ChartBody({
       </div>
       {footer}
     </>
+  );
+}
+
+/**
+ * An always-visible scroll track under a horizontally scrolling area. Native scrollbars
+ * are hidden until use on macOS and in many iframes, so this shows from the first paint
+ * that there is more to the right and how much. Drag the thumb or click the track; the
+ * area itself still scrolls by trackpad, wheel and keyboard. Decorative to assistive tech.
+ */
+export function ScrollTrack({ scrollRef }: { scrollRef: RefObject<HTMLElement | null> }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [thumb, setThumb] = useState({ left: 0, width: 100, scrollable: false });
+  const drag = useRef<{ x: number; scrollLeft: number } | null>(null);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const update = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = el;
+      const scrollable = scrollWidth > clientWidth + 1;
+      const width = scrollable ? Math.max(12, (clientWidth / scrollWidth) * 100) : 100;
+      const max = scrollWidth - clientWidth;
+      const left = scrollable && max > 0 ? (scrollLeft / max) * (100 - width) : 0;
+      setThumb({ left, width, scrollable });
+    };
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(update) : null;
+    ro?.observe(el);
+    if (el.firstElementChild) ro?.observe(el.firstElementChild);
+    return () => {
+      el.removeEventListener("scroll", update);
+      ro?.disconnect();
+    };
+  }, [scrollRef]);
+
+  if (!thumb.scrollable) return null;
+
+  const ratio = () => {
+    const el = scrollRef.current;
+    const track = trackRef.current;
+    return el && track ? el.scrollWidth / track.clientWidth : 1;
+  };
+
+  return (
+    <div
+      ref={trackRef}
+      aria-hidden="true"
+      className="bg-paper-warm relative z-[2] mt-1 h-1.5 cursor-pointer rounded-full"
+      onPointerDown={(e) => {
+        const el = scrollRef.current;
+        const track = trackRef.current;
+        if (!el || !track || e.target !== track) return;
+        // Click on the track: center the view on that point.
+        const x = e.clientX - track.getBoundingClientRect().left;
+        el.scrollTo({ left: x * ratio() - el.clientWidth / 2, behavior: "smooth" });
+      }}
+    >
+      <div
+        className="bg-pine-mid/45 hover:bg-pine-mid active:bg-pine absolute inset-y-0 cursor-grab touch-none rounded-full transition-colors active:cursor-grabbing"
+        style={{ left: `${thumb.left}%`, width: `${thumb.width}%` }}
+        onPointerDown={(e) => {
+          const el = scrollRef.current;
+          if (!el) return;
+          e.currentTarget.setPointerCapture(e.pointerId);
+          drag.current = { x: e.clientX, scrollLeft: el.scrollLeft };
+        }}
+        onPointerMove={(e) => {
+          const el = scrollRef.current;
+          if (!el || !drag.current) return;
+          el.scrollLeft = drag.current.scrollLeft + (e.clientX - drag.current.x) * ratio();
+        }}
+        onPointerUp={() => (drag.current = null)}
+        onPointerCancel={() => (drag.current = null)}
+      />
+    </div>
   );
 }
