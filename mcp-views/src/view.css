@@ -24,5 +24,8 @@
      wide as the iframe, like the native render, or the strip scales differently. */
   #root {
     padding: 0 0 30px;
+    /* The page follows the host's theme (view.tsx) so its canvas stays transparent;
+       the cards themselves are always Paper & Pine light. */
+    color-scheme: light;
   }
 }

@@ -6,7 +6,7 @@
 
 import type { ReactNode } from "react";
 import { createRoot } from "react-dom/client";
-import { App } from "@modelcontextprotocol/ext-apps";
+import { App, applyDocumentTheme } from "@modelcontextprotocol/ext-apps";
 import type { CallToolResult } from "@modelcontextprotocol/client";
 
 /** Chart series the server sends Views in `_meta` (backend app/tools/views.py). */
@@ -62,6 +62,17 @@ export function startView(
   };
   app.ontoolcancelled = () => message("Cancelled.");
 
+  // Match the page's color scheme to the host's theme. When the two differ (a light
+  // page in a dark Claude), the browser paints an opaque white canvas behind the
+  // iframe, which shows as a square box around the rounded card. The cards stay
+  // light either way (#root in view.css).
+  app.onhostcontextchanged = (ctx) => {
+    if (ctx.theme) applyDocumentTheme(ctx.theme);
+  };
+
   message("Working on it…");
-  void app.connect();
+  void app.connect().then(() => {
+    const theme = app.getHostContext()?.theme;
+    if (theme) applyDocumentTheme(theme);
+  });
 }
