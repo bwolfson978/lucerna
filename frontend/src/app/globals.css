@@ -320,3 +320,53 @@ input.landing-range-dark::-moz-range-thumb {
   background: #f5f2ea;
   border-color: #0b1d15;
 }
+
+/* Saved scenarios: dialog, bulk bar and undo toast */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes rise-in-centered {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+@keyframes drain {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+.animate-dialog-rise {
+  animation: rise-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.animate-bar-rise {
+  animation: rise-in-centered 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.animate-drain {
+  transform-origin: left;
+  animation: drain var(--drain-ms, 8000ms) linear forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-dialog-rise,
+  .animate-bar-rise {
+    animation: none;
+  }
+  .animate-drain {
+    animation: none;
+    transform: scaleX(0.5);
+  }
+}
