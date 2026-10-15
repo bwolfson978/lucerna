@@ -7,7 +7,7 @@ from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Response, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -15,6 +15,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from app import error_tracking
 from app.mcp import analytics as mcp_analytics
 from app.mcp.auth import router as mcp_auth_router
+from app.mcp.server import WEBSITE_URL
 from app.mcp.server import build_route as build_mcp_route
 from app.mcp.server import mcp as mcp_server
 from app.origins import ORIGIN_REGEX, allowed_origins
@@ -114,6 +115,13 @@ app.router.routes.append(build_mcp_route())
 
 
 FAVICON = Path(__file__).parent / "static" / "favicon.ico"
+
+
+# This service's hosts (mcp.rothconversionsoptimizer.com among them) have no page of their
+# own. Send the root to the website so crawlers and favicon lookups find the site's icon.
+@app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
+async def root():
+    return RedirectResponse(f"{WEBSITE_URL}/", status_code=status.HTTP_308_PERMANENT_REDIRECT)
 
 
 # Clients that show the MCP server's domain (connector lists, browser tabs) look here.

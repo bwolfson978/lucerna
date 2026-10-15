@@ -308,4 +308,5 @@ async def test_server_advertises_icons():
     async with create_connected_server_and_client_session(mcp) as session:
         info = (await session.initialize()).serverInfo
         assert info.icons and {i.mimeType for i in info.icons} == {"image/svg+xml", "image/png"}
-        assert all(str(i.src).startswith("https://") for i in info.icons)
+        assert all(str(i.src).startswith("https://www.") for i in info.icons)
+        assert info.websiteUrl == "https://www.rothconversionsoptimizer.com"

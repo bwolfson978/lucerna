@@ -141,7 +141,8 @@ def _tool_ui(resource_uri: str) -> dict:
     return {"ui": {"resourceUri": resource_uri, "visibility": ["model", "app"]}, **_NO_AUTH}
 
 
-WEBSITE_URL = "https://rothconversionsoptimizer.com"
+# The canonical www host: the bare domain only redirects there.
+WEBSITE_URL = "https://www.rothconversionsoptimizer.com"
 
 # Shown next to the server name in connector lists. Served by the web app (frontend/public).
 ICONS = [
