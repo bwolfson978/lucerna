@@ -10,6 +10,11 @@
 #
 # Prints one markdown line per file: an image for .png/.webp/.gif/.jpg, a link otherwise
 # (GitHub only plays video dragged into a comment by hand, so MP4s are download links).
+#
+# Every commit also carries frontend/vercel.json turning Vercel's git deployments off.
+# Both Vercel projects (lucerna, lucerna-storybook) build every branch push from the
+# frontend/ root directory, which this branch doesn't have, so without it each publish
+# shows up as two failed "Preview" deployments.
 set -euo pipefail
 
 PR=""
@@ -44,6 +49,8 @@ INDEX="$(mktemp)"
 trap 'rm -f "$INDEX"' EXIT
 export GIT_INDEX_FILE="$INDEX"
 if [[ -n "$PARENT" ]]; then git read-tree "$PARENT"; else git read-tree --empty; fi
+VERCEL_BLOB="$(printf '{\n  "git": { "deploymentEnabled": false }\n}\n' | git hash-object -w --stdin)"
+git update-index --add --cacheinfo "100644,$VERCEL_BLOB,frontend/vercel.json"
 PATHS=()
 for f in "${FILES[@]}"; do
   path="$PREFIX/$(basename "$f")"
