@@ -32,6 +32,13 @@ Ask the user which workstream or task they're picking up.
 
 The current aesthetic is **"Paper & Pine"** — a light, editorial design with warm paper backgrounds, deep pine green (#1b4332) as the brand color, ember (#f26522) reserved for costs and danger, three-font typography (Playfair Display, Inter, IBM Plex Mono), and animated, interactive explainer diagrams. When working on any frontend code, follow the design spec in `docs/design-aesthetic.md`. It defines Lucerna's visual language — colors, typography, spacing, component patterns, chart styling, and anti-patterns. Read it before building or modifying UI.
 
+## Design system
+Paper & Pine: https://claude.ai/artifact/DmM5iwLcxeTE8rA6siDr1M
+Before UI work, read its project/README.md and the README of each component you touch.
+Source of truth for values stays in code: ui/tailwind/preset.js, ui/styles/tokens.css,
+ui/src/colors.ts, docs/design-aesthetic.md. If you change those, say so, so the design
+system can be re-synced.
+
 ## Frontend guidelines
 
 The UI is for financially literate people who are not financial professionals. All backend and financial concepts must be translated into plain English before reaching the user:
