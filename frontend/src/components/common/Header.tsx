@@ -51,7 +51,7 @@ export function Header({ isSignedIn: signedInOverride }: HeaderProps = {}) {
               line. Labels never wrap; the "How does it work?" pill drops to its icon when
               space is tight. */}
           <nav
-            className={cn("hidden items-center gap-5", isSignedIn ? "xl:flex" : "lg:flex xl:gap-7")}
+            className={cn("hidden items-center gap-5", isSignedIn ? "xl:flex" : "lg:flex xl:gap-8")}
             aria-label="Main"
           >
             <Link
