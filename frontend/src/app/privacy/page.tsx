@@ -143,9 +143,9 @@ export default function PrivacyPage() {
         <ul>
           <li>Use the analysis without an account. Signing in is only needed to save.</li>
           <li>
-            Delete any saved scenario, or your whole account, on{" "}
-            <Link href="/my-scenarios">My scenarios</Link>. Deleting your account removes your
-            account details and every saved scenario right away.
+            Delete any saved scenario on <Link href="/my-scenarios">My scenarios</Link>, or your
+            whole account in <Link href="/account">Account settings</Link>. Deleting your account
+            removes your account details and every saved scenario right away.
           </li>
           <li>
             Ask us to delete the usage analytics, session replays or feedback linked to you, or for

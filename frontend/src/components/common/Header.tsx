@@ -3,11 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSignOut, useUser } from "@/lib/auth";
+import { useAccountProfile, useSignOut, useUser } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { HowItWorksButton } from "@/components/methodology/HowItWorksButton";
 import { SparkleIcon } from "@/components/common/icons";
 import { Wordmark } from "@/components/common/Wordmark";
+import { AccountMenu, type AccountIdentity } from "@/components/common/AccountMenu";
 
 /** First in the nav so people find they can use the tool from their own AI assistant. */
 const ASSISTANT_LINK = { href: "/connect", label: "Claude & ChatGPT" } as const;
@@ -21,14 +22,24 @@ const NAV_LINKS = [
 interface HeaderProps {
   /** Overrides the signed-in state (Storybook, tests); the app leaves it to Clerk. */
   isSignedIn?: boolean;
+  /** Overrides who is signed in, for the account menu (Storybook, tests). */
+  account?: AccountIdentity;
+  /** Opens the account menu on first render (Storybook, screenshots). */
+  accountMenuOpen?: boolean;
 }
 
-export function Header({ isSignedIn: signedInOverride }: HeaderProps = {}) {
+export function Header({
+  isSignedIn: signedInOverride,
+  account: accountOverride,
+  accountMenuOpen,
+}: HeaderProps = {}) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const user = useUser();
   const isSignedIn = signedInOverride ?? user.isSignedIn;
   const signOut = useSignOut();
+  const profile = useAccountProfile();
+  const account = accountOverride ?? profile ?? { name: "", email: "" };
   // Signed in, the nav carries two more links, so the full desktop nav only fits from xl;
   // below that those visitors get the menu button, as on phones.
   const mobileOnly = isSignedIn ? "xl:hidden" : "lg:hidden";
@@ -90,15 +101,6 @@ export function Header({ isSignedIn: signedInOverride }: HeaderProps = {}) {
                 My scenarios
               </Link>
             )}
-            {isSignedIn && (
-              <button
-                type="button"
-                onClick={signOut}
-                className="shrink-0 whitespace-nowrap text-[15px] font-medium text-text-secondary transition-colors duration-200 hover:text-text-primary"
-              >
-                Sign out
-              </button>
-            )}
             <HowItWorksButton label={isSignedIn ? "never" : "xl"} />
             {/* Not on the calculator itself, where it would link to the page you're on. */}
             {pathname !== "/calculator" && (
@@ -108,6 +110,9 @@ export function Header({ isSignedIn: signedInOverride }: HeaderProps = {}) {
               >
                 Run your scenario
               </Link>
+            )}
+            {isSignedIn && (
+              <AccountMenu account={account} onSignOut={signOut} defaultOpen={accountMenuOpen} />
             )}
           </nav>
 
@@ -184,6 +189,15 @@ export function Header({ isSignedIn: signedInOverride }: HeaderProps = {}) {
                 className="-mx-2 rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-200 hover:bg-paper-warm hover:text-pine"
               >
                 My scenarios
+              </Link>
+            )}
+            {isSignedIn && (
+              <Link
+                href="/account"
+                onClick={() => handleNavClick("/account")}
+                className="-mx-2 rounded-lg px-2 py-2.5 text-body text-text-secondary transition-colors duration-200 hover:bg-paper-warm hover:text-pine"
+              >
+                Account settings
               </Link>
             )}
             {isSignedIn && (

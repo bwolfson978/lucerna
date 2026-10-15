@@ -12,6 +12,7 @@ vi.mock("@/lib/auth", () => ({
   useUser: () => ({ isLoaded: true, isSignedIn: true, user: null }),
   useAuth: () => ({ getToken: async () => "token" }),
   useSignOut: () => () => {},
+  useAccountProfile: () => ({ name: "Barry", email: "you@example.com", signIn: "Google" }),
   SignInButton: ({ children }: { children: React.ReactNode }) => children,
 }));
 
