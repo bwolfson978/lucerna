@@ -15,7 +15,6 @@ available and nothing else changes.
 
 from __future__ import annotations
 
-import os
 import time
 from typing import Any
 
@@ -24,6 +23,8 @@ import jwt
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 from jwt import PyJWKClient
+
+from app.config import settings
 
 ACCOUNT_TOOLS = frozenset({"save_scenario", "list_saved_scenarios", "open_saved_scenario"})
 
@@ -37,12 +38,11 @@ _AS_METADATA_TTL = 3600.0
 
 
 def auth_issuer() -> str | None:
-    issuer = os.environ.get("MCP_AUTH_ISSUER", "").strip().rstrip("/")
-    return issuer or None
+    return settings().mcp_auth_issuer.rstrip("/") or None
 
 
 def auth_scopes() -> list[str]:
-    return os.environ.get("MCP_AUTH_SCOPES", "profile email").split()
+    return settings().mcp_auth_scopes.split()
 
 
 def base_url(request: Request) -> str:

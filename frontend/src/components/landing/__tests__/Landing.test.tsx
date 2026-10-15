@@ -5,8 +5,7 @@ import { server } from "@/test/mocks/server";
 import { LandingDemo } from "../LandingDemo";
 import { BracketFiller } from "../BracketFiller";
 import { IncomeWindowMap } from "../IncomeWindowMap";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { API_URL } from "@/lib/utils/constants";
 
 // Reduced motion makes the landing animations jump straight to their end state.
 beforeEach(() => {
@@ -41,7 +40,7 @@ describe("LandingDemo", () => {
   });
 
   it("falls back gracefully when the demo API fails", async () => {
-    server.use(http.get(`${API_BASE}/api/demo`, () => new HttpResponse(null, { status: 500 })));
+    server.use(http.get(`${API_URL}/api/demo`, () => new HttpResponse(null, { status: 500 })));
     render(<LandingDemo />);
 
     expect(await screen.findByText(/live demo is unavailable/i)).toBeInTheDocument();

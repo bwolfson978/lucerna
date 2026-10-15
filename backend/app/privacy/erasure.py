@@ -25,12 +25,12 @@ https://us.posthog.com). Saved scenarios need ``DATABASE_URL``.
 from __future__ import annotations
 
 import logging
-import os
 from dataclasses import dataclass, field
 from typing import Any
 
 import httpx
 
+from app.config import settings
 from app.db import scenarios as store
 from app.tools.feedback import EVENT as FEEDBACK_EVENT
 from app.tools.feedback import SURVEYS
@@ -51,14 +51,12 @@ class Config:
 
     @classmethod
     def from_env(cls) -> Config:
-        def env(name: str) -> str:
-            return os.environ.get(name, "").strip()
-
+        config = settings()
         return cls(
-            clerk_secret_key=env("CLERK_SECRET_KEY"),
-            posthog_api_key=env("POSTHOG_PERSONAL_API_KEY"),
-            posthog_project_id=env("POSTHOG_PROJECT_ID"),
-            posthog_api_host=(env("POSTHOG_API_HOST") or DEFAULT_POSTHOG_API_HOST).rstrip("/"),
+            clerk_secret_key=config.clerk_secret_key,
+            posthog_api_key=config.posthog_personal_api_key,
+            posthog_project_id=config.posthog_project_id,
+            posthog_api_host=config.posthog_api_host.rstrip("/"),
         )
 
     @property

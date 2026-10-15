@@ -14,15 +14,15 @@ catches and recovers from a failure it still wants to hear about calls
 from __future__ import annotations
 
 import logging
-import os
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from posthog import Posthog
 
+from app.config import settings
+
 logger = logging.getLogger(__name__)
 
-DEFAULT_HOST = "https://us.i.posthog.com"
 
 _client: Posthog | None = None
 
@@ -30,16 +30,17 @@ _client: Posthog | None = None
 def init() -> Posthog | None:
     """Create the PostHog client once, if a project token is configured."""
     global _client
-    token = os.environ.get("POSTHOG_PROJECT_TOKEN", "").strip()
+    config = settings()
+    token = config.posthog_project_token
     if _client is None and token:
         _client = Posthog(
             token,
-            host=os.environ.get("POSTHOG_HOST") or DEFAULT_HOST,
+            host=config.posthog_host,
             enable_exception_autocapture=True,
             in_app_modules=["app"],
             super_properties={
                 "service": "lucerna-api",
-                "environment": os.environ.get("RAILWAY_ENVIRONMENT_NAME", "local"),
+                "environment": config.railway_environment_name,
             },
         )
     return _client

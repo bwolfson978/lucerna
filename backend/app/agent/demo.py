@@ -15,7 +15,6 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-import os
 import threading
 from collections.abc import AsyncIterator
 from pathlib import Path
@@ -34,6 +33,7 @@ from app.agent.model import (
     has_credentials,
 )
 from app.agent.prompts import PROMPT_VERSION
+from app.config import settings
 from app.engine.demo import DEMO_PERSONA
 from app.tools import core
 from app.tools.draft import ScenarioDraft, current_year
@@ -73,7 +73,7 @@ _SCRIPTED_SCENARIO = ScenarioUpdate(
     ],
 )
 
-_CACHE_DIR = Path(os.environ.get("AGENT_CACHE_DIR", Path(__file__).resolve().parents[2] / ".cache"))
+_CACHE_DIR = settings().agent_cache_dir
 _lock = threading.Lock()
 _memory: dict[str, dict] = {}
 

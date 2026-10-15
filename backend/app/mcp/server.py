@@ -16,7 +16,6 @@ from __future__ import annotations
 import functools
 import hmac
 import json
-import os
 import time
 from contextvars import ContextVar
 from pathlib import Path
@@ -32,6 +31,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 
+from app.config import settings
 from app.db import scenarios as saved_store
 from app.engine.types import FilingStatus, OptimizationResult, ScenarioInput
 from app.mcp import analytics
@@ -141,8 +141,8 @@ def _tool_ui(resource_uri: str) -> dict:
     return {"ui": {"resourceUri": resource_uri, "visibility": ["model", "app"]}, **_NO_AUTH}
 
 
-# The canonical www host: the bare domain only redirects there.
-WEBSITE_URL = "https://www.rothconversionsoptimizer.com"
+# The website (SITE_URL), shown with the connector and serving its icons.
+WEBSITE_URL = settings().site_origin
 
 # Shown next to the server name in connector lists. Served by the web app (frontend/public).
 ICONS = [
@@ -860,7 +860,7 @@ INTERNAL_HEADER = "x-lucerna-internal"
 
 
 def internal_token() -> str:
-    return os.environ.get("MCP_INTERNAL_TOKEN", "")
+    return settings().mcp_internal_token
 
 
 def _is_internal(request: Request) -> bool:

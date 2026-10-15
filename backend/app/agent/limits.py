@@ -11,9 +11,10 @@ Hitting any of them sends the user to the form with their scenario intact.
 from __future__ import annotations
 
 import datetime
-import os
 import threading
 from dataclasses import dataclass
+
+from app.config import settings
 
 # Per million tokens. Keep in sync with the model in app.agent.config.
 _PRICES_PER_MTOK = {
@@ -21,20 +22,6 @@ _PRICES_PER_MTOK = {
     "claude-opus-5-5": {"input": 4.00, "output": 20.00, "cache_read": 0.20, "cache_write": 5.00},
 }
 _FALLBACK_PRICE = {"input": 5.00, "output": 25.00, "cache_read": 0.50, "cache_write": 6.25}
-
-
-def _env_int(name: str, default: int) -> int:
-    try:
-        return int(os.environ.get(name, default))
-    except ValueError:
-        return default
-
-
-def _env_float(name: str, default: float) -> float:
-    try:
-        return float(os.environ.get(name, default))
-    except ValueError:
-        return default
 
 
 @dataclass(frozen=True)
@@ -45,10 +32,11 @@ class LimitConfig:
 
     @classmethod
     def from_env(cls) -> LimitConfig:
+        config = settings()
         return cls(
-            messages_per_conversation=_env_int("AGENT_MESSAGES_PER_CONVERSATION", 20),
-            messages_per_ip_per_day=_env_int("AGENT_MESSAGES_PER_IP_PER_DAY", 60),
-            daily_spend_usd=_env_float("AGENT_DAILY_SPEND_USD", 50.0),
+            messages_per_conversation=config.agent_messages_per_conversation,
+            messages_per_ip_per_day=config.agent_messages_per_ip_per_day,
+            daily_spend_usd=config.agent_daily_spend_usd,
         )
 
 

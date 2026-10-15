@@ -18,7 +18,6 @@ from __future__ import annotations
 
 import contextvars
 import datetime
-import os
 import threading
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -26,6 +25,8 @@ from dataclasses import dataclass
 
 import anyio
 from starlette.requests import Request
+
+from app.config import settings
 
 # Who is calling: "ip:<address>" or "user:<id>". Set per request by the /mcp route and
 # the web app's View broker. None means a trusted in-process caller (the web assistant,
@@ -42,20 +43,6 @@ def client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-def _env_int(name: str, default: int) -> int:
-    try:
-        return int(os.environ.get(name, default))
-    except ValueError:
-        return default
-
-
-def _env_float(name: str, default: float) -> float:
-    try:
-        return float(os.environ.get(name, default))
-    except ValueError:
-        return default
-
-
 @dataclass(frozen=True)
 class AnalysisLimits:
     per_anonymous_caller_per_day: int
@@ -66,12 +53,13 @@ class AnalysisLimits:
 
     @classmethod
     def from_env(cls) -> AnalysisLimits:
+        config = settings()
         return cls(
-            per_anonymous_caller_per_day=_env_int("MCP_ANALYSES_PER_IP_PER_DAY", 25),
-            per_user_per_day=_env_int("MCP_ANALYSES_PER_USER_PER_DAY", 100),
-            anonymous_per_day=_env_int("MCP_ANONYMOUS_ANALYSES_PER_DAY", 3000),
-            max_concurrent=max(1, _env_int("MCP_MAX_CONCURRENT_ANALYSES", 2)),
-            queue_seconds=_env_float("MCP_ANALYSIS_QUEUE_SECONDS", 10.0),
+            per_anonymous_caller_per_day=config.mcp_analyses_per_ip_per_day,
+            per_user_per_day=config.mcp_analyses_per_user_per_day,
+            anonymous_per_day=config.mcp_anonymous_analyses_per_day,
+            max_concurrent=max(1, config.mcp_max_concurrent_analyses),
+            queue_seconds=config.mcp_analysis_queue_seconds,
         )
 
 

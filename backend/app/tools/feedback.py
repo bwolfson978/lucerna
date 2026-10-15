@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import datetime
 import logging
-import os
 import re
 import threading
 import uuid
@@ -28,6 +27,7 @@ from enum import StrEnum
 from typing import Any
 
 from app import error_tracking
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -94,17 +94,11 @@ class FeedbackLimitReached(Exception):
     """Too many submissions today, from this caller or from everyone."""
 
 
-def _env_int(name: str, default: int) -> int:
-    try:
-        return int(os.environ.get(name, default))
-    except ValueError:
-        return default
-
-
 class FeedbackLimiter:
     def __init__(self, per_caller: int | None = None, per_day: int | None = None):
-        self.per_caller = per_caller or _env_int("FEEDBACK_PER_CALLER_PER_DAY", 10)
-        self.per_day = per_day or _env_int("FEEDBACK_PER_DAY", 500)
+        config = settings()
+        self.per_caller = per_caller or config.feedback_per_caller_per_day
+        self.per_day = per_day or config.feedback_per_day
         self._lock = threading.Lock()
         self._day = self._today()
         self._counts: dict[str, int] = {}

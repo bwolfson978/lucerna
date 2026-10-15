@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import fallbackData from "./federal-brackets-2026.json";
+import { API_URL } from "@/lib/utils/constants";
 
 export interface TaxBracket {
   min: number;
@@ -27,14 +28,12 @@ const fallbackConfig: TaxConfig = {
 
 const TaxConfigContext = createContext<TaxConfig>(fallbackConfig);
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
 export function TaxConfigProvider({ children }: { children: ReactNode }) {
   const [config, setConfig] = useState<TaxConfig>(fallbackConfig);
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${API_BASE}/api/tax-config`)
+    fetch(`${API_URL}/api/tax-config`)
       .then((res) => {
         if (!res.ok) throw new Error(`${res.status}`);
         return res.json();

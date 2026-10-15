@@ -8,13 +8,14 @@ development swap in other implementations.
 
 from __future__ import annotations
 
-import os
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from typing import Protocol
 
-MODEL = os.environ.get("AGENT_MODEL", "claude-sonnet-5-5")
-EFFORT = os.environ.get("AGENT_EFFORT", "medium")
+from app.config import settings
+
+MODEL = settings().agent_model
+EFFORT = settings().agent_effort
 MAX_TOKENS = 16000
 
 # Server-side refusal fallback: the API re-runs a declined request on a suitable
@@ -54,11 +55,12 @@ def api_key() -> str | None:
     ``LUCERNA_ANTHROPIC_API_KEY`` is a fallback for environments that reserve
     ``ANTHROPIC_API_KEY``, such as Claude Code cloud sessions.
     """
-    return os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("LUCERNA_ANTHROPIC_API_KEY")
+    config = settings()
+    return config.anthropic_api_key or config.lucerna_anthropic_api_key or None
 
 
 def has_credentials() -> bool:
-    return bool(api_key() or os.environ.get("ANTHROPIC_AUTH_TOKEN"))
+    return bool(api_key() or settings().anthropic_auth_token)
 
 
 class ModelUnavailable(Exception):
@@ -134,7 +136,7 @@ def get_model_client() -> ModelClient:
     global _default_client
     if _default_client is not None:
         return _default_client
-    if os.environ.get("AGENT_OFFLINE") == "1":
+    if settings().agent_offline:
         from app.agent.offline import OfflineModelClient
 
         _default_client = OfflineModelClient()

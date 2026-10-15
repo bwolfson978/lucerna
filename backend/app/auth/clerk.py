@@ -1,11 +1,11 @@
 """Clerk JWT verification — extracts clerk_user_id from Bearer tokens."""
 
-import os
-
 import jwt
 from fastapi import HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import PyJWKClient
+
+from app.config import settings
 
 _bearer = HTTPBearer(auto_error=False)
 _jwks_clients: dict[str, PyJWKClient] | None = None
@@ -24,7 +24,7 @@ def _get_jwks_clients() -> dict[str, PyJWKClient]:
     """
     global _jwks_clients
     if _jwks_clients is None:
-        urls = [u.strip() for u in os.environ.get("CLERK_JWKS_URL", "").split(",") if u.strip()]
+        urls = settings().clerk_jwks_urls
         _jwks_clients = {
             url.removesuffix(_JWKS_SUFFIX): PyJWKClient(url, cache_keys=True) for url in urls
         }

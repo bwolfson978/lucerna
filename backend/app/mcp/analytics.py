@@ -21,7 +21,6 @@ Who the event belongs to:
 from __future__ import annotations
 
 import logging
-import os
 import uuid
 from collections.abc import Callable
 from contextvars import ContextVar
@@ -32,6 +31,7 @@ from posthog.mcp import instrument as posthog_instrument
 from posthog.mcp.types import MCPAnalyticsOptions, UserIdentity
 
 from app import error_tracking
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +165,7 @@ def instrument(server: Any, signed_in_user: Callable[[], str | None]) -> None:
             enable_conversation_id=False,
             identify=identify,
             before_send=_before_send,
-            server_build=os.environ.get("RAILWAY_GIT_COMMIT_SHA") or None,
+            server_build=settings().railway_git_commit_sha or None,
             logger=logger.debug,
         ),
     )
