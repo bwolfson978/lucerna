@@ -251,6 +251,8 @@ def vectorized_state_tax(
 #
 #   tiers     [{min_age, amount}]: the highest tier the age reaches applies.
 #             amount null means unlimited; a dict gives it per filing status.
+#   indexed   true when the state adjusts the amounts for inflation each year;
+#             false when they are fixed in statute.
 #   phaseout  {filing_status: [start, end]}: the exclusion shrinks linearly to
 #             zero as federal AGI goes from start to end.
 #

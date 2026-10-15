@@ -60,6 +60,7 @@
             "amount": 6000
           }
         ],
+        "indexed": false,
         "summary": "Alabama exempts up to $6,000 a year of IRA and 401(k) income from age 65.",
         "note": "Schedule RS. Conversions are taxable IRA distributions, so they are treated as eligible; Alabama does not say so outright.",
         "sources": [
@@ -109,6 +110,7 @@
             "amount": 6000
           }
         ],
+        "indexed": false,
         "summary": "Arkansas exempts up to $6,000 a year of IRA and 401(k) income from age 59 and a half.",
         "note": "Conversions are treated as eligible distributions; Arkansas does not say so outright.",
         "sources": [
@@ -174,6 +176,7 @@
             "amount": 24000
           }
         ],
+        "indexed": false,
         "summary": "Colorado exempts up to $20,000 a year of IRA and 401(k) income at ages 55 to 64, and $24,000 from 65.",
         "note": "At 55 to 64 taxable Social Security also counts toward the $20,000 cap, which is not modeled. Conversions are treated as eligible.",
         "sources": [
@@ -214,6 +217,7 @@
             "amount": null
           }
         ],
+        "indexed": false,
         "summary": "Connecticut exempts IRA and 401(k) income in full when income is under $75,000 (single) or $100,000 (joint), phasing out above that.",
         "phaseout": {
           "single": [
@@ -315,6 +319,7 @@
             "amount": 65000
           }
         ],
+        "indexed": false,
         "summary": "Georgia exempts up to $35,000 a year of retirement income at ages 62 to 64, and $65,000 from 65, including Roth conversions.",
         "note": "IT-511: conversions are treated the same as for the IRS and count as taxable IRA income on the exclusion worksheet.",
         "sources": [
@@ -395,6 +400,7 @@
             "amount": null
           }
         ],
+        "indexed": false,
         "summary": "Illinois does not tax IRA or 401(k) withdrawals or Roth conversions.",
         "note": "Publication 120 lists IRA distributions, including amounts rolled over to a Roth IRA, as exempt retirement income.",
         "sources": [
@@ -438,6 +444,7 @@
             "amount": null
           }
         ],
+        "indexed": false,
         "summary": "Iowa does not tax IRA or 401(k) withdrawals or Roth conversions from age 55.",
         "note": "Full exclusion since 2023; Roth conversion income is listed as eligible.",
         "sources": [
@@ -482,6 +489,7 @@
             "amount": 31110
           }
         ],
+        "indexed": false,
         "summary": "Kentucky exempts up to $31,110 a year of retirement income, including Roth conversions.",
         "note": "Schedule M lists income from converting a regular IRA to a Roth IRA.",
         "sources": [
@@ -510,6 +518,7 @@
             "amount": 12000
           }
         ],
+        "indexed": true,
         "summary": "Louisiana exempts up to $12,000 a year of retirement income from age 65.",
         "note": "R.S. 47:44.1, from 2025; the amount is inflation-indexed (about $12,324 for 2026, not yet final). Conversions are treated as eligible.",
         "sources": [
@@ -606,6 +615,7 @@
             }
           }
         ],
+        "indexed": true,
         "summary": "Michigan exempts up to about $65,900 (single) or $131,800 (joint) a year of retirement income from age 59 and a half, including Roth conversions.",
         "note": "Fully phased in for 2026 for anyone born after 1945; uses the 2025 limit, which is indexed. The limit is per return.",
         "sources": [
@@ -657,6 +667,7 @@
             "amount": null
           }
         ],
+        "indexed": false,
         "summary": "Mississippi does not tax IRA or 401(k) withdrawals or Roth conversions from age 59 and a half.",
         "note": "Miss. Code 27-7-15; HB 1673 (2010) excludes conversions. Early distributions do not qualify.",
         "sources": [
@@ -776,6 +787,7 @@
             }
           }
         ],
+        "indexed": false,
         "summary": "New Jersey exempts up to $75,000 (single) or $100,000 (joint) a year of retirement income from age 62 when total income is under $100,000, phasing out to none above $150,000.",
         "phaseout": {
           "single": [
@@ -855,6 +867,7 @@
             "amount": 20000
           }
         ],
+        "indexed": false,
         "summary": "New York exempts up to $20,000 a year of IRA and 401(k) income from age 59 and a half, including Roth conversions.",
         "note": "TSB-M-98(7)I: up to $20,000 of conversion income can be excluded at 59 and a half.",
         "sources": [
@@ -945,6 +958,7 @@
             "amount": 10000
           }
         ],
+        "indexed": false,
         "summary": "Oklahoma exempts up to $10,000 a year of retirement income.",
         "note": "Schedule 511-A line 6 covers IRC 401, 403, 408 and 457 plans. Conversions are treated as eligible.",
         "sources": [
@@ -994,6 +1008,7 @@
             "amount": null
           }
         ],
+        "indexed": false,
         "summary": "Pennsylvania does not tax Roth conversions, or IRA withdrawals from age 59 and a half.",
         "note": "Conversions are not taxable at any age. Withdrawals before 59 and a half are taxed above previously taxed contributions, which is not modeled: they are treated as exempt too.",
         "sources": [
@@ -1049,6 +1064,7 @@
             "amount": 10000
           }
         ],
+        "indexed": false,
         "summary": "South Carolina exempts up to $3,000 a year of retirement income, and $10,000 from age 65.",
         "note": "Conversions are treated as eligible; South Carolina does not say so outright.",
         "sources": [
@@ -1179,6 +1195,7 @@
             "amount": 24000
           }
         ],
+        "indexed": false,
         "summary": "Wisconsin exempts up to $24,000 a year of retirement income from age 67, including Roth conversions.",
         "note": "2025 Act 15. Claiming it means giving up Wisconsin income tax credits that year, which is not modeled.",
         "sources": [
