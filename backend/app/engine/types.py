@@ -138,7 +138,7 @@ class ScenarioInput(BaseModel):
         default=90,
         ge=50,
         le=120,
-        description="Age at end of plan (terminal liquidation year).",
+        description="Age at end of plan. Traditional money left is valued at that year's marginal rate.",
     )
 
     # Growth/discount rates (with defaults), as usually quoted: before inflation

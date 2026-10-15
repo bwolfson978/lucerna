@@ -7,14 +7,19 @@ from app.engine.dp import _compute_retirement_values
 from app.engine.optimizer import _build_rmd_projection, calculate_npv
 from app.engine.retirement import (
     account_spending,
+    conversion_bases,
     draw_beyond_rmd,
     post_timeline_start,
     resolve_drawdowns,
+    terminal_tax_rate,
+    terminal_value,
+    vectorized_terminal_value,
     vectorized_withdrawal_tax,
     withdrawal_tax,
 )
 from app.engine.tax import calculate_federal_tax
 from app.engine.types import FilingStatus, PlanYear, ScenarioInput
+from app.engine.year_tax import year_tax
 
 
 def _scenario(**overrides) -> ScenarioInput:
@@ -51,6 +56,46 @@ def _margaret(**overrides) -> ScenarioInput:
     return ScenarioInput(**{**base, **overrides})
 
 
+class TestTerminalValue:
+    def test_rate_is_marginal_rate_on_final_year_income(self):
+        """Final year in the timeline: next $1,000 on top of income, RMD and spending draw."""
+        timeline = [PlanYear(year=2026 + i, gross_income=40_000) for i in range(3)]
+        s = _scenario(timeline=timeline, drawdown_start_age=60, planning_horizon_age=62)
+        s = resolve_drawdowns(s)
+        income = conversion_bases(s, [0.0] * 3)[-1]
+        yt = year_tax(s, 2)
+        expected = (yt.total(income + 1_000) - yt.total(income)) / 1_000
+        assert terminal_tax_rate(s) == pytest.approx(expected)
+        assert income == pytest.approx(80_000)  # $40k income plus the $40k spending draw
+
+    def test_rate_in_post_timeline_final_year(self):
+        """Final year after the timeline: marginal withdrawal tax on that year's distribution."""
+        s = _scenario()  # one drawdown year at 61 funding $80k
+        expected = (withdrawal_tax(s, 81_000) - withdrawal_tax(s, 80_000)) / 1_000
+        assert terminal_tax_rate(s) == pytest.approx(expected)
+
+    def test_values_trad_at_flat_rate_and_roth_tax_free(self):
+        s = _scenario(state="NY")
+        rate = terminal_tax_rate(s)
+        disc = (1 + s.discount_rate) ** -3
+        assert terminal_value(s, 500_000, 100_000, 3) == pytest.approx(
+            (500_000 * (1 - rate) + 100_000) * disc
+        )
+
+    def test_no_bracket_jump_for_a_large_balance(self):
+        """Value is linear in the leftover balance: no single-year lump sum."""
+        s = _scenario()
+        small = terminal_value(s, 100_000, 0.0, 0)
+        assert terminal_value(s, 2_000_000, 0.0, 0) == pytest.approx(20 * small)
+
+    def test_vectorized_matches_scalar(self):
+        s = _scenario(state="NY")
+        trad = np.array([0.0, 50_000, 400_000, 2_000_000])
+        roth = np.array([10_000, 0.0, 250_000, 0.0])
+        expected = [terminal_value(s, t, r, 7) for t, r in zip(trad, roth, strict=True)]
+        np.testing.assert_allclose(vectorized_terminal_value(s, trad, roth, 7), expected)
+
+
 class TestPhaseTiming:
     def test_starts_at_drawdown_age_after_short_timeline(self):
         assert post_timeline_start(_scenario(drawdown_start_age=65)) == 5
@@ -60,15 +105,14 @@ class TestPhaseTiming:
         assert post_timeline_start(_scenario(timeline=timeline, drawdown_start_age=63)) == 8
 
     def test_first_drawdown_year_is_funded(self):
-        """One drawdown year at 61: spend, grow, then liquidate at 62."""
+        """One drawdown year at 61: spend, grow, then value the rest at 62."""
         s = _scenario()
         g, d = s.annual_growth_rate, s.discount_rate
         trad = s.traditional_ira_balance * (1 + g)  # after the timeline year
         spend = 80_000
         tax = calculate_federal_tax(spend, s.filing_status)
         remaining = (trad - spend) * (1 + g)
-        liquidation = remaining - calculate_federal_tax(remaining, s.filing_status)
-        expected = (spend - tax) / (1 + d) + liquidation / (1 + d) ** 2
+        expected = (spend - tax) / (1 + d) + terminal_value(s, remaining, 0.0, 2)
 
         assert calculate_npv(s, [0.0]) == pytest.approx(expected)
 

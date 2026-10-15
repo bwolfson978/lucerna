@@ -4,7 +4,8 @@ Engine incomes count Social Security in full (it is part of ``gross_income``,
 and ACA MAGI does include all of it). Federal tax only sees the taxable part
 of the benefit, found with the IRS provisional income worksheet, and filers
 65 and older get a larger standard deduction. Most states don't tax Social
-Security at all. ``YearTax`` maps an engine income to what each tax actually
+Security at all, and some exempt part or all of IRA and 401(k) money (see
+``retirement_exclusion``). ``YearTax`` maps an engine income to what each tax actually
 applies to, so every caller keeps passing the same incomes it always did.
 """
 
@@ -16,6 +17,7 @@ from app.engine.irmaa import lookback_threshold_scale
 from app.engine.state_tax import (
     calculate_state_tax,
     resolve_state_for_year,
+    retirement_exclusion,
     vectorized_state_tax,
 )
 from app.engine.tax import calculate_federal_tax, get_marginal_rate, vectorized_federal_tax
@@ -73,6 +75,10 @@ class YearTax:
     fixed_scale: float = 1.0
     # IRMAA tiers that this year's MAGI is compared with (see ``lookback_threshold_scale``)
     irmaa_scale: float = 1.0
+    # The year's income from outside the accounts (wages, pensions, benefits).
+    # Engine income above it is IRA money: RMDs, withdrawals and conversions.
+    other_income: float | None = None
+    age: float = 0.0
 
     def agi(self, income):
         """Adjusted gross income: other income plus the taxable part of benefits."""
@@ -95,11 +101,21 @@ class YearTax:
         return calculate_federal_tax(float(base), self.filing_status)
 
     def state_income(self, income):
-        """The income state tax applies to: benefits drop out where the state exempts them."""
+        """The income state tax applies to: benefits and IRA money drop out where
+        the state exempts them."""
+        out = np.asarray(income, dtype=float)
+        if self.other_income is not None:
+            out = out - retirement_exclusion(
+                self.state,
+                self.filing_status,
+                self.age,
+                out - self.other_income,
+                self.agi(income),
+                self.fixed_scale,
+            )
         if self.social_security > 0 and self.state not in STATES_TAXING_SOCIAL_SECURITY:
-            out = np.maximum(0.0, np.asarray(income, dtype=float) - self.social_security)
-            return out if np.ndim(income) else float(out)
-        return income
+            out = np.maximum(0.0, out - self.social_security)
+        return out if np.ndim(income) else float(out)
 
     def state_tax(self, income):
         if not self.state:
@@ -138,6 +154,8 @@ def year_tax(scenario: ScenarioInput, t: int, state: str | None = None) -> YearT
         extra_deduction=people * ADDITIONAL_DEDUCTION_65[scenario.filing_status] if senior else 0.0,
         fixed_scale=scenario.fixed_dollar_scale(t),
         irmaa_scale=lookback_threshold_scale(scenario.inflation_rate),
+        other_income=entry.gross_income,
+        age=scenario.age + t,
     )
 
 

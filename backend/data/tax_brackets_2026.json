@@ -5,7 +5,8 @@
     "primary_source_url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
     "federal_source": "IRS Revenue Procedure 2025-32",
     "last_updated": "2026-04-09",
-    "notes": "Bracket thresholds are on taxable income (after standard deduction). Rates verified against official state department of revenue publications. TCJA provisions made permanent by One Big Beautiful Bill Act (July 2025)."
+    "notes": "Bracket thresholds are on taxable income (after standard deduction). Rates verified against official state department of revenue publications. TCJA provisions made permanent by One Big Beautiful Bill Act (July 2025).",
+    "retirement_income_notes": "States with a retirement_income entry exempt part or all of IRA and 401(k) money, including Roth conversions. Amounts are per person and counted once (for the account owner). Not modeled: rules that exclude Roth conversions (Delaware, Maine, Maryland, Rhode Island), rules that phase out at low incomes (Missouri), age deductions on any income (Montana, New Mexico, Virginia, West Virginia), credits (Ohio, Oregon, Utah) and government-only pensions."
   },
   "federal": {
     "standard_deduction": {
@@ -51,7 +52,21 @@
           { "min": 6000, "max": "inf", "rate": 0.05 }
         ]
       },
-      "notes": "Allows deduction of federal income tax paid. Standard deduction phases down for higher AGI."
+      "notes": "Allows deduction of federal income tax paid. Standard deduction phases down for higher AGI.",
+      "retirement_income": {
+        "tiers": [
+          {
+            "min_age": 65,
+            "amount": 6000
+          }
+        ],
+        "indexed": false,
+        "summary": "Alabama exempts up to $6,000 a year of IRA and 401(k) income from age 65.",
+        "note": "Schedule RS. Conversions are taxable IRA distributions, so they are treated as eligible; Alabama does not say so outright.",
+        "sources": [
+          "https://www.revenue.alabama.gov/wp-content/uploads/2026/01/25schrsblk.pdf"
+        ]
+      }
     },
     "AK": {
       "name": "Alaska",
@@ -87,7 +102,21 @@
           { "min": 4500, "max": "inf", "rate": 0.039 }
         ]
       },
-      "notes": "Two-bracket system for incomes above $89,600. Lower incomes use a separate schedule with more brackets."
+      "notes": "Two-bracket system for incomes above $89,600. Lower incomes use a separate schedule with more brackets.",
+      "retirement_income": {
+        "tiers": [
+          {
+            "min_age": 59.5,
+            "amount": 6000
+          }
+        ],
+        "indexed": false,
+        "summary": "Arkansas exempts up to $6,000 a year of IRA and 401(k) income from age 59 and a half.",
+        "note": "Conversions are treated as eligible distributions; Arkansas does not say so outright.",
+        "sources": [
+          "https://www.dfa.arkansas.gov/wp-content/uploads/206-PensionsAnnuities.pdf"
+        ]
+      }
     },
     "CA": {
       "name": "California",
@@ -135,7 +164,25 @@
           { "min": 0, "max": "inf", "rate": 0.044 }
         ]
       },
-      "notes": "Starts from federal taxable income; federal standard deduction already applied."
+      "notes": "Starts from federal taxable income; federal standard deduction already applied.",
+      "retirement_income": {
+        "tiers": [
+          {
+            "min_age": 55,
+            "amount": 20000
+          },
+          {
+            "min_age": 65,
+            "amount": 24000
+          }
+        ],
+        "indexed": false,
+        "summary": "Colorado exempts up to $20,000 a year of IRA and 401(k) income at ages 55 to 64, and $24,000 from 65.",
+        "note": "At 55 to 64 taxable Social Security also counts toward the $20,000 cap, which is not modeled. Conversions are treated as eligible.",
+        "sources": [
+          "https://tax.colorado.gov/sites/tax/files/documents/ITT_Social_Security_Pensions_and_Annuities_Jan_2025.pdf"
+        ]
+      }
     },
     "CT": {
       "name": "Connecticut",
@@ -162,7 +209,32 @@
           { "min": 1000000, "max": "inf", "rate": 0.0699 }
         ]
       },
-      "notes": "Rates updated for 2025: lowest bracket reduced to 2%, second bracket to 4.5%."
+      "notes": "Rates updated for 2025: lowest bracket reduced to 2%, second bracket to 4.5%.",
+      "retirement_income": {
+        "tiers": [
+          {
+            "min_age": 0,
+            "amount": null
+          }
+        ],
+        "indexed": false,
+        "summary": "Connecticut exempts IRA and 401(k) income in full when income is under $75,000 (single) or $100,000 (joint), phasing out above that.",
+        "phaseout": {
+          "single": [
+            75000,
+            100000
+          ],
+          "married_filing_jointly": [
+            100000,
+            150000
+          ]
+        },
+        "note": "The IRA subtraction reaches 100% in 2026. Connecticut phases it out in steps; modeled as a straight line. Conversions count toward AGI.",
+        "sources": [
+          "https://portal.ct.gov/-/media/drs/publications/pubsip/2024/ip-2024-7.pdf",
+          "https://www.cga.ct.gov/2025/rpt/pdf/2025-R-0152.pdf"
+        ]
+      }
     },
     "DE": {
       "name": "Delaware",
@@ -235,7 +307,25 @@
           { "min": 0, "max": "inf", "rate": 0.0519 }
         ]
       },
-      "notes": "Flat rate effective 2025 per HB 111 (signed April 2025). Reduced from 5.39%."
+      "notes": "Flat rate effective 2025 per HB 111 (signed April 2025). Reduced from 5.39%.",
+      "retirement_income": {
+        "tiers": [
+          {
+            "min_age": 62,
+            "amount": 35000
+          },
+          {
+            "min_age": 65,
+            "amount": 65000
+          }
+        ],
+        "indexed": false,
+        "summary": "Georgia exempts up to $35,000 a year of retirement income at ages 62 to 64, and $65,000 from 65, including Roth conversions.",
+        "note": "IT-511: conversions are treated the same as for the IRS and count as taxable IRA income on the exclusion worksheet.",
+        "sources": [
+          "https://dor.georgia.gov/it-511-individual-income-tax-booklet"
+        ]
+      }
     },
     "HI": {
       "name": "Hawaii",
@@ -302,7 +392,21 @@
           { "min": 0, "max": "inf", "rate": 0.0495 }
         ]
       },
-      "notes": "No standard deduction. Personal exemption of $2,850 single / $5,700 MFJ not modeled as deduction."
+      "notes": "No standard deduction. Personal exemption of $2,850 single / $5,700 MFJ not modeled as deduction.",
+      "retirement_income": {
+        "tiers": [
+          {
+            "min_age": 0,
+            "amount": null
+          }
+        ],
+        "indexed": false,
+        "summary": "Illinois does not tax IRA or 401(k) withdrawals or Roth conversions.",
+        "note": "Publication 120 lists IRA distributions, including amounts rolled over to a Roth IRA, as exempt retirement income.",
+        "sources": [
+          "https://tax.illinois.gov/research/publications/pubs/retirement-income.html"
+        ]
+      }
     },
     "IN": {
       "name": "Indiana",
@@ -332,7 +436,21 @@
           { "min": 0, "max": "inf", "rate": 0.038 }
         ]
       },
-      "notes": "Changed to flat 3.8% for 2025 (previously progressive). Uses federal taxable income as starting point."
+      "notes": "Changed to flat 3.8% for 2025 (previously progressive). Uses federal taxable income as starting point.",
+      "retirement_income": {
+        "tiers": [
+          {
+            "min_age": 55,
+            "amount": null
+          }
+        ],
+        "indexed": false,
+        "summary": "Iowa does not tax IRA or 401(k) withdrawals or Roth conversions from age 55.",
+        "note": "Full exclusion since 2023; Roth conversion income is listed as eligible.",
+        "sources": [
+          "https://revenue.iowa.gov/taxes/tax-guidance/individual-income-tax/retirement-income-tax-guidance"
+        ]
+      }
     },
     "KS": {
       "name": "Kansas",
@@ -363,6 +481,20 @@
         "married_filing_jointly": [
           { "min": 0, "max": "inf", "rate": 0.04 }
         ]
+      },
+      "retirement_income": {
+        "tiers": [
+          {
+            "min_age": 0,
+            "amount": 31110
+          }
+        ],
+        "indexed": false,
+        "summary": "Kentucky exempts up to $31,110 a year of retirement income, including Roth conversions.",
+        "note": "Schedule M lists income from converting a regular IRA to a Roth IRA.",
+        "sources": [
+          "https://revenue.ky.gov/Forms/Schedule%20M-2021.pdf"
+        ]
       }
     },
     "LA": {
@@ -378,7 +510,21 @@
           { "min": 0, "max": "inf", "rate": 0.03 }
         ]
       },
-      "notes": "Changed to flat 3.0% for 2025 (previously progressive)."
+      "notes": "Changed to flat 3.0% for 2025 (previously progressive).",
+      "retirement_income": {
+        "tiers": [
+          {
+            "min_age": 65,
+            "amount": 12000
+          }
+        ],
+        "indexed": true,
+        "summary": "Louisiana exempts up to $12,000 a year of retirement income from age 65.",
+        "note": "R.S. 47:44.1, from 2025; the amount is inflation-indexed (about $12,324 for 2026, not yet final). Conversions are treated as eligible.",
+        "sources": [
+          "https://legis.la.gov/legis/Law.aspx?d=102133"
+        ]
+      }
     },
     "ME": {
       "name": "Maine",
@@ -458,7 +604,24 @@
           { "min": 0, "max": "inf", "rate": 0.0425 }
         ]
       },
-      "notes": "No standard deduction. Personal exemption of $5,800 per person not modeled as deduction."
+      "notes": "No standard deduction. Personal exemption of $5,800 per person not modeled as deduction.",
+      "retirement_income": {
+        "tiers": [
+          {
+            "min_age": 59.5,
+            "amount": {
+              "single": 65897,
+              "married_filing_jointly": 131794
+            }
+          }
+        ],
+        "indexed": true,
+        "summary": "Michigan exempts up to about $65,900 (single) or $131,800 (joint) a year of retirement income from age 59 and a half, including Roth conversions.",
+        "note": "Fully phased in for 2026 for anyone born after 1945; uses the 2025 limit, which is indexed. The limit is per return.",
+        "sources": [
+          "https://www.michigan.gov/taxes/questions/iit/accordion/retirement/is-a-rollover-from-a-regular-ira-to-a-roth-ira-an-allowable-subtraction-1"
+        ]
+      }
     },
     "MN": {
       "name": "Minnesota",
@@ -496,7 +659,21 @@
           { "min": 10000, "max": "inf", "rate": 0.044 }
         ]
       },
-      "notes": "Effectively flat 4.4% on income above $10,000. $6,000/$12,000 personal exemption not modeled separately."
+      "notes": "Effectively flat 4.4% on income above $10,000. $6,000/$12,000 personal exemption not modeled separately.",
+      "retirement_income": {
+        "tiers": [
+          {
+            "min_age": 59.5,
+            "amount": null
+          }
+        ],
+        "indexed": false,
+        "summary": "Mississippi does not tax IRA or 401(k) withdrawals or Roth conversions from age 59 and a half.",
+        "note": "Miss. Code 27-7-15; HB 1673 (2010) excludes conversions. Early distributions do not qualify.",
+        "sources": [
+          "https://law.justia.com/codes/mississippi/title-27/chapter-7/article-1/section-27-7-15/"
+        ]
+      }
     },
     "MO": {
       "name": "Missouri",
@@ -599,7 +776,34 @@
           { "min": 1000000, "max": "inf", "rate": 0.1075 }
         ]
       },
-      "notes": "NJ uses personal exemptions ($1,000/$2,000) rather than a traditional standard deduction."
+      "notes": "NJ uses personal exemptions ($1,000/$2,000) rather than a traditional standard deduction.",
+      "retirement_income": {
+        "tiers": [
+          {
+            "min_age": 62,
+            "amount": {
+              "single": 75000,
+              "married_filing_jointly": 100000
+            }
+          }
+        ],
+        "indexed": false,
+        "summary": "New Jersey exempts up to $75,000 (single) or $100,000 (joint) a year of retirement income from age 62 when total income is under $100,000, phasing out to none above $150,000.",
+        "phaseout": {
+          "single": [
+            100000,
+            150000
+          ],
+          "married_filing_jointly": [
+            100000,
+            150000
+          ]
+        },
+        "note": "New Jersey steps the exclusion down by income tier; modeled as a straight line. The pension exclusion covers IRA withdrawals; conversions are treated as eligible.",
+        "sources": [
+          "https://www.nj.gov/treasury/taxation/pdf/pubs/tgi-ee/git1&2.pdf"
+        ]
+      }
     },
     "NM": {
       "name": "New Mexico",
@@ -655,7 +859,22 @@
           { "min": 25000000, "max": "inf", "rate": 0.109 }
         ]
       },
-      "notes": "2025 rates updated: 5.85% reduced to 5.5%, 6.25% reduced to 6%, new 5.25% bracket added. NYC local tax (3.078-3.876%) not modeled."
+      "notes": "2025 rates updated: 5.85% reduced to 5.5%, 6.25% reduced to 6%, new 5.25% bracket added. NYC local tax (3.078-3.876%) not modeled.",
+      "retirement_income": {
+        "tiers": [
+          {
+            "min_age": 59.5,
+            "amount": 20000
+          }
+        ],
+        "indexed": false,
+        "summary": "New York exempts up to $20,000 a year of IRA and 401(k) income from age 59 and a half, including Roth conversions.",
+        "note": "TSB-M-98(7)I: up to $20,000 of conversion income can be excluded at 59 and a half.",
+        "sources": [
+          "https://www.tax.ny.gov/pdf/memos/income/m98_7i.pdf",
+          "https://www.tax.ny.gov/pdf/advisory_opinions/income/a09_9i.pdf"
+        ]
+      }
     },
     "NC": {
       "name": "North Carolina",
@@ -731,6 +950,20 @@
           { "min": 9800, "max": 14400, "rate": 0.0375 },
           { "min": 14400, "max": "inf", "rate": 0.0475 }
         ]
+      },
+      "retirement_income": {
+        "tiers": [
+          {
+            "min_age": 0,
+            "amount": 10000
+          }
+        ],
+        "indexed": false,
+        "summary": "Oklahoma exempts up to $10,000 a year of retirement income.",
+        "note": "Schedule 511-A line 6 covers IRC 401, 403, 408 and 457 plans. Conversions are treated as eligible.",
+        "sources": [
+          "https://oklahoma.gov/content/dam/ok/en/tax/documents/forms/individuals/current/511-Pkt.pdf"
+        ]
       }
     },
     "OR": {
@@ -767,7 +1000,21 @@
           { "min": 0, "max": "inf", "rate": 0.0307 }
         ]
       },
-      "notes": "No standard deduction or personal exemption."
+      "notes": "No standard deduction or personal exemption.",
+      "retirement_income": {
+        "tiers": [
+          {
+            "min_age": 0,
+            "amount": null
+          }
+        ],
+        "indexed": false,
+        "summary": "Pennsylvania does not tax Roth conversions, or IRA withdrawals from age 59 and a half.",
+        "note": "Conversions are not taxable at any age. Withdrawals before 59 and a half are taxed above previously taxed contributions, which is not modeled: they are treated as exempt too.",
+        "sources": [
+          "https://www.pa.gov/content/dam/copapwp-pagov/en/revenue/documents/formsandpublications/formsforindividuals/pit/documents/2025/2025_pa-40in.pdf"
+        ]
+      }
     },
     "RI": {
       "name": "Rhode Island",
@@ -805,7 +1052,25 @@
           { "min": 17830, "max": "inf", "rate": 0.062 }
         ]
       },
-      "notes": "Uses federal standard deduction. Same brackets for single and MFJ."
+      "notes": "Uses federal standard deduction. Same brackets for single and MFJ.",
+      "retirement_income": {
+        "tiers": [
+          {
+            "min_age": 0,
+            "amount": 3000
+          },
+          {
+            "min_age": 65,
+            "amount": 10000
+          }
+        ],
+        "indexed": false,
+        "summary": "South Carolina exempts up to $3,000 a year of retirement income, and $10,000 from age 65.",
+        "note": "Conversions are treated as eligible; South Carolina does not say so outright.",
+        "sources": [
+          "https://dor.sc.gov/resources-site/lawandpolicy/Documents/SCTIED-2025/Chapter%203-Individual%20Income%20Taxes.pdf"
+        ]
+      }
     },
     "SD": {
       "name": "South Dakota",
@@ -922,7 +1187,21 @@
           { "min": 430820, "max": "inf", "rate": 0.0765 }
         ]
       },
-      "notes": "Bracket thresholds inflation-adjusted for 2025."
+      "notes": "Bracket thresholds inflation-adjusted for 2025.",
+      "retirement_income": {
+        "tiers": [
+          {
+            "min_age": 67,
+            "amount": 24000
+          }
+        ],
+        "indexed": false,
+        "summary": "Wisconsin exempts up to $24,000 a year of retirement income from age 67, including Roth conversions.",
+        "note": "2025 Act 15. Claiming it means giving up Wisconsin income tax credits that year, which is not modeled.",
+        "sources": [
+          "https://www.revenue.wi.gov/Pages/TaxPro/2026/TaxPractitonerFall2025QandA.aspx"
+        ]
+      }
     },
     "WY": {
       "name": "Wyoming",

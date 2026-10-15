@@ -453,6 +453,13 @@ def compare_results(
 # --------------------------------------------------------------------------
 
 
+def _tier_amount(tier: dict, key: str) -> float | str:
+    amount = tier["amount"]
+    if isinstance(amount, dict):
+        amount = amount[key]
+    return "no limit" if amount is None else amount
+
+
 def tax_brackets(filing_status: FilingStatus, state: str | None = None) -> dict:
     def serialize(brackets: list[dict]) -> list[dict]:
         return [
@@ -487,6 +494,25 @@ def tax_brackets(filing_status: FilingStatus, state: str | None = None) -> dict:
                 "standard_deduction": data.get("standard_deduction", {}).get(key),
                 "brackets_on_taxable_income": serialize(data.get("brackets", {}).get(key, [])),
             }
+            rule = data.get("retirement_income")
+            out["state"]["retirement_income"] = (
+                {
+                    "summary": rule["summary"],
+                    "exclusions_by_age": [
+                        {
+                            "from_age": tier["min_age"],
+                            "max_excluded_per_year": _tier_amount(tier, key),
+                        }
+                        for tier in rule["tiers"]
+                    ],
+                    **({"note": rule["note"]} if rule.get("note") else {}),
+                    "sources": rule["sources"],
+                }
+                if rule
+                else {
+                    "summary": "IRA and 401(k) withdrawals and Roth conversions are taxed in full."
+                }
+            )
     return out
 
 

@@ -102,8 +102,12 @@
           "text": "Your income timeline runs through the age you plan to. Social Security, pensions and other income fill in the years they cover. Once you start drawing on your accounts, they cover whatever part of your spending that income doesn't, and required minimum distributions count toward it."
         },
         {
+          "heading": "Money left at the end of the plan",
+          "text": "If money is still in your traditional account at the end of the plan, we count what it would be worth after tax. We use the tax rate you'd pay on one more dollar of income in that final year, including Social Security, pensions and required withdrawals. Roth money is counted in full."
+        },
+        {
           "heading": "What's not included",
-          "text": "The few states that tax Social Security are treated as taxing all of it, without their own exemptions. IRMAA surcharges are factored in during optimization but are not a direct user input. The net investment income tax is not included, and every pension is treated as fixed, though some government pensions get cost-of-living raises. These simplifications could shift the optimal amount depending on your situation."
+          "text": "The few states that tax Social Security are treated as taxing all of it, without their own exemptions. Maine, Maryland, Delaware and Rhode Island exempt some retirement withdrawals but not Roth conversions; those breaks are not included. State credits and age deductions are not included either, and pension exclusions are not applied to pension income. IRMAA surcharges are factored in during optimization but are not a direct user input. The net investment income tax is not included, and every pension is treated as fixed, though some government pensions get cost-of-living raises. These simplifications could shift the optimal amount depending on your situation."
         }
       ]
     },
@@ -130,7 +134,7 @@
         },
         {
           "heading": "Four phases",
-          "text": "1) Conversion years: tax is paid on conversions and money moves from Traditional to Roth while both accounts grow. 2) Growth to retirement: both accounts compound until retirement age. 3) Retirement distributions: Traditional withdrawals are taxed, Roth withdrawals are not, and Required Minimum Distributions are enforced. 4) Final liquidation at the planning horizon age: remaining Traditional balances are taxed, Roth balances are not."
+          "text": "1) Conversion years: tax is paid on conversions and money moves from Traditional to Roth while both accounts grow. 2) Growth to retirement: both accounts compound until retirement age. 3) Retirement distributions: Traditional withdrawals are taxed, Roth withdrawals are not, and Required Minimum Distributions are enforced. 4) Money left at the end: If money is still in your traditional account at the end of the plan, we count what it would be worth after tax. We use the tax rate you'd pay on one more dollar of income in that final year, including Social Security, pensions and required withdrawals. Roth money is counted in full."
         },
         {
           "heading": "Two-stage search",
@@ -184,7 +188,7 @@
       "sidebar": false,
       "blocks": [
         {
-          "text": "When you choose a state, its income tax is added to the cost of converting in your working years. From your retirement age on, your retirement state's tax applies instead, to conversions and withdrawals alike. Moving from a high-tax state to a no-tax state in retirement makes conversions less attractive before the move and more attractive after it. Without a state selected, the analysis is federal only."
+          "text": "When you choose a state, its income tax is added to the cost of converting in your working years. From your retirement age on, your retirement state's tax applies instead, to conversions and withdrawals alike. Moving from a high-tax state to a no-tax state in retirement makes conversions less attractive before the move and more attractive after it. Some states exempt part or all of IRA and 401(k) money: Illinois, Iowa (from 55), Mississippi and Pennsylvania exempt it in full, and states like New York, Georgia, Colorado and Michigan exempt a yearly amount from a set age. Where the exemption covers Roth conversions, it is applied to conversions and withdrawals alike. Without a state selected, the analysis is federal only."
         }
       ]
     },

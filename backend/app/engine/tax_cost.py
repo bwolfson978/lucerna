@@ -26,6 +26,9 @@ from app.engine.tax import calculate_federal_tax, get_marginal_rate
 from app.engine.types import FilingStatus, HealthcareInput
 from app.engine.year_tax import YearTax
 
+# Dollars added to measure a marginal state rate
+MARGINAL_STEP = 100.0
+
 # Every function takes an optional ``year``: the timeline year's YearTax, which
 # taxes only the taxable part of Social Security and applies the 65+ deduction.
 # Without it, incomes are taxed as ordinary income in full.
@@ -103,15 +106,19 @@ def combined_marginal_rate(
     income = base_income + conversion
     if year is not None:
         rate = year.federal_bracket(income)
-        income = replace(year, state=state).state_income(income)
-    else:
-        rate = get_marginal_rate(income, filing_status)
+        if state:
+            # Measured on the year's own state tax, so exempt income (Social
+            # Security, IRA money in some states) adds nothing
+            year = replace(year, state=state, custom_state_rate=custom_state_rate)
+            step = MARGINAL_STEP
+            rate += (year.state_tax(income + step) - year.state_tax(income)) / step
+        return rate
+    rate = get_marginal_rate(income, filing_status)
     if state:
         rate += get_state_marginal_rate(
             income,
             state,
             filing_status,
             custom_state_rate,
-            year.fixed_scale if year is not None else 1.0,
         )
     return rate

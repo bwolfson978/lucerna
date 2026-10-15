@@ -374,7 +374,26 @@ export const flows = {
       await page.goto('/methodology')
       await page.getByRole('heading', { level: 1 }).waitFor()
       await shot('top', 'Methodology, first screen')
+      await shot('lifetime-model', 'The Lifetime Model section', { element: page.locator('section#npv-model') })
+      await shot('assumptions', 'Assumptions & Limitations section', { element: page.locator('section#assumptions') })
       await shot('full', 'Methodology, whole page', { fullPage: true })
+    },
+  },
+
+  'methodology-sidebar': {
+    title: 'How it works sidebar (Assumptions & Limitations)',
+    paths: ['frontend/src/components/methodology/', 'frontend/src/content/'],
+    async run(page, shot) {
+      await page.goto('/calculator')
+      await page.getByRole('button', { name: 'How does it work?' }).first().click()
+      const section = page.locator('#methodology-assumptions-limitations:visible').first()
+      await section.getByRole('button', { name: /Assumptions & Limitations/ }).click()
+      await page.waitForTimeout(600)
+      // The "What's not included" paragraph, where the limits of the model are listed
+      const limits = section.locator('p', { hasText: 'The few states that tax Social Security' })
+      await limits.scrollIntoViewIfNeeded()
+      await page.waitForTimeout(800)
+      await shot('not-included', "How it works: What's not included", { element: limits })
     },
   },
 }
