@@ -202,7 +202,7 @@ function DeleteAccountDialog({
           </svg>
           <span>
             We couldn&apos;t finish deleting your account. Try again, or email{" "}
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="underline underline-offset-2">
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="break-all underline underline-offset-2">
               {SUPPORT_EMAIL}
             </a>{" "}
             and we&apos;ll finish it for you.
