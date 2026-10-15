@@ -46,6 +46,31 @@ describe("scenario draft parity with the backend", () => {
   });
 });
 
+describe("normalizeDraft", () => {
+  it("re-projects a timeline saved before inflation was modeled", () => {
+    const saved = syncTimeline(
+      normalizeDraft({
+        age: 45,
+        filing_status: "single",
+        current_income: 100000,
+        traditional_balance: 200000,
+        retirement_age: 48,
+        income_growth_rate_pct: 0,
+        inflation_pct: 0,
+        planning_horizon_age: 50,
+      }),
+      null,
+      2026
+    );
+    const { inflation_pct: _dropped, ...legacy } = saved;
+    const loaded = normalizeDraft(legacy);
+    expect(loaded.inflation_pct).toBe(2.5);
+    expect(loaded.timeline.map((y) => y.gross_income)).toEqual([100000, 97561, 95181, 0, 0, 0]);
+    // A draft that has inflation keeps its timeline as saved
+    expect(normalizeDraft(saved).timeline).toEqual(saved.timeline);
+  });
+});
+
 describe("applyDraftPatch", () => {
   const base = applyDraftPatch(
     EMPTY_DRAFT,
@@ -56,6 +81,7 @@ describe("applyDraftPatch", () => {
       traditional_balance: 200000,
       retirement_age: 48,
       income_growth_rate_pct: 0,
+      inflation_pct: 0,
       planning_horizon_age: 50,
     },
     2026
@@ -102,6 +128,12 @@ describe("applyDraftPatch", () => {
     expect(unrelated.timeline[1].gross_income).toBe(5);
     const rebased = applyDraftPatch(unrelated, { current_income: 90000 }, 2026);
     expect(rebased.timeline[1].gross_income).toBe(90000);
+  });
+
+  it("regenerates the timeline when inflation changes", () => {
+    const inflated = applyDraftPatch(base, { inflation_pct: 2.5 }, 2026);
+    // No raises: pay falls by inflation in today's dollars
+    expect(inflated.timeline.map((y) => y.gross_income)).toEqual([100000, 97561, 95181, 0, 0, 0]);
   });
 
   it("choosing a state also sets the retirement state", () => {

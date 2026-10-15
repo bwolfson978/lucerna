@@ -15,6 +15,8 @@ interface IncomePreviewChartProps {
   retirementAge: number;
   /** Total household spending once withdrawals begin. Null: 4% rule (not drawn). */
   spending: number | null;
+  /** Yearly inflation, percent: a pension's fixed amount shrinks by it in today's dollars. */
+  inflationPct?: number;
 }
 
 type Segment = "base" | IncomeKind | "accounts";
@@ -34,7 +36,8 @@ export function previewBars(
   age: number,
   retirementAge: number,
   spending: number | null,
-  horizon: number
+  horizon: number,
+  inflationPct = 0
 ) {
   return timeline.map((row, i) => {
     const yearAge = age + i;
@@ -48,7 +51,10 @@ export function previewBars(
     let fromSources = 0;
     for (const src of sources) {
       if (src.start_age <= yearAge && yearAge <= (src.end_age ?? horizon)) {
-        const share = Math.min(src.amount, Math.max(0, row.gross_income - fromSources));
+        // Same amounts as generateTimeline: a pension is fixed, so it shrinks by inflation
+        const amount =
+          src.kind === "pension" ? src.amount / Math.pow(1 + inflationPct / 100, i) : src.amount;
+        const share = Math.min(amount, Math.max(0, row.gross_income - fromSources));
         parts[src.kind] += share;
         fromSources += share;
       }
@@ -71,12 +77,13 @@ export function IncomePreviewChart({
   age,
   retirementAge,
   spending,
+  inflationPct = 0,
 }: IncomePreviewChartProps) {
   const ref = useRef<HTMLElement>(null);
   const W = Math.max(280, useContainerWidth(ref) ?? 600);
   if (timeline.length === 0) return null;
   const horizon = age + timeline.length - 1;
-  const bars = previewBars(timeline, sources, age, retirementAge, spending, horizon);
+  const bars = previewBars(timeline, sources, age, retirementAge, spending, horizon, inflationPct);
   const used = STACK.filter((seg) => bars.some((b) => b.parts[seg] > 0));
   const peak = Math.max(1, ...bars.map((b) => STACK.reduce((sum, seg) => sum + b.parts[seg], 0)));
   const step = niceStep(peak / 4);

@@ -41,6 +41,8 @@ export interface ScenarioDraft {
   planning_horizon_age: number | null;
   investment_return_pct: number | null;
   discount_rate_pct: number | null;
+  /** Yearly inflation, percent. Every amount is in today's dollars. */
+  inflation_pct: number | null;
   include_aca: boolean;
   household_size: number | null;
   monthly_slcsp_premium: number | null;
@@ -50,6 +52,8 @@ export interface ScenarioDraft {
 }
 
 export type DraftPatch = Partial<ScenarioDraft>;
+
+export const DEFAULT_INFLATION_PCT = 2.5;
 
 export const EMPTY_DRAFT: ScenarioDraft = {
   age: null,
@@ -67,6 +71,7 @@ export const EMPTY_DRAFT: ScenarioDraft = {
   planning_horizon_age: 90,
   investment_return_pct: 7,
   discount_rate_pct: 5,
+  inflation_pct: DEFAULT_INFLATION_PCT,
   include_aca: false,
   household_size: 1,
   monthly_slcsp_premium: 620,
@@ -93,16 +98,25 @@ const TIMELINE_BASE_FIELDS = [
   "current_income_end_age",
   "planning_horizon_age",
   "income_sources",
+  "inflation_pct",
 ] as const;
 
-/** Fill in any fields missing from a draft that came from storage or the network. */
+/**
+ * Fill in any fields missing from a draft that came from storage or the network. A draft
+ * saved before inflation was modeled gets the default inflation and a fresh timeline, since
+ * its incomes were projected without it (rows with a note or a state override are kept).
+ */
 export function normalizeDraft(value: Partial<ScenarioDraft> | null | undefined): ScenarioDraft {
-  return {
+  const draft: ScenarioDraft = {
     ...EMPTY_DRAFT,
     ...(value ?? {}),
     income_sources: value?.income_sources ?? [],
     timeline: value?.timeline ?? [],
   };
+  if (value && !("inflation_pct" in value) && draft.timeline.length > 0) {
+    return syncTimeline(draft, null, draft.timeline[0].year);
+  }
+  return draft;
 }
 
 /** Regenerate the timeline when the inputs it depends on changed (pinned rows survive). */
@@ -145,6 +159,7 @@ export function projectedTimeline(draft: ScenarioDraft, startYear: number): Plan
       planningHorizonAge: draft.planning_horizon_age ?? DEFAULT_PLANNING_HORIZON_AGE,
       sources: draft.income_sources,
       baseEndAge: draft.current_income_end_age,
+      inflationPct: draft.inflation_pct ?? DEFAULT_INFLATION_PCT,
     }
   );
 }
@@ -223,6 +238,7 @@ export function buildScenarioInput(draft: ScenarioDraft): ScenarioInput {
     default_drawdown: draft.retirement_spending || null,
     annual_growth_rate: (draft.investment_return_pct ?? 7) / 100,
     discount_rate: (draft.discount_rate_pct ?? 5) / 100,
+    inflation_rate: (draft.inflation_pct ?? DEFAULT_INFLATION_PCT) / 100,
     healthcare,
     state: draft.state,
     retirement_state:

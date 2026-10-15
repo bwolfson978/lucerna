@@ -363,8 +363,8 @@ async def prepare_scenario(scenario: ScenarioArg) -> CallToolResult:
     description=(
         "Run the optimizer: find the Roth conversion schedule with the highest estimated lifetime "
         "tax savings for a complete scenario. Only call after the user confirmed the scenario's "
-        "values or asked to run the numbers. Returns savings in today's dollars, the conversion "
-        "and tax for each year, alternatives (no conversion, full conversion), the engine's "
+        "values or asked to run the numbers. Returns savings and yearly amounts in today's "
+        "dollars, the conversion and tax for each year, alternatives (no conversion, full conversion), the engine's "
         "reasoning, and a result_id."
     ),
 )

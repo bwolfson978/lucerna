@@ -33,24 +33,34 @@ def account_spending(scenario: ScenarioInput, account_balance):
     return scenario.default_drawdown
 
 
-def withdrawal_tax(scenario: ScenarioInput, amount: float) -> float:
-    """Federal and retirement-state tax on an account withdrawal."""
+def withdrawal_tax(scenario: ScenarioInput, amount: float, t: float = 0) -> float:
+    """Federal and retirement-state tax on an account withdrawal in plan year ``t``."""
     tax = calculate_federal_tax(amount, scenario.filing_status)
     state = scenario.retirement_state or scenario.state
     if state:
         tax += calculate_state_tax(
-            amount, state, scenario.filing_status, scenario.custom_state_rate
+            amount,
+            state,
+            scenario.filing_status,
+            scenario.custom_state_rate,
+            scenario.fixed_dollar_scale(t),
         )
     return tax
 
 
-def vectorized_withdrawal_tax(scenario: ScenarioInput, amounts: np.ndarray) -> np.ndarray:
+def vectorized_withdrawal_tax(
+    scenario: ScenarioInput, amounts: np.ndarray, t: float = 0
+) -> np.ndarray:
     """Vectorized ``withdrawal_tax``."""
     tax = vectorized_federal_tax(amounts, scenario.filing_status)
     state = scenario.retirement_state or scenario.state
     if state:
         tax = tax + vectorized_state_tax(
-            amounts, state, scenario.filing_status, scenario.custom_state_rate
+            amounts,
+            state,
+            scenario.filing_status,
+            scenario.custom_state_rate,
+            scenario.fixed_dollar_scale(t),
         )
     return tax
 
@@ -120,7 +130,7 @@ def conversion_bases(scenario: ScenarioInput, conversions: list[float]) -> list[
         base, _ = conversion_magi(entry.gross_income + rmd, available, need, conversion)
         bases.append(float(base))
         balance = (available - conversion - min(need, available - conversion)) * (
-            1 + scenario.annual_growth_rate
+            1 + scenario.real_growth_rate
         )
     return bases
 
@@ -141,7 +151,7 @@ def resolve_drawdowns(scenario: ScenarioInput) -> ScenarioInput:
 
     if scenario.default_drawdown is None:
         projected = (scenario.traditional_ira_balance + scenario.roth_ira_balance) * (
-            1 + scenario.annual_growth_rate
+            1 + scenario.real_growth_rate
         ) ** max(0, start_offset)
         four_percent = projected * RETIREMENT_SPENDING_RATE
 

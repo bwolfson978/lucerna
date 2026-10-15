@@ -1,0 +1,263 @@
+{
+  "metadata": {
+    "description": "Which state income tax thresholds rise with inflation each year by law, tax year 2026",
+    "primary_source": "Tax Foundation - State Individual Income Tax Rates and Brackets, 2026 (footnotes on indexing)",
+    "primary_source_url": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+    "last_updated": "2026-10-15",
+    "notes": "brackets: bracket thresholds (null for a flat tax, which has none). deduction: the standard_deduction amount in tax_brackets_2026.json (a personal exemption or the federal deduction in some states). Thresholds that are not indexed lose value in today's dollars (see app/engine/inflation.py). Checked against state sources where the table disagreed; each state's source is listed."
+  },
+  "states": {
+    "AL": {
+      "brackets": false,
+      "deduction": false,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "No indexing; brackets and $3,000/$8,500 SD (AGI phase-down) fixed by statute."
+    },
+    "AR": {
+      "brackets": true,
+      "deduction": true,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Brackets indexed (TF fn j); SD indexed with 3% annual cap ($2,410 in 2025 to $2,470 in 2026)."
+    },
+    "AZ": {
+      "brackets": null,
+      "deduction": true,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Flat 2.5%; SD equals the federal amount (TF fn u)."
+    },
+    "CA": {
+      "brackets": true,
+      "deduction": true,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Brackets and SD indexed (TF fn j, n); $1M mental health surtax threshold not indexed (fn nn)."
+    },
+    "CO": {
+      "brackets": null,
+      "deduction": true,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Flat 4.4%; starts from federal taxable income, so federal SD applies (TF fn o)."
+    },
+    "CT": {
+      "brackets": false,
+      "deduction": false,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "No indexing; $15,000/$24,000 personal exemption fixed and phases out with AGI."
+    },
+    "DC": {
+      "brackets": false,
+      "deduction": true,
+      "source": "https://taxnews.ey.com/news/2026-1962",
+      "note": "Brackets not indexed. 2026-2029 DC sets its own SD = 2025 amounts ($15,000/$30,000) with annual COLA (FY2027 budget act); federal SD from 2030."
+    },
+    "DE": {
+      "brackets": false,
+      "deduction": false,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "No indexing; brackets and $3,250/$6,500 SD fixed."
+    },
+    "GA": {
+      "brackets": null,
+      "deduction": false,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Flat rate; $12,000/$24,000 SD fixed by statute, not indexed."
+    },
+    "HI": {
+      "brackets": false,
+      "deduction": false,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "No indexing; Act 46 (2024) raises brackets and SD in scheduled legislated steps, not by inflation. TF shows SD $4,400/$8,800 for 2026."
+    },
+    "IA": {
+      "brackets": null,
+      "deduction": true,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Flat 3.8%; starts from federal taxable income, so federal SD applies (TF fn o)."
+    },
+    "ID": {
+      "brackets": null,
+      "deduction": true,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Flat 5.3%; federal SD (TF fn o, u). Idaho's 0% band (~$4,811/$9,622) is indexed (fn j) but the model has no band."
+    },
+    "IL": {
+      "brackets": null,
+      "deduction": false,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Model SD is 0 (no SD). Unmodeled personal exemption IS indexed ($2,850 in 2025, $2,925 in 2026; TF fn d)."
+    },
+    "IN": {
+      "brackets": null,
+      "deduction": false,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Model SD is 0 (no SD). Unmodeled $1,000 exemption is fixed, not indexed."
+    },
+    "KS": {
+      "brackets": false,
+      "deduction": false,
+      "source": "https://www.ksrevisor.gov/statutes/chapters/ch79/079_032_0119.html",
+      "note": "K.S.A. 79-32,119 fixes SD at $3,605/$8,240 for 2024+ with no COLA; brackets not indexed."
+    },
+    "KY": {
+      "brackets": null,
+      "deduction": true,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Flat 3.5%; SD indexed by statute ($3,270 in 2025, $3,360 in 2026; TF fn d)."
+    },
+    "LA": {
+      "brackets": null,
+      "deduction": true,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Flat 3%; SD $12,500 indexed annually from 2026 ($12,875; TF fn d)."
+    },
+    "MA": {
+      "brackets": true,
+      "deduction": false,
+      "source": "https://malegislature.gov/Laws/GeneralLaws/PartI/TitleIX/Chapter62/Section4",
+      "note": "Modeled 4% surtax threshold indexed (MGL c.62 s.4); $4,400/$8,800 personal exemption is at its statutory cap, no COLA."
+    },
+    "MD": {
+      "brackets": false,
+      "deduction": true,
+      "source": "https://www.marylandcomptroller.gov/content/dam/mdcomp/tax/legal-publications/alerts/tax-alert-changes-to-standard-and-itemized-deductions-and-to-state-and-local-income-tax-rates-from-the-2025-legislative-session.pdf",
+      "note": "Brackets not indexed. 2025 BRFA set flat SD $3,350/$6,700 indexed to COLA after 2025. Model's $2,700/$5,450 is the old formula max."
+    },
+    "ME": {
+      "brackets": true,
+      "deduction": true,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Brackets indexed (TF fn bb); SD tied to federal SD (fn u; fn vv says pre-OBBBA conformity, still indexed)."
+    },
+    "MI": {
+      "brackets": null,
+      "deduction": false,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Model SD is 0 (no SD). Unmodeled personal exemption IS indexed ($5,800 in 2025, $5,900 in 2026; TF fn d)."
+    },
+    "MN": {
+      "brackets": true,
+      "deduction": true,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Brackets and Minnesota's own SD indexed (TF fn bb, d)."
+    },
+    "MO": {
+      "brackets": true,
+      "deduction": true,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Brackets indexed (TF fn bb); SD equals federal SD (fn u)."
+    },
+    "MS": {
+      "brackets": false,
+      "deduction": false,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "No indexing; $10,000 exempt band, $2,300/$4,600 SD and exemptions fixed. Rate is 4.0% for 2026 (model has 4.4%)."
+    },
+    "MT": {
+      "brackets": true,
+      "deduction": true,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Brackets indexed (TF fn bb); starts from federal taxable income, so federal SD applies (fn o, u)."
+    },
+    "NC": {
+      "brackets": null,
+      "deduction": false,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Flat 3.99%; $12,750/$25,500 SD fixed by statute, not indexed."
+    },
+    "ND": {
+      "brackets": true,
+      "deduction": true,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Brackets (incl. 0% band) indexed (TF fn j); federal SD applies (fn o, u)."
+    },
+    "NE": {
+      "brackets": true,
+      "deduction": true,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Brackets and SD indexed (TF fn bb, d); SD $8,850/$17,700 for 2026."
+    },
+    "NJ": {
+      "brackets": false,
+      "deduction": false,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "No indexing; $1,000/$2,000 exemptions and brackets fixed."
+    },
+    "NM": {
+      "brackets": false,
+      "deduction": true,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Brackets (2024 HB 252) not indexed; uses federal SD (TF fn o, u)."
+    },
+    "NY": {
+      "brackets": false,
+      "deduction": false,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "No indexing; $8,000/$16,050 SD and brackets fixed by statute."
+    },
+    "OH": {
+      "brackets": false,
+      "deduction": false,
+      "source": "https://policymattersohio.org/research/the-great-ohio-tax-shift-2026/",
+      "note": "R.C. 5747.02(A)(5) indexes brackets, but HB 96 suspended indexing of brackets and exemptions for 2025-2026. Model SD is 0."
+    },
+    "OK": {
+      "brackets": false,
+      "deduction": false,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "No indexing; TF states HB 2764 brackets (3 brackets from 2026) not indexed; $6,350/$12,700 SD fixed."
+    },
+    "OR": {
+      "brackets": true,
+      "deduction": true,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Brackets indexed except top $125k/$250k threshold (TF fn bb, nn); SD indexed ($2,910/$5,820 in 2026; fn d)."
+    },
+    "PA": {
+      "brackets": null,
+      "deduction": false,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Flat 3.07%; no SD or personal exemption."
+    },
+    "RI": {
+      "brackets": true,
+      "deduction": true,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Brackets and SD indexed (TF fn bb, d); SD $11,200/$22,400 for 2026."
+    },
+    "SC": {
+      "brackets": true,
+      "deduction": true,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Brackets indexed (TF fn bb); federal SD via federal taxable income (fn o, u; fn vv pre-OBBBA conformity, still indexed)."
+    },
+    "UT": {
+      "brackets": null,
+      "deduction": true,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Flat 4.5%; credit is 6% of the federal SD (moves with federal) and its phaseout threshold is indexed (TF fn d, gg)."
+    },
+    "VA": {
+      "brackets": false,
+      "deduction": false,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "No indexing; SD changed only by legislation ($8,750/$17,500 for 2026 per TF)."
+    },
+    "VT": {
+      "brackets": true,
+      "deduction": true,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Brackets and SD/exemption indexed (TF fn j, n)."
+    },
+    "WI": {
+      "brackets": true,
+      "deduction": true,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "Brackets and sliding-scale SD indexed (TF fn bb, d); SD $13,960/$25,840 for 2026."
+    },
+    "WV": {
+      "brackets": false,
+      "deduction": false,
+      "source": "https://taxfoundation.org/data/all/state/state-income-tax-rates-2026/",
+      "note": "No indexing; model SD 0, $2,000/$4,000 exemption fixed."
+    }
+  }
+}

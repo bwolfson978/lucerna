@@ -85,8 +85,8 @@ def _npv_parts(scenario: ScenarioInput, yearly_conversions: list[float]) -> tupl
     planning_horizon_age. Terminal liquidation at planning_horizon_age.
     """
     n_years = len(scenario.timeline)
-    g = scenario.annual_growth_rate
-    d = scenario.discount_rate
+    g = scenario.real_growth_rate
+    d = scenario.real_discount_rate
     filing_status = scenario.filing_status
 
     trad_balance = scenario.traditional_ira_balance
@@ -144,7 +144,7 @@ def _npv_parts(scenario: ScenarioInput, yearly_conversions: list[float]) -> tupl
             # IRMAA MAGI counts only the taxable part of Social Security
             agi_base = yt.agi(base)
             irmaa_cost = irmaa_surcharge_loss(
-                agi_base, yt.agi(base + added) - agi_base, filing_status
+                agi_base, yt.agi(base + added) - agi_base, filing_status, yt.irmaa_scale
             )
             if irmaa_cost > 0:
                 irmaa_discount = (1 + d) ** (-(t + IRMAA_LOOKBACK_YEARS))
@@ -187,7 +187,7 @@ def _npv_parts(scenario: ScenarioInput, yearly_conversions: list[float]) -> tupl
         distribution = min(distribution, trad_balance)
         trad_balance -= distribution
 
-        after_tax_dist = distribution - withdrawal_tax(scenario, distribution)
+        after_tax_dist = distribution - withdrawal_tax(scenario, distribution, year)
 
         shortfall = spending - distribution
         if shortfall > 0:
@@ -206,7 +206,9 @@ def _npv_parts(scenario: ScenarioInput, yearly_conversions: list[float]) -> tupl
     discount_factor = (1 + d) ** (-liquidation_year)
 
     if trad_balance > 0:
-        npv += (trad_balance - withdrawal_tax(scenario, trad_balance)) * discount_factor
+        npv += (
+            trad_balance - withdrawal_tax(scenario, trad_balance, liquidation_year)
+        ) * discount_factor
 
     npv += roth_balance * discount_factor
 
@@ -487,8 +489,10 @@ def _build_year_detail(
         if t in irmaa_exposed:
             agi_base = yt.agi(base)
             agi_with = yt.agi(base + added)
-            irmaa_cost = irmaa_surcharge_loss(agi_base, agi_with - agi_base, scenario.filing_status)
-            irmaa_tier = irmaa_tier_index(agi_with, scenario.filing_status)
+            irmaa_cost = irmaa_surcharge_loss(
+                agi_base, agi_with - agi_base, scenario.filing_status, yt.irmaa_scale
+            )
+            irmaa_tier = irmaa_tier_index(agi_with, scenario.filing_status, yt.irmaa_scale)
 
         detail: dict = {
             "year": year,
@@ -559,8 +563,8 @@ def _build_year_detail(
 
         # Advance balances for next year's RMD and spending draws
         trad_balance -= rmd + actual_conv + trad_draw
-        roth_balance = (roth_balance + actual_conv - roth_draw) * (1 + scenario.annual_growth_rate)
-        trad_balance *= 1 + scenario.annual_growth_rate
+        roth_balance = (roth_balance + actual_conv - roth_draw) * (1 + scenario.real_growth_rate)
+        trad_balance *= 1 + scenario.real_growth_rate
 
     return yearly_detail, yearly_bracket_fill, total_tax, aca_details
 
@@ -581,7 +585,7 @@ def _build_irmaa_projection(
         entry = scenario.timeline[t]
         owner_age = scenario.age + t
         conversion = conversions[t]
-        g = scenario.annual_growth_rate
+        g = scenario.real_growth_rate
 
         rmd = calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
         rmd = min(rmd, trad_balance)
@@ -593,10 +597,11 @@ def _build_irmaa_projection(
 
         if t in irmaa_exposed:
             # Income, RMD, conversion and the traditional withdrawal for spending
-            magi = year_tax(scenario, t).agi(entry.gross_income + rmd + actual_conv + trad_draw)
+            yt = year_tax(scenario, t)
+            magi = yt.agi(entry.gross_income + rmd + actual_conv + trad_draw)
 
-            irmaa_cost = calculate_irmaa(magi, scenario.filing_status)
-            tier = irmaa_tier_index(magi, scenario.filing_status)
+            irmaa_cost = calculate_irmaa(magi, scenario.filing_status, yt.irmaa_scale)
+            tier = irmaa_tier_index(magi, scenario.filing_status, yt.irmaa_scale)
 
             if irmaa_cost > 0:
                 yearly_detail.append(
@@ -677,7 +682,7 @@ def _build_rmd_projection(
 ) -> RmdProjection | None:
     """Project RMD amounts and taxes across the full plan (timeline + post-timeline)."""
     n_years = len(scenario.timeline)
-    g = scenario.annual_growth_rate
+    g = scenario.real_growth_rate
 
     trad_balance = scenario.traditional_ira_balance
     roth_balance = scenario.roth_ira_balance
@@ -750,7 +755,7 @@ def _build_rmd_projection(
         distribution = min(distribution, trad_balance)
         trad_balance -= distribution
 
-        tax = withdrawal_tax(scenario, distribution)
+        tax = withdrawal_tax(scenario, distribution, year)
         eff_rate = tax / distribution if distribution > 0 else 0.0
 
         if rmd > 0:
@@ -966,7 +971,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         )
         raw_constrained = _run_scipy(scenario, constrained_bounds, constrained_constraints)
         final_conversions = _finalize_conversions(
-            raw_constrained, max_balance, scenario.annual_growth_rate
+            raw_constrained, max_balance, scenario.real_growth_rate
         )
     else:
         final_conversions = unconstrained_conversions
@@ -989,7 +994,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
             final_conversions = _finalize_conversions(
                 list(best_curve_point.yearly_conversions),
                 max_balance,
-                scenario.annual_growth_rate,
+                scenario.real_growth_rate,
             )
             total_conversion = sum(final_conversions)
 
@@ -1004,7 +1009,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
     timeline_chart = []
     trad_balance = scenario.traditional_ira_balance
     roth_balance = scenario.roth_ira_balance
-    g = scenario.annual_growth_rate
+    g = scenario.real_growth_rate
     owner_rmd_start = rmd_start_age(scenario.age)
 
     # Balances when drawdowns begin ("at retirement"), or after the timeline if later.

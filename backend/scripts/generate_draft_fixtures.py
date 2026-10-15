@@ -124,6 +124,35 @@ BUILD_CASES: list[tuple[str, dict]] = [
         ),
     ),
     (
+        "inflation: raises less inflation, pension shrinks, Social Security keeps up",
+        dict(
+            age=55,
+            filing_status="single",
+            current_income=100000,
+            income_growth_rate_pct=3,
+            inflation_pct=3.5,
+            traditional_balance=800000,
+            retirement_age=62,
+            income_sources=[
+                {"kind": "social_security", "owner": "you", "amount": 30000, "start_age": 67},
+                {"kind": "pension", "owner": "you", "amount": 24000.5, "start_age": 62},
+                {"kind": "other", "owner": "you", "amount": 6000, "start_age": 60, "end_age": 70},
+            ],
+        ),
+    ),
+    (
+        "no inflation",
+        dict(
+            age=60,
+            filing_status="single",
+            current_income=80000,
+            inflation_pct=0,
+            traditional_balance=400000,
+            retirement_age=65,
+            income_sources=[{"kind": "pension", "owner": "you", "amount": 12000, "start_age": 65}],
+        ),
+    ),
+    (
         "zero spending means 4% rule",
         dict(
             age=50,

@@ -11,7 +11,7 @@
         },
         {
           "heading": "Why “today's dollars?”",
-          "text": "A dollar 20 years from now buys less than a dollar today. We discount future savings at 5% so the number reflects what that money is actually worth to you right now, not an inflated future amount."
+          "text": "A dollar 20 years from now buys less than a dollar today. Every amount you enter and every result is in today's dollars, and we discount future savings at 5% a year so the number reflects what that money is actually worth to you right now, not an inflated future amount."
         },
         {
           "heading": "What's included",
@@ -86,12 +86,16 @@
           "text": "Every projection requires assumptions about the future. Here's what we use and why they're reasonable, but not guaranteed."
         },
         {
-          "heading": "7% annual growth",
-          "text": "The historical average real return of a diversified stock portfolio. Your actual returns will vary year to year, but this is a widely-used baseline for long-term planning."
+          "heading": "7% investment return",
+          "text": "A typical long-run return for a diversified portfolio, before inflation, as returns are usually quoted. Your actual returns will vary year to year, but this is a widely-used baseline for long-term planning."
+        },
+        {
+          "heading": "2.5% inflation",
+          "text": "Every amount you enter and every result is in today's dollars. Spending, Social Security, tax brackets, the standard deduction, IRMAA tiers and ACA subsidy limits keep up with prices, as the law and cost-of-living raises make them. A pension stays at its stated amount, so it buys a little less each year. A few thresholds are fixed in law and don't keep up: the Social Security taxation thresholds and the brackets of states that don't index theirs, so more income crosses them over time."
         },
         {
           "heading": "5% discount rate",
-          "text": "How we convert future dollars to today's dollars. A moderate assumption that avoids overstating benefits."
+          "text": "How we turn future amounts into today's value, quoted before inflation like the investment return. A moderate assumption that avoids overstating benefits."
         },
         {
           "heading": "Income and spending in retirement",
@@ -99,7 +103,7 @@
         },
         {
           "heading": "What's not included",
-          "text": "The few states that tax Social Security are treated as taxing all of it, without their own exemptions. IRMAA surcharges are factored in during optimization but are not a direct user input. The net investment income tax is not included, and future tax brackets are not adjusted for inflation. These simplifications could shift the optimal amount depending on your situation."
+          "text": "The few states that tax Social Security are treated as taxing all of it, without their own exemptions. IRMAA surcharges are factored in during optimization but are not a direct user input. The net investment income tax is not included, and every pension is treated as fixed, though some government pensions get cost-of-living raises. These simplifications could shift the optimal amount depending on your situation."
         }
       ]
     },

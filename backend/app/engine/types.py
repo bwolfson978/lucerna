@@ -2,6 +2,8 @@ from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
+from app.engine.inflation import fixed_dollar_scale, real_rate
+
 
 class FilingStatus(StrEnum):
     SINGLE = "single"
@@ -9,7 +11,7 @@ class FilingStatus(StrEnum):
 
 
 class PlanYear(BaseModel):
-    """A single year in the planning timeline."""
+    """A single year in the planning timeline. Amounts are in today's dollars."""
 
     year: int
     gross_income: float = Field(ge=0)
@@ -139,9 +141,19 @@ class ScenarioInput(BaseModel):
         description="Age at end of plan (terminal liquidation year).",
     )
 
-    # Growth/discount rates (with defaults)
-    annual_growth_rate: float = Field(default=0.07)
-    discount_rate: float = Field(default=0.05)
+    # Growth/discount rates (with defaults), as usually quoted: before inflation
+    annual_growth_rate: float = Field(default=0.07, description="Yearly investment return")
+    discount_rate: float = Field(default=0.05, description="Yearly discount rate")
+    inflation_rate: float = Field(
+        default=0.0,
+        ge=0,
+        le=0.15,
+        description=(
+            "Yearly inflation. Amounts are in today's dollars; the engine turns the return "
+            "and discount rate into after-inflation rates and shrinks thresholds the law "
+            "doesn't index. 0 means no inflation."
+        ),
+    )
 
     # Conversion preferences (optional constraints)
     conversion_preferences: ConversionPreferences | None = None
@@ -164,6 +176,20 @@ class ScenarioInput(BaseModel):
         le=0.20,
         description="Custom flat state tax rate (used when state='custom')",
     )
+
+    @property
+    def real_growth_rate(self) -> float:
+        """Investment return after inflation, which balances grow at in today's dollars."""
+        return real_rate(self.annual_growth_rate, self.inflation_rate)
+
+    @property
+    def real_discount_rate(self) -> float:
+        """Discount rate after inflation, for amounts in today's dollars."""
+        return real_rate(self.discount_rate, self.inflation_rate)
+
+    def fixed_dollar_scale(self, t: float) -> float:
+        """Today's value, in plan year ``t``, of a dollar amount fixed in law."""
+        return fixed_dollar_scale(self.inflation_rate, t)
 
 
 class BracketFillResult(BaseModel):

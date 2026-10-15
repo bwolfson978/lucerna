@@ -18,6 +18,7 @@ import { IncomePreviewChart } from "@/components/calculator/IncomePreviewChart";
 import {
   EMPTY_DRAFT,
   applyDraftPatch,
+  DEFAULT_INFLATION_PCT,
   buildScenarioInput,
   projectedTimeline,
   type DraftPatch,
@@ -102,6 +103,7 @@ export function InputForm({
     planning_horizon_age: planningHorizonAge,
     investment_return_pct: growthRate,
     discount_rate_pct: discountRate,
+    inflation_pct: inflationPct,
     custom_state_rate_pct: customStateRate,
     include_aca: includeAca,
     household_size: householdSize,
@@ -391,7 +393,7 @@ export function InputForm({
                 Your income, year by year
               </h3>
               <span className="text-caption text-text-tertiary">
-                {age} to {age + timeline.length - 1} · {timeline.length} years
+                {age} to {age + timeline.length - 1} · in today&apos;s dollars
               </span>
             </div>
             <IncomePreviewChart
@@ -400,6 +402,7 @@ export function InputForm({
               age={age}
               retirementAge={drawdownStartAge}
               spending={retirementSpending}
+              inflationPct={inflationPct ?? DEFAULT_INFLATION_PCT}
             />
           </section>
         )}
@@ -432,7 +435,7 @@ export function InputForm({
         </CollapsibleTrigger>
 
         <CollapsibleContent>
-          <div className="grid grid-cols-1 gap-x-default gap-y-5 pt-5 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-x-default gap-y-5 pt-5 sm:grid-cols-2">
             <NumericField
               ref={(el) => {
                 fieldRefs.current.yearsInRetirement = el;
@@ -442,6 +445,14 @@ export function InputForm({
               min={1}
               error={errors.yearsInRetirement}
               onChange={(v) => patch({ planning_horizon_age: v })}
+            />
+            <NumericField
+              label="Inflation"
+              value={inflationPct ?? ""}
+              decimalScale={1}
+              unit="%"
+              tooltip="How fast prices rise each year. Every amount you enter is in today's dollars: spending, Social Security and tax brackets keep up with prices, and a pension stays at its stated amount. 2.5% is a common long-run assumption."
+              onChange={(v) => patch({ inflation_pct: v })}
             />
             <NumericField
               label="Investment return"

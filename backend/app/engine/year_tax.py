@@ -12,6 +12,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from app.engine.irmaa import lookback_threshold_scale
 from app.engine.state_tax import (
     calculate_state_tax,
     resolve_state_for_year,
@@ -38,11 +39,17 @@ SENIOR_DEDUCTION_AGE = 65
 STATES_TAXING_SOCIAL_SECURITY = frozenset({"CO", "CT", "MN", "MT", "NM", "RI", "UT", "VT"})
 
 
-def taxable_social_security(other_income, benefits: float, filing_status: FilingStatus):
-    """Taxable part of ``benefits`` given the year's other income (scalar or array)."""
+def taxable_social_security(
+    other_income, benefits: float, filing_status: FilingStatus, fixed_scale: float = 1.0
+):
+    """Taxable part of ``benefits`` given the year's other income (scalar or array).
+
+    The thresholds are fixed in law, so in today's dollars they shrink by
+    ``fixed_scale`` (see ``app.engine.inflation``).
+    """
     if benefits <= 0:
         return np.zeros_like(other_income, dtype=float) if np.ndim(other_income) else 0.0
-    low, high = SS_THRESHOLDS[filing_status]
+    low, high = (threshold * fixed_scale for threshold in SS_THRESHOLDS[filing_status])
     provisional = np.asarray(other_income, dtype=float) + 0.5 * benefits
     middle = np.minimum(0.5 * (provisional - low), 0.5 * benefits)
     upper = np.minimum(
@@ -62,13 +69,19 @@ class YearTax:
     custom_state_rate: float | None = None
     social_security: float = 0.0
     extra_deduction: float = 0.0
+    # Today's value of a dollar amount fixed in law this year (1.0 without inflation)
+    fixed_scale: float = 1.0
+    # IRMAA tiers that this year's MAGI is compared with (see ``lookback_threshold_scale``)
+    irmaa_scale: float = 1.0
 
     def agi(self, income):
         """Adjusted gross income: other income plus the taxable part of benefits."""
         if self.social_security <= 0:
             return income
         other = np.maximum(0.0, np.asarray(income, dtype=float) - self.social_security)
-        agi = other + taxable_social_security(other, self.social_security, self.filing_status)
+        agi = other + taxable_social_security(
+            other, self.social_security, self.filing_status, self.fixed_scale
+        )
         return agi if np.ndim(income) else float(agi)
 
     def _federal_base(self, income):
@@ -94,10 +107,10 @@ class YearTax:
         income = self.state_income(income)
         if np.ndim(income):
             return vectorized_state_tax(
-                income, self.state, self.filing_status, self.custom_state_rate
+                income, self.state, self.filing_status, self.custom_state_rate, self.fixed_scale
             )
         return calculate_state_tax(
-            float(income), self.state, self.filing_status, self.custom_state_rate
+            float(income), self.state, self.filing_status, self.custom_state_rate, self.fixed_scale
         )
 
     def total(self, income):
@@ -123,6 +136,8 @@ def year_tax(scenario: ScenarioInput, t: int, state: str | None = None) -> YearT
         custom_state_rate=scenario.custom_state_rate,
         social_security=min(entry.social_security or 0.0, entry.gross_income),
         extra_deduction=people * ADDITIONAL_DEDUCTION_65[scenario.filing_status] if senior else 0.0,
+        fixed_scale=scenario.fixed_dollar_scale(t),
+        irmaa_scale=lookback_threshold_scale(scenario.inflation_rate),
     )
 
 

@@ -112,5 +112,6 @@ def combined_marginal_rate(
             state,
             filing_status,
             custom_state_rate,
+            year.fixed_scale if year is not None else 1.0,
         )
     return rate

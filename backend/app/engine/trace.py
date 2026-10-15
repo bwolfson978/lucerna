@@ -10,7 +10,12 @@ from app.engine.constants import (
     LOW_GROWTH_RATE,
     ROUNDING_RESOLUTION,
 )
-from app.engine.irmaa import IRMAA_LOOKBACK_YEARS, IRMAA_TIERS, MEDICARE_START_AGE
+from app.engine.irmaa import (
+    IRMAA_LOOKBACK_YEARS,
+    IRMAA_TIERS,
+    MEDICARE_START_AGE,
+    lookback_threshold_scale,
+)
 from app.engine.retirement import conversion_bases
 from app.engine.rmd import calculate_rmd, rmd_start_age
 from app.engine.state_tax import resolve_state_for_year, state_name
@@ -192,7 +197,7 @@ def _traditional_left_after_conversions(scenario: ScenarioInput, conversions: li
         drawdown = scenario.timeline[t].drawdown
         if drawdown:
             balance -= min(float(drawdown), balance)
-        balance *= 1 + scenario.annual_growth_rate
+        balance *= 1 + scenario.real_growth_rate
     return balance
 
 
@@ -201,8 +206,9 @@ def _just_under_irmaa_threshold(scenario: ScenarioInput, t: int, magi: float) ->
     if scenario.age + t < MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS:
         return False
     key = "mfj_max" if scenario.filing_status == FilingStatus.MFJ else "single_max"
+    scale = lookback_threshold_scale(scenario.inflation_rate)
     return any(
-        0 <= tier[key] - magi <= IRMAA_NEAR_THRESHOLD
+        0 <= tier[key] * scale - magi <= IRMAA_NEAR_THRESHOLD
         for tier in IRMAA_TIERS
         if tier[key] != float("inf")
     )
