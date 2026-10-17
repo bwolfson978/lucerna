@@ -149,7 +149,7 @@ describe("ScenarioWorkspace (calculator)", () => {
     await waitFor(() => expect(sent).toHaveLength(1));
     expect(sent[0].message).toMatch(/^I'm 55 and single/);
     // After the first message the box is a plain follow-up box.
-    await screen.findByTestId("scenario-note");
+    await screen.findByRole("button", { name: /^Review your scenario\. Ready to run/ });
     expect(box.value).toBe("");
     expect(screen.queryByText(/Sample message/)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Clear text" })).not.toBeInTheDocument();
