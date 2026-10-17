@@ -10,6 +10,7 @@
 import type { ReactNode } from "react";
 import {
   SignInButton as ClerkSignInButton,
+  SignUpButton as ClerkSignUpButton,
   useAuth as useClerkAuth,
   useClerk,
   useUser as useClerkUser,
@@ -89,7 +90,20 @@ export const useDeleteClerkUser: () => () => Promise<void> = AUTH_ENABLED
     }
   : () => async () => {};
 
-export function SignInButton({ children }: { children: ReactNode }) {
-  if (!AUTH_ENABLED) return null;
+interface AuthButtonProps {
+  children: ReactNode;
+  /** Without Clerk, show the button anyway, inert (Storybook, screenshots). */
+  preview?: boolean;
+}
+
+/** Opens Clerk's sign-in window, which also links to creating an account. */
+export function SignInButton({ children, preview = false }: AuthButtonProps) {
+  if (!AUTH_ENABLED) return preview ? <>{children}</> : null;
   return <ClerkSignInButton mode="modal">{children}</ClerkSignInButton>;
+}
+
+/** Opens Clerk's create-account window, which also links to signing in. */
+export function SignUpButton({ children, preview = false }: AuthButtonProps) {
+  if (!AUTH_ENABLED) return preview ? <>{children}</> : null;
+  return <ClerkSignUpButton mode="modal">{children}</ClerkSignUpButton>;
 }
