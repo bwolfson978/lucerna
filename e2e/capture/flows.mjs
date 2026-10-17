@@ -19,11 +19,12 @@ const MESSAGE = "I'm 52, married, income $90,000 a year, $600k in my 401k, I wan
  * summary card in the conversation (before the scenario panel), or the scenario panel
  * (opened as a sheet on phones).
  */
-async function scenarioReady(page) {
+async function scenarioReady(page, onCaptured = async () => {}) {
   await page
     .locator('[data-testid=scenario-summary], [data-testid=scenario-note]')
     .first()
     .waitFor({ timeout: 30000 })
+  await onCaptured()
   if (!(await page.getByTestId('scenario-note').count())) return page.getByTestId('scenario-summary')
   const bar = page.getByRole('button', { name: /^Review your scenario/ })
   await bar.or(page.getByTestId('scenario-panel')).filter({ visible: true }).first().waitFor()
@@ -48,13 +49,14 @@ async function openForm(page) {
 
 /**
  * Drive one conversation to a result card and a what-if (same steps as ui-drift.spec.ts).
- * `onSummary` runs while the scenario waits for Run the numbers.
+ * `onSent` runs once the scenario is captured, before anything opens it; `onSummary`
+ * runs while the scenario waits for Run the numbers.
  */
-async function converse(page, onSummary = async () => {}) {
+async function converse(page, { onSent = async () => {}, onSummary = async () => {} } = {}) {
   await page.goto('/calculator')
   await page.getByLabel('Message').fill(MESSAGE)
   await page.getByRole('button', { name: 'Send' }).click()
-  const summary = await scenarioReady(page)
+  const summary = await scenarioReady(page, onSent)
   const run = summary.getByRole('button', { name: 'Run the numbers' })
   await onSummary(summary)
   await run.click()
@@ -249,7 +251,10 @@ export const flows = {
       await shot('form', 'The whole scenario as a form', { fullPage: true })
 
       // Margaret's numbers. Fields that only exist on one side are skipped there.
-      const fill = (label, value) => page.getByLabel(label, { exact: true }).first().fill(String(value))
+      const fill = async (label, value) => {
+        const field = page.getByLabel(label, { exact: true }).first()
+        if (await field.count()) await field.fill(String(value))
+      }
       await fill('Age', 63)
       await page.getByLabel('Filing status').click()
       await page.getByRole('option', { name: /Married/ }).click()
@@ -258,6 +263,7 @@ export const flows = {
       await fill('Retirement age', 73)
       await fill('Roth IRA/401(k) balance', 52000)
       await fill('Income growth rate (%)', 0)
+      await fill('Yearly income growth', 0)
       await fill('Yearly spend in retirement', 95000)
       const addSs = page.getByRole('button', { name: '+ Social Security' })
       if (await addSs.count()) {
@@ -390,11 +396,16 @@ export const flows = {
       await page.goto('/calculator')
       await page.getByLabel('Message').waitFor()
       await shot('start', 'Calculator before any message')
-      await converse(page, async (summary) => {
-        // Let a smooth scroll to the sent message settle before the viewport shot.
-        await page.waitForTimeout(1000)
-        await shot('sent', 'Right after sending the first message: what the screen shows')
-        await shot('summary', 'The captured scenario, waiting for Run the numbers', { element: summary })
+      await converse(page, {
+        onSent: async () => {
+          // Let a smooth scroll to the sent message settle before the viewport shot.
+          await page.waitForTimeout(1000)
+          await shot('sent', 'Right after sending the first message: what the screen shows')
+        },
+        onSummary: async (summary) => {
+          await page.waitForTimeout(400)
+          await shot('summary', 'The captured scenario, waiting for Run the numbers', { element: summary })
+        },
       })
       const result = view(page, 0).locator('[data-ui=result-card]')
       await result.waitFor({ timeout: 30000 })

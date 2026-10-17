@@ -150,18 +150,18 @@ export const ScenarioPanelContent = forwardRef<HTMLHeadingElement, ScenarioPanel
           </p>
         )}
         {onRun && (
-          <div className="flex items-center justify-between gap-3 border-t border-border bg-card px-comfortable py-default">
-            <p className="text-caption text-text-tertiary">
-              Tap any value to change it. Nothing runs until you say so.
-            </p>
+          <div className="flex flex-col gap-2.5 border-t border-border bg-card px-comfortable py-default">
             <button
               type="button"
-              className="btn-dark shrink-0"
+              className="btn-dark w-full"
               disabled={runDisabled}
               onClick={onRun}
             >
               Run the numbers
             </button>
+            <p className="text-center text-caption text-text-tertiary">
+              Tap any value to change it. Nothing runs until you say so.
+            </p>
           </div>
         )}
       </div>
