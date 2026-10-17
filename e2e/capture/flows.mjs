@@ -429,6 +429,18 @@ export const flows = {
       await shot('result-card', 'Result card after "Run the numbers"', {
         element: page.getByTestId('mcp-app').first(),
       })
+      // The card's slider (absent before it existed): convert less than the optimum.
+      const slider = result.getByRole('slider', { name: 'Total amount to convert' })
+      if (await slider.count()) {
+        const box = await slider.boundingBox()
+        await page.mouse.click(box.x + box.width * 0.2, box.y + box.height / 2)
+        await page.waitForTimeout(800)
+        await shot('result-card-moved', 'Result card after moving its slider below the optimum', {
+          element: page.getByTestId('mcp-app').first(),
+        })
+        await result.getByRole('button', { name: 'Back to most savings' }).click()
+        await page.waitForTimeout(400)
+      }
       const compare = view(page, 1).locator('[data-ui=scenario-compare]')
       await compare.waitFor({ timeout: 30000 })
       await shot('what-if', 'What-if card for "retire at 58"', { element: page.getByTestId('mcp-app').nth(1) })
