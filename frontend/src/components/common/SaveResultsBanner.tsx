@@ -60,7 +60,7 @@ export function SaveResultsBanner({
           {state === "saving" ? "Saving your analysis..." : "Save your analysis"}
         </span>
         <span className="text-body-sm text-text-secondary">
-          Sign in to revisit this scenario and compare conversion schedules over time.
+          A free account keeps this scenario so you can reopen it here or from Claude and ChatGPT.
         </span>
       </div>
       {state !== "saving" && (

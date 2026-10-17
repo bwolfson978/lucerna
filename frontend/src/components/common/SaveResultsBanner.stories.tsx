@@ -9,7 +9,7 @@ const meta: Meta<typeof SaveResultsBanner> = {
     layout: "padded",
   },
   args: {
-    signInButton: <GlowButton size="sm">Sign in to save</GlowButton>,
+    signInButton: <GlowButton size="sm">Save with a free account</GlowButton>,
     onDismiss: () => {},
   },
 };
