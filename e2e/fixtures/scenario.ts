@@ -1,4 +1,4 @@
-import type { Locator, Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 
 /**
  * The scenario panel: beside the conversation on desktop, a sheet opened from the
@@ -7,10 +7,14 @@ import type { Locator, Page } from '@playwright/test'
 export async function openScenario(page: Page): Promise<Locator> {
   const bar = page.getByRole('button', { name: /^Review your scenario/ })
   const panel = page.getByTestId('scenario-panel')
-  await bar.or(panel).filter({ visible: true }).first().waitFor()
-  if (await bar.isVisible()) await bar.click()
   const shown = panel.filter({ visible: true }).first()
-  await shown.waitFor()
+  // On desktop the panel can open by itself (a restored draft, or the first values the
+  // assistant fills in), hiding the bar mid-click, so retry until the panel is showing.
+  await expect(async () => {
+    if (await shown.isVisible()) return
+    await bar.click({ timeout: 1000 })
+    await expect(shown).toBeVisible({ timeout: 1000 })
+  }).toPass({ timeout: 15000 })
   return shown
 }
 

@@ -1,7 +1,7 @@
 /**
  * What changed between two versions of the scenario draft: for marking the values the
- * assistant just filled in, and for the one-line note the conversation shows when it
- * updates the scenario.
+ * assistant just filled in, counting them on the scenario bar, and announcing the update
+ * to screen readers.
  */
 
 import type { ScenarioValues } from "@lucerna/ui";
@@ -48,13 +48,17 @@ export function changedFields(before: ScenarioDraft, after: ScenarioDraft): Show
   return SHOWN_FIELDS.filter((f) => !same(before[f], after[f]));
 }
 
+/** How many details a set of changed fields makes, with state now and later as one. */
+export function detailCount(fields: readonly ShownField[]): number {
+  return new Set(fields.map((f) => DETAIL_OF[f] ?? f)).size;
+}
+
 /** How many details changed, and whether every one of them was empty (or a default) before. */
 export function detailChanges(
   before: ScenarioDraft,
   after: ScenarioDraft
 ): { count: number; allNew: boolean } {
   const changed = changedFields(before, after);
-  const details = new Set(changed.map((f) => DETAIL_OF[f] ?? f));
   const allNew = changed.every((f) => {
     const was = before[f];
     return (
@@ -64,7 +68,15 @@ export function detailChanges(
       was === false
     );
   });
-  return { count: details.size, allNew };
+  return { count: detailCount(changed), allNew };
+}
+
+/** One line on what an update did to the scenario, such as "Added 5 details to your scenario". */
+export function changeSummary(before: ScenarioDraft, after: ScenarioDraft): string {
+  const { count, allNew } = detailChanges(before, after);
+  if (count === 0) return "Your scenario is ready to check";
+  const details = `${count} ${count === 1 ? "detail" : "details"}`;
+  return allNew ? `Added ${details} to your scenario` : `Updated ${details} in your scenario`;
 }
 
 /**

@@ -52,9 +52,10 @@ offline agent this script always gets there (the same steps as `e2e/tests/ui-dri
 
 1. On `/calculator`, fill the "Message" box with
    `I'm 52, married, income $90,000 a year, $600k in my 401k, I want to retire at 60` and press Send.
-2. When the conversation notes the scenario (`data-testid=scenario-note`), press "Run the numbers"
-   in the scenario panel (on phones, tap the "Your scenario" bar first to open it as a sheet).
-   `e2e/fixtures/scenario.ts` has helpers for both widths.
+2. When the scenario says "Ready to run" (the panel opens on its own on desktop; on phones the
+   "Your scenario" bar above the message box says it), press "Run the numbers" in the panel (on
+   phones, tap the bar first to open it as a sheet). `e2e/fixtures/scenario.ts` has helpers for
+   both widths.
 3. The result card renders as an MCP App View inside `data-testid=mcp-app`, two iframes deep
    (sandbox proxy, then the View); the card root is `[data-ui=result-card]`.
 4. Send `What if I retire at 58?` for a second `mcp-app` holding the what-if card

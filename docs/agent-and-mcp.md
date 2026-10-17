@@ -72,7 +72,7 @@ Cards that appear both in MCP App Views and natively in the web app are defined 
 
 | Tool | View | Shared component (ui/) | Web app |
 |---|---|---|---|
-| `prepare_scenario` | `scenario-summary.html` | `ScenarioSummary` | Not mounted: the host notes the change in the conversation and shows the values in its scenario panel (same component, `variant="panel"`, wired to the live draft) |
+| `prepare_scenario` | `scenario-summary.html` | `ScenarioSummary` | Not mounted: the host shows the values in its scenario panel (same component, `variant="panel"`, wired to the live draft), marks what changed New, and counts it on the bar above the message box |
 | `analyze_roth_conversions` | `result-card.html` | `ResultCard` with `BracketFillChart`: the results page's `BracketChart` at the optimal schedule | Mounted |
 | `compare_roth_scenarios` | `scenario-compare.html` | `ScenarioCompareCard` | Mounted |
 

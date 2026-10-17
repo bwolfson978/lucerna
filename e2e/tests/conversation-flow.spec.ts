@@ -13,16 +13,16 @@ const view = (page: Page, index: number) =>
 
 test.describe('Conversation flow', () => {
   test('describe, confirm, run, explore a what-if and open full results', async ({ page }) => {
+    // Two optimizer runs, a page change and a what-if apply: more than the default budget.
+    test.setTimeout(60000)
     await page.goto('/calculator')
 
     await page.getByLabel('Message').fill("I'm 52, married, income $90,000 a year, $600k in my 401k, I want to retire at 60")
     await page.getByRole('button', { name: 'Send' }).click()
 
-    // The conversation notes what it captured; the values land in the scenario panel.
-    const notes = page.getByTestId('scenario-note')
-    await expect(notes.first()).toBeVisible({ timeout: 15000 })
+    // What the conversation captured lands in the scenario panel.
     const panel = await openScenario(page)
-    await expect(panel.getByText('$600,000')).toBeVisible()
+    await expect(panel.getByText('$600,000')).toBeVisible({ timeout: 15000 })
     await expect(panel.getByText('Ready to run')).toBeVisible()
 
     await panel.getByRole('button', { name: 'Run the numbers' }).click()
@@ -50,7 +50,12 @@ test.describe('Conversation flow', () => {
     // what-if in the scenario.
     await compare.getByRole('button', { name: 'Apply to my scenario' }).click()
     await expect(page.getByText('Use the "Retire at 58" what-if as my scenario.')).toBeVisible()
-    await expect(notes).toHaveCount(2, { timeout: 20000 })
+    // The changed value is marked New in the panel (desktop) and counted on the bar (phones).
+    await expect(
+      page
+        .getByRole('button', { name: /^Review your scenario.*1 new$/ })
+        .or(page.getByTestId('scenario-panel').filter({ visible: true }).getByText('New', { exact: true }))
+    ).toBeVisible({ timeout: 20000 })
 
     // The full details hold what the conversation captured.
     await openDetails(page)
@@ -66,9 +71,9 @@ test.describe('Conversation flow', () => {
     await page.goto('/calculator')
     await page.getByLabel('Message').fill("I'm 40, single, income $120,000, $300k in my IRA, retire at 55")
     await page.getByRole('button', { name: 'Send' }).click()
-    await expect(page.getByTestId('scenario-note')).toBeVisible({ timeout: 15000 })
+    await expect((await openScenario(page)).getByText('$300,000')).toBeVisible({ timeout: 15000 })
     await page.reload()
-    await expect(page.getByTestId('scenario-note')).toBeVisible()
+    await expect(page.getByText("I'm 40, single, income $120,000")).toBeVisible()
     const panel = await openScenario(page)
     await expect(panel.getByText('$300,000')).toBeVisible()
   })

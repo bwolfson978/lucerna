@@ -53,7 +53,8 @@ async function converse(page: Page) {
   await page.goto('/calculator')
   await page.getByLabel('Message').fill("I'm 52, married, income $90,000 a year, $600k in my 401k, I want to retire at 60")
   await page.getByRole('button', { name: 'Send' }).click()
-  await page.getByTestId('scenario-note').waitFor({ timeout: 20000 })
+  // The scenario is captured: the panel (desktop) or the bar (phones) says it's ready.
+  await page.getByText(/Ready to run/).filter({ visible: true }).first().waitFor({ timeout: 20000 })
   await runScenario(page)
   await expect(page.getByTestId('mcp-app')).toHaveCount(1, { timeout: 30000 })
   await page.getByLabel('Message').fill('What if I retire at 58?')

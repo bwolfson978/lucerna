@@ -3,9 +3,11 @@
 /**
  * The scenario screen: a conversation beside the scenario it builds. The assistant and
  * the person edit one shared scenario draft, which lives in a panel on the right (a
- * sheet on phones) with the Run button. Any result in the conversation opens a full
- * results view, and the panel opens a full details view for the rest of the inputs.
- * Also powers /demo, where the conversation opens with a replay of Margaret's example.
+ * sheet on phones) with the Run button. The panel folds away to a thin strip, leaving
+ * the conversation centered, and a bar above the message box opens it again. Any result
+ * in the conversation opens a full results view, and the panel opens a full details
+ * view for the rest of the inputs. Also powers /demo, where the conversation opens with
+ * a replay of Margaret's example.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -40,7 +42,7 @@ import {
   type DraftPatch,
   type ScenarioDraft,
 } from "@/lib/scenario/draft";
-import { changedFields, draftKey } from "@/lib/scenario/changes";
+import { changeSummary, changedFields, detailCount, draftKey } from "@/lib/scenario/changes";
 import { CURRENT_YEAR } from "@/lib/utils/constants";
 import { useConversation } from "@/hooks/useConversation";
 import { usePrefersReducedMotion } from "@/hooks/useInView";
@@ -92,6 +94,28 @@ function writeSession(key: string, value: unknown): void {
     // Storage unavailable; state lives for this page view.
   }
 }
+
+// Whether the visitor last left the desktop scenario panel open or folded away.
+const PANEL_KEY = "lucerna:scenario-panel:v1";
+
+function readPanelChoice(): boolean | null {
+  try {
+    const value = localStorage.getItem(PANEL_KEY);
+    return value === "open" ? true : value === "closed" ? false : null;
+  } catch {
+    return null;
+  }
+}
+
+function writePanelChoice(open: boolean): void {
+  try {
+    localStorage.setItem(PANEL_KEY, open ? "open" : "closed");
+  } catch {
+    // Storage unavailable; the choice lasts for this page view.
+  }
+}
+
+const isDesktop = () => window.matchMedia?.("(min-width: 1024px)").matches ?? false;
 
 /** What fills the page beside the scenario panel. */
 type View =
@@ -171,14 +195,45 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
     [keys.draft]
   );
 
+  // The desktop panel: open, or folded to its strip. The visitor's own choice is kept on
+  // this device; until they make one, it starts closed (open when there's already a
+  // scenario) and opens the first time the assistant fills the scenario in.
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelAnimate, setPanelAnimate] = useState(false);
+  const panelChosen = useRef(false);
+
+  useEffect(() => {
+    const choice = readPanelChoice();
+    panelChosen.current = choice != null;
+    const saved = readSession<Partial<ScenarioDraft>>(keys.draft);
+    setPanelOpen(choice ?? (isDemo || (saved != null && hasDraftValues(normalizeDraft(saved)))));
+  }, [isDemo, keys.draft]);
+
+  const choosePanel = useCallback((open: boolean) => {
+    panelChosen.current = true;
+    writePanelChoice(open);
+    setPanelAnimate(true);
+    setPanelOpen(open);
+  }, []);
+
   // Values the assistant (or an applied what-if) just filled in, marked "New" in the panel
-  // until the person changes them or sends another message.
+  // and counted on the bar until the person changes them or sends another message.
   const [highlight, setHighlight] = useState<ReturnType<typeof changedFields>>([]);
+  // The same update in words, for screen readers.
+  const [announcement, setAnnouncement] = useState("");
 
   const replaceDraft = useCallback(
     (next: ScenarioDraft) => {
       const normalized = normalizeDraft(next);
-      setHighlight(changedFields(draftRef.current, normalized));
+      const changed = changedFields(draftRef.current, normalized);
+      setHighlight(changed);
+      if (changed.length > 0) {
+        setAnnouncement(changeSummary(draftRef.current, normalized));
+        if (!panelChosen.current) {
+          setPanelAnimate(true);
+          setPanelOpen(true);
+        }
+      }
       updateDraft(normalized);
     },
     [updateDraft]
@@ -552,16 +607,25 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
     [openView]
   );
 
-  // "Review" on a scenario note: the panel on desktop, the sheet on phones.
+  // Open the scenario: the panel on desktop (bringing focus to it), the sheet on phones.
   const [revealKey, setRevealKey] = useState(0);
-  const showScenario = useCallback(() => {
-    if (window.matchMedia?.("(min-width: 1024px)").matches) {
-      setRevealKey((k) => k + 1);
-    } else {
-      setSheetOpen(true);
-      posthog.capture("scenario_sheet_opened", { from: "note" });
-    }
-  }, []);
+  const showScenario = useCallback(
+    (from: "bar" | "strip" | "intro") => {
+      if (isDesktop()) {
+        choosePanel(true);
+        setRevealKey((k) => k + 1);
+        posthog.capture("scenario_panel_toggled", { open: true, from });
+      } else {
+        setSheetOpen(true);
+        posthog.capture("scenario_sheet_opened", { from });
+      }
+    },
+    [choosePanel]
+  );
+  const hidePanel = useCallback(() => {
+    choosePanel(false);
+    posthog.capture("scenario_panel_toggled", { open: false, from: "hide" });
+  }, [choosePanel]);
 
   // ------------------------------------------------------------- rendering
   const contextValue: ConversationContextValue = useMemo(
@@ -571,19 +635,9 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
       send: (text: string) => void send(text),
       openResults,
       applyWhatIf: isDemo ? undefined : applyWhatIf,
-      showScenario,
       ensureResult,
     }),
-    [
-      state.results,
-      state.streaming,
-      send,
-      openResults,
-      isDemo,
-      applyWhatIf,
-      showScenario,
-      ensureResult,
-    ]
+    [state.results, state.streaming, send, openResults, isDemo, applyWhatIf, ensureResult]
   );
 
   // The opening line reflects whether the scenario had values when the conversation began.
@@ -720,6 +774,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
                 hasDraft={introHasDraft}
                 empty={state.messages.length === 0}
                 onStart={(text) => void send(text)}
+                onFillIn={() => showScenario("intro")}
               />
             )
           }
@@ -751,6 +806,9 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
   // The conversation is a chat shell: the message box stays pinned to the bottom of the
   // screen and the footer steps aside so only the conversation scrolls.
   const chatShell = linkStatus !== "loading" && !openStored && !showDetails;
+  // With the panel folded to its strip, the left padding matches the strip so the
+  // conversation sits in the middle of the screen.
+  const stripShown = !showDetails && !panelOpen;
 
   return (
     <MethodologyProvider askAbout={askAbout}>
@@ -760,7 +818,10 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
           <main
             className={cn(
               "flex min-w-0 flex-1 flex-col self-stretch px-default sm:px-7",
-              chatShell ? "pt-section sm:pt-section-lg" : "py-section sm:py-section-lg"
+              chatShell ? "pt-section sm:pt-section-lg" : "py-section sm:py-section-lg",
+              stripShown && "lg:pl-[72px]",
+              panelAnimate &&
+                "motion-reduce:transition-none lg:transition-[padding] lg:duration-300 lg:ease-out"
             )}
           >
             <div
@@ -783,10 +844,9 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
                   <ScenarioBar
                     status={status}
                     label={isDemo ? "Margaret's scenario" : "Your scenario"}
-                    onOpen={() => {
-                      setSheetOpen(true);
-                      posthog.capture("scenario_sheet_opened", { from: "bar" });
-                    }}
+                    newCount={isDemo ? 0 : detailCount(highlight)}
+                    onOpen={() => showScenario("bar")}
+                    className={panelOpen ? "lg:hidden" : undefined}
                   />
                 }
                 onSend={(text) => void send(text)}
@@ -802,9 +862,21 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
             )}
           </main>
           {/* The details view is the whole scenario as a form, so the panel steps aside. */}
-          {!showDetails && <PanelSlot revealKey={revealKey} {...panelProps} />}
+          {!showDetails && (
+            <PanelSlot
+              revealKey={revealKey}
+              open={panelOpen}
+              animate={panelAnimate}
+              onShow={() => showScenario("strip")}
+              onHide={hidePanel}
+              {...panelProps}
+            />
+          )}
         </div>
         {!chatShell && <PageFooter />}
+        <p className="sr-only" aria-live="polite">
+          {announcement}
+        </p>
       </MethodologyLayout>
       <ScenarioSheet open={sheetOpen} onClose={() => setSheetOpen(false)} {...panelProps} />
     </MethodologyProvider>
@@ -814,13 +886,32 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
 // ---------------------------------------------------------------------------
 
 /**
- * The desktop panel. The methodology sidebar takes its place while open, and "Review"
- * on a scenario note closes that sidebar and brings focus to the panel.
+ * The desktop panel. The methodology sidebar takes its place while open. Opening the
+ * panel (the bar's Review, the strip's arrow) closes that sidebar and brings focus to
+ * the panel; hiding it returns focus to the strip.
  */
-function PanelSlot({ revealKey, ...props }: ScenarioPanelProps & { revealKey: number }) {
+function PanelSlot({
+  revealKey,
+  open,
+  animate,
+  onShow,
+  onHide,
+  ...props
+}: ScenarioPanelProps & {
+  revealKey: number;
+  open: boolean;
+  animate: boolean;
+  onShow: () => void;
+  onHide: () => void;
+}) {
   const methodology = useMethodologyOptional();
   const closeMethodology = methodology?.closeSidebar;
   const headingRef = useRef<HTMLHeadingElement>(null);
+  const stripRef = useRef<HTMLButtonElement>(null);
+  const hide = () => {
+    onHide();
+    requestAnimationFrame(() => stripRef.current?.focus());
+  };
 
   useEffect(() => {
     if (revealKey === 0) return;
@@ -842,7 +933,18 @@ function PanelSlot({ revealKey, ...props }: ScenarioPanelProps & { revealKey: nu
     return () => cancelAnimationFrame(frame);
   }, [revealKey, closeMethodology]);
 
-  return <ScenarioPanel ref={headingRef} hidden={methodology?.isOpen} {...props} />;
+  return (
+    <ScenarioPanel
+      ref={headingRef}
+      stripRef={stripRef}
+      open={open}
+      animate={animate}
+      onShow={onShow}
+      onHide={hide}
+      hidden={methodology?.isOpen}
+      {...props}
+    />
+  );
 }
 
 function PageIntro({ isDemo }: { isDemo: boolean }) {
@@ -880,10 +982,13 @@ function AssistantIntro({
   hasDraft,
   empty,
   onStart,
+  onFillIn,
 }: {
   hasDraft: boolean;
   empty: boolean;
   onStart: (text: string) => void;
+  /** Open the scenario to type the numbers in directly. */
+  onFillIn: () => void;
 }) {
   const starters = hasDraft
     ? ["Run my scenario", "Explain what I've entered so far"]
@@ -904,12 +1009,14 @@ function AssistantIntro({
         />
         {!hasDraft && (
           <p className="text-[15px] text-text-tertiary">
-            <span className="lg:hidden">
-              Prefer to type the numbers in yourself? Tap Review below to fill in your scenario.
-            </span>
-            <span className="hidden lg:inline">
-              Prefer to type the numbers in yourself? Fill in your scenario on the right.
-            </span>
+            Prefer to type the numbers in yourself?{" "}
+            <button
+              type="button"
+              onClick={onFillIn}
+              className="font-semibold text-pine underline decoration-border underline-offset-4 transition-colors duration-200 hover:decoration-pine"
+            >
+              Fill in your scenario
+            </button>
           </p>
         )}
       </AssistantBubble>

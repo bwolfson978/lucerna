@@ -52,8 +52,8 @@ STATUS = {
 
 # Tools whose View this host doesn't mount because it has a richer first-party
 # equivalent: the website's scenario panel shows the live draft and edits it in place,
-# and the conversation notes each change in one line. Both use the same shared
-# component (ui/src/ScenarioSummary.tsx), so they look the same.
+# marking what each change filled in. It uses the same shared component
+# (ui/src/ScenarioSummary.tsx), so it looks the same.
 RENDERED_NATIVELY = {"prepare_scenario"}
 
 SHOW_TOOL = {

@@ -20,12 +20,15 @@ const MESSAGE = "I'm 52, married, income $90,000 a year, $600k in my 401k, I wan
  * (opened as a sheet on phones).
  */
 async function scenarioReady(page, onCaptured = async () => {}) {
-  await page
-    .locator('[data-testid=scenario-summary], [data-testid=scenario-note]')
-    .first()
-    .waitFor({ timeout: 30000 })
+  const hasPanel = (await page.getByTestId('scenario-panel').count()) > 0
+  if (!hasPanel) {
+    await page.getByTestId('scenario-summary').first().waitFor({ timeout: 30000 })
+    await onCaptured()
+    return page.getByTestId('scenario-summary')
+  }
+  // The panel (desktop) or the bar above the message box (phones) says it's ready.
+  await page.getByText(/Ready to run/).filter({ visible: true }).first().waitFor({ timeout: 30000 })
   await onCaptured()
-  if (!(await page.getByTestId('scenario-note').count())) return page.getByTestId('scenario-summary')
   const bar = page.getByRole('button', { name: /^Review your scenario/ })
   await bar.or(page.getByTestId('scenario-panel')).filter({ visible: true }).first().waitFor()
   if (await bar.isVisible()) await bar.click()
@@ -405,6 +408,15 @@ export const flows = {
         onSummary: async (summary) => {
           await page.waitForTimeout(400)
           await shot('summary', 'The captured scenario, waiting for Run the numbers', { element: summary })
+          // Desktop panels that fold away: the closed state, then open again to run it.
+          const hide = page.getByRole('button', { name: 'Hide your scenario' }).filter({ visible: true })
+          if (await hide.count()) {
+            await hide.click()
+            await page.waitForTimeout(600)
+            await shot('panel-hidden', 'Scenario panel folded away: the conversation centered')
+            await page.getByRole('button', { name: 'Show your scenario' }).click()
+            await page.waitForTimeout(600)
+          }
         },
       })
       const result = view(page, 0).locator('[data-ui=result-card]')

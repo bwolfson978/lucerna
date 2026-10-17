@@ -12,8 +12,6 @@ export interface ConversationContextValue {
   openResults: (resultId: string) => void;
   /** Make a what-if result the user's scenario. */
   applyWhatIf?: (resultId: string) => void;
-  /** Bring the scenario panel into view (the sheet, on phones). */
-  showScenario?: () => void;
   /** Recompute a result that was dropped from session storage. */
   ensureResult: (resultId: string) => void;
 }

@@ -2,12 +2,12 @@
 
 /**
  * The scenario beside the conversation: every value the analysis uses, editable in
- * place, with the Run button. A right-hand panel on desktop; on phones a bar above the
- * message box opens the same panel as a sheet. The assistant and the person edit the
- * one shared draft, so whatever either changes shows here.
+ * place, with the Run button. A right-hand panel on desktop that folds away to a thin
+ * strip; a bar above the message box opens it (on phones, as a sheet). The assistant
+ * and the person edit the one shared draft, so whatever either changes shows here.
  */
 
-import { forwardRef, useEffect, useId, useRef, type ReactNode } from "react";
+import { forwardRef, useEffect, useId, useRef, type ReactNode, type Ref } from "react";
 import { FIELD_LABELS, ScenarioSummary, type ScenarioValues } from "@lucerna/ui";
 import { ChevronIcon } from "@/components/common/icons";
 import { summaryData } from "@/lib/results/viewData";
@@ -71,8 +71,31 @@ export interface ScenarioPanelProps {
   heading?: ReactNode;
   /** Close control, for the phone sheet. */
   onClose?: () => void;
+  /** Fold the desktop panel away to its strip. */
+  onHide?: () => void;
   /** A problem with the last run, shown above the Run button. */
   notice?: string | null;
+}
+
+/** A panel on the right, with an arrow toward the edge (hide) or away from it (show). */
+function PanelToggleIcon({ show = false }: { show?: boolean }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="4" width="18" height="16" rx="2.5" />
+      <path d="M15 4v16" />
+      <path d={show ? "M10 10l-2 2 2 2" : "M8 10l2 2-2 2"} />
+    </svg>
+  );
 }
 
 /** The panel's content, shared by the desktop panel and the phone sheet. */
@@ -93,6 +116,7 @@ export const ScenarioPanelContent = forwardRef<HTMLHeadingElement, ScenarioPanel
         </>
       ),
       onClose,
+      onHide,
       notice,
     },
     headingRef
@@ -126,6 +150,17 @@ export const ScenarioPanelContent = forwardRef<HTMLHeadingElement, ScenarioPanel
               className="-mr-2 -mt-1 min-h-[44px] rounded-full px-3 text-body-sm font-semibold text-pine hover:bg-paper-deep"
             >
               Done
+            </button>
+          )}
+          {onHide && (
+            <button
+              type="button"
+              onClick={onHide}
+              aria-label="Hide your scenario"
+              className="-mr-2 -mt-1 inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full px-3 text-body-sm font-semibold text-pine transition-colors duration-200 hover:bg-paper-deep"
+            >
+              <PanelToggleIcon />
+              Hide
             </button>
           )}
         </div>
@@ -231,42 +266,97 @@ function MoreDetails({
   );
 }
 
-/** Desktop: a sticky column to the right of the conversation. */
+/**
+ * Desktop: a sticky column to the right of the conversation. Closed, it folds to a thin
+ * strip whose arrow opens it again. Open and closed animate the width, so the
+ * conversation beside it glides to stay centered in the room left.
+ */
 export const ScenarioPanel = forwardRef<
   HTMLHeadingElement,
-  ScenarioPanelProps & { hidden?: boolean; className?: string }
->(function ScenarioPanel({ hidden, className, ...props }, ref) {
+  ScenarioPanelProps & {
+    open: boolean;
+    onShow: () => void;
+    /** Animate opening and closing (off for the first render, so a page loads still). */
+    animate?: boolean;
+    /** The strip's button, to return focus to when the panel is hidden. */
+    stripRef?: Ref<HTMLButtonElement>;
+    hidden?: boolean;
+    className?: string;
+  }
+>(function ScenarioPanel({ open, onShow, animate, stripRef, hidden, className, ...props }, ref) {
+  const contentId = useId();
+  const label = props.eyebrow ?? "Your scenario";
   return (
     <aside
-      aria-label={props.eyebrow ?? "Your scenario"}
+      aria-label={label}
       className={cn(
-        "sticky top-[68px] hidden h-[calc(100dvh-68px)] w-[360px] shrink-0 flex-col self-start border-l border-border bg-card transition-shadow duration-300 xl:w-[400px]",
-        hidden ? "lg:hidden" : "lg:flex",
+        "sticky top-[68px] hidden h-[calc(100dvh-68px)] shrink-0 self-start overflow-hidden border-l border-border bg-card",
+        open ? "w-[360px] xl:w-[400px]" : "w-11",
+        animate &&
+          "transition-[width,box-shadow] duration-300 ease-out motion-reduce:transition-none",
+        hidden ? "lg:hidden" : "lg:block",
         className
       )}
     >
-      <ScenarioPanelContent ref={ref} {...props} />
+      <div
+        id={contentId}
+        className={cn(
+          "flex h-full w-[360px] flex-col xl:w-[400px]",
+          open ? "visible opacity-100" : "invisible opacity-0",
+          animate && "transition-[opacity,visibility] duration-300 motion-reduce:transition-none"
+        )}
+      >
+        <ScenarioPanelContent ref={ref} {...props} />
+      </div>
+      {!open && (
+        <button
+          ref={stripRef}
+          type="button"
+          onClick={onShow}
+          aria-expanded="false"
+          aria-controls={contentId}
+          aria-label={`Show ${label.toLowerCase()}`}
+          title={`Show ${label.toLowerCase()}`}
+          className="group absolute inset-0 flex justify-center bg-card pt-[18px] text-pine transition-colors duration-200 hover:bg-paper"
+        >
+          <span className="flex h-9 w-9 items-center justify-center rounded-full transition-colors duration-200 group-hover:bg-paper-deep">
+            <PanelToggleIcon show />
+          </span>
+        </button>
+      )}
     </aside>
   );
 });
 
-/** Phones: a bar above the message box that opens the scenario sheet. */
+/**
+ * A bar above the message box that opens the scenario: the sheet on phones, the panel on
+ * desktop while it's folded away. It says where the scenario stands and how many values
+ * the assistant just filled in.
+ */
 export function ScenarioBar({
   status,
   label = "Your scenario",
+  newCount = 0,
   onOpen,
+  className,
 }: {
   status: ScenarioStatus;
   label?: string;
+  /** Details the assistant just filled in, not yet changed or seen. */
+  newCount?: number;
   onOpen: () => void;
+  className?: string;
 }) {
+  const text = newCount > 0 ? `${status.text} · ${newCount} new` : status.text;
   return (
     <button
       type="button"
       onClick={onOpen}
-      aria-haspopup="dialog"
-      aria-label={`Review ${label.toLowerCase()}. ${status.text}`}
-      className="mb-2.5 flex w-full items-center gap-3 rounded-[16px] border border-border-emphasis bg-card py-1.5 pl-4 pr-1.5 text-left shadow-elevated lg:hidden"
+      aria-label={`Review ${label.toLowerCase()}. ${text}`}
+      className={cn(
+        "mb-2.5 flex w-full items-center gap-3 rounded-[16px] border border-border-emphasis bg-card py-1.5 pl-4 pr-1.5 text-left shadow-elevated",
+        className
+      )}
     >
       <span className="flex min-w-0 flex-1 flex-col leading-snug">
         <span className="text-[14.5px] font-semibold text-text-primary">{label}</span>
@@ -275,7 +365,7 @@ export function ScenarioBar({
             aria-hidden="true"
             className={cn("h-1.5 w-1.5 shrink-0 rounded-full", DOT[status.tone])}
           />
-          {status.text}
+          {text}
         </span>
       </span>
       <span className="inline-flex min-h-[40px] items-center rounded-full bg-pine-deep px-4 text-[14px] font-semibold text-[#f5f2ea]">

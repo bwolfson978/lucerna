@@ -96,6 +96,23 @@ async function sendMessage(text: string) {
 
 const panel = () => screen.getByRole("complementary", { name: "Your scenario" });
 
+/** The assistant has filled the scenario in. */
+const captured = () =>
+  waitFor(() => expect(within(panel()).getByText("Ready to run")).toBeInTheDocument());
+
+/** Make the page match the desktop media queries (and reduced motion). */
+function asDesktop() {
+  const original = window.matchMedia;
+  window.matchMedia = vi.fn().mockReturnValue({
+    matches: true,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }) as unknown as typeof window.matchMedia;
+  return () => {
+    window.matchMedia = original;
+  };
+}
+
 describe("ScenarioWorkspace (calculator)", () => {
   it("opens with an opening message, starters and an empty scenario beside it", () => {
     mockAgent();
@@ -107,11 +124,16 @@ describe("ScenarioWorkspace (calculator)", () => {
     ).toBeInTheDocument();
     expect(within(panel()).getByText("Add your details")).toBeInTheDocument();
     expect(within(panel()).getByRole("button", { name: "Run the numbers" })).toBeDisabled();
+    // On desktop it starts folded away, leaving the conversation centered.
+    expect(screen.getByRole("button", { name: "Show your scenario" })).toBeInTheDocument();
     // On phones, a bar above the message box opens the same scenario.
     fireEvent.click(screen.getByRole("button", { name: /Review your scenario/ }));
     const sheet = screen.getByRole("dialog", { name: "Your scenario" });
     fireEvent.click(within(sheet).getByRole("button", { name: "Done" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    // So does the line under the opening message.
+    fireEvent.click(screen.getByRole("button", { name: "Fill in your scenario" }));
+    expect(screen.getByRole("dialog", { name: "Your scenario" })).toBeInTheDocument();
   });
 
   it("asks a signed-out visitor to sign in before opening a saved scenario", () => {
@@ -127,10 +149,13 @@ describe("ScenarioWorkspace (calculator)", () => {
     renderWorkspace("calculator");
 
     await sendMessage("I'm 52, married, $90k income, $600k in my 401k, retiring at 60");
-    // The conversation notes the change; the values themselves land in the panel.
-    expect(await screen.findByTestId("scenario-note")).toHaveTextContent(
-      "Added 5 details to your scenario"
-    );
+    // The values land in the panel, and the bar above the message box counts them.
+    await captured();
+    expect(
+      screen.getByRole("button", { name: "Review your scenario. Ready to run · 5 new" })
+    ).toBeInTheDocument();
+    expect(screen.getByText("Added 5 details to your scenario")).toHaveClass("sr-only");
+    expect(screen.queryByTestId("scenario-note")).not.toBeInTheDocument();
     expect(within(panel()).getByText("52")).toBeInTheDocument();
     expect(within(panel()).getByText("$600,000")).toBeInTheDocument();
     expect(within(panel()).getAllByText("New")).toHaveLength(5);
@@ -178,7 +203,7 @@ describe("ScenarioWorkspace (calculator)", () => {
     mockAgent();
     renderWorkspace("calculator");
     await sendMessage("I'm 52, married, $90k income, $600k in my 401k, retiring at 60");
-    await screen.findByTestId("scenario-note");
+    await captured();
 
     fireEvent.click(within(panel()).getByRole("button", { name: /Income in retirement/ }));
     expect(window.location.search).toContain("view=details&section=income");
@@ -192,22 +217,22 @@ describe("ScenarioWorkspace (calculator)", () => {
       window.history.back();
       await new Promise((r) => setTimeout(r, 20));
     });
-    await waitFor(() => expect(screen.getByTestId("scenario-note")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Here's what I have.")).toBeInTheDocument());
   });
 
   it("asks before clearing the conversation", async () => {
     mockAgent();
     renderWorkspace("calculator");
     await sendMessage("I'm 52, married, $90k income, $600k in my 401k, retiring at 60");
-    await screen.findByTestId("scenario-note");
+    await captured();
 
     fireEvent.click(await screen.findByRole("button", { name: "Start over" }));
     fireEvent.click(screen.getByRole("button", { name: "Keep it" }));
-    expect(screen.getByTestId("scenario-note")).toBeInTheDocument();
+    expect(screen.getByText("Here's what I have.")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Start over" }));
     fireEvent.click(screen.getByRole("button", { name: "Clear" }));
-    expect(screen.queryByTestId("scenario-note")).not.toBeInTheDocument();
+    expect(screen.queryByText("Here's what I have.")).not.toBeInTheDocument();
     // Back to the opening line; the values gathered so far stay in the scenario.
     expect(screen.getByRole("button", { name: "Run my scenario" })).toBeInTheDocument();
     expect(within(panel()).getByText("52")).toBeInTheDocument();
@@ -246,12 +271,53 @@ describe("ScenarioWorkspace (calculator)", () => {
     mockAgent();
     const { unmount } = renderWorkspace("calculator");
     await sendMessage("I'm 52");
-    await screen.findByTestId("scenario-note");
+    await captured();
     unmount();
     renderWorkspace("calculator");
-    expect(await screen.findByTestId("scenario-note")).toBeInTheDocument();
+    expect(await screen.findByText("Here's what I have.")).toBeInTheDocument();
     expect(screen.getByText("I'm 52")).toBeInTheDocument();
     expect(within(panel()).getByText("52")).toBeInTheDocument();
+    // A scenario with values in it opens beside the conversation.
+    expect(screen.queryByRole("button", { name: "Show your scenario" })).toBeNull();
+  });
+
+  it("folds the panel away to a strip and remembers that", async () => {
+    const restore = asDesktop();
+    try {
+      mockAgent();
+      const { unmount } = renderWorkspace("calculator");
+      expect(screen.getByRole("button", { name: "Show your scenario" })).toBeInTheDocument();
+      const bar = () => screen.getByRole("button", { name: /^Review your scenario/ });
+      expect(bar()).not.toHaveClass("lg:hidden");
+
+      // The assistant's first fill opens it, and the bar steps aside on desktop.
+      await sendMessage("I'm 52, married, $90k income, $600k in my 401k, retiring at 60");
+      await captured();
+      expect(screen.queryByRole("button", { name: "Show your scenario" })).toBeNull();
+      expect(bar()).toHaveClass("lg:hidden");
+
+      fireEvent.click(within(panel()).getByRole("button", { name: "Hide your scenario" }));
+      expect(screen.getByRole("button", { name: "Show your scenario" })).toBeInTheDocument();
+      expect(bar()).not.toHaveClass("lg:hidden");
+      expect(localStorage.getItem("lucerna:scenario-panel:v1")).toBe("closed");
+
+      // On desktop the bar opens the panel itself, not the phone sheet.
+      fireEvent.click(bar());
+      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(screen.queryByRole("button", { name: "Show your scenario" })).toBeNull();
+      expect(localStorage.getItem("lucerna:scenario-panel:v1")).toBe("open");
+
+      // A choice to keep it folded holds on the next visit, even with values in it.
+      fireEvent.click(within(panel()).getByRole("button", { name: "Hide your scenario" }));
+      unmount();
+      renderWorkspace("calculator");
+      await waitFor(() => expect(within(panel()).getByText("Ready to run")).toBeInTheDocument());
+      expect(screen.getByRole("button", { name: "Show your scenario" })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "Show your scenario" }));
+      expect(screen.queryByRole("button", { name: "Show your scenario" })).toBeNull();
+    } finally {
+      restore();
+    }
   });
 
   it("keeps follow-up chips below text that streamed after them", async () => {
