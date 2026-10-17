@@ -900,7 +900,7 @@ function AssistantIntro({
           text={
             hasDraft
               ? "I can see the scenario you've started. Tell me what's different, or ask me to run it."
-              : "Let's map out your situation. I wrote a sample message below so you can see what helps. Edit it to match your life, or send it as is to see how this works."
+              : "Let's map out your situation. Tell me your age, whether you file single or jointly, your income this year, your traditional IRA or 401(k) balance, and when you plan to start drawing on it. A sentence or two is plenty. See the starter prompt below."
           }
         />
         {!hasDraft && (
