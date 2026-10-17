@@ -119,7 +119,7 @@ export function ResultsView({ result }: ResultsViewProps) {
               In today&apos;s dollars, compared with not converting
             </span>
           </div>
-          <div className="w-full sm:w-[320px] sm:shrink-0">
+          <div className="w-full sm:w-[260px] sm:shrink-0">
             <ConversionSlider
               value={sliderValue}
               min={0}
