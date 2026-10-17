@@ -51,6 +51,8 @@ async function measure(scope: Locator, parts: string[]) {
 /** Drive one conversation to a result and a what-if (offline model: deterministic). */
 async function converse(page: Page) {
   await page.goto('/calculator')
+  // The sample message lands once the page is interactive; typing before that races hydration.
+  await expect(page.getByLabel('Message')).toHaveValue(/^I'm 55 and single/)
   await page.getByLabel('Message').fill("I'm 52, married, income $90,000 a year, $600k in my 401k, I want to retire at 60")
   await page.getByRole('button', { name: 'Send' }).click()
   // The scenario is captured: the panel (desktop) or the bar (phones) says it's ready.
