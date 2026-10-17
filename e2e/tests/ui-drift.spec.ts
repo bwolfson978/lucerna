@@ -1,5 +1,6 @@
 import type { Locator, Page } from '@playwright/test'
 import { test, expect, watchPageErrors } from '../fixtures/test'
+import { runScenario } from '../fixtures/scenario'
 
 // Cards are shared components (ui/) rendered two ways: natively by the web app, and by
 // the MCP server's Views inside sandboxed iframes (preact/compat, Tailwind compiled
@@ -52,7 +53,8 @@ async function converse(page: Page) {
   await page.goto('/calculator')
   await page.getByLabel('Message').fill("I'm 52, married, income $90,000 a year, $600k in my 401k, I want to retire at 60")
   await page.getByRole('button', { name: 'Send' }).click()
-  await page.getByTestId('scenario-summary').getByRole('button', { name: 'Run the numbers' }).click({ timeout: 20000 })
+  await page.getByTestId('scenario-note').waitFor({ timeout: 20000 })
+  await runScenario(page)
   await expect(page.getByTestId('mcp-app')).toHaveCount(1, { timeout: 30000 })
   await page.getByLabel('Message').fill('What if I retire at 58?')
   await page.getByRole('button', { name: 'Send' }).click()

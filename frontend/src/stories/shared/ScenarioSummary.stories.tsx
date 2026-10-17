@@ -99,3 +99,25 @@ export const AssumptionsOpen: Story = {
     await userEvent.click(within(canvasElement).getByRole("button", { name: /Assumptions/ }));
   },
 };
+
+/**
+ * The scenario panel beside the conversation on the website: one column, no header, and
+ * "Add" on the values still missing. Fields the assistant just filled in are marked New.
+ */
+export const Panel: Story = {
+  render: (args) => (
+    <div className="w-[400px] border border-border">
+      <ScenarioSummary {...args} />
+    </div>
+  ),
+  args: {
+    variant: "panel",
+    data: {
+      ...recordedScenario,
+      scenario: { ...recordedScenario.scenario, age: null, state: null },
+    },
+    highlight: ["traditional_balance", "retirement_age"],
+    onEdit: fn(),
+    onOpenForm: fn(),
+  },
+};

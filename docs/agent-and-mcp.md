@@ -7,8 +7,8 @@ How the assistant on `/calculator` and `/demo` works, how to run it, and how to 
 ```
 frontend (Next.js)                         backend (FastAPI)
   ScenarioWorkspace                          POST /api/agent ── app/agent (loop, prompt, limits, demo)
-    conversation ⇄ form (shared draft)                             │  MCP client (in process, or
-    full results view (?view=results)                              │  HTTP when AGENT_MCP_URL is set)
+    conversation ⇄ scenario panel (shared draft)                   │  MCP client (in process, or
+    full results (?view=results), details (?view=details)          │  HTTP when AGENT_MCP_URL is set)
                                                                    ▼
   Claude / ChatGPT / any MCP client ───────────────────────▶ /mcp  app/mcp/server.py
                                                                prepare_scenario
@@ -72,7 +72,7 @@ Cards that appear both in MCP App Views and natively in the web app are defined 
 
 | Tool | View | Shared component (ui/) | Web app |
 |---|---|---|---|
-| `prepare_scenario` | `scenario-summary.html` | `ScenarioSummary` | Not mounted: the host shows its own editable card (same component, wired to the live draft and form) via `show` |
+| `prepare_scenario` | `scenario-summary.html` | `ScenarioSummary` | Not mounted: the host notes the change in the conversation and shows the values in its scenario panel (same component, `variant="panel"`, wired to the live draft) |
 | `analyze_roth_conversions` | `result-card.html` | `ResultCard` with `BracketFillChart`: the results page's `BracketChart` at the optimal schedule | Mounted |
 | `compare_roth_scenarios` | `scenario-compare.html` | `ScenarioCompareCard` | Mounted |
 
@@ -82,7 +82,7 @@ Chart series the model doesn't need (yearly income, required withdrawals, conver
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | none | Required for the live assistant. Without it the page falls back to the form and `/demo` uses its scripted version. |
+| `ANTHROPIC_API_KEY` | none | Required for the live assistant. Without it the scenario panel runs the engine directly and `/demo` uses its scripted version. |
 | `LUCERNA_ANTHROPIC_API_KEY` | none | Fallback for `ANTHROPIC_API_KEY`, for environments that reserve that name (Claude Code cloud sessions). |
 | `AGENT_MODEL` | `claude-sonnet-5-5` | Model for the agent loop and demo generation. |
 | `AGENT_EFFORT` | `medium` | `output_config.effort` for each model call. |
@@ -126,10 +126,10 @@ E2E (uses the offline stand-in automatically): `cd e2e && npx playwright test`. 
 |---|---|---|
 | `text_delta` | `text` | Streams into the current reply |
 | `tool_start` | `name`, `status` | Status line ("Running the optimizer") |
-| `draft` | `draft`, `missing` | Updates the shared scenario (form and summary card) |
+| `draft` | `draft`, `missing` | Updates the shared scenario (the scenario panel marks the changed values New) |
 | `result` | `result_id`, `label`, `result`, `draft?` | Stores a full engine result for cards and the full results view |
 | `part` | `part` | Renders a card: `scenario_summary`, `result_headline`, `scenario_compare`, `suggestions` |
-| `error` | `code`, `message` | Notice; `unavailable` and limit codes switch to the form |
+| `error` | `code`, `message` | Notice; after `unavailable` and limit codes, Run the numbers calls the engine directly |
 | `done` | `messages` | API-format turns to append to the stored history |
 
 The browser stores `messages` exactly as returned and sends them back. Never edit earlier turns: thinking blocks and prompt caching depend on an unchanged prefix.

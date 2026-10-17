@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface ComposerProps {
@@ -9,6 +9,8 @@ interface ComposerProps {
   placeholder?: string;
   /** Width and offset of the input row inside the full-bleed bar. */
   innerClassName?: string;
+  /** Shown above the input row (the scenario bar on phones). */
+  top?: ReactNode;
 }
 
 /** Message box pinned to the bottom of the viewport, above the on-screen keyboard. */
@@ -17,6 +19,7 @@ export function Composer({
   disabled,
   placeholder,
   innerClassName = "max-w-content",
+  top,
 }: ComposerProps) {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -43,6 +46,7 @@ export function Composer({
       style={{ bottom: keyboardOffset }}
     >
       <div className={cn("mx-auto", innerClassName)}>
+        {top}
         <form
           className="flex items-end gap-2"
           onSubmit={(e) => {

@@ -4,27 +4,29 @@ import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import type { UiMessage, UiPart } from "@/lib/agent/types";
 import { cn } from "@/lib/utils";
 import type { ConversationState } from "@/lib/agent/conversation";
+import { EMPTY_DRAFT, normalizeDraft, type ScenarioDraft } from "@/lib/scenario/draft";
 import { Markdown } from "./Markdown";
 import { usePrefersReducedMotion } from "@/hooks/useInView";
 import { McpAppFrame } from "./parts/McpAppFrame";
 import { PartBoundary } from "./parts/PartBoundary";
-import { ScenarioSummaryCard } from "./parts/ScenarioSummaryCard";
+import { ScenarioNote } from "./parts/ScenarioNote";
 import { ResultHeadlineCard, ScenarioCompareCard, SuggestionChips } from "./parts/ResultCards";
 
 /** Screen height the header, composer and margins take: what the latest turn needn't fill. */
 const TURN_ROOM = 192;
 
-/** Index of the summary card that can still be edited and run, if any. */
-function activeSummaryKey(messages: UiMessage[]): string | null {
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const parts = messages[i].parts;
-    for (let j = parts.length - 1; j >= 0; j--) {
-      const kind = parts[j].kind;
-      if (kind === "result_headline" || kind === "mcp_app") return null;
-      if (kind === "scenario_summary") return `${messages[i].id}:${j}`;
-    }
+/** For each scenario note, the scenario the note before it recorded (empty for the first). */
+function previousScenarios(messages: UiMessage[]): Map<string, ScenarioDraft> {
+  const previous = new Map<string, ScenarioDraft>();
+  let last: ScenarioDraft = EMPTY_DRAFT;
+  for (const message of messages) {
+    message.parts.forEach((part, i) => {
+      if (part.kind !== "scenario_summary") return;
+      previous.set(`${message.id}:${i}`, last);
+      last = normalizeDraft(part.draft);
+    });
   }
-  return null;
+  return previous;
 }
 
 export function ConversationThread({
@@ -46,7 +48,7 @@ export function ConversationThread({
   followOnRestore?: boolean;
 }) {
   const { messages, streaming, status } = state;
-  const activeSummary = activeSummaryKey(messages);
+  const previous = previousScenarios(messages);
   const lastUserRef = useRef<HTMLDivElement | null>(null);
   const userCount = messages.filter((m) => m.role === "user").length;
   const prevCount = useRef(userCount);
@@ -131,7 +133,7 @@ export function ConversationThread({
         isLast={isLast}
         streaming={streaming && isLast}
         status={isLast ? status : null}
-        activeSummary={activeSummary}
+        previous={previous}
         className={noAnchor}
       />
     );
@@ -157,14 +159,14 @@ function AssistantMessage({
   isLast,
   streaming,
   status,
-  activeSummary,
+  previous,
   className,
 }: {
   message: UiMessage;
   isLast: boolean;
   streaming: boolean;
   status: string | null;
-  activeSummary: string | null;
+  previous: Map<string, ScenarioDraft>;
   className?: string;
 }) {
   const showThinking = streaming && (message.parts.length === 0 || status);
@@ -174,7 +176,7 @@ function AssistantMessage({
         <PartBoundary key={i} kind={part.kind}>
           <PartView
             part={part}
-            active={activeSummary === `${message.id}:${i}`}
+            previous={previous.get(`${message.id}:${i}`) ?? EMPTY_DRAFT}
             interactive={isLast && !streaming}
           />
         </PartBoundary>
@@ -201,11 +203,12 @@ function suggestionsLast(parts: UiPart[]): { part: UiPart; i: number }[] {
 
 function PartView({
   part,
-  active,
+  previous,
   interactive,
 }: {
   part: UiPart;
-  active: boolean;
+  /** For a scenario note: the scenario the note before it recorded. */
+  previous: ScenarioDraft;
   interactive: boolean;
 }) {
   switch (part.kind) {
@@ -216,7 +219,7 @@ function PartView({
         </div>
       );
     case "scenario_summary":
-      return <ScenarioSummaryCard snapshot={part.draft} active={active} />;
+      return <ScenarioNote draft={normalizeDraft(part.draft)} previous={previous} />;
     case "result_headline":
       return <ResultHeadlineCard resultId={part.result_id} />;
     case "bracket_fill":

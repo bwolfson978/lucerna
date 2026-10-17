@@ -51,8 +51,8 @@ STATUS = {
 }
 
 # Tools whose View this host doesn't mount because it has a richer first-party
-# equivalent: the scenario summary here edits the live draft and syncs with the form,
-# and is shown with `show` once the scenario is complete. Both use the same shared
+# equivalent: the website's scenario panel shows the live draft and edits it in place,
+# and the conversation notes each change in one line. Both use the same shared
 # component (ui/src/ScenarioSummary.tsx), so they look the same.
 RENDERED_NATIVELY = {"prepare_scenario"}
 

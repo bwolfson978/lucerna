@@ -47,19 +47,22 @@ _DRAFT_HASH = re.compile(r'draft_hash[\\"\s:=]+([0-9a-f]{12})')
 
 ERROR_MESSAGES = {
     "conversation_limit": (
-        "This conversation has reached its message limit. Your scenario is saved in the form, "
-        "where you can keep adjusting it."
+        "This conversation has reached its message limit. Your scenario is saved, so you can "
+        "keep adjusting it and run the numbers yourself."
     ),
     "daily_limit": (
-        "You've reached today's limit for the assistant. Your scenario is saved in the form, "
-        "where you can keep working."
+        "You've reached today's limit for the assistant. Your scenario is saved, so you can "
+        "keep adjusting it and run the numbers yourself."
     ),
     "unavailable": (
-        "The assistant is unavailable right now. Your scenario is saved in the form, where you "
-        "can keep working."
+        "The assistant is unavailable right now. Your scenario is saved, so you can keep "
+        "adjusting it and run the numbers yourself."
     ),
     "refusal": "I can't help with that one. I can answer questions about Roth conversions and your scenario.",
-    "too_long": "That conversation is too long to continue. Start a new one or use the form.",
+    "too_long": (
+        "That conversation is too long to continue. Start a new one, or keep adjusting your "
+        "scenario and run the numbers yourself."
+    ),
 }
 
 

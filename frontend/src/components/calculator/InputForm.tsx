@@ -29,6 +29,8 @@ interface InputFormProps {
   onSubmit: (input: ScenarioInput) => void;
   loading?: boolean;
   loadingLabel?: string;
+  /** The submit button's label. */
+  submitLabel?: string;
   /** Shared scenario draft. When omitted the form manages its own. */
   draft?: ScenarioDraft;
   onDraftChange?: (draft: ScenarioDraft) => void;
@@ -57,6 +59,7 @@ export function InputForm({
   onSubmit,
   loading,
   loadingLabel,
+  submitLabel = "Run my scenario",
   draft: controlledDraft,
   onDraftChange,
 }: InputFormProps) {
@@ -340,7 +343,11 @@ export function InputForm({
       </div>
 
       {/* Income that runs across years: Social Security, pensions, other */}
-      <section className="flex flex-col gap-default" aria-labelledby="income-sources-heading">
+      <section
+        id="income-in-retirement"
+        className="flex scroll-mt-36 flex-col gap-default"
+        aria-labelledby="income-sources-heading"
+      >
         <div className="flex flex-col gap-1">
           <h3 id="income-sources-heading" className="text-h3 text-text-primary">
             Income in retirement
@@ -385,7 +392,7 @@ export function InputForm({
       </section>
 
       {/* Live preview of the year-by-year timeline, with per-year overrides */}
-      <div ref={timelineRef} className="flex flex-col gap-default">
+      <div ref={timelineRef} id="income-by-year" className="flex scroll-mt-36 flex-col gap-default">
         {showTimeline && age != null && drawdownStartAge != null && (
           <section className="flex flex-col gap-tight" aria-labelledby="income-preview-heading">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -475,7 +482,7 @@ export function InputForm({
       </Collapsible>
 
       {/* ACA marketplace coverage */}
-      <div className="flex flex-col gap-5">
+      <div id="health-insurance" className="flex scroll-mt-36 flex-col gap-5">
         {/* A settings row: what it is on the left, the switch on the right. */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col gap-0.5">
@@ -535,7 +542,7 @@ export function InputForm({
       {/* Submit */}
       <div className="border-t border-border pt-comfortable">
         <GlowButton type="submit" loading={loading} className="w-full sm:w-auto">
-          {loading && loadingLabel ? loadingLabel : "Run my scenario"}
+          {loading && loadingLabel ? loadingLabel : submitLabel}
         </GlowButton>
       </div>
     </form>

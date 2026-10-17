@@ -94,7 +94,7 @@ export async function streamAgent(
       type: "error",
       code: "network",
       message:
-        "We couldn't reach the assistant. Your scenario is saved in the form, where you can keep working.",
+        "We couldn't reach the assistant. Your scenario is saved, so you can keep adjusting it and run the numbers yourself.",
     });
     onEvent({ type: "done", messages: [] });
   }
