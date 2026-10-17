@@ -112,7 +112,7 @@ export function Composer({
             {sample && value !== "" && (
               <button
                 type="button"
-                aria-label="Clear message"
+                aria-label="Clear text"
                 onClick={() => {
                   setValue("");
                   setUntouched(false);

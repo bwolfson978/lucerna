@@ -130,7 +130,7 @@ describe("ScenarioWorkspace (calculator)", () => {
     await screen.findByTestId("scenario-note");
     expect(box.value).toBe("");
     expect(screen.queryByText(/Sample message/)).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Clear message" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Clear text" })).not.toBeInTheDocument();
   });
 
   it("lets the sample be edited into the person's own words or cleared", () => {
@@ -141,7 +141,7 @@ describe("ScenarioWorkspace (calculator)", () => {
     expect(box).not.toHaveClass("italic");
     expect(screen.queryByText(/Sample message/)).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Clear message" }));
+    fireEvent.click(screen.getByRole("button", { name: "Clear text" }));
     expect(box.value).toBe("");
     expect(box).toHaveAttribute("placeholder", "Describe your situation");
     expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
