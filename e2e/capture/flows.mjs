@@ -37,11 +37,18 @@ async function scenarioReady(page, onCaptured = async () => {}) {
   return panel
 }
 
-/** The sample message lands once the page is interactive; typing before that races hydration. */
+/**
+ * The sample message lands once the page is interactive; typing before that races
+ * hydration. Builds from before the sample have none, so this gives up quietly.
+ */
 async function waitForSample(page) {
-  await page.waitForFunction(() =>
-    document.getElementById('conversation-input')?.value.startsWith("I'm 55 and single")
-  )
+  await page
+    .waitForFunction(
+      () => document.getElementById('conversation-input')?.value.startsWith("I'm 55 and single"),
+      null,
+      { timeout: 8000 }
+    )
+    .catch(() => {})
 }
 
 /** The full scenario form: "My numbers" before the scenario panel, its details view after. */
