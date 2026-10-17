@@ -8,7 +8,8 @@ describe("Header", () => {
     render(<Header isSignedIn account={{ name: "Barry", email: "you@example.com" }} />);
     expect(screen.queryByRole("button", { name: "Sign out" })).not.toBeInTheDocument();
 
-    const avatar = screen.getByRole("button", { name: "Account menu" });
+    // One avatar in the desktop nav, one in the phone bar; CSS shows one at a time.
+    const avatar = screen.getAllByRole("button", { name: "Account menu" })[0];
     expect(avatar).toHaveTextContent("B");
     fireEvent.click(avatar);
     expect(avatar).toHaveAttribute("aria-expanded", "true");
@@ -34,6 +35,22 @@ describe("Header", () => {
     fireEvent.click(screen.getByRole("button", { name: "Toggle menu" }));
     const menu = screen.getByRole("navigation", { name: "Mobile" });
     expect(within(menu).getAllByRole("link")[0]).toHaveTextContent("Claude & ChatGPT");
+  });
+
+  it("keeps My scenarios in the account menu, not the main nav", () => {
+    render(<Header isSignedIn account={{ name: "Barry", email: "you@example.com" }} />);
+    const main = screen.getByRole("navigation", { name: "Main" });
+    expect(within(main).queryByRole("link", { name: "My scenarios" })).not.toBeInTheDocument();
+  });
+
+  it("offers sign in to a signed-out visitor, and creating an account in the phone menu", () => {
+    render(<Header isSignedIn={false} />);
+    const main = screen.getByRole("navigation", { name: "Main" });
+    expect(within(main).getByRole("button", { name: "Sign in" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Toggle menu" }));
+    const menu = screen.getByRole("navigation", { name: "Mobile" });
+    expect(within(menu).getByRole("button", { name: "Sign in" })).toBeInTheDocument();
+    expect(within(menu).getByRole("button", { name: "Create account" })).toBeInTheDocument();
   });
 
   it("has no sign out for a signed-out visitor", () => {

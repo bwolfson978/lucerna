@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface ComposerProps {
@@ -27,8 +27,12 @@ export function Composer({
   top,
   sample,
 }: ComposerProps) {
-  const [value, setValue] = useState(sample ?? "");
-  const [untouched, setUntouched] = useState(Boolean(sample));
+  // The sample arrives after hydration: server HTML has an empty box, so text typed
+  // before the page is interactive is never mixed with it.
+  const hydrated = useSyncExternalStore(noSubscribe, isClient, isServer);
+  const activeSample = hydrated ? sample : undefined;
+  const [value, setValue] = useState("");
+  const [untouched, setUntouched] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const keyboardOffset = useKeyboardOffset();
 
@@ -42,18 +46,18 @@ export function Composer({
 
   // Follow the sample when it comes and goes (starting over offers it again; a
   // restored draft withdraws it), without touching anything the person typed.
-  const [shownSample, setShownSample] = useState(sample);
-  if (sample !== shownSample) {
-    setShownSample(sample);
-    if (sample && (value === "" || value === shownSample)) {
-      setValue(sample);
+  const [shownSample, setShownSample] = useState<string | undefined>(undefined);
+  if (activeSample !== shownSample) {
+    setShownSample(activeSample);
+    if (activeSample && (value === "" || value === shownSample)) {
+      setValue(activeSample);
       setUntouched(true);
-    } else if (!sample && value !== "" && value === shownSample) {
+    } else if (!activeSample && value !== "" && value === shownSample) {
       setValue("");
     }
   }
 
-  const showingSample = Boolean(sample) && untouched && value === sample;
+  const showingSample = Boolean(activeSample) && untouched && value === activeSample;
 
   function submit() {
     const text = value.trim();
@@ -105,11 +109,11 @@ export function Composer({
               aria-describedby={showingSample ? "conversation-sample-hint" : undefined}
               className={cn(
                 "min-h-[44px] flex-1 resize-none rounded-[22px] border border-border bg-white px-4 py-[11px] text-[16px] leading-[1.4] text-text-primary outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-text-tertiary focus:border-pine focus:ring-2 focus:ring-pine-mid/15",
-                sample && value !== "" && "pr-11",
+                activeSample && value !== "" && "pr-11",
                 showingSample && "italic text-text-tertiary"
               )}
             />
-            {sample && value !== "" && (
+            {activeSample && value !== "" && (
               <button
                 type="button"
                 aria-label="Clear text"
@@ -163,6 +167,10 @@ export function Composer({
     </div>
   );
 }
+
+const noSubscribe = () => () => {};
+const isClient = () => true;
+const isServer = () => false;
 
 /**
  * Height of the on-screen keyboard covering the layout viewport (iOS Safari keeps

@@ -15,14 +15,23 @@ type Story = StoryObj<typeof Header>;
 
 export const Default: Story = {};
 
+/**
+ * Signed out: "Sign in" sits before the main action and opens Clerk's window, which links
+ * to creating an account. The phone menu offers both. (The app shows these only with Clerk;
+ * setting isSignedIn shows them here, inert.)
+ */
+export const SignedOut: Story = {
+  args: { isSignedIn: false },
+};
+
 /** On the calculator the header drops its "Run your scenario" button. */
 export const OnCalculator: Story = {
   parameters: { nextjs: { navigation: { pathname: "/calculator" } } },
 };
 
 /**
- * Signed in: "My scenarios" joins the nav and the account avatar sits at the end, with
- * Account settings and Sign out (both also in the phone menu).
+ * Signed in: the account avatar sits at the end, with My scenarios, Account settings and
+ * Sign out. On phones the avatar stays in the top bar and the menu ends with the same items.
  */
 export const SignedIn: Story = {
   args: { isSignedIn: true, account: { name: "Barry", email: "you@example.com" } },
@@ -46,7 +55,7 @@ export const AccountMenuOpen: Story = {
 
 /**
  * The fullest nav: signed in on a page with the "How does it work?" sidebar (the Demo page).
- * The desktop nav waits for xl and the pill shows only its icon, so no label wraps.
+ * The pill shows only its icon so every label stays on one line from lg.
  */
 export const SignedInOnDemo: Story = {
   args: { isSignedIn: true, account: { name: "Barry", email: "you@example.com" } },

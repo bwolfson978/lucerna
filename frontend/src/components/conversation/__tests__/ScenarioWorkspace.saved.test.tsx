@@ -9,9 +9,10 @@ import { ScenarioWorkspace } from "../ScenarioWorkspace";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/calculator" }));
 vi.mock("posthog-js", () => ({ default: { capture: vi.fn() } }));
+const auth = vi.hoisted(() => ({ signedIn: true }));
 vi.mock("@/lib/auth", () => ({
   AUTH_ENABLED: true,
-  useUser: () => ({ isLoaded: true, isSignedIn: true, user: null }),
+  useUser: () => ({ isLoaded: true, isSignedIn: auth.signedIn, user: null }),
   useAuth: () => ({ getToken: async () => "token" }),
   useSignOut: () => () => {},
   useAccountProfile: () => ({ name: "Barry", email: "you@example.com", signIn: "Google" }),
@@ -26,6 +27,10 @@ beforeAll(() => {
     unobserve() {}
     disconnect() {}
   } as unknown as typeof ResizeObserver;
+});
+
+beforeEach(() => {
+  auth.signedIn = true;
 });
 
 it("re-runs a saved scenario from its link without saving a copy", async () => {
@@ -124,4 +129,74 @@ it("saves a run of the scenario to My scenarios", async () => {
   await waitFor(() => expect(saves).toHaveLength(1));
   fireEvent.click(within(headline).getByRole("button", { name: "See full results" }));
   expect(await screen.findByText("Analysis saved")).toBeInTheDocument();
+});
+
+it("saves a signed-out run once the visitor signs in", async () => {
+  auth.signedIn = false;
+  sessionStorage.clear();
+  window.history.replaceState(null, "", "/calculator");
+  window.scrollTo = vi.fn() as unknown as typeof window.scrollTo;
+  Element.prototype.scrollIntoView = vi.fn();
+  sessionStorage.setItem(
+    "lucerna:draft:v1",
+    JSON.stringify({
+      ...EMPTY_DRAFT,
+      age: 52,
+      filing_status: "married_filing_jointly",
+      current_income: 90000,
+      traditional_balance: 600000,
+      retirement_age: 60,
+      timeline: [{ year: 2026, gross_income: 90000 }],
+    })
+  );
+  const saves: unknown[] = [];
+  const events: AgentEvent[] = [
+    {
+      type: "result",
+      result_id: "r_0000000001",
+      label: "Your scenario",
+      result: sampleOptimizationResult,
+    },
+    { type: "part", part: { kind: "result_headline", result_id: "r_0000000001" } },
+    { type: "done", messages: [{ role: "user", content: "run" }] },
+  ];
+  server.use(
+    http.post(
+      `${API}/api/agent`,
+      () =>
+        new HttpResponse(events.map((e) => `data: ${JSON.stringify(e)}\n\n`).join(""), {
+          headers: { "Content-Type": "text/event-stream" },
+        })
+    ),
+    http.post(`${API}/api/scenarios`, async ({ request }) => {
+      saves.push(await request.json());
+      return HttpResponse.json({ id: "new", name: "Copy" });
+    })
+  );
+
+  const { rerender } = render(
+    <TooltipProvider>
+      <ScenarioWorkspace variant="calculator" />
+    </TooltipProvider>
+  );
+
+  const panel = screen.getByRole("complementary", { name: "Your scenario" });
+  await waitFor(() => expect(within(panel).getByText("Ready to run")).toBeInTheDocument());
+  fireEvent.click(within(panel).getByRole("button", { name: "Run the numbers" }));
+  const headline = await screen.findByTestId("result-headline");
+  fireEvent.click(within(headline).getByRole("button", { name: "See full results" }));
+  expect(
+    await screen.findByRole("button", { name: "Save with a free account" })
+  ).toBeInTheDocument();
+  expect(saves).toHaveLength(0);
+
+  auth.signedIn = true;
+  rerender(
+    <TooltipProvider>
+      <ScenarioWorkspace variant="calculator" />
+    </TooltipProvider>
+  );
+  await waitFor(() => expect(saves).toHaveLength(1));
+  expect(await screen.findByText("Analysis saved")).toBeInTheDocument();
+  expect(JSON.parse(sessionStorage.getItem("lucerna:unsaved-runs:v1") ?? "[]")).toEqual([]);
 });

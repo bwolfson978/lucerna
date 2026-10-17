@@ -70,11 +70,13 @@ const KEYS = {
     conversation: "lucerna:conversation:v1",
     draft: "lucerna:draft:v1",
     ran: "lucerna:draft-ran:v1",
+    unsaved: "lucerna:unsaved-runs:v1",
   },
   demo: {
     conversation: "lucerna:demo-conversation:v1",
     draft: "lucerna:demo-draft:v1",
     ran: "lucerna:demo-draft-ran:v1",
+    unsaved: "lucerna:demo-unsaved-runs:v1",
   },
 } as const;
 
@@ -268,7 +270,9 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
     [variant]
   );
 
-  // Signed-in runs of the person's own scenario are saved to "My scenarios".
+  // Signed-in runs of the person's own scenario are saved to "My scenarios". Signed-out
+  // runs are remembered for this tab and saved as soon as the person signs in or creates
+  // an account, from the header or the save banner.
   const { isLoaded, isSignedIn } = useUser();
   const { getToken } = useAuth();
   const [saveStates, setSaveStates] = useState<Record<string, SaveBannerState>>({});
@@ -276,7 +280,12 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
 
   const saveResult = useCallback(
     (id: string, input: ScenarioInput, result: OptimizationResult) => {
-      if (!AUTH_ENABLED || isDemo || !isSignedIn) return;
+      if (!AUTH_ENABLED || isDemo) return;
+      if (!isSignedIn) {
+        const unsaved = readSession<string[]>(keys.unsaved) ?? [];
+        if (!unsaved.includes(id)) writeSession(keys.unsaved, [...unsaved, id]);
+        return;
+      }
       setBannerDismissed(false);
       setSaveStates((s) => ({ ...s, [id]: "saving" }));
       createScenariosApi(getToken)
@@ -284,7 +293,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
         .then(() => setSaveStates((s) => ({ ...s, [id]: "saved" })))
         .catch(() => setSaveStates((s) => ({ ...s, [id]: "prompt" })));
     },
-    [isDemo, isSignedIn, getToken]
+    [isDemo, isSignedIn, getToken, keys.unsaved]
   );
 
   // A run from the Run button is waiting for the assistant's result.
@@ -314,6 +323,21 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
     surface: variant,
   });
   const { state, send: sendMessage, replay, reset, loadResult, addResult } = conversation;
+
+  // Once signed in, save the runs made before. Session storage carries them across the
+  // page reload a Google sign-in brings; an id whose result isn't restored yet waits.
+  useEffect(() => {
+    if (!isSignedIn) return;
+    const unsaved = readSession<string[]>(keys.unsaved);
+    if (!unsaved?.length) return;
+    const waiting = unsaved.filter((id) => {
+      const stored = state.results[id];
+      if (!stored) return true;
+      if (stored.result) saveResult(id, stored.result.input, stored.result);
+      return false;
+    });
+    writeSession(keys.unsaved, waiting);
+  }, [isSignedIn, state.results, keys.unsaved, saveResult]);
 
   // Everything the person sends from this page goes through here, so the thread can
   // bring their message to the top (a demo replay adds messages without it).
@@ -712,7 +736,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
               onDismiss={() => setBannerDismissed(true)}
               signInButton={
                 <SignInButton>
-                  <GlowButton size="sm">Sign in to save</GlowButton>
+                  <GlowButton size="sm">Save with a free account</GlowButton>
                 </SignInButton>
               }
             />

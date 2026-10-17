@@ -16,6 +16,8 @@ test.describe('Conversation flow', () => {
     // Two optimizer runs, a page change and a what-if apply: more than the default budget.
     test.setTimeout(60000)
     await page.goto('/calculator')
+    // The sample message lands once the page is interactive; typing before that races hydration.
+    await expect(page.getByLabel('Message')).toHaveValue(/^I'm 55 and single/)
 
     await page.getByLabel('Message').fill("I'm 52, married, income $90,000 a year, $600k in my 401k, I want to retire at 60")
     await page.getByRole('button', { name: 'Send' }).click()
@@ -69,6 +71,8 @@ test.describe('Conversation flow', () => {
 
   test('the conversation survives a reload', async ({ page }) => {
     await page.goto('/calculator')
+    // The sample message lands once the page is interactive; typing before that races hydration.
+    await expect(page.getByLabel('Message')).toHaveValue(/^I'm 55 and single/)
     await page.getByLabel('Message').fill("I'm 40, single, income $120,000, $300k in my IRA, retire at 55")
     await page.getByRole('button', { name: 'Send' }).click()
     await expect((await openScenario(page)).getByText('$300,000')).toBeVisible({ timeout: 15000 })

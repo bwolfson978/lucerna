@@ -37,6 +37,20 @@ async function scenarioReady(page, onCaptured = async () => {}) {
   return panel
 }
 
+/**
+ * The sample message lands once the page is interactive; typing before that races
+ * hydration. Builds from before the sample have none, so this gives up quietly.
+ */
+async function waitForSample(page) {
+  await page
+    .waitForFunction(
+      () => document.getElementById('conversation-input')?.value.startsWith("I'm 55 and single"),
+      null,
+      { timeout: 8000 }
+    )
+    .catch(() => {})
+}
+
 /** The full scenario form: "My numbers" before the scenario panel, its details view after. */
 async function openForm(page) {
   const radio = page.getByRole('radio', { name: 'My numbers' })
@@ -57,6 +71,7 @@ async function openForm(page) {
  */
 async function converse(page, { onSent = async () => {}, onSummary = async () => {} } = {}) {
   await page.goto('/calculator')
+  await waitForSample(page)
   await page.getByLabel('Message').fill(MESSAGE)
   await page.getByRole('button', { name: 'Send' }).click()
   const summary = await scenarioReady(page, onSent)
@@ -544,6 +559,7 @@ export const flows = {
       await page.goto('/calculator')
       await page.evaluate(() => window.localStorage.clear())
       await page.goto('/calculator')
+      await waitForSample(page)
       await page.getByLabel('Message').fill(MESSAGE)
       await page.getByRole('button', { name: 'Send' }).click()
       const summary = await scenarioReady(page)
