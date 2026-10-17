@@ -851,6 +851,11 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
                 }
                 onSend={(text) => void send(text)}
                 disabled={state.streaming || (isDemo && !replayDone)}
+                sample={
+                  !isDemo && !introHasDraft && state.messages.length === 0
+                    ? SAMPLE_MESSAGE
+                    : undefined
+                }
                 placeholder={
                   isDemo
                     ? "Ask about Margaret's results"
@@ -992,11 +997,7 @@ function AssistantIntro({
 }) {
   const starters = hasDraft
     ? ["Run my scenario", "Explain what I've entered so far"]
-    : [
-        "I just left my job to start a company",
-        "I'm planning to retire early",
-        "How do Roth conversions work?",
-      ];
+    : ["How do Roth conversions work?"];
   return (
     <div className="flex flex-col gap-default">
       <AssistantBubble>
@@ -1004,7 +1005,7 @@ function AssistantIntro({
           text={
             hasDraft
               ? "I can see the scenario you've started. Tell me what's different, or ask me to run it."
-              : "Let's map out your situation. Tell me your age, whether you file single or jointly, your income this year, your traditional IRA or 401(k) balance, and when you plan to start drawing on it. A sentence or two is plenty."
+              : "Let's map out your situation. Tell me your age, whether you file single or jointly, your income this year, your traditional IRA or 401(k) balance, and when you plan to start drawing on it. A sentence or two is plenty. See the starter prompt below."
           }
         />
         {!hasDraft && (
@@ -1040,6 +1041,10 @@ function AssistantIntro({
     </div>
   );
 }
+
+/** Starts the message box on the calculator, in the order the scenario asks for things. */
+const SAMPLE_MESSAGE =
+  "I'm 55 and single, with $95,000 of income this year. I have $650,000 in a traditional 401(k) and plan to start drawing on it at 62.";
 
 /** Clearing the conversation can't be undone, so it asks once, inline. */
 function StartOver({ onConfirm }: { onConfirm: () => void }) {
