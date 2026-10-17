@@ -103,7 +103,7 @@ describe("ScenarioWorkspace (calculator)", () => {
     expect(screen.queryByRole("radio")).not.toBeInTheDocument();
     expect(screen.getByText(/Let's map out your situation/)).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "I'm planning to retire early" })
+      screen.getByRole("button", { name: "How do Roth conversions work?" })
     ).toBeInTheDocument();
     expect(within(panel()).getByText("Add your details")).toBeInTheDocument();
     expect(within(panel()).getByRole("button", { name: "Run the numbers" })).toBeDisabled();
@@ -112,6 +112,39 @@ describe("ScenarioWorkspace (calculator)", () => {
     const sheet = screen.getByRole("dialog", { name: "Your scenario" });
     fireEvent.click(within(sheet).getByRole("button", { name: "Done" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("starts the message box with a sample message that sends as is", async () => {
+    const sent: { message: string; draft: ScenarioDraft }[] = [];
+    mockAgent(sent);
+    renderWorkspace("calculator");
+    const box = screen.getByLabelText("Message") as HTMLTextAreaElement;
+    expect(box.value).toMatch(/^I'm 55 and single/);
+    expect(box).toHaveClass("italic");
+    expect(screen.getByText(/Sample message\. Change the numbers/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+    await waitFor(() => expect(sent).toHaveLength(1));
+    expect(sent[0].message).toMatch(/^I'm 55 and single/);
+    // After the first message the box is a plain follow-up box.
+    await screen.findByTestId("scenario-note");
+    expect(box.value).toBe("");
+    expect(screen.queryByText(/Sample message/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Clear message" })).not.toBeInTheDocument();
+  });
+
+  it("lets the sample be edited into the person's own words or cleared", () => {
+    mockAgent();
+    renderWorkspace("calculator");
+    const box = screen.getByLabelText("Message") as HTMLTextAreaElement;
+    fireEvent.change(box, { target: { value: box.value.replace("55", "52") } });
+    expect(box).not.toHaveClass("italic");
+    expect(screen.queryByText(/Sample message/)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Clear message" }));
+    expect(box.value).toBe("");
+    expect(box).toHaveAttribute("placeholder", "Describe your situation");
+    expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
   });
 
   it("asks a signed-out visitor to sign in before opening a saved scenario", () => {
