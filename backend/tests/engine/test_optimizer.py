@@ -149,6 +149,32 @@ class TestOptimize:
         assert npv_optimal >= npv_greedy - 1  # -1 for float tolerance
 
 
+class TestConversionCurve:
+    def test_curve_includes_the_optimal_schedule(self, sample_single_input):
+        result = optimize(sample_single_input())
+        [point] = [
+            p for p in result.conversion_curve if abs(p.total_cap - result.total_conversion) < 1
+        ]
+        assert point.yearly_conversions == result.yearly_conversions
+        assert point.npv == max(p.npv for p in result.conversion_curve)
+
+    def test_curve_rises_into_the_optimum_without_a_dip(self, sample_single_input):
+        """Points just short of the optimal total are close to it in savings, not a step
+        below it (they can take the optimal schedule scaled to their total)."""
+        result = optimize(sample_single_input())
+        total = result.total_conversion
+        below = [p for p in result.conversion_curve if total * 0.9 <= p.total_cap < total - 1]
+        assert below
+        nearest = max(below, key=lambda p: p.total_cap)
+        gap = (result.npv_at_optimal - nearest.npv) / (total - nearest.total_cap)
+        # Less than the tax rate on a dollar, the most a dollar less of conversion costs.
+        assert gap < 0.4
+
+    def test_curve_stays_sorted(self, sample_single_input):
+        caps = [p.total_cap for p in optimize(sample_single_input()).conversion_curve]
+        assert caps == sorted(caps)
+
+
 class TestConversionPreferences:
     """Tests for optional user constraints on the conversion schedule."""
 

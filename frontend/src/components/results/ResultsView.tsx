@@ -3,10 +3,9 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { OptimizationResult, ScenarioInput } from "@/lib/types";
 import { ChartLegend } from "@/components/common/ChartLegend";
-import { BracketChart, Stat } from "@lucerna/ui";
+import { BracketChart, ConversionSlider, Stat } from "@lucerna/ui";
 import { formatCurrency, formatSavings } from "@/lib/utils/formatting";
 import { CHART_COLORS, buildResultsDisclaimer } from "@/lib/utils/constants";
-import { ConversionSlider } from "./ConversionSlider";
 import { ScenarioCards } from "./ScenarioCards";
 import { BalanceProjections } from "./BalanceProjections";
 import { AcaSubsidyImpact } from "./AcaSubsidyImpact";
@@ -112,7 +111,7 @@ export function ResultsView({ result }: ResultsViewProps) {
                 className={`font-data whitespace-nowrap text-body-sm font-semibold text-negative ${isAtOptimal ? "invisible" : ""}`}
                 aria-hidden={isAtOptimal || undefined}
               >
-                &minus;{formatCurrency(Math.max(1, Math.abs(savingsDifference)))} vs. highest
+                {formatCurrency(Math.max(1, Math.abs(savingsDifference)))} less than the most
                 savings
               </span>
             </div>

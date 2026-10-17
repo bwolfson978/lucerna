@@ -41,7 +41,7 @@ function openFull(openResults: (id: string) => void, id: string, from: string) {
 // --------------------------------------------------------------------------
 
 export function ResultHeadlineCard({ resultId }: { resultId: string }) {
-  const { openResults } = useConversationContext();
+  const { openResults, send } = useConversationContext();
   const stored = useStoredResult(resultId);
   if (!stored) return null;
   const result = stored.result;
@@ -52,6 +52,7 @@ export function ResultHeadlineCard({ resultId }: { resultId: string }) {
         data={resultCardData(resultId, result)}
         details={resultDetails(result)}
         onOpenFullResults={() => openFull(openResults, resultId, "headline")}
+        onAsk={send}
       />
     </div>
   );

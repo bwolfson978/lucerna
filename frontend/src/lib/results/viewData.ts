@@ -7,6 +7,7 @@
 
 import type {
   BracketFillData,
+  ConversionCurveData,
   ResultCardData,
   ResultDetails,
   ScenarioCompareData,
@@ -65,8 +66,55 @@ export function bracketFillData(result: OptimizationResult): BracketFillData {
   };
 }
 
+/** Points the card's slider gets (backend app/tools/views.py CURVE_VIEW_POINTS). */
+const CURVE_VIEW_POINTS = 40;
+
+/** Mirrors backend app/tools/views.py curve_points: the point nearest each of 41 evenly
+ * spaced totals, plus the optimal schedule's own point. */
+function curvePoints(result: OptimizationResult) {
+  const points = [...(result.conversion_curve ?? [])].sort((a, b) => a.total_cap - b.total_cap);
+  if (points.length < 2) return [];
+  const top = points[points.length - 1].total_cap;
+  const chosen = new Set<number>();
+  for (let k = 0; k <= CURVE_VIEW_POINTS; k++) {
+    const target = (top * k) / CURVE_VIEW_POINTS;
+    let nearest = 0;
+    points.forEach((p, i) => {
+      if (Math.abs(p.total_cap - target) < Math.abs(points[nearest].total_cap - target)) {
+        nearest = i;
+      }
+    });
+    chosen.add(nearest);
+  }
+  points.forEach((p, i) => {
+    if (Math.abs(p.total_cap - result.total_conversion) < 1) chosen.add(i);
+  });
+  return Array.from(chosen)
+    .sort((a, b) => a - b)
+    .map((i) => points[i]);
+}
+
+/** Rounds like Python: never -0, which toEqual tells apart from the server's 0. */
+const roundInt = (v: number) => round(v) + 0;
+
+/** Mirrors backend app/tools/views.py curve_view. */
+export function curveData(result: OptimizationResult): ConversionCurveData | undefined {
+  const points = curvePoints(result);
+  if (points.length === 0) return undefined;
+  return {
+    points: points.map((p) => ({
+      total: roundInt(p.total_cap),
+      savings: roundInt(p.npv - result.npv_at_zero),
+      tax: roundInt(p.total_tax),
+      conversions: p.yearly_conversions.map(roundInt),
+      rmds: (p.yearly_rmd_amounts ?? []).map(roundInt),
+    })),
+  };
+}
+
 export function resultDetails(result: OptimizationResult): ResultDetails {
-  return { bracket_fill: bracketFillData(result) };
+  const curve = curveData(result);
+  return { bracket_fill: bracketFillData(result), ...(curve && { curve }) };
 }
 
 /** Mirrors backend app/tools/core.py _tax_breakdown. */

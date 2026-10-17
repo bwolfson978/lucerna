@@ -25,9 +25,15 @@ export const WithFullResultsLink: Story = {
   args: { onOpenFullResults: fn() },
 };
 
-/** With the tax bracket chart from the View's `_meta`. */
-export const WithBracketChart: Story = {
-  args: { details: resultDetails },
+/** With the tax bracket chart and the slider from the View's `_meta`. Move the slider to
+ * see the savings, the chart and the "Ask about" button change. */
+export const WithSlider: Story = {
+  args: { details: resultDetails, onOpenFullResults: fn(), onAsk: fn() },
+};
+
+/** A result from before the slider: the chart without a curve. */
+export const WithoutCurve: Story = {
+  args: { details: { bracket_fill: resultDetails.bracket_fill } },
 };
 
 /** Tool output from the previous release: no chart, and it must not crash. */

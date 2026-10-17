@@ -444,10 +444,34 @@ export const flows = {
       await shot('result-card', 'Result card after "Run the numbers"', {
         element: page.getByTestId('mcp-app').first(),
       })
+      // The card's slider (absent before it existed): convert less than the optimum.
+      const slider = result.getByRole('slider', { name: 'Total amount to convert' })
+      if (await slider.count()) {
+        await slider.scrollIntoViewIfNeeded()
+        const max = Number(await slider.getAttribute('max'))
+        await slider.fill(String(Math.round((max * 0.2) / 100) * 100))
+        // fill() focuses the input from code, which shows the keyboard focus ring; a drag would not.
+        await slider.blur()
+        await page.waitForTimeout(800)
+        await shot('result-card-moved', 'Result card after moving its slider below the optimum', {
+          element: page.getByTestId('mcp-app').first(),
+        })
+        await result.getByRole('button', { name: 'Back to most savings' }).click()
+        await page.waitForTimeout(400)
+      }
       const compare = view(page, 1).locator('[data-ui=scenario-compare]')
       await compare.waitFor({ timeout: 30000 })
       await shot('what-if', 'What-if card for "retire at 58"', { element: page.getByTestId('mcp-app').nth(1) })
-      // Full results for the scenario, opened from the result card.
+      // Full results for the scenario, opened from the result card. On a phone the card is
+      // taller than the screen; lift its bottom above the sticky composer before clicking.
+      await page
+        .getByTestId('mcp-app')
+        .first()
+        .evaluate((el) => {
+          el.scrollIntoView({ block: 'end' })
+          window.scrollBy(0, 240)
+        })
+      await page.waitForTimeout(300)
       await view(page, 0).getByRole('button', { name: 'See full results' }).click()
       await page.getByRole('button', { name: /Back to conversation/ }).waitFor({ timeout: 30000 })
       await page.waitForTimeout(1500)
@@ -477,8 +501,10 @@ export const flows = {
       await page.waitForTimeout(1500)
       await shot('results-hero', 'Full results at the highest-savings amount', { element: hero })
       // Off the optimum the "vs. highest savings" delta appears; it should not move the layout.
-      const box = await hero.locator('input[type=range]').boundingBox()
-      await page.mouse.click(box.x + box.width * 0.7, box.y + box.height / 2)
+      const range = hero.locator('input[type=range]')
+      const max = Number(await range.getAttribute('max'))
+      await range.fill(String(Math.round((max * 0.7) / 100) * 100))
+      await range.blur()
       await page.waitForTimeout(800)
       await shot('results-hero-moved', 'Full results after moving the slider below the optimum', { element: hero })
     },

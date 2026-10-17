@@ -62,5 +62,52 @@ def bracket_fill_view(result: OptimizationResult) -> dict:
     }
 
 
+# Points the result card's slider gets from the conversion curve (about 200 points).
+CURVE_VIEW_POINTS = 40
+
+
+def curve_points(result: OptimizationResult) -> list:
+    """The conversion curve points the card's slider uses: for each of CURVE_VIEW_POINTS + 1
+    evenly spaced totals, the point nearest it (the lower one on a tie), plus the optimal
+    schedule's own point. Picking from these again returns the same points, so the web
+    app can repeat the pick on a stored result (frontend lib/results/viewData.ts)."""
+    points = sorted(result.conversion_curve, key=lambda p: p.total_cap)
+    if len(points) < 2:
+        return []
+    top = points[-1].total_cap
+    chosen = set()
+    for k in range(CURVE_VIEW_POINTS + 1):
+        target = top * k / CURVE_VIEW_POINTS
+        chosen.add(min(range(len(points)), key=lambda i: (abs(points[i].total_cap - target), i)))
+    chosen.update(i for i, p in enumerate(points) if abs(p.total_cap - result.total_conversion) < 1)
+    return [points[i] for i in sorted(chosen)]
+
+
+def curve_view(result: OptimizationResult) -> dict | None:
+    """What the card's slider needs to move off the optimal schedule: per point, the
+    total converted, estimated savings (today's dollars, as the headline), total tax,
+    and each year's conversion and required withdrawal. The card adds each year's tax
+    from the brackets, as the results page does. None without a curve."""
+    points = curve_points(result)
+    if not points:
+        return None
+    return {
+        "points": [
+            {
+                "total": _round(p.total_cap),
+                "savings": _round(p.npv - result.npv_at_zero),
+                "tax": _round(p.total_tax),
+                "conversions": [_round(c) for c in p.yearly_conversions],
+                "rmds": [_round(r) for r in p.yearly_rmd_amounts],
+            }
+            for p in points
+        ]
+    }
+
+
 def result_view(result: OptimizationResult) -> dict:
-    return {"bracket_fill": bracket_fill_view(result)}
+    view = {"bracket_fill": bracket_fill_view(result)}
+    curve = curve_view(result)
+    if curve:
+        view["curve"] = curve
+    return view

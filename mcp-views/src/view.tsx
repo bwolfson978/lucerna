@@ -20,7 +20,13 @@ export interface ViewContext {
   sendMessage: (text: string) => Promise<boolean>;
   /** Ask the host to open a link, such as a result's `full_results_url`. */
   openLink: (url: string) => void;
+  /** Tell the host's model what the user is looking at (sent after a short pause, so a
+   * dragged slider reports where it stopped). Ignored by hosts without it. */
+  updateContext: (text: string) => void;
 }
+
+/** How long a View waits after the last change before updating the model's context. */
+const CONTEXT_DELAY_MS = 600;
 
 export function startView(
   name: string,
@@ -28,6 +34,7 @@ export function startView(
 ): void {
   const root = createRoot(document.getElementById("root")!);
   const app = new App({ name, version: "1.0.0" }, {}, { autoResize: true });
+  let contextTimer: ReturnType<typeof setTimeout> | undefined;
 
   const message = (text: string) =>
     root.render(<p className="p-default text-body-sm text-text-tertiary m-0">{text}</p>);
@@ -49,6 +56,13 @@ export function startView(
       }
     },
     openLink: (url) => void app.openLink({ url }),
+    updateContext: (text) => {
+      clearTimeout(contextTimer);
+      contextTimer = setTimeout(() => {
+        if (!app.getHostCapabilities()?.updateModelContext) return;
+        app.updateModelContext({ content: [{ type: "text", text }] }).catch(() => {});
+      }, CONTEXT_DELAY_MS);
+    },
   };
 
   app.ontoolresult = (result) => {

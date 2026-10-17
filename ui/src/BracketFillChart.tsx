@@ -58,10 +58,13 @@ export function isBracketFillData(value: unknown): value is BracketFillData {
 export function BracketFillChart({
   data,
   framed = true,
+  stableMaxGrossAmount,
 }: {
   data: BracketFillData;
   /** Draw its own card with a title. Off when embedded in another card. */
   framed?: boolean;
+  /** Fix the vertical scale (see BracketChart), e.g. while a slider changes the data. */
+  stableMaxGrossAmount?: number;
 }) {
   return (
     <div
@@ -82,6 +85,7 @@ export function BracketFillChart({
         brackets={data.brackets}
         standardDeduction={data.standard_deduction}
         addedTax={data.years.map((y) => y.tax)}
+        stableMaxGrossAmount={stableMaxGrossAmount}
         fixedHeight
       />
     </div>
