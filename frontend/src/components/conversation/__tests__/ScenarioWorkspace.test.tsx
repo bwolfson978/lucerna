@@ -94,15 +94,46 @@ async function sendMessage(text: string) {
   fireEvent.click(screen.getByRole("button", { name: "Send" }));
 }
 
+const panel = () => screen.getByRole("complementary", { name: "Your scenario" });
+
+/** The assistant has filled the scenario in. */
+const captured = () =>
+  waitFor(() => expect(within(panel()).getByText("Ready to run")).toBeInTheDocument());
+
+/** Make the page match the desktop media queries (and reduced motion). */
+function asDesktop() {
+  const original = window.matchMedia;
+  window.matchMedia = vi.fn().mockReturnValue({
+    matches: true,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }) as unknown as typeof window.matchMedia;
+  return () => {
+    window.matchMedia = original;
+  };
+}
+
 describe("ScenarioWorkspace (calculator)", () => {
-  it("opens in conversation mode with an opening message and starters", () => {
+  it("opens with an opening message, starters and an empty scenario beside it", () => {
     mockAgent();
     renderWorkspace("calculator");
-    expect(screen.getByRole("radio", { name: "Discuss" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.queryByRole("radio")).not.toBeInTheDocument();
     expect(screen.getByText(/Let's map out your situation/)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "I'm planning to retire early" })
     ).toBeInTheDocument();
+    expect(within(panel()).getByText("Add your details")).toBeInTheDocument();
+    expect(within(panel()).getByRole("button", { name: "Run the numbers" })).toBeDisabled();
+    // On desktop it starts folded away, leaving the conversation centered.
+    expect(screen.getByRole("button", { name: "Show your scenario" })).toBeInTheDocument();
+    // On phones, a bar above the message box opens the same scenario.
+    fireEvent.click(screen.getByRole("button", { name: /Review your scenario/ }));
+    const sheet = screen.getByRole("dialog", { name: "Your scenario" });
+    fireEvent.click(within(sheet).getByRole("button", { name: "Done" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    // So does the line under the opening message.
+    fireEvent.click(screen.getByRole("button", { name: "Fill in your scenario" }));
+    expect(screen.getByRole("dialog", { name: "Your scenario" })).toBeInTheDocument();
   });
 
   it("asks a signed-out visitor to sign in before opening a saved scenario", () => {
@@ -110,100 +141,183 @@ describe("ScenarioWorkspace (calculator)", () => {
     window.history.replaceState(null, "", "/calculator?saved=abc");
     renderWorkspace("calculator");
     expect(screen.getByText("Sign in to open this saved scenario")).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "My numbers" })).toHaveAttribute(
-      "aria-checked",
-      "true"
-    );
   });
 
-  it("gathers inputs, confirms, runs and opens full results", async () => {
+  it("fills the panel from the conversation, runs it and opens full results", async () => {
     const sent: { message: string; draft: ScenarioDraft }[] = [];
     mockAgent(sent);
     renderWorkspace("calculator");
 
     await sendMessage("I'm 52, married, $90k income, $600k in my 401k, retiring at 60");
-    const summary = await screen.findByTestId("scenario-summary");
-    expect(within(summary).getByText("52")).toBeInTheDocument();
-    expect(within(summary).getByText("$600,000")).toBeInTheDocument();
+    // The values land in the panel, and the bar above the message box counts them.
+    await captured();
+    expect(
+      screen.getByRole("button", { name: "Review your scenario. Ready to run · 5 new" })
+    ).toBeInTheDocument();
+    expect(screen.getByText("Added 5 details to your scenario")).toHaveClass("sr-only");
+    expect(screen.queryByTestId("scenario-note")).not.toBeInTheDocument();
+    expect(within(panel()).getByText("52")).toBeInTheDocument();
+    expect(within(panel()).getByText("$600,000")).toBeInTheDocument();
+    expect(within(panel()).getAllByText("New")).toHaveLength(5);
+    expect(within(panel()).getByText("Ready to run")).toBeInTheDocument();
 
-    // Edit a value on the card: the shared draft changes.
-    fireEvent.click(within(summary).getByRole("button", { name: "60" }));
-    const input = within(summary).getByLabelText("Start drawing at age");
+    // Edit a value in the panel: the shared draft changes and its "New" mark goes.
+    fireEvent.click(within(panel()).getByRole("button", { name: "60" }));
+    const input = within(panel()).getByLabelText("Start drawing at age");
     fireEvent.change(input, { target: { value: "62" } });
     fireEvent.blur(input);
-    expect(within(summary).getByRole("button", { name: "62" })).toBeInTheDocument();
+    expect(within(panel()).getByRole("button", { name: "62" })).toBeInTheDocument();
+    expect(within(panel()).getAllByText("New")).toHaveLength(4);
 
-    fireEvent.click(within(summary).getByRole("button", { name: "Run the numbers" }));
+    fireEvent.click(within(panel()).getByRole("button", { name: "Run the numbers" }));
     const headline = await screen.findByTestId("result-headline");
     expect(within(headline).getByText(/\$28,500/)).toBeInTheDocument();
     expect(screen.getByText("savings")).toContainHTML("strong");
     expect(screen.getByRole("button", { name: "What if I retire at 58?" })).toBeInTheDocument();
-    // The edited draft went to the backend with the confirmation.
+    // The assistant ran the edited draft, and the panel knows it's current.
+    expect(sent[1].message).toBe("Looks right. Run the numbers.");
     expect(sent[1].draft.retirement_age).toBe(62);
-    // Once run, the summary card is read-only.
-    expect(screen.getByText("Confirmed")).toBeInTheDocument();
+    expect(within(panel()).getByText("Up to date")).toBeInTheDocument();
+    expect(within(panel()).queryByText("New")).not.toBeInTheDocument();
+
+    fireEvent.click(within(panel()).getByRole("button", { name: "62" }));
+    const again = within(panel()).getByLabelText("Start drawing at age");
+    fireEvent.change(again, { target: { value: "63" } });
+    fireEvent.blur(again);
+    expect(within(panel()).getByText("Changes not run yet")).toBeInTheDocument();
 
     fireEvent.click(within(headline).getByRole("button", { name: "See full results" }));
     expect(screen.getByRole("button", { name: /Back to conversation/ })).toBeInTheDocument();
     expect(window.location.search).toContain("view=results");
+    // The scenario stays beside the full results.
+    expect(panel()).toBeInTheDocument();
 
     await act(async () => {
       window.history.back();
       await new Promise((r) => setTimeout(r, 20));
     });
     await waitFor(() => expect(screen.getByTestId("result-headline")).toBeInTheDocument());
+  });
 
-    // The form shows what the conversation captured.
-    fireEvent.click(screen.getByRole("radio", { name: "My numbers" }));
+  it("opens the full details from the panel", async () => {
+    mockAgent();
+    renderWorkspace("calculator");
+    await sendMessage("I'm 52, married, $90k income, $600k in my 401k, retiring at 60");
+    await captured();
+
+    fireEvent.click(within(panel()).getByRole("button", { name: /Income in retirement/ }));
+    expect(window.location.search).toContain("view=details&section=income");
+    expect(screen.getByRole("heading", { name: "All the details." })).toBeInTheDocument();
     expect(screen.getByLabelText("Age")).toHaveValue("52");
+    // The form is the whole scenario here, so the panel steps aside.
+    expect(screen.queryByRole("complementary", { name: "Your scenario" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Run the numbers" })).toBeInTheDocument();
+
+    await act(async () => {
+      window.history.back();
+      await new Promise((r) => setTimeout(r, 20));
+    });
+    await waitFor(() => expect(screen.getByText("Here's what I have.")).toBeInTheDocument());
   });
 
   it("asks before clearing the conversation", async () => {
     mockAgent();
     renderWorkspace("calculator");
     await sendMessage("I'm 52, married, $90k income, $600k in my 401k, retiring at 60");
-    await screen.findByTestId("scenario-summary");
+    await captured();
 
     fireEvent.click(await screen.findByRole("button", { name: "Start over" }));
     fireEvent.click(screen.getByRole("button", { name: "Keep it" }));
-    expect(screen.getByTestId("scenario-summary")).toBeInTheDocument();
+    expect(screen.getByText("Here's what I have.")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Start over" }));
     fireEvent.click(screen.getByRole("button", { name: "Clear" }));
-    expect(screen.queryByTestId("scenario-summary")).not.toBeInTheDocument();
-    // Back to the opening line; the values gathered so far stay in the draft.
+    expect(screen.queryByText("Here's what I have.")).not.toBeInTheDocument();
+    // Back to the opening line; the values gathered so far stay in the scenario.
     expect(screen.getByRole("button", { name: "Run my scenario" })).toBeInTheDocument();
+    expect(within(panel()).getByText("52")).toBeInTheDocument();
   });
 
-  it("falls back to the form when the assistant is unavailable", async () => {
+  it("runs the scenario itself when the assistant is unavailable", async () => {
+    const sent: string[] = [];
     server.use(
-      http.post(API, () =>
-        sse([
+      http.post(API, async ({ request }) => {
+        sent.push(((await request.json()) as { message: string }).message);
+        return sse([
           { type: "error", code: "unavailable", message: "The assistant is unavailable." },
           { type: "done", messages: [] },
-        ])
-      )
+        ]);
+      })
     );
+    sessionStorage.setItem("lucerna:draft:v1", JSON.stringify(DRAFT));
     renderWorkspace("calculator");
-    await sendMessage("hello");
-    expect(
-      await screen.findByText(/Everything you told it is filled in below/)
-    ).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "My numbers" })).toHaveAttribute(
-      "aria-checked",
-      "true"
-    );
+    await waitFor(() => expect(within(panel()).getByText("Ready to run")).toBeInTheDocument());
+
+    // The first run finds the assistant down and runs on the engine instead.
+    fireEvent.click(within(panel()).getByRole("button", { name: "Run the numbers" }));
+    const back = await screen.findByRole("button", { name: /Back to conversation/ });
+    expect(await screen.findAllByText(/\$28,500/)).not.toHaveLength(0);
+    expect(within(panel()).getByText("Up to date")).toBeInTheDocument();
+    fireEvent.click(back);
+    expect(await screen.findByText("The assistant is unavailable.")).toBeInTheDocument();
+
+    // After that, runs skip the assistant.
+    fireEvent.click(within(panel()).getByRole("button", { name: "Run the numbers" }));
+    expect(await screen.findByRole("button", { name: /Back to conversation/ })).toBeInTheDocument();
+    expect(sent).toHaveLength(1);
   });
 
   it("restores the conversation from session storage", async () => {
     mockAgent();
     const { unmount } = renderWorkspace("calculator");
     await sendMessage("I'm 52");
-    await screen.findByTestId("scenario-summary");
+    await captured();
     unmount();
     renderWorkspace("calculator");
-    expect(await screen.findByTestId("scenario-summary")).toBeInTheDocument();
+    expect(await screen.findByText("Here's what I have.")).toBeInTheDocument();
     expect(screen.getByText("I'm 52")).toBeInTheDocument();
+    expect(within(panel()).getByText("52")).toBeInTheDocument();
+    // A scenario with values in it opens beside the conversation.
+    expect(screen.queryByRole("button", { name: "Show your scenario" })).toBeNull();
+  });
+
+  it("folds the panel away to a strip and remembers that", async () => {
+    const restore = asDesktop();
+    try {
+      mockAgent();
+      const { unmount } = renderWorkspace("calculator");
+      expect(screen.getByRole("button", { name: "Show your scenario" })).toBeInTheDocument();
+      const bar = () => screen.getByRole("button", { name: /^Review your scenario/ });
+      expect(bar()).not.toHaveClass("lg:hidden");
+
+      // The assistant's first fill opens it, and the bar steps aside on desktop.
+      await sendMessage("I'm 52, married, $90k income, $600k in my 401k, retiring at 60");
+      await captured();
+      expect(screen.queryByRole("button", { name: "Show your scenario" })).toBeNull();
+      expect(bar()).toHaveClass("lg:hidden");
+
+      fireEvent.click(within(panel()).getByRole("button", { name: "Hide your scenario" }));
+      expect(screen.getByRole("button", { name: "Show your scenario" })).toBeInTheDocument();
+      expect(bar()).not.toHaveClass("lg:hidden");
+      expect(localStorage.getItem("lucerna:scenario-panel:v1")).toBe("closed");
+
+      // On desktop the bar opens the panel itself, not the phone sheet.
+      fireEvent.click(bar());
+      expect(screen.queryByRole("dialog")).toBeNull();
+      expect(screen.queryByRole("button", { name: "Show your scenario" })).toBeNull();
+      expect(localStorage.getItem("lucerna:scenario-panel:v1")).toBe("open");
+
+      // A choice to keep it folded holds on the next visit, even with values in it.
+      fireEvent.click(within(panel()).getByRole("button", { name: "Hide your scenario" }));
+      unmount();
+      renderWorkspace("calculator");
+      await waitFor(() => expect(within(panel()).getByText("Ready to run")).toBeInTheDocument());
+      expect(screen.getByRole("button", { name: "Show your scenario" })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "Show your scenario" }));
+      expect(screen.queryByRole("button", { name: "Show your scenario" })).toBeNull();
+    } finally {
+      restore();
+    }
   });
 
   it("keeps follow-up chips below text that streamed after them", async () => {
@@ -321,7 +435,10 @@ describe("ScenarioWorkspace (demo)", () => {
     // The wash is an absolute overlay; on the band itself it pulls the band out of flow.
     expect(ctaBand).toHaveClass("bg-pine-deep");
     expect(ctaBand).not.toHaveClass("dark-wash");
-    expect(screen.queryByRole("radio", { name: "My numbers" })).not.toBeInTheDocument();
     expect(screen.getByLabelText("Message")).not.toBeDisabled();
+    // Margaret's scenario sits beside her conversation, read only.
+    const demoPanel = screen.getByRole("complementary", { name: "Margaret's scenario" });
+    expect(within(demoPanel).getByText("52")).toBeInTheDocument();
+    expect(within(demoPanel).queryByRole("button", { name: "Run the numbers" })).toBeNull();
   });
 });

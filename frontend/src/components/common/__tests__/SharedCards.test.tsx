@@ -157,6 +157,32 @@ it("asks for a rate when the state is Other", () => {
   expect(onEdit).toHaveBeenLastCalledWith({ custom_state_rate_pct: 4.5 });
 });
 
+it("as the website's scenario panel, offers Add for missing values and marks new ones", () => {
+  const onEdit = vi.fn();
+  const data = { ...recorded, scenario: { ...recorded.scenario, age: null } };
+  const { container } = render(
+    <ScenarioSummary
+      data={data}
+      variant="panel"
+      onEdit={onEdit}
+      highlight={["traditional_balance"]}
+    />
+  );
+  // No card header or Run button: the panel has its own.
+  expect(container.querySelector("[data-ui=scenario-summary]")).toHaveAttribute(
+    "data-variant",
+    "panel"
+  );
+  expect(screen.queryByRole("button", { name: "Run the numbers" })).not.toBeInTheDocument();
+  expect(screen.getAllByText("New")).toHaveLength(1);
+
+  fireEvent.click(screen.getByRole("button", { name: "Add age" }));
+  const age = screen.getByLabelText("Age");
+  fireEvent.change(age, { target: { value: "58" } });
+  fireEvent.blur(age);
+  expect(onEdit).toHaveBeenLastCalledWith({ age: 58 });
+});
+
 it("web MetricCard wraps the shared one", () => {
   render(<MetricCard label="Roth" value="$1" delta="+5%" deltaType="positive" />);
   const metric = screen.getByText("Roth").closest("[data-ui=metric-card]");

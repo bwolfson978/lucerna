@@ -81,7 +81,7 @@ export interface DemoConversation {
   cache_key: string;
 }
 
-/** Errors that send the user to the form with their scenario intact. */
+/** Errors that end the assistant's help; the scenario stays editable and runnable. */
 export const FALLBACK_CODES: ReadonlySet<AgentErrorCode> = new Set([
   "unavailable",
   "conversation_limit",

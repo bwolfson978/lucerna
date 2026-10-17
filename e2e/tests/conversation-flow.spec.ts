@@ -1,5 +1,6 @@
 import type { Page } from '@playwright/test'
 import { test, expect } from '../fixtures/test'
+import { openDetails, openScenario } from '../fixtures/scenario'
 
 // A tool result rendered by the MCP server's own View (MCP Apps), mounted by the host
 // in a sandbox proxy (outer iframe) that loads the View (inner iframe).
@@ -12,17 +13,19 @@ const view = (page: Page, index: number) =>
 
 test.describe('Conversation flow', () => {
   test('describe, confirm, run, explore a what-if and open full results', async ({ page }) => {
+    // Two optimizer runs, a page change and a what-if apply: more than the default budget.
+    test.setTimeout(60000)
     await page.goto('/calculator')
-    await expect(page.getByRole('radio', { name: 'Discuss' })).toHaveAttribute('aria-checked', 'true')
 
     await page.getByLabel('Message').fill("I'm 52, married, income $90,000 a year, $600k in my 401k, I want to retire at 60")
     await page.getByRole('button', { name: 'Send' }).click()
 
-    const summary = page.getByTestId('scenario-summary')
-    await expect(summary.first()).toBeVisible({ timeout: 15000 })
-    await expect(summary.first().getByText('$600,000')).toBeVisible()
+    // What the conversation captured lands in the scenario panel.
+    const panel = await openScenario(page)
+    await expect(panel.getByText('$600,000')).toBeVisible({ timeout: 15000 })
+    await expect(panel.getByText('Ready to run')).toBeVisible()
 
-    await summary.first().getByRole('button', { name: 'Run the numbers' }).click()
+    await panel.getByRole('button', { name: 'Run the numbers' }).click()
     const headline = view(page, 0).locator('[data-ui=result-card]')
     await expect(headline).toBeVisible({ timeout: 30000 })
     await expect(headline.getByText(/\$\d/).first()).toBeVisible()
@@ -44,13 +47,18 @@ test.describe('Conversation flow', () => {
     await expect(compare).toBeVisible({ timeout: 30000 })
 
     // Apply sends a chat message from the View (ui/message); the assistant records the
-    // what-if and shows the scenario to confirm.
+    // what-if in the scenario.
     await compare.getByRole('button', { name: 'Apply to my scenario' }).click()
     await expect(page.getByText('Use the "Retire at 58" what-if as my scenario.')).toBeVisible()
-    await expect(summary.last()).toBeVisible({ timeout: 20000 })
+    // The changed value is marked New in the panel (desktop) and counted on the bar (phones).
+    await expect(
+      page
+        .getByRole('button', { name: /^Review your scenario.*1 new$/ })
+        .or(page.getByTestId('scenario-panel').filter({ visible: true }).getByText('New', { exact: true }))
+    ).toBeVisible({ timeout: 20000 })
 
-    // The form holds what the conversation captured.
-    await page.getByRole('radio', { name: 'My numbers' }).click()
+    // The full details hold what the conversation captured.
+    await openDetails(page)
     await expect(page.getByLabel('Age', { exact: true })).toHaveValue('52')
     await expect(page.getByLabel('Retirement age', { exact: true })).toHaveValue('58')
 
@@ -63,8 +71,10 @@ test.describe('Conversation flow', () => {
     await page.goto('/calculator')
     await page.getByLabel('Message').fill("I'm 40, single, income $120,000, $300k in my IRA, retire at 55")
     await page.getByRole('button', { name: 'Send' }).click()
-    await expect(page.getByTestId('scenario-summary')).toBeVisible({ timeout: 15000 })
+    await expect((await openScenario(page)).getByText('$300,000')).toBeVisible({ timeout: 15000 })
     await page.reload()
-    await expect(page.getByTestId('scenario-summary')).toBeVisible()
+    await expect(page.getByText("I'm 40, single, income $120,000")).toBeVisible()
+    const panel = await openScenario(page)
+    await expect(panel.getByText('$300,000')).toBeVisible()
   })
 })

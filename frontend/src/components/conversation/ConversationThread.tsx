@@ -8,24 +8,10 @@ import { Markdown } from "./Markdown";
 import { usePrefersReducedMotion } from "@/hooks/useInView";
 import { McpAppFrame } from "./parts/McpAppFrame";
 import { PartBoundary } from "./parts/PartBoundary";
-import { ScenarioSummaryCard } from "./parts/ScenarioSummaryCard";
 import { ResultHeadlineCard, ScenarioCompareCard, SuggestionChips } from "./parts/ResultCards";
 
 /** Screen height the header, composer and margins take: what the latest turn needn't fill. */
 const TURN_ROOM = 192;
-
-/** Index of the summary card that can still be edited and run, if any. */
-function activeSummaryKey(messages: UiMessage[]): string | null {
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const parts = messages[i].parts;
-    for (let j = parts.length - 1; j >= 0; j--) {
-      const kind = parts[j].kind;
-      if (kind === "result_headline" || kind === "mcp_app") return null;
-      if (kind === "scenario_summary") return `${messages[i].id}:${j}`;
-    }
-  }
-  return null;
-}
 
 export function ConversationThread({
   state,
@@ -46,7 +32,6 @@ export function ConversationThread({
   followOnRestore?: boolean;
 }) {
   const { messages, streaming, status } = state;
-  const activeSummary = activeSummaryKey(messages);
   const lastUserRef = useRef<HTMLDivElement | null>(null);
   const userCount = messages.filter((m) => m.role === "user").length;
   const prevCount = useRef(userCount);
@@ -131,7 +116,6 @@ export function ConversationThread({
         isLast={isLast}
         streaming={streaming && isLast}
         status={isLast ? status : null}
-        activeSummary={activeSummary}
         className={noAnchor}
       />
     );
@@ -157,14 +141,12 @@ function AssistantMessage({
   isLast,
   streaming,
   status,
-  activeSummary,
   className,
 }: {
   message: UiMessage;
   isLast: boolean;
   streaming: boolean;
   status: string | null;
-  activeSummary: string | null;
   className?: string;
 }) {
   const showThinking = streaming && (message.parts.length === 0 || status);
@@ -172,11 +154,7 @@ function AssistantMessage({
     <div className={cn("flex flex-col gap-default", className)} data-testid="assistant-message">
       {suggestionsLast(message.parts).map(({ part, i }) => (
         <PartBoundary key={i} kind={part.kind}>
-          <PartView
-            part={part}
-            active={activeSummary === `${message.id}:${i}`}
-            interactive={isLast && !streaming}
-          />
+          <PartView part={part} interactive={isLast && !streaming} />
         </PartBoundary>
       ))}
       {showThinking && (
@@ -199,15 +177,7 @@ function suggestionsLast(parts: UiPart[]): { part: UiPart; i: number }[] {
   ];
 }
 
-function PartView({
-  part,
-  active,
-  interactive,
-}: {
-  part: UiPart;
-  active: boolean;
-  interactive: boolean;
-}) {
+function PartView({ part, interactive }: { part: UiPart; interactive: boolean }) {
   switch (part.kind) {
     case "text":
       return (
@@ -216,7 +186,9 @@ function PartView({
         </div>
       );
     case "scenario_summary":
-      return <ScenarioSummaryCard snapshot={part.draft} active={active} />;
+      // The scenario panel shows what the assistant recorded, and the bar above the
+      // message box counts what's new, so the conversation carries no copy of it.
+      return null;
     case "result_headline":
       return <ResultHeadlineCard resultId={part.result_id} />;
     case "bracket_fill":

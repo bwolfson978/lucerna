@@ -5,7 +5,7 @@ Three guards, all in process memory (the backend runs as a single instance):
 - messages per client IP per day,
 - estimated model spend per day across everyone.
 
-Hitting any of them sends the user to the form with their scenario intact.
+Hitting any of them leaves the user's scenario intact, to edit and run without the assistant.
 """
 
 from __future__ import annotations

@@ -64,7 +64,7 @@ def has_credentials() -> bool:
 
 
 class ModelUnavailable(Exception):
-    """The model can't be reached (no key, outage, rate limit). The UI falls back to the form."""
+    """The model can't be reached (no key, outage, rate limit). The UI keeps the scenario editable and runnable without it."""
 
 
 class ModelClient(Protocol):
