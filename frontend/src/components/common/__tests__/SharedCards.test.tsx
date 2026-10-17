@@ -44,6 +44,36 @@ it("shows the tax bracket chart in the result card", () => {
   expect(screen.getByText("Room left in bracket")).toBeInTheDocument();
 });
 
+it("tries other totals with the slider and asks about one", () => {
+  const ask = vi.fn();
+  const selection = vi.fn();
+  render(<ResultCard data={card} details={details} onAsk={ask} onSelectionChange={selection} />);
+  const hero = screen.getByText("$36,990");
+  expect(screen.getAllByText("Most savings")).toHaveLength(2);
+  expect(screen.queryByRole("button", { name: /Ask about/ })).not.toBeInTheDocument();
+
+  // Converting less than the optimum saves less, and the card says by how much.
+  fireEvent.change(screen.getByRole("slider", { name: "Total amount to convert" }), {
+    target: { value: "180000" },
+  });
+  expect(hero).not.toHaveTextContent("$36,990");
+  expect(screen.getByText(/less than the most savings$/)).toBeInTheDocument();
+  expect(selection).toHaveBeenLastCalledWith(
+    expect.objectContaining({ total: 180000, optimalTotal: card.total_conversion })
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Ask about $180K" }));
+  expect(ask).toHaveBeenCalledWith(expect.stringMatching(/^Why does converting \$180K save/));
+
+  fireEvent.click(screen.getByRole("button", { name: "Back to most savings" }));
+  expect(screen.getByText("$36,990")).toBeInTheDocument();
+  expect(screen.getByText("In today's dollars, compared with not converting")).toBeInTheDocument();
+});
+
+it("leaves the slider out without a curve", () => {
+  render(<ResultCard data={card} details={{ bracket_fill: details.bracket_fill }} />);
+  expect(screen.queryByRole("slider")).not.toBeInTheDocument();
+});
+
 it("renders the previous release's tool output without the chart instead of crashing", () => {
   // A newer frontend can meet an older server (deploys roll out separately) or a
   // conversation saved before the change. The card must degrade, not throw.

@@ -22,8 +22,18 @@ export {
   isResultCardData,
   isResultDetails,
   type ResultCardData,
+  type ResultCardSelection,
   type ResultDetails,
 } from "./ResultCard";
+export { ConversionSlider } from "./ConversionSlider";
+export {
+  federalTax,
+  isConversionCurveData,
+  sampleCurve,
+  type ConversionCurveData,
+  type CurveSample,
+} from "./curve";
+export { computeSnapThreshold, maybeSnap } from "./snap";
 export {
   BracketChart,
   type BracketChartLayout,

@@ -18,8 +18,9 @@ from pathlib import Path
 
 from mcp.shared.memory import create_connected_server_and_client_session
 
+from app.engine.types import OptimizationResult
 from app.mcp.server import RESULTS_META_KEY, UI_META_KEY, mcp
-from app.tools.views import VIEW_META_KEY
+from app.tools.views import VIEW_META_KEY, curve_points
 
 OUTPUT = Path(__file__).resolve().parents[2] / "shared" / "fixtures" / "view-data.json"
 
@@ -38,9 +39,17 @@ CHANGES = {"retirement_age": 62}
 LABEL = "Retire at 62"
 
 
-def _slim(result: dict) -> dict:
-    # The conversion curve is chart-only and most of the payload; no card reads it.
-    return {**result, "conversion_curve": []}
+CURVE_FIELDS = ("total_cap", "npv", "total_tax", "yearly_conversions", "yearly_rmd_amounts")
+
+
+def _slim(result: dict, *, keep_curve: bool = False) -> dict:
+    # The conversion curve is most of the payload. The card's slider reads only the
+    # points the View gets (curve_points), and only these fields of them.
+    curve = []
+    if keep_curve:
+        picked = curve_points(OptimizationResult.model_validate(result))
+        curve = [{k: p.model_dump()[k] for k in CURVE_FIELDS} for p in picked]
+    return {**result, "conversion_curve": curve}
 
 
 async def generate() -> dict:
@@ -64,7 +73,7 @@ async def generate() -> dict:
             "structured_content": analyzed.structuredContent,
             "view_meta": analyzed.meta[VIEW_META_KEY],
             "result_id": analysis["result_id"],
-            "result": _slim(analysis["result"]),
+            "result": _slim(analysis["result"], keep_curve=True),
         },
         "compare_roth_scenarios": {
             "changes": CHANGES,

@@ -9,6 +9,7 @@ from app.engine.aca import (
 )
 from app.engine.constants import (
     IMPROVEMENT_THRESHOLD,
+    ROUNDING_RESOLUTION,
     round_to_resolution,
 )
 from app.engine.heuristic import greedy_bracket_fill
@@ -942,6 +943,50 @@ def _build_scenarios(
     ]
 
 
+# Curve points within this fraction of the optimal total also try the optimal schedule,
+# scaled to their total.
+ENVELOPE_SPAN = 0.5
+
+
+def _with_optimal_schedule(
+    scenario: ScenarioInput,
+    curve: list[ConversionCurvePoint],
+    final_conversions: list[float],
+    *,
+    envelope: bool = True,
+) -> list[ConversionCurvePoint]:
+    """Put the optimizer's own schedule on the conversion curve.
+
+    The curve strategy builds each point its own way, so near the optimal total its
+    points can sit well below the optimizer's answer and the slider dips just beside
+    the optimum. The optimal schedule becomes a point of its own, and points near it
+    keep whichever is better: their own allocation or the optimal schedule scaled to
+    their total (both real allocations of that total). Skipped with ``envelope=False``
+    (user preferences), where a scaled-up schedule could break a per-year limit.
+    """
+    from app.engine.curve_strategy import build_curve_point  # lazy: avoids a cycle
+
+    total = sum(final_conversions)
+    if not curve or total <= 0:
+        return curve
+    balance = scenario.traditional_ira_balance
+    points = []
+    for point in curve:
+        cap = point.total_cap
+        if abs(cap - total) < 1:
+            continue
+        if envelope and abs(cap - total) <= total * ENVELOPE_SPAN and cap > 0:
+            scaled = _finalize_conversions(
+                [c * cap / total for c in final_conversions], balance, scenario.real_growth_rate
+            )
+            fits = abs(sum(scaled) - cap) <= ROUNDING_RESOLUTION * len(scaled)
+            if fits and calculate_npv(scenario, scaled) > point.npv + 1.0:
+                point = build_curve_point(scenario, cap, scaled)
+        points.append(point)
+    points.append(build_curve_point(scenario, round(total, 2), list(final_conversions)))
+    return sorted(points, key=lambda p: p.total_cap)
+
+
 def optimize(scenario: ScenarioInput) -> OptimizationResult:
     """Find the optimal multi-year conversion schedule."""
     from app.engine.curve_strategy import generate_conversion_curve
@@ -991,6 +1036,13 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
                 scenario.real_growth_rate,
             )
             total_conversion = sum(final_conversions)
+
+    conversion_curve = _with_optimal_schedule(
+        scenario,
+        conversion_curve,
+        final_conversions,
+        envelope=not _has_active_preferences(scenario),
+    )
 
     npv_at_optimal, upfront_cost = _npv_parts(scenario, final_conversions)
     npv_at_zero = calculate_npv(scenario, [0.0] * n_years)

@@ -51,6 +51,7 @@ export function ViewFallback({ toolResult, openResult, sendMessage }: ViewFallba
         data={data}
         details={isResultDetails(details) ? details : undefined}
         onOpenFullResults={openResult?.(data.result_id)}
+        onAsk={sendMessage}
       />
     );
   }

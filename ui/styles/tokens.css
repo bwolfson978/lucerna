@@ -208,6 +208,36 @@
   .link-arrow:hover {
     gap: 12px;
   }
+
+  /* A native range input laid invisibly over a drawn track (ui/src/ConversionSlider.tsx):
+     it keeps keyboard, touch and screen reader behavior, with a thumb wide enough to grab. */
+  .range-overlay {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+    background: transparent;
+    opacity: 0;
+    cursor: pointer;
+    touch-action: pan-y;
+  }
+
+  .range-overlay::-webkit-slider-runnable-track {
+    height: 100%;
+    background: transparent;
+  }
+
+  .range-overlay::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 44px;
+    height: 44px;
+    margin-top: 0;
+  }
+
+  .range-overlay::-moz-range-thumb {
+    width: 44px;
+    height: 44px;
+    border: 0;
+  }
 }
 
 /* Bars and lines that grow in when a chart first renders. */
