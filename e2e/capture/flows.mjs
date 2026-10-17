@@ -411,8 +411,11 @@ export const flows = {
           // Desktop panels that fold away: the closed state, then open again to run it.
           const hide = page.getByRole('button', { name: 'Hide your scenario' }).filter({ visible: true })
           if (await hide.count()) {
+            await shot('panel-open', 'Scenario panel open beside the conversation')
             await hide.click()
             await page.waitForTimeout(600)
+            // Park the video cursor in the empty margin so it doesn't read as a badge.
+            await page.mouse.move(8, page.viewportSize().height - 8)
             await shot('panel-hidden', 'Scenario panel folded away: the conversation centered')
             await page.getByRole('button', { name: 'Show your scenario' }).click()
             await page.waitForTimeout(600)
