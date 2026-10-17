@@ -284,7 +284,7 @@ export const flows = {
         .click()
       // Results show under the form, or (with the scenario panel) in the conversation.
       const inPage = page.getByText('Estimated lifetime tax savings', { exact: false }).first()
-      await inPage.or(page.getByTestId('mcp-app').first()).waitFor({ timeout: 90000 })
+      await inPage.or(page.getByTestId('mcp-app')).first().waitFor({ timeout: 90000 })
       if (!(await inPage.isVisible())) {
         await view(page, 0).getByRole('button', { name: 'See full results' }).click({ timeout: 60000 })
         await page.getByTestId('results-hero').waitFor({ timeout: 30000 })
