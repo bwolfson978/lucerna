@@ -54,6 +54,10 @@ interface Row {
   key: string;
   label: string;
   value: string;
+  /** Scenario fields the row shows, for highlighting values that just changed. */
+  fields: (keyof ScenarioValues)[];
+  /** No value yet for a required field. */
+  unset?: boolean;
   /** Numeric field the row edits inline. */
   edit?: NumericKey;
   /** Filing status gets a select. */
@@ -84,12 +88,16 @@ function buildRows(s: ScenarioValues): Row[] {
       key: "age",
       label: "Age",
       value: s.age != null ? String(s.age) : notSet,
+      unset: s.age == null,
+      fields: ["age"],
       edit: "age",
     },
     {
       key: "filing",
       label: "Filing status",
       value: filingStatusLabel(s.filing_status) ?? notSet,
+      unset: s.filing_status == null,
+      fields: ["filing_status"],
       editFiling: true,
     },
     {
@@ -101,42 +109,54 @@ function buildRows(s: ScenarioValues): Row[] {
           : s.current_income_end_age != null
             ? `${formatCurrency(s.current_income)} until ${s.current_income_end_age}`
             : formatCurrency(s.current_income),
+      unset: s.current_income == null,
+      fields: ["current_income", "current_income_end_age"],
       edit: "current_income",
     },
     {
       key: "growth",
       label: "Income growth",
       value: `${s.income_growth_rate_pct ?? 0}% a year`,
+      fields: ["income_growth_rate_pct"],
       edit: "income_growth_rate_pct",
     },
-    ...(s.income_sources ?? []).map((src, i) => ({
-      key: `source-${i}`,
-      label: incomeSourceLabel(src),
-      value: `${formatCurrency(src.amount)} a year ${incomeSourceAges(src)}`,
-      formOnly: true,
-    })),
+    ...(s.income_sources ?? []).map(
+      (src, i): Row => ({
+        key: `source-${i}`,
+        label: incomeSourceLabel(src),
+        value: `${formatCurrency(src.amount)} a year ${incomeSourceAges(src)}`,
+        fields: ["income_sources"],
+        formOnly: true,
+      })
+    ),
     {
       key: "traditional",
       label: "Traditional IRA/401(k)",
       value: s.traditional_balance != null ? formatCurrency(s.traditional_balance) : notSet,
+      unset: s.traditional_balance == null,
+      fields: ["traditional_balance"],
       edit: "traditional_balance",
     },
     {
       key: "roth",
       label: "Roth IRA/401(k)",
       value: formatCurrency(s.roth_balance ?? 0),
+      fields: ["roth_balance"],
       edit: "roth_balance",
     },
     {
       key: "retirement",
       label: "Start drawing at age",
       value: s.retirement_age != null ? String(s.retirement_age) : notSet,
+      unset: s.retirement_age == null,
+      fields: ["retirement_age"],
       edit: "retirement_age",
     },
     {
       key: "spending",
       label: "Household spending in retirement",
       value: s.retirement_spending ? `${formatCurrency(s.retirement_spending)} a year` : "4% rule",
+      fields: ["retirement_spending"],
       edit: "retirement_spending",
     },
     {
@@ -146,6 +166,7 @@ function buildRows(s: ScenarioValues): Row[] {
         s.retirement_state && s.retirement_state !== s.state
           ? `${stateName(s.state)}, then ${stateName(s.retirement_state)}`
           : stateName(s.state),
+      fields: ["state", "retirement_state", "custom_state_rate_pct"],
       editState: true,
     },
     ...(s.include_aca
@@ -154,26 +175,30 @@ function buildRows(s: ScenarioValues): Row[] {
             key: "aca",
             label: "ACA marketplace",
             value: `${household} ${household === 1 ? "person" : "people"}, ${formatCurrency(s.monthly_slcsp_premium ?? 620)}/mo benchmark`,
+            fields: ["include_aca", "household_size", "monthly_slcsp_premium"],
             formOnly: true,
-          },
+          } satisfies Row,
         ]
       : []),
     {
       key: "horizon",
       label: "Plan through age",
       value: String(s.planning_horizon_age ?? 90),
+      fields: ["planning_horizon_age"],
       edit: "planning_horizon_age",
     },
     {
       key: "return",
       label: "Investment return",
       value: `${s.investment_return_pct ?? 7}%`,
+      fields: ["investment_return_pct"],
       edit: "investment_return_pct",
     },
     {
       key: "inflation",
       label: "Inflation",
       value: `${s.inflation_pct ?? 2.5}% a year`,
+      fields: ["inflation_pct"],
       edit: "inflation_pct",
     },
   ];
@@ -197,6 +222,14 @@ interface ScenarioSummaryProps {
   /** Start folded to a one-line recap that opens from the header, as for a summary
    * already run, further up a conversation. */
   collapsible?: boolean;
+  /**
+   * "card" (default) is a card of its own. "panel" fills a side panel or sheet that has
+   * its own heading and Run button: no card frame or header, one column at any width,
+   * and values still needed read "Add".
+   */
+  variant?: "card" | "panel";
+  /** Fields that just changed (filled in by the assistant), marked "New". */
+  highlight?: (keyof ScenarioValues)[];
 }
 
 /** The scenario's values for the user to check before running the numbers. */
@@ -210,19 +243,31 @@ export function ScenarioSummary({
   hint,
   missing = [],
   collapsible = false,
+  variant = "card",
+  highlight = [],
 }: ScenarioSummaryProps) {
+  const panel = variant === "panel";
   const rows = buildRows(data.scenario);
   const primary = rows.filter((row) => !ASSUMPTION_KEYS.has(row.key));
   const assumptions = rows.filter((row) => ASSUMPTION_KEYS.has(row.key));
   const [showAssumptions, setShowAssumptions] = useState(false);
-  const [collapsed, setCollapsed] = useState(collapsible);
+  const [collapsed, setCollapsed] = useState(collapsible && !panel);
   const timeline = data.timeline;
   const notedYears = timeline.filter((y) => y.note);
   const s = data.scenario;
+  const isNew = (row: Row) => row.fields.some((f) => highlight.includes(f));
+  // Side gutter for every line, and the two-column grid a card gets from sm.
+  const gutter = panel ? "px-comfortable" : "px-default sm:px-comfortable";
+  const grid = panel ? "grid" : "grid sm:grid-cols-2";
+  const divider = panel ? undefined : "sm:odd:border-r";
 
   return (
-    <article className="card overflow-hidden !p-0" data-ui="scenario-summary">
-      {collapsible ? (
+    <article
+      className={panel ? "bg-card !shadow-none" : "card overflow-hidden !p-0"}
+      data-ui="scenario-summary"
+      data-variant={variant}
+    >
+      {panel ? null : collapsible ? (
         <button
           type="button"
           aria-expanded={!collapsed}
@@ -259,7 +304,7 @@ export function ScenarioSummary({
         <>
           {/* What the person told us: one column on phones, two from sm. Each row draws its
           own bottom rule; the list tucks the last one under the next section's top border. */}
-          <dl className="-mb-px grid sm:grid-cols-2">
+          <dl className={cn("-mb-px", grid)}>
             {primary.map((row) => (
               <SummaryRow
                 key={row.key}
@@ -267,7 +312,9 @@ export function ScenarioSummary({
                 scenario={s}
                 onEdit={onEdit}
                 onOpenForm={onOpenForm}
-                className="sm:odd:border-r"
+                className={cn(gutter, divider)}
+                isNew={isNew(row)}
+                addLabel={panel}
               />
             ))}
           </dl>
@@ -277,7 +324,10 @@ export function ScenarioSummary({
               type="button"
               aria-expanded={showAssumptions}
               onClick={() => setShowAssumptions((open) => !open)}
-              className="px-default sm:px-comfortable hover:bg-paper flex min-h-[44px] w-full items-center justify-between gap-4 py-1 text-left"
+              className={cn(
+                gutter,
+                "hover:bg-paper flex min-h-[44px] w-full items-center justify-between gap-4 py-1 text-left"
+              )}
             >
               <span className="text-body-sm text-text-secondary">Assumptions</span>
               <span className="font-data text-text-primary sm:text-body-sm flex items-center gap-2 text-right text-[13px]">
@@ -286,7 +336,7 @@ export function ScenarioSummary({
               </span>
             </button>
             {showAssumptions && (
-              <dl className="border-border -mb-px grid border-t sm:grid-cols-2">
+              <dl className={cn("border-border -mb-px border-t", grid)}>
                 {assumptions.map((row) => (
                   <SummaryRow
                     key={row.key}
@@ -294,14 +344,17 @@ export function ScenarioSummary({
                     scenario={s}
                     onEdit={onEdit}
                     onOpenForm={onOpenForm}
-                    className="sm:odd:border-r"
+                    className={cn(gutter, divider)}
+                    isNew={isNew(row)}
                   />
                 ))}
               </dl>
             )}
           </div>
           {timeline.length > 0 && (
-            <div className="border-border px-default text-body-sm text-text-secondary sm:px-comfortable border-t py-3">
+            <div
+              className={cn("border-border text-body-sm text-text-secondary border-t py-3", gutter)}
+            >
               <span className="text-text-primary">
                 {timeline.length}-year income timeline, {timeline[0].year} to{" "}
                 {timeline[timeline.length - 1].year}.
@@ -321,14 +374,19 @@ export function ScenarioSummary({
           )}
           {missing.length > 0 && (
             <div
-              className="border-border px-default text-body-sm text-text-secondary sm:px-comfortable border-t py-3"
+              className={cn("border-border text-body-sm text-text-secondary border-t py-3", gutter)}
               data-ui="scenario-missing"
             >
               Still needed: {missing.map((m) => (FIELD_LABELS[m] ?? m).toLowerCase()).join(", ")}.
             </div>
           )}
           {onRun && (
-            <div className="border-border px-default py-default sm:px-comfortable flex flex-col gap-2 border-t sm:flex-row sm:items-center sm:justify-between">
+            <div
+              className={cn(
+                "border-border py-default flex flex-col gap-2 border-t sm:flex-row sm:items-center sm:justify-between",
+                gutter
+              )}
+            >
               {hint && <p className="text-caption text-text-tertiary">{hint}</p>}
               <button
                 type="button"
@@ -390,13 +448,19 @@ function SummaryRow({
   onEdit,
   onOpenForm,
   className,
+  isNew = false,
+  addLabel = false,
 }: {
   row: Row;
   scenario: ScenarioValues;
   onEdit?: (patch: Partial<ScenarioValues>) => void;
   onOpenForm?: () => void;
-  /** Column divider for the grid the row sits in. */
+  /** Side gutter and column divider for the grid the row sits in. */
   className?: string;
+  /** The value just changed: a sage wash and a "New" tag. */
+  isNew?: boolean;
+  /** An editable value still needed reads "Add" instead of "Not set". */
+  addLabel?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState("");
@@ -425,15 +489,26 @@ function SummaryRow({
     setEditing(false);
   }
 
+  const showAdd = addLabel && row.unset && canEdit;
+
   return (
     <div
       className={cn(
-        "px-default sm:px-comfortable border-border flex min-h-[44px] items-center justify-between gap-4 border-b py-1",
+        "border-border flex min-h-[44px] items-center justify-between gap-4 border-b py-1",
         className,
+        isNew && !editing && "bg-sage/10",
         editing && row.editState && "bg-paper flex-wrap gap-y-2 pt-3 pb-3"
       )}
+      data-new={isNew || undefined}
     >
-      <dt className="text-body-sm text-text-secondary">{row.label}</dt>
+      <dt className="text-body-sm text-text-secondary flex items-center gap-2">
+        {row.label}
+        {isNew && (
+          <span className="border-pine-mid/25 text-pine-mid rounded-full border bg-white px-1.5 font-mono text-[10px] leading-[16px] tracking-[0.1em] uppercase">
+            New
+          </span>
+        )}
+      </dt>
       <dd className={cn("m-0", editing && row.editState ? "basis-full text-left" : "text-right")}>
         {editing && row.editState ? (
           <StateEditor scenario={scenario} onEdit={onEdit} onDone={() => setEditing(false)} />
@@ -473,6 +548,15 @@ function SummaryRow({
               onBlur={commit}
             />
           </form>
+        ) : showAdd ? (
+          <button
+            type="button"
+            onClick={startEdit}
+            aria-label={`Add ${row.label.toLowerCase()}`}
+            className="text-body-sm text-pine hover:bg-paper-deep min-h-[36px] rounded-md px-2 font-semibold"
+          >
+            Add
+          </button>
         ) : canEdit ? (
           <button
             type="button"

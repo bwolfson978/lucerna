@@ -15,16 +15,52 @@
 const MESSAGE = "I'm 52, married, income $90,000 a year, $600k in my 401k, I want to retire at 60"
 
 /**
- * Drive one conversation to a result card and a what-if (same steps as ui-drift.spec.ts).
- * `onSummary` runs while the scenario summary waits for Run the numbers.
+ * The scenario once the conversation has captured it, waiting for Run the numbers: the
+ * summary card in the conversation (before the scenario panel), or the scenario panel
+ * (opened as a sheet on phones).
  */
-async function converse(page, onSummary = async () => {}) {
+async function scenarioReady(page, onCaptured = async () => {}) {
+  const hasPanel = (await page.getByTestId('scenario-panel').count()) > 0
+  if (!hasPanel) {
+    await page.getByTestId('scenario-summary').first().waitFor({ timeout: 30000 })
+    await onCaptured()
+    return page.getByTestId('scenario-summary')
+  }
+  // The panel (desktop) or the bar above the message box (phones) says it's ready.
+  await page.getByText(/Ready to run/).filter({ visible: true }).first().waitFor({ timeout: 30000 })
+  await onCaptured()
+  const bar = page.getByRole('button', { name: /^Review your scenario/ })
+  await bar.or(page.getByTestId('scenario-panel')).filter({ visible: true }).first().waitFor()
+  if (await bar.isVisible()) await bar.click()
+  const panel = page.getByTestId('scenario-panel').filter({ visible: true }).first()
+  await panel.getByRole('button', { name: 'Run the numbers' }).waitFor({ timeout: 30000 })
+  return panel
+}
+
+/** The full scenario form: "My numbers" before the scenario panel, its details view after. */
+async function openForm(page) {
+  const radio = page.getByRole('radio', { name: 'My numbers' })
+  const bar = page.getByRole('button', { name: /^Review your scenario/ })
+  const panel = page.getByTestId('scenario-panel')
+  await radio.or(bar).or(panel).filter({ visible: true }).first().waitFor()
+  if (await radio.count()) return radio.click()
+  if (await bar.isVisible()) await bar.click()
+  await page.getByRole('button', { name: /^Income in retirement/ }).filter({ visible: true }).first().click()
+  await page.getByRole('button', { name: /Back to conversation/ }).waitFor()
+  await page.evaluate(() => window.scrollTo(0, 0))
+}
+
+/**
+ * Drive one conversation to a result card and a what-if (same steps as ui-drift.spec.ts).
+ * `onSent` runs once the scenario is captured, before anything opens it; `onSummary`
+ * runs while the scenario waits for Run the numbers.
+ */
+async function converse(page, { onSent = async () => {}, onSummary = async () => {} } = {}) {
   await page.goto('/calculator')
   await page.getByLabel('Message').fill(MESSAGE)
   await page.getByRole('button', { name: 'Send' }).click()
-  const summary = page.getByTestId('scenario-summary')
+  const summary = await scenarioReady(page, onSent)
   const run = summary.getByRole('button', { name: 'Run the numbers' })
-  await run.waitFor({ timeout: 30000 })
   await onSummary(summary)
   await run.click()
   await page.getByTestId('mcp-app').first().waitFor({ timeout: 60000 })
@@ -213,12 +249,15 @@ export const flows = {
     paths: ['frontend/src/app/calculator/', 'frontend/src/components/calculator/', 'frontend/src/components/ui/'],
     async run(page, shot) {
       await page.goto('/calculator')
-      await page.getByRole('radio', { name: 'My numbers' }).click()
+      await openForm(page)
       await page.getByRole('heading', { level: 1 }).waitFor()
-      await shot('form', 'Calculator in form mode ("My numbers")', { fullPage: true })
+      await shot('form', 'The whole scenario as a form', { fullPage: true })
 
       // Margaret's numbers. Fields that only exist on one side are skipped there.
-      const fill = (label, value) => page.getByLabel(label, { exact: true }).first().fill(String(value))
+      const fill = async (label, value) => {
+        const field = page.getByLabel(label, { exact: true }).first()
+        if (await field.count()) await field.fill(String(value))
+      }
       await fill('Age', 63)
       await page.getByLabel('Filing status').click()
       await page.getByRole('option', { name: /Married/ }).click()
@@ -227,6 +266,7 @@ export const flows = {
       await fill('Retirement age', 73)
       await fill('Roth IRA/401(k) balance', 52000)
       await fill('Income growth rate (%)', 0)
+      await fill('Yearly income growth', 0)
       await fill('Yearly spend in retirement', 95000)
       const addSs = page.getByRole('button', { name: '+ Social Security' })
       if (await addSs.count()) {
@@ -240,8 +280,18 @@ export const flows = {
         await page.getByRole('button', { name: 'Done' }).click()
       }
       await shot('filled', "Form with Margaret's numbers", { fullPage: true })
-      await page.getByRole('button', { name: /run my scenario/i }).click()
-      await page.getByText('Estimated lifetime tax savings', { exact: false }).first().waitFor({ timeout: 90000 })
+      await page
+        .getByRole('button', { name: /run my scenario|run the numbers/i })
+        .filter({ visible: true })
+        .first()
+        .click()
+      // Results show under the form, or (with the scenario panel) in the conversation.
+      const inPage = page.getByText('Estimated lifetime tax savings', { exact: false }).first()
+      await inPage.or(page.getByTestId('mcp-app')).first().waitFor({ timeout: 90000 })
+      if (!(await inPage.isVisible())) {
+        await view(page, 0).getByRole('button', { name: 'See full results' }).click({ timeout: 60000 })
+        await page.getByTestId('results-hero').waitFor({ timeout: 30000 })
+      }
       await page.waitForLoadState('networkidle')
       await shot('results', "Results for Margaret's numbers", { fullPage: true })
     },
@@ -348,12 +398,29 @@ export const flows = {
     async run(page, shot) {
       await page.goto('/calculator')
       await page.getByLabel('Message').waitFor()
-      await shot('start', 'Calculator, conversation mode, before any message')
-      await converse(page, async (summary) => {
-        // Let a smooth scroll to the sent message settle before the viewport shot.
-        await page.waitForTimeout(1000)
-        await shot('sent', 'Right after sending the first message: what the screen shows')
-        await shot('summary', 'Scenario summary, waiting for Run the numbers', { element: summary })
+      await shot('start', 'Calculator before any message')
+      await converse(page, {
+        onSent: async () => {
+          // Let a smooth scroll to the sent message settle before the viewport shot.
+          await page.waitForTimeout(1000)
+          await shot('sent', 'Right after sending the first message: what the screen shows')
+        },
+        onSummary: async (summary) => {
+          await page.waitForTimeout(400)
+          await shot('summary', 'The captured scenario, waiting for Run the numbers', { element: summary })
+          // Desktop panels that fold away: the closed state, then open again to run it.
+          const hide = page.getByRole('button', { name: 'Hide your scenario' }).filter({ visible: true })
+          if (await hide.count()) {
+            await shot('panel-open', 'Scenario panel open beside the conversation')
+            await hide.click()
+            await page.waitForTimeout(600)
+            // Park the video cursor in the empty margin so it doesn't read as a badge.
+            await page.mouse.move(8, page.viewportSize().height - 8)
+            await shot('panel-hidden', 'Scenario panel folded away: the conversation centered')
+            await page.getByRole('button', { name: 'Show your scenario' }).click()
+            await page.waitForTimeout(600)
+          }
+        },
       })
       const result = view(page, 0).locator('[data-ui=result-card]')
       await result.waitFor({ timeout: 30000 })
@@ -413,7 +480,7 @@ export const flows = {
     async run(page, shot) {
       // The income preview and the additional settings in the form
       await page.goto('/calculator')
-      await page.getByRole('radio', { name: 'My numbers' }).click()
+      await openForm(page)
       await page.getByRole('heading', { level: 1 }).waitFor()
       const fill = (label, value) => page.getByLabel(label, { exact: true }).first().fill(String(value))
       await fill('Age', 40)
@@ -453,8 +520,7 @@ export const flows = {
       await page.goto('/calculator')
       await page.getByLabel('Message').fill(MESSAGE)
       await page.getByRole('button', { name: 'Send' }).click()
-      const summary = page.getByTestId('scenario-summary')
-      await summary.getByRole('button', { name: 'Run the numbers' }).waitFor({ timeout: 30000 })
+      const summary = await scenarioReady(page)
       await summary.getByRole('button', { name: /Assumptions/ }).click()
       await page.waitForTimeout(600)
       await shot('scenario-card', 'Scenario card with its assumptions open', { element: summary })

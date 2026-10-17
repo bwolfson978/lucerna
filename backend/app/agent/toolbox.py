@@ -51,9 +51,9 @@ STATUS = {
 }
 
 # Tools whose View this host doesn't mount because it has a richer first-party
-# equivalent: the scenario summary here edits the live draft and syncs with the form,
-# and is shown with `show` once the scenario is complete. Both use the same shared
-# component (ui/src/ScenarioSummary.tsx), so they look the same.
+# equivalent: the website's scenario panel shows the live draft and edits it in place,
+# marking what each change filled in. It uses the same shared component
+# (ui/src/ScenarioSummary.tsx), so it looks the same.
 RENDERED_NATIVELY = {"prepare_scenario"}
 
 SHOW_TOOL = {

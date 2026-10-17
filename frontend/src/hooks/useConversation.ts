@@ -28,8 +28,10 @@ interface UseConversationOptions {
   getDraft: () => ScenarioDraft;
   /** The assistant recorded new scenario values. */
   onDraft: (draft: ScenarioDraft) => void;
-  /** The assistant can't continue (limit, outage); the page should offer the form. */
+  /** The assistant can't continue (limit, outage); the scenario still runs without it. */
   onFallback?: (code: AgentErrorCode) => void;
+  /** The assistant ran the engine (a live turn or a replay). */
+  onResult?: (event: Extract<AgentEvent, { type: "result" }>) => void;
   /** Analytics label for events, e.g. "calculator" or "demo". */
   surface: string;
 }
@@ -44,6 +46,7 @@ export function useConversation({
   getDraft,
   onDraft,
   onFallback,
+  onResult,
   surface,
 }: UseConversationOptions) {
   const [state, dispatch] = useReducer(conversationReducer, INITIAL_CONVERSATION);
@@ -51,15 +54,15 @@ export function useConversation({
   const abortRef = useRef<AbortController | null>(null);
   const replayToken = useRef(0);
   const restored = useRef(false);
-  const callbacks = useRef({ getDraft, onDraft, onFallback });
+  const callbacks = useRef({ getDraft, onDraft, onFallback, onResult });
 
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
 
   useEffect(() => {
-    callbacks.current = { getDraft, onDraft, onFallback };
-  }, [getDraft, onDraft, onFallback]);
+    callbacks.current = { getDraft, onDraft, onFallback, onResult };
+  }, [getDraft, onDraft, onFallback, onResult]);
 
   // Restore this tab's conversation after mount (sessionStorage is client-only).
   useEffect(() => {
@@ -92,6 +95,7 @@ export function useConversation({
     (event: AgentEvent) => {
       dispatch({ type: "event", event });
       if (event.type === "draft") callbacks.current.onDraft(event.draft);
+      if (event.type === "result") callbacks.current.onResult?.(event);
       if (event.type === "part") {
         if (event.part.kind === "result_headline")
           posthog.capture("agent_result_shown", { surface });

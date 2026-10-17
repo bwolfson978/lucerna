@@ -1,7 +1,9 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/mocks/server";
 import { sampleOptimizationResult } from "@/test/fixtures/optimization-result";
+import type { AgentEvent } from "@/lib/agent/types";
+import { EMPTY_DRAFT } from "@/lib/scenario/draft";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ScenarioWorkspace } from "../ScenarioWorkspace";
 
@@ -61,6 +63,65 @@ it("re-runs a saved scenario from its link without saving a copy", async () => {
 
   await waitFor(() => expect(optimized).toHaveBeenCalled());
   await screen.findAllByText(/\$28,500/);
+  expect(screen.getByText("Saved scenario")).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Saved" })).toBeInTheDocument();
   expect(saves).toHaveLength(0);
   expect(screen.queryByText("Saving your analysis...")).not.toBeInTheDocument();
+});
+
+it("saves a run of the scenario to My scenarios", async () => {
+  sessionStorage.clear();
+  window.history.replaceState(null, "", "/calculator");
+  window.scrollTo = vi.fn() as unknown as typeof window.scrollTo;
+  Element.prototype.scrollIntoView = vi.fn();
+  sessionStorage.setItem(
+    "lucerna:draft:v1",
+    JSON.stringify({
+      ...EMPTY_DRAFT,
+      age: 52,
+      filing_status: "married_filing_jointly",
+      current_income: 90000,
+      traditional_balance: 600000,
+      retirement_age: 60,
+      timeline: [{ year: 2026, gross_income: 90000 }],
+    })
+  );
+  const saves: unknown[] = [];
+  const events: AgentEvent[] = [
+    {
+      type: "result",
+      result_id: "r_0000000001",
+      label: "Your scenario",
+      result: sampleOptimizationResult,
+    },
+    { type: "part", part: { kind: "result_headline", result_id: "r_0000000001" } },
+    { type: "done", messages: [{ role: "user", content: "run" }] },
+  ];
+  server.use(
+    http.post(
+      `${API}/api/agent`,
+      () =>
+        new HttpResponse(events.map((e) => `data: ${JSON.stringify(e)}\n\n`).join(""), {
+          headers: { "Content-Type": "text/event-stream" },
+        })
+    ),
+    http.post(`${API}/api/scenarios`, async ({ request }) => {
+      saves.push(await request.json());
+      return HttpResponse.json({ id: "new", name: "Copy" });
+    })
+  );
+
+  render(
+    <TooltipProvider>
+      <ScenarioWorkspace variant="calculator" />
+    </TooltipProvider>
+  );
+
+  const panel = screen.getByRole("complementary", { name: "Your scenario" });
+  await waitFor(() => expect(within(panel).getByText("Ready to run")).toBeInTheDocument());
+  fireEvent.click(within(panel).getByRole("button", { name: "Run the numbers" }));
+  const headline = await screen.findByTestId("result-headline");
+  await waitFor(() => expect(saves).toHaveLength(1));
+  fireEvent.click(within(headline).getByRole("button", { name: "See full results" }));
+  expect(await screen.findByText("Analysis saved")).toBeInTheDocument();
 });
