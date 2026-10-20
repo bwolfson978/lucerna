@@ -312,6 +312,70 @@ export const flows = {
     },
   },
 
+  retiree: {
+    title: 'Retired couple with no income from work',
+    paths: [
+      'frontend/src/components/calculator/InputForm',
+      'frontend/src/lib/scenario/',
+      'ui/src/ScenarioSummary',
+      'backend/app/tools/draft.py',
+      'backend/app/tools/models.py',
+    ],
+    async run(page, shot) {
+      // In the conversation: the scenario card with $0 income from work.
+      await page.goto('/calculator')
+      await waitForSample(page)
+      await page
+        .getByLabel('Message')
+        .fill("I'm 66, married, retired with no income, $2.6M in my IRA, $80k Roth, started drawing at 65, spend $130k")
+      await page.getByRole('button', { name: 'Send' }).click()
+      const card = page.getByTestId('scenario-summary').or(page.getByTestId('scenario-panel')).filter({ visible: true })
+      await page.getByText(/Ready to run|Still needed/).filter({ visible: true }).first().waitFor({ timeout: 30000 })
+      const bar = page.getByRole('button', { name: /^Review your scenario/ })
+      if (await bar.isVisible()) await bar.click()
+      await page.waitForTimeout(800)
+      await shot('summary', 'Scenario card for a retired couple with no income from work', { element: card.first() })
+
+      // The form: $0 income from work, then run it.
+      await page.goto('/calculator')
+      await openForm(page)
+      const fill = async (label, value) => {
+        const field = page.getByLabel(label, { exact: true }).first()
+        if (await field.count()) await field.fill(String(value))
+      }
+      await fill('Age', 66)
+      await page.getByLabel('Filing status').click()
+      await page.getByRole('option', { name: /Married/ }).click()
+      await fill('Current income', 0)
+      await fill('Earned income', 0)
+      await fill('Traditional IRA/401(k) balance', 2600000)
+      await fill('Retirement age', 65)
+      await fill('Roth IRA/401(k) balance', 80000)
+      await fill('Yearly spend in retirement', 130000)
+      const income = page.getByLabel(/^(Current income|Earned income)$/).first()
+      await income.scrollIntoViewIfNeeded()
+      await page.evaluate(() => window.scrollBy(0, -120))
+      await page.waitForTimeout(400)
+      await shot('form-filled', 'The income field with $0 entered')
+      await page
+        .getByRole('button', { name: /run my scenario|run the numbers/i })
+        .filter({ visible: true })
+        .first()
+        .click()
+      // Before: the form stops on the income field. After: the scenario runs.
+      const error = page.getByText(/^Enter your (current income|earned income)/).first()
+      const ran = page.getByTestId('mcp-app').or(page.getByText('Estimated lifetime tax savings')).first()
+      await error.or(ran).waitFor({ timeout: 90000 })
+      if (await error.isVisible()) {
+        await error.scrollIntoViewIfNeeded()
+        await page.evaluate(() => window.scrollBy(0, -200))
+      } else {
+        await page.waitForTimeout(3000)
+      }
+      await shot('form-run', 'After Run with $0 income from work')
+    },
+  },
+
   'aca-card': {
     title: 'ACA subsidy card in full results',
     paths: ['frontend/src/components/results/AcaSubsidyImpact', 'backend/app/engine/trace.py'],

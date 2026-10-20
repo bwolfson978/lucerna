@@ -69,8 +69,13 @@ class ScenarioUpdate(BaseModel):
     filing_status: FilingStatus | None = None
     current_income: float | None = Field(
         default=None,
-        gt=0,
-        description="Gross household income this year, in dollars (wages, pensions, Social Security, etc.)",
+        ge=0,
+        description=(
+            "Household earned income this year (wages and self-employment), in dollars. "
+            "0 when no one is working. Social Security, pensions and other lasting income "
+            "belong in income_sources, and retirement account withdrawals come from "
+            "retirement_spending, so neither is included here."
+        ),
     )
     current_income_end_age: int | None = Field(
         default=None,

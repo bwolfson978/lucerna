@@ -62,6 +62,48 @@ def test_describe_reports_missing_and_ready():
     assert core.describe_draft(ready_draft(), 2026)["ready_to_run"] is True
 
 
+RETIRED = ScenarioUpdate(
+    age=66,
+    filing_status="married_filing_jointly",
+    state="FL",
+    current_income=0,
+    traditional_balance=2_600_000,
+    roth_balance=80_000,
+    retirement_age=65,
+    retirement_spending=130_000,
+    income_sources=[
+        {"kind": "social_security", "owner": "you", "amount": 42_000, "start_age": 67},
+        {"kind": "social_security", "owner": "spouse", "amount": 30_000, "start_age": 67},
+    ],
+)
+
+
+def test_retiree_with_no_work_income_is_ready_and_runs():
+    """$0 income from work is a valid answer, not a missing one (bug review #5)."""
+    draft = core.draft_from_scenario(RETIRED, 2026)
+    described = core.describe_draft(draft, 2026)
+    assert described["missing_required"] == []
+    assert described["ready_to_run"] is True
+    assert draft.timeline[0].gross_income == 0
+    assert draft.timeline[1].social_security == 72_000
+
+    scenario, result = core.run_draft(draft)
+    assert scenario.timeline[0].gross_income == 0
+    # With no other income the first year has the most low-bracket room to convert.
+    first = result.yearly_detail[0]
+    assert first["conversion"] > 0
+    assert result.reasoning_trace is not None
+
+    # The stateless scenario round-trips without turning every $0 year into an income change.
+    assert "income_changes" not in core.scenario_from_draft(draft, 2026)
+
+
+def test_zero_work_income_is_accepted_by_the_tool_schema():
+    assert ScenarioUpdate(current_income=0).current_income == 0
+    with pytest.raises(ValueError):
+        ScenarioUpdate(current_income=-1)
+
+
 def test_income_changes_inside_and_directly_after_timeline():
     draft = core.apply_update(
         ready_draft(),

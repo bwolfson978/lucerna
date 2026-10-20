@@ -44,6 +44,8 @@ def extract_update(text: str) -> dict:
         update["filing_status"] = "single"
     if m := re.search(r"(?:retire|stop working|draw\w*)[^.\d]{0,40}?(?:at|age)\s+(\d{2})", lowered):
         update["retirement_age"] = int(m.group(1))
+    if re.search(r"\bno (?:work |current )?income\b|\bnot working\b", lowered):
+        update["current_income"] = 0
     for sentence in re.split(r"[.;\n]\s|,\s+", text):
         s = sentence.lower()
         amount = _money(re.sub(r"\b(?:at|age)\s+\d{2}\b", "", sentence))

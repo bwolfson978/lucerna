@@ -163,6 +163,23 @@ BUILD_CASES: list[tuple[str, dict]] = [
             retirement_spending=0,
         ),
     ),
+    (
+        "retired couple, no work income, Social Security later",
+        dict(
+            age=66,
+            filing_status="married_filing_jointly",
+            state="FL",
+            current_income=0,
+            traditional_balance=2600000,
+            roth_balance=80000,
+            retirement_age=65,
+            retirement_spending=130000,
+            income_sources=[
+                {"kind": "social_security", "owner": "you", "amount": 42000, "start_age": 67},
+                {"kind": "social_security", "owner": "spouse", "amount": 30000, "start_age": 67},
+            ],
+        ),
+    ),
 ]
 
 MISSING_CASES: list[tuple[str, dict]] = [
@@ -175,6 +192,16 @@ MISSING_CASES: list[tuple[str, dict]] = [
             filing_status="single",
             current_income=0,
             traditional_balance=1000,
+            retirement_age=60,
+        ),
+    ),
+    (
+        "zero traditional balance",
+        dict(
+            age=45,
+            filing_status="single",
+            current_income=50000,
+            traditional_balance=0,
             retirement_age=60,
         ),
     ),

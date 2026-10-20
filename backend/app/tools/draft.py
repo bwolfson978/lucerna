@@ -182,12 +182,7 @@ def sync_timeline(draft: ScenarioDraft, previous: ScenarioDraft | None, start_ye
         getattr(draft, f) == getattr(previous, f) for f in _TIMELINE_BASE_FIELDS
     ):
         return
-    if (
-        draft.age is None
-        or draft.retirement_age is None
-        or draft.current_income is None
-        or draft.current_income <= 0
-    ):
+    if draft.age is None or draft.retirement_age is None or draft.current_income is None:
         draft.timeline = []
         return
     fresh = projected_timeline(draft, start_year)
@@ -198,7 +193,7 @@ def missing_fields(draft: ScenarioDraft) -> list[str]:
     missing = []
     for name in REQUIRED_FIELDS:
         value = getattr(draft, name)
-        if value is None or (name in ("current_income", "traditional_balance") and value <= 0):
+        if value is None or (name == "traditional_balance" and value <= 0):
             missing.append(name)
     return missing
 

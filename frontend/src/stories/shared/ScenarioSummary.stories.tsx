@@ -45,6 +45,30 @@ export const WithIncomeSources: Story = {
   },
 };
 
+/** Already retired: no earned income, Social Security starting next year. */
+export const RetiredNoWorkIncome: Story = {
+  args: {
+    data: {
+      ...recordedScenario,
+      scenario: {
+        ...recordedScenario.scenario,
+        age: 66,
+        filing_status: "married_filing_jointly",
+        current_income: 0,
+        traditional_balance: 2600000,
+        roth_balance: 80000,
+        retirement_age: 65,
+        retirement_spending: 130000,
+        state: "FL",
+        income_sources: [
+          { kind: "social_security", owner: "you", amount: 42000, start_age: 67 },
+          { kind: "social_security", owner: "spouse", amount: 30000, start_age: 67 },
+        ],
+      },
+    },
+  },
+};
+
 export const StillNeedsInputs: Story = {
   args: { missing: ["age", "retirement_age"] },
 };

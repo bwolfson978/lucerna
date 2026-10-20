@@ -132,12 +132,7 @@ export function syncTimeline(
     )
   )
     return draft;
-  if (
-    draft.age == null ||
-    draft.retirement_age == null ||
-    draft.current_income == null ||
-    draft.current_income <= 0
-  ) {
+  if (draft.age == null || draft.retirement_age == null || draft.current_income == null) {
     return { ...draft, timeline: [] };
   }
   const fresh = projectedTimeline(draft, startYear);
@@ -189,8 +184,7 @@ export function missingFields(draft: ScenarioDraft): RequiredField[] {
   return REQUIRED_FIELDS.filter((name) => {
     const value = draft[name];
     if (value == null) return true;
-    if ((name === "current_income" || name === "traditional_balance") && (value as number) <= 0)
-      return true;
+    if (name === "traditional_balance" && (value as number) <= 0) return true;
     return false;
   });
 }
