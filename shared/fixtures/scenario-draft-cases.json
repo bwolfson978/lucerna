@@ -4043,6 +4043,324 @@
         "discount_rate": 0.05,
         "inflation_rate": 0.025
       }
+    },
+    {
+      "name": "retired couple, no work income, Social Security later",
+      "start_year": 2026,
+      "draft": {
+        "age": 66,
+        "filing_status": "married_filing_jointly",
+        "state": "FL",
+        "current_income": 0,
+        "traditional_balance": 2600000,
+        "roth_balance": 80000,
+        "retirement_age": 65,
+        "retirement_spending": 130000,
+        "income_sources": [
+          {
+            "kind": "social_security",
+            "owner": "you",
+            "amount": 42000,
+            "start_age": 67
+          },
+          {
+            "kind": "social_security",
+            "owner": "spouse",
+            "amount": 30000,
+            "start_age": 67
+          }
+        ]
+      },
+      "timeline": [
+        {
+          "year": 2026,
+          "gross_income": 0.0
+        },
+        {
+          "year": 2027,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2028,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2029,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2030,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2031,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2032,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2033,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2034,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2035,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2036,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2037,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2038,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2039,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2040,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2041,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2042,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2043,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2044,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2045,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2046,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2047,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2048,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2049,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        },
+        {
+          "year": 2050,
+          "gross_income": 72000.0,
+          "social_security": 72000.0
+        }
+      ],
+      "scenario": {
+        "age": 66,
+        "filing_status": "married_filing_jointly",
+        "timeline": [
+          {
+            "year": 2026,
+            "gross_income": 0.0,
+            "notes": ""
+          },
+          {
+            "year": 2027,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2028,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2029,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2030,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2031,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2032,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2033,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2034,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2035,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2036,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2037,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2038,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2039,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2040,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2041,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2042,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2043,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2044,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2045,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2046,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2047,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2048,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2049,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          },
+          {
+            "year": 2050,
+            "gross_income": 72000.0,
+            "notes": "",
+            "social_security": 72000.0
+          }
+        ],
+        "traditional_ira_balance": 2600000.0,
+        "roth_ira_balance": 80000.0,
+        "drawdown_start_age": 65,
+        "default_drawdown": 130000.0,
+        "planning_horizon_age": 90,
+        "annual_growth_rate": 0.07,
+        "discount_rate": 0.05,
+        "inflation_rate": 0.025,
+        "state": "FL"
+      }
     }
   ],
   "missing": [
@@ -4078,8 +4396,19 @@
         "traditional_balance": 1000,
         "retirement_age": 60
       },
+      "missing": []
+    },
+    {
+      "name": "zero traditional balance",
+      "draft": {
+        "age": 45,
+        "filing_status": "single",
+        "current_income": 50000,
+        "traditional_balance": 0,
+        "retirement_age": 60
+      },
       "missing": [
-        "current_income"
+        "traditional_balance"
       ]
     }
   ]

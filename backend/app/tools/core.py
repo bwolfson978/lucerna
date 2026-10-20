@@ -130,7 +130,11 @@ def scenario_from_draft(draft: ScenarioDraft, start_year: int) -> dict:
     if not scenario.get("income_sources"):
         scenario.pop("income_sources", None)
     projected: dict[int, float] = {}
-    if draft.age is not None and draft.retirement_age is not None and draft.current_income:
+    if (
+        draft.age is not None
+        and draft.retirement_age is not None
+        and draft.current_income is not None
+    ):
         projected = {row.year: row.gross_income for row in projected_timeline(draft, start_year)}
     changes = []
     for row in draft.timeline:

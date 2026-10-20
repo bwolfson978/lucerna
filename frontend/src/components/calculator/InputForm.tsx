@@ -174,8 +174,7 @@ export function InputForm({
     if (age == null) errs.age = "Enter your age";
     else if (age < 0 || age > 120) errs.age = "Age must be between 0 and 120";
     if (filingStatus == null) errs.filingStatus = "Select your filing status";
-    if (currentIncome == null || currentIncome <= 0)
-      errs.currentIncome = "Enter your current income";
+    if (currentIncome == null) errs.currentIncome = "Enter your income from work, or 0";
     if (traditionalBalance == null || traditionalBalance <= 0)
       errs.traditionalBalance = "Enter your traditional IRA/401(k) balance";
     if (drawdownStartAge == null) errs.retirementAge = "Enter your retirement age";
@@ -240,13 +239,13 @@ export function InputForm({
           ref={(el) => {
             fieldRefs.current.currentIncome = el;
           }}
-          label="Current income"
+          label="Income from work"
           value={currentIncome ?? ""}
           placeholder="e.g. 85,000"
           min={0}
           required
           error={errors.currentIncome}
-          helper="Taxable income this year, before tax"
+          helper="Wages or self-employment this year, before tax. Enter 0 if retired."
           onChange={(v) => patch({ current_income: v })}
         />
         <NumericField
@@ -361,7 +360,7 @@ export function InputForm({
             ref={(el) => {
               fieldRefs.current.currentIncomeEndAge = el;
             }}
-            label="Current income ends at age"
+            label="Income from work ends at age"
             value={currentIncomeEndAge ?? ""}
             placeholder={
               age != null && drawdownStartAge != null && drawdownStartAge > age
