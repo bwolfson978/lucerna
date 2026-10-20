@@ -357,12 +357,17 @@ export const flows = {
         .filter({ visible: true })
         .first()
         .click()
-      await page.waitForTimeout(1500)
-      const income = page.getByLabel(/^(Current income|Income from work)$/).first()
-      await income.scrollIntoViewIfNeeded()
-      await page.evaluate(() => window.scrollBy(0, -160))
-      await page.waitForTimeout(400)
-      await shot('form-run', 'Form after Run with $0 income from work')
+      // Before: the form stops on the income field. After: the scenario runs.
+      const error = page.getByText(/^Enter your (current income|income from work)/).first()
+      const ran = page.getByTestId('mcp-app').or(page.getByText('Estimated lifetime tax savings')).first()
+      await error.or(ran).waitFor({ timeout: 90000 })
+      if (await error.isVisible()) {
+        await error.scrollIntoViewIfNeeded()
+        await page.evaluate(() => window.scrollBy(0, -200))
+      } else {
+        await page.waitForTimeout(3000)
+      }
+      await shot('form-run', 'After Run with $0 income from work')
     },
   },
 
