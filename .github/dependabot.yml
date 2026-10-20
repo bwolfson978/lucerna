@@ -1,0 +1,39 @@
+# Keeps the PostHog SDKs current (PostHog's SDK health page flags old versions).
+# Scoped to PostHog packages only. Each ecosystem gets one grouped PR a week,
+# and a release must be 3 days old before Dependabot proposes it, the safety
+# window PostHog recommends after the Shai-Hulud npm attack:
+# https://posthog.com/docs/health-checks/keeping-sdks-current
+# Green PRs merge themselves via .github/workflows/dependabot-auto-merge.yml.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+    allow:
+      - dependency-name: posthog-js
+      - dependency-name: posthog-node
+      - dependency-name: '@posthog/*'
+    groups:
+      posthog:
+        patterns: ['*']
+    commit-message:
+      prefix: deps
+
+  # posthog stays an exact pin (posthog.mcp is beta); Dependabot moves the pin
+  # and the backend tests exercise the MCP analytics instrumentation.
+  - package-ecosystem: pip
+    directory: /backend
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+    allow:
+      - dependency-name: posthog
+    groups:
+      posthog:
+        patterns: ['*']
+    commit-message:
+      prefix: deps

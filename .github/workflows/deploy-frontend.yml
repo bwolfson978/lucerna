@@ -8,6 +8,9 @@ on:
       # Shared cards and theme the frontend imports (also built into the MCP Views).
       - 'ui/**'
       - '.github/workflows/deploy-frontend.yml'
+  # Dependabot auto-merges (dependabot-auto-merge.yml) dispatch this, since a
+  # merge made with GITHUB_TOKEN does not fire the push trigger.
+  workflow_dispatch:
 
 jobs:
   test:
