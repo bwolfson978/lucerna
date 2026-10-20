@@ -352,6 +352,11 @@ export const flows = {
       await fill('Retirement age', 65)
       await fill('Roth IRA/401(k) balance', 80000)
       await fill('Yearly spend in retirement', 130000)
+      const income = page.getByLabel(/^(Current income|Earned income)$/).first()
+      await income.scrollIntoViewIfNeeded()
+      await page.evaluate(() => window.scrollBy(0, -120))
+      await page.waitForTimeout(400)
+      await shot('form-filled', 'The income field with $0 entered')
       await page
         .getByRole('button', { name: /run my scenario|run the numbers/i })
         .filter({ visible: true })
