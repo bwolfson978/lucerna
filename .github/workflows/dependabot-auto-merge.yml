@@ -1,0 +1,67 @@
+name: Dependabot auto-merge
+
+# Merges Dependabot's PostHog SDK PRs (see .github/dependabot.yml) once the
+# Tests workflow passes on them, then deploys whatever they touched. Major
+# version bumps are left open for a human to review.
+#
+# Merging with GITHUB_TOKEN does not fire push triggers, so this workflow
+# dispatches Deploy Frontend / Deploy Backend itself.
+
+on:
+  workflow_run:
+    workflows: [Tests]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  merge:
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.actor.login == 'dependabot[bot]' &&
+      startsWith(github.event.workflow_run.head_branch, 'dependabot/')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      BRANCH: ${{ github.event.workflow_run.head_branch }}
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - name: Find the PR
+        id: pr
+        run: |
+          pr=$(gh pr list --state open --head "$BRANCH" --json number,author,headRefOid \
+            --jq ".[] | select(.author.login == \"app/dependabot\" and .headRefOid == \"$HEAD_SHA\") | .number")
+          if [ -z "$pr" ]; then
+            echo "No open Dependabot PR at $HEAD_SHA on $BRANCH (new commits or already closed); skipping."
+            exit 0
+          fi
+          echo "number=$pr" >> "$GITHUB_OUTPUT"
+
+      - name: Skip major version bumps
+        id: check
+        if: steps.pr.outputs.number
+        run: |
+          # Dependabot lists each update's semver level in its commit message.
+          msg=$(gh api "repos/$GH_REPO/commits/$HEAD_SHA" --jq .commit.message)
+          if grep -q 'update-type: version-update:semver-major' <<<"$msg"; then
+            echo "Major version bump; leaving PR #${{ steps.pr.outputs.number }} for review."
+            gh pr comment "${{ steps.pr.outputs.number }}" --body "This includes a major version bump, so it was not auto-merged. Review the changelog before merging."
+            exit 0
+          fi
+          echo "ok=true" >> "$GITHUB_OUTPUT"
+
+      - name: Merge
+        if: steps.check.outputs.ok
+        run: gh pr merge "${{ steps.pr.outputs.number }}" --squash --match-head-commit "$HEAD_SHA"
+
+      - name: Deploy what changed
+        if: steps.check.outputs.ok
+        run: |
+          files=$(gh pr view "${{ steps.pr.outputs.number }}" --json files --jq '.files[].path')
+          if grep -q '^frontend/' <<<"$files"; then gh workflow run deploy-frontend.yml --ref master; fi
+          if grep -q '^backend/' <<<"$files"; then gh workflow run deploy-backend.yml --ref master; fi

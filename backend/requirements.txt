@@ -10,4 +10,4 @@ mcp>=1.28,<2  # 2.x renamed FastMCP and changed APIs
 asyncpg
 PyJWT[crypto]
 httpx
-posthog==7.69.0  # posthog.mcp (MCP Analytics) is in beta: pinned per PostHog docs
+posthog==7.73.0  # posthog.mcp (MCP Analytics) is in beta: pinned per PostHog docs
