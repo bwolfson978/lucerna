@@ -347,7 +347,7 @@ export const flows = {
       await page.getByLabel('Filing status').click()
       await page.getByRole('option', { name: /Married/ }).click()
       await fill('Current income', 0)
-      await fill('Income from work', 0)
+      await fill('Earned income', 0)
       await fill('Traditional IRA/401(k) balance', 2600000)
       await fill('Retirement age', 65)
       await fill('Roth IRA/401(k) balance', 80000)
@@ -358,7 +358,7 @@ export const flows = {
         .first()
         .click()
       // Before: the form stops on the income field. After: the scenario runs.
-      const error = page.getByText(/^Enter your (current income|income from work)/).first()
+      const error = page.getByText(/^Enter your (current income|earned income)/).first()
       const ran = page.getByTestId('mcp-app').or(page.getByText('Estimated lifetime tax savings')).first()
       await error.or(ran).waitFor({ timeout: 90000 })
       if (await error.isVisible()) {

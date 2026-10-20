@@ -22,7 +22,7 @@ interface IncomePreviewChartProps {
 type Segment = "base" | IncomeKind | "accounts";
 const STACK: Segment[] = ["base", "social_security", "pension", "other", "accounts"];
 const LEGEND: Record<Segment, string> = {
-  base: "Income from work",
+  base: "Earned income",
   social_security: "Social Security",
   pension: "Pension",
   other: "Other income",

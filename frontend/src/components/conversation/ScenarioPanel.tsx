@@ -220,7 +220,7 @@ function MoreDetails({
       detail:
         sources > 0
           ? `${sources} ${sources === 1 ? "source" : "sources"} added`
-          : "Social Security, pensions and other income",
+          : "Social Security, pensions, rent and other income",
     },
     {
       section: "health",

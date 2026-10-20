@@ -138,7 +138,7 @@ describe("InputForm", () => {
     fireEvent.change(screen.getByLabelText("Filing status"), {
       target: { value: "single" },
     });
-    fireEvent.change(screen.getByLabelText("Income from work"), {
+    fireEvent.change(screen.getByLabelText("Earned income"), {
       target: { value: "100000" },
     });
     fireEvent.change(screen.getByLabelText("Traditional IRA/401(k) balance"), {
@@ -245,7 +245,7 @@ describe("InputForm", () => {
     fireEvent.click(screen.getByTestId("simulate-edit-notes"));
 
     // Change income — should regenerate but preserve pinned year
-    const incomeInput = screen.getByLabelText("Income from work");
+    const incomeInput = screen.getByLabelText("Earned income");
     fireEvent.change(incomeInput, { target: { value: "120000" } });
 
     // The year with notes should still show notes
@@ -264,7 +264,7 @@ describe("InputForm", () => {
     // All five Tier-1 required fields should flag their own error
     expect(screen.getByText("Enter your age")).toBeInTheDocument();
     expect(screen.getByText("Select your filing status")).toBeInTheDocument();
-    expect(screen.getByText("Enter your income from work, or 0")).toBeInTheDocument();
+    expect(screen.getByText("Enter your earned income, or 0")).toBeInTheDocument();
     expect(screen.getByText("Enter your traditional IRA/401(k) balance")).toBeInTheDocument();
     expect(screen.getByText("Enter your retirement age")).toBeInTheDocument();
     expect(onSubmit).not.toHaveBeenCalled();
@@ -275,7 +275,7 @@ describe("InputForm", () => {
 
     const age = screen.getByLabelText("Age") as HTMLInputElement;
     const filing = screen.getByLabelText("Filing status") as HTMLSelectElement;
-    const income = screen.getByLabelText("Income from work") as HTMLInputElement;
+    const income = screen.getByLabelText("Earned income") as HTMLInputElement;
     const balance = screen.getByLabelText("Traditional IRA/401(k) balance") as HTMLInputElement;
     const retAge = screen.getByLabelText("Retirement age") as HTMLInputElement;
 
@@ -311,7 +311,7 @@ describe("InputForm", () => {
     // Tier 1 — personal data the user must supply
     expect(hasRequiredIndicator("Age")).toBe(true);
     expect(hasRequiredIndicator("Filing status")).toBe(true);
-    expect(hasRequiredIndicator("Income from work")).toBe(true);
+    expect(hasRequiredIndicator("Earned income")).toBe(true);
     expect(hasRequiredIndicator("Traditional IRA/401(k) balance")).toBe(true);
     expect(hasRequiredIndicator("Retirement age")).toBe(true);
 
@@ -351,7 +351,7 @@ describe("InputForm", () => {
       target: { value: "single" },
     });
     fireEvent.click(screen.getByRole("button", { name: /run my scenario/i }));
-    expect(document.activeElement).toBe(screen.getByLabelText("Income from work"));
+    expect(document.activeElement).toBe(screen.getByLabelText("Earned income"));
 
     expect(onSubmit).not.toHaveBeenCalled();
   });
@@ -365,7 +365,7 @@ describe("InputForm", () => {
     fireEvent.change(screen.getByLabelText("Retirement age"), {
       target: { value: "65" },
     });
-    fireEvent.change(screen.getByLabelText("Income from work"), {
+    fireEvent.change(screen.getByLabelText("Earned income"), {
       target: { value: "50000" },
     });
     fireEvent.change(screen.getByLabelText("Traditional IRA/401(k) balance"), {
@@ -394,7 +394,7 @@ describe("InputForm", () => {
     fireEvent.change(screen.getByLabelText("Retirement age"), {
       target: { value: "65" },
     });
-    fireEvent.change(screen.getByLabelText("Income from work"), {
+    fireEvent.change(screen.getByLabelText("Earned income"), {
       target: { value: "50000" },
     });
     fireEvent.change(screen.getByLabelText("Traditional IRA/401(k) balance"), {
@@ -423,13 +423,13 @@ describe("InputForm", () => {
       target: { value: "married_filing_jointly" },
     });
     fireEvent.change(screen.getByLabelText("Retirement age"), { target: { value: "65" } });
-    fireEvent.change(screen.getByLabelText("Income from work"), { target: { value: "0" } });
+    fireEvent.change(screen.getByLabelText("Earned income"), { target: { value: "0" } });
     fireEvent.change(screen.getByLabelText("Traditional IRA/401(k) balance"), {
       target: { value: "2600000" },
     });
 
     fireEvent.click(screen.getByRole("button", { name: /run my scenario/i }));
-    expect(screen.queryByText("Enter your income from work, or 0")).not.toBeInTheDocument();
+    expect(screen.queryByText("Enter your earned income, or 0")).not.toBeInTheDocument();
     expect(onSubmit).toHaveBeenCalledTimes(1);
     const input = onSubmit.mock.calls[0][0];
     expect(input.timeline[0].gross_income).toBe(0);
@@ -458,7 +458,7 @@ describe("InputForm", () => {
     it("stops current income at the age given", () => {
       renderInputForm({ onSubmit });
       fillBasicInputs();
-      fireEvent.change(screen.getByLabelText("Income from work ends at age"), {
+      fireEvent.change(screen.getByLabelText("Earned income ends at age"), {
         target: { value: "40" },
       });
       expect(screen.getByTestId(`year-${yearAt(40)}`).textContent).not.toMatch(/^0 /);

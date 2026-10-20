@@ -71,7 +71,7 @@ class ScenarioUpdate(BaseModel):
         default=None,
         ge=0,
         description=(
-            "Household income from work this year (wages and self-employment), in dollars. "
+            "Household earned income this year (wages and self-employment), in dollars. "
             "0 when no one is working. Social Security, pensions and other lasting income "
             "belong in income_sources, and retirement account withdrawals come from "
             "retirement_spending, so neither is included here."

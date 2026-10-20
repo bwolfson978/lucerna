@@ -45,7 +45,7 @@ export const WithIncomeSources: Story = {
   },
 };
 
-/** Already retired: no income from work, Social Security starting next year. */
+/** Already retired: no earned income, Social Security starting next year. */
 export const RetiredNoWorkIncome: Story = {
   args: {
     data: {

@@ -38,8 +38,8 @@ or say the analysis doesn't cover it.
 
 INTAKE = """\
 <gathering_inputs>
-Required before running: age, filing status (single or married filing jointly), income \
-from work this year (0 if retired), traditional IRA/401(k) balance, and the age they start drawing on retirement \
+Required before running: age, filing status (single or married filing jointly), earned \
+income this year (0 if retired), traditional IRA/401(k) balance, and the age they start drawing on retirement \
 accounts (retirement_age). Everything else has a sensible default.
 - The tools are stateless. Each call takes the whole scenario: start from the `scenario` \
 returned by your last tool call (or the latest <scenario_state>), merge in what the user just \

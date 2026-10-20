@@ -75,7 +75,7 @@ const ASSUMPTION_KEYS = new Set(["growth", "horizon", "return", "inflation"]);
 export const FIELD_LABELS: Record<string, string> = {
   age: "Age",
   filing_status: "Filing status",
-  current_income: "Work income this year",
+  current_income: "Earned income this year",
   traditional_balance: "Traditional IRA/401(k) balance",
   retirement_age: "Age you start drawing",
 };
@@ -102,7 +102,7 @@ function buildRows(s: ScenarioValues): Row[] {
     },
     {
       key: "income",
-      label: "Work income this year",
+      label: "Earned income this year",
       value:
         s.current_income == null
           ? notSet
@@ -410,7 +410,7 @@ function recap(s: ScenarioValues): string {
   return [
     s.age != null && `Age ${s.age}`,
     filingStatusLabel(s.filing_status),
-    s.current_income != null && `${formatCurrency(s.current_income)} work income`,
+    s.current_income != null && `${formatCurrency(s.current_income)} earned income`,
     s.traditional_balance != null && `${formatCurrency(s.traditional_balance)} traditional`,
     s.retirement_age != null && `drawing at ${s.retirement_age}`,
   ]
