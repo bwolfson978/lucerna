@@ -142,6 +142,26 @@ export const flows = {
     },
   },
 
+  'landing-hero': {
+    title: 'Landing hero: life situations on a timeline',
+    paths: ['frontend/src/app/page.tsx', 'frontend/src/components/landing/HeroWindowTimeline', 'shared/fixtures/landing-situations'],
+    async run(page, shot) {
+      await page.goto('/')
+      await page.getByRole('heading', { level: 1 }).waitFor()
+      const hero = page.locator('main section').first()
+      await page.waitForTimeout(2500)
+      await shot('hero', 'Hero, first screen', { element: hero })
+      const chip = page.getByRole('button', { name: 'Career break', exact: true })
+      if (await chip.count()) {
+        // Let the auto-advance step once, as a visitor would see it, then pick one.
+        await page.waitForTimeout(7000)
+        await chip.click()
+        await page.waitForTimeout(1500)
+        await shot('career-break', 'Hero after picking Career break', { element: hero })
+      }
+    },
+  },
+
   'example-situations': {
     title: 'Example life situations named across the site',
     paths: [

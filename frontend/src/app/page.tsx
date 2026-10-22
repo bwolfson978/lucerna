@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Header } from "@/components/common/Header";
 import { PageFooter } from "@/components/common/PageFooter";
 import { Reveal } from "@/components/common/Reveal";
-import { HeroConversionDiagram } from "@/components/landing/HeroConversionDiagram";
+import { HeroWindowTimeline } from "@/components/landing/HeroWindowTimeline";
 import { IncomeWindowMap } from "@/components/landing/IncomeWindowMap";
 import { BracketFiller } from "@/components/landing/BracketFiller";
 import { LandingDemo } from "@/components/landing/LandingDemo";
@@ -13,76 +13,36 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-const WINDOW_YEARS = [
-  "Early retirement",
-  "Before Social Security and RMDs",
-  "Career break",
-  "Part-time or consulting years",
-];
-
 export default function Home() {
   return (
     <>
       <Header />
       <main className="flex flex-col">
         {/* Hero */}
-        <section className="relative overflow-hidden px-default pb-16 pt-14 sm:px-7 lg:pb-[70px] lg:pt-24">
+        <section className="relative overflow-hidden px-default pb-16 pt-14 sm:px-7 lg:pb-[90px] lg:pt-20">
           <div className="hero-wash" />
-          <div className="relative mx-auto grid max-w-wide grid-cols-1 items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
-            <div>
-              <Reveal className="eyebrow-pine mb-5">Roth conversion planning</Reveal>
-              <Reveal as="h1" delay={1} className="display-heading mb-6 text-display-xl">
-                Model. Optimize.
+          <div className="relative mx-auto max-w-wide">
+            <div className="mx-auto max-w-[820px] text-center">
+              <Reveal className="eyebrow-pine mb-5">For the in-between years</Reveal>
+              <Reveal as="h1" delay={1} className="display-heading mb-5 text-display-xl">
+                Your in-between years
                 <br />
-                <em>Convert.</em>
+                <em>are a tax opportunity.</em>
               </Reveal>
               <Reveal
                 as="p"
                 delay={2}
-                className="max-w-[620px] text-[1.08rem] leading-[1.65] text-text-secondary sm:text-[1.25rem]"
+                className="mx-auto max-w-[640px] text-[1.08rem] leading-[1.65] text-text-secondary sm:text-[1.2rem]"
               >
-                Map your retirement income, find the low-tax window before required minimum
-                distributions begin, and build a year-by-year conversion schedule for the accounts
-                you already have.
-              </Reveal>
-              <Reveal delay={3} className="mt-8 flex flex-col gap-3.5 sm:flex-row sm:flex-wrap">
-                <Link href="/calculator" className="btn-dark">
-                  Discuss your numbers
-                </Link>
-                <Link href="/demo" className="btn-ghost">
-                  See an example
-                </Link>
-              </Reveal>
-              <Reveal
-                delay={3}
-                className="mt-7 flex items-center gap-2.5 text-[14px] text-text-tertiary"
-              >
-                <span className="h-[7px] w-[7px] flex-none rounded-full bg-sage" />
-                Educational scenario modeling · Not tax or financial advice
+                Most lives have a few years when income dips. Converting to Roth in those years can
+                mean less tax over a lifetime. Pick a situation to see where the window falls.
               </Reveal>
             </div>
-            <Reveal delay={2}>
-              <HeroConversionDiagram />
+            <Reveal delay={3} className="mt-10">
+              <HeroWindowTimeline />
             </Reveal>
           </div>
         </section>
-
-        {/* Window-years strip */}
-        <div className="border-y border-border bg-paper-warm px-default py-8 sm:px-7">
-          <Reveal className="mx-auto flex max-w-wide flex-wrap items-center gap-3 sm:gap-[18px]">
-            <span className="mr-2 w-full text-[13px] font-semibold uppercase tracking-[0.08em] text-text-tertiary sm:w-auto">
-              For the in-between years
-            </span>
-            {WINDOW_YEARS.map((label) => (
-              <span
-                key={label}
-                className="rounded-full border border-border bg-white px-5 py-2 text-[14.5px] font-medium text-text-secondary transition-colors duration-200 hover:border-pine-mid hover:text-pine"
-              >
-                {label}
-              </span>
-            ))}
-          </Reveal>
-        </div>
 
         {/* 01: Find the window */}
         <section id="how" className="px-default py-[72px] sm:px-7 lg:py-[110px]">
