@@ -221,10 +221,10 @@ export function MethodologyPageClient() {
                 </P>
                 <SubHeading>Why your income trajectory matters</SubHeading>
                 <P>
-                  A career break, sabbatical, early retirement, or transition between jobs creates
-                  low-income years with abundant cheap bracket space. These windows are often the
-                  highest-value conversion opportunities in a lifetime. The multi-year view
-                  identifies them automatically.
+                  A career break, early retirement, part-time years, or a transition between jobs
+                  creates low-income years with abundant cheap bracket space. These windows are
+                  often the highest-value conversion opportunities in a lifetime. The multi-year
+                  view identifies them automatically.
                 </P>
               </MethodologySection>
 

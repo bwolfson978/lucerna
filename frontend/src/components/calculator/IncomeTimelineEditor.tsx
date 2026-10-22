@@ -233,7 +233,7 @@ export function IncomeTimelineEditor({
                 <input
                   type="text"
                   value={row.notes ?? ""}
-                  placeholder="Notes (e.g. sabbatical, startup, part-time)"
+                  placeholder="Notes (e.g. career break, startup, part-time)"
                   onChange={(e) => updateYear(index, "notes", e.target.value)}
                   className="w-full rounded-md border border-border/50 bg-transparent px-3 py-1.5 text-body-sm text-text-secondary transition-colors duration-300 placeholder:text-text-tertiary/50 focus:border-accent/50 focus:outline-none"
                 />

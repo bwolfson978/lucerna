@@ -44,7 +44,7 @@ test('the prepare_scenario View renders the shared scenario summary', async ({ p
     .locator('[data-ui=scenario-summary]')
   await expect(summary).toBeVisible({ timeout: 30000 })
   await expect(summary.getByText('California, then Arizona')).toBeVisible()
-  await expect(summary.getByText(/Sabbatical/)).toBeVisible()
+  await expect(summary.getByText(/Part-time year/)).toBeVisible()
   // This host accepts ui/message, so the complete scenario offers to run.
   await expect(summary.getByRole('button', { name: 'Run the numbers' })).toBeVisible()
 })

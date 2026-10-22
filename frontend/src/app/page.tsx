@@ -15,10 +15,9 @@ export const metadata: Metadata = {
 
 const WINDOW_YEARS = [
   "Early retirement",
-  "Low-income gap years",
-  "Pre-RMD decade",
-  "Sabbatical",
-  "Business sale",
+  "Before Social Security and RMDs",
+  "Career break or layoff",
+  "Part-time or consulting years",
 ];
 
 export default function Home() {

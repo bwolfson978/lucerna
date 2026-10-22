@@ -111,7 +111,7 @@ it("renders the scenario summary read-only or editable", () => {
   const onEdit = vi.fn();
   const { rerender } = render(<ScenarioSummary data={recorded} missing={["age"]} />);
   expect(screen.getByText("California, then Arizona")).toBeInTheDocument();
-  expect(screen.getByText(/Sabbatical/)).toBeInTheDocument();
+  expect(screen.getByText(/Part-time year/)).toBeInTheDocument();
   expect(screen.getByText("Still needed: age.")).toBeInTheDocument();
   // Read-only: nothing to edit, only the assumptions disclosure.
   expect(screen.getAllByRole("button").map((b) => b.getAttribute("aria-expanded"))).toEqual([

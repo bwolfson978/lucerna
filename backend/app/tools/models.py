@@ -22,7 +22,7 @@ class IncomeChange(BaseModel):
     note: str = Field(
         min_length=1,
         max_length=60,
-        description="Short reason shown in the timeline, e.g. 'Sabbatical' or 'Social Security starts'",
+        description="Short reason shown in the timeline, e.g. 'Career break' or 'Social Security starts'",
     )
     state: str | None = Field(
         default=None, description="Two-letter state code if they live somewhere else that year"
@@ -180,7 +180,7 @@ class ScenarioUpdate(BaseModel):
     income_changes: list[IncomeChange] | None = Field(
         default=None,
         description=(
-            "One-off income for a single year that differs from the projection: a sabbatical, "
+            "One-off income for a single year that differs from the projection: a career break, "
             "a bonus, a year of part-time work. Years must fall inside the timeline (this year "
             "until planning_horizon_age). Use income_sources for income that lasts."
         ),
