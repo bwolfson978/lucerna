@@ -142,6 +142,34 @@ export const flows = {
     },
   },
 
+  'example-situations': {
+    title: 'Example life situations named across the site',
+    paths: [
+      'frontend/src/app/page.tsx',
+      'frontend/src/app/about/',
+      'frontend/src/app/methodology/',
+      'frontend/src/components/connect/AssistantChatPreview',
+    ],
+    async run(page, shot) {
+      await page.goto('/')
+      const strip = page.getByText('For the in-between years', { exact: true }).locator('..')
+      await strip.scrollIntoViewIfNeeded()
+      await shot('landing-strip', 'Landing page: in-between years strip', { element: strip })
+      await page.goto('/about')
+      const about = page.locator('p', { hasText: 'in-between' }).first()
+      await about.scrollIntoViewIfNeeded()
+      await shot('about-paragraph', 'About page: who it is for', { element: about })
+      await page.goto('/methodology')
+      const why = page.getByText('Why your income trajectory matters', { exact: true }).locator('xpath=following-sibling::*[1]')
+      await why.scrollIntoViewIfNeeded()
+      await shot('methodology-trajectory', 'Methodology: why your income trajectory matters', { element: why })
+      await page.goto('/connect')
+      const chat = page.getByRole('figure', { name: /^Example chat/ })
+      await chat.scrollIntoViewIfNeeded()
+      await shot('connect-chat', 'Claude & ChatGPT page: example chat', { element: chat })
+    },
+  },
+
   'landing-margaret': {
     title: "Landing page: Margaret's schedule and spotlight",
     paths: ['frontend/src/components/landing/LandingDemo', 'backend/app/engine/demo.py'],
