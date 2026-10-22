@@ -41,7 +41,7 @@ export const SITUATIONS: Situation[] = [
   },
   {
     id: "before-social-security",
-    label: "Before Social Security and RMDs",
+    label: "Before Social Security",
     who: "A couple who just retired at 63",
     detail: "$1.4M in a 401(k). Social Security at 67, required withdrawals at 73.",
     events: [
@@ -52,7 +52,7 @@ export const SITUATIONS: Situation[] = [
   },
   {
     id: "part-time",
-    label: "Part-time or consulting years",
+    label: "Part-time work",
     who: "A couple consulting part-time from 58",
     detail: "$950K in 401(k)s, about $50K a year of consulting until 65.",
     events: [
@@ -166,6 +166,9 @@ export function HeroWindowTimeline() {
   const ticks: number[] = [];
   for (let a = Math.ceil(startAge / tickStep) * tickStep; a <= endAge; a += tickStep) ticks.push(a);
 
+  // Plot starts just under the lowest row of event labels.
+  const plotTop = (Math.max(...situation.events.map((e) => e.row)) + 1) * ROW_HEIGHT + 10;
+
   const gain = (result.after_tax_wealth_with / result.after_tax_wealth_without - 1) * 100;
 
   return (
@@ -175,9 +178,13 @@ export function HeroWindowTimeline() {
       onPointerLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
-      className="rounded-[20px] border border-border bg-white p-4 shadow-card sm:p-7"
+      className="rounded-[20px] border border-border bg-white p-3.5 shadow-card sm:p-7"
     >
-      <div role="group" aria-label="Life situation" className="flex flex-wrap justify-center gap-2">
+      <div
+        role="group"
+        aria-label="Life situation"
+        className="flex flex-wrap justify-center gap-1.5 sm:gap-2"
+      >
         {SITUATIONS.map((s) => {
           const on = s.id === situation.id;
           return (
@@ -190,7 +197,7 @@ export function HeroWindowTimeline() {
                 setSelected(s.id);
               }}
               className={cn(
-                "min-h-[44px] rounded-full border px-4 text-[14px] font-medium transition-colors duration-200 sm:px-[18px]",
+                "min-h-[40px] rounded-full border px-3.5 text-[13.5px] font-medium transition-colors duration-200 sm:min-h-[44px] sm:px-[18px] sm:text-[14px]",
                 on
                   ? "border-pine-deep bg-pine-deep text-[#f5f2ea]"
                   : "border-border bg-white text-text-secondary hover:border-pine-mid hover:text-pine"
@@ -202,16 +209,16 @@ export function HeroWindowTimeline() {
         })}
       </div>
 
-      <div className="mt-6 flex flex-wrap items-stretch gap-7">
+      <div className="mt-4 flex flex-wrap items-stretch gap-4 sm:mt-6 sm:gap-7">
         <div className="min-w-0 flex-[999_1_520px]">
-          <p className="mb-3.5 text-[14px] text-text-secondary">
+          <p className="mb-2.5 text-[13px] leading-snug text-text-secondary sm:mb-3.5 sm:text-[14px]">
             <strong className="text-text-primary">{situation.who}.</strong> {situation.detail}
           </p>
 
           <div
             role="img"
             aria-label={`${situation.label}: the optimizer converts between ages ${firstAge} and ${lastAge}, before required withdrawals begin.`}
-            className="relative h-[250px] sm:h-[300px]"
+            className="relative h-[200px] sm:h-[300px]"
           >
             {situation.events.map((e) => {
               const right = pct(e.age) > 70;
@@ -246,7 +253,11 @@ export function HeroWindowTimeline() {
             })}
 
             {/* Plot area below the event labels */}
-            <div className="absolute inset-x-0 bottom-[25px] top-[76px]" aria-hidden="true">
+            <div
+              className={cn("absolute inset-x-0 bottom-[25px]", MOVE)}
+              style={{ top: plotTop }}
+              aria-hidden="true"
+            >
               <div
                 className={cn("absolute inset-y-0 origin-left rounded-t-lg bg-sage/[0.14]", MOVE)}
                 style={{
@@ -297,7 +308,7 @@ export function HeroWindowTimeline() {
             ))}
           </div>
 
-          <div className="mt-2.5 flex flex-wrap gap-[18px] text-[12px] text-text-secondary">
+          <div className="mt-2.5 hidden flex-wrap gap-[18px] text-[12px] text-text-secondary sm:flex">
             <span className="inline-flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-sm bg-pine-mid" />
               Roth conversion, by year
@@ -309,14 +320,14 @@ export function HeroWindowTimeline() {
           </div>
         </div>
 
-        <div className="flex min-w-0 flex-[1_1_260px] flex-col gap-1.5 rounded-2xl border border-pine-mid/20 bg-pine-mid/[0.07] p-6">
+        <div className="flex min-w-0 flex-[1_1_260px] flex-col gap-1.5 rounded-2xl border border-pine-mid/20 bg-pine-mid/[0.07] p-4 sm:p-6">
           <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#3d5a4c]">
             Estimated lifetime tax savings
           </div>
-          <div className="mt-1 font-serif text-[46px] font-bold leading-[1.05] tracking-[-0.02em] text-pine-mid [font-variant-numeric:lining-nums_tabular-nums]">
+          <div className="mt-1 font-serif text-[38px] font-bold leading-[1.05] tracking-[-0.02em] text-pine-mid [font-variant-numeric:lining-nums_tabular-nums] sm:text-[46px]">
             {formatDollars(shownSavings)}
           </div>
-          <div className="my-3.5 h-px bg-pine-mid/20" />
+          <div className="my-2 h-px bg-pine-mid/20 sm:my-3.5" />
           <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#3d5a4c]">
             After-tax wealth
           </div>
@@ -343,7 +354,7 @@ export function HeroWindowTimeline() {
               +{gain.toFixed(1)}%
             </span>
           </div>
-          <div className="mt-auto flex flex-col gap-2.5 pt-5">
+          <div className="mt-auto flex flex-col gap-2 pt-3 sm:gap-2.5 sm:pt-5">
             <Link href="/calculator" className="btn-pill bg-pine text-[#f5f2ea] hover:bg-pine-deep">
               Try your own numbers
             </Link>
@@ -357,7 +368,7 @@ export function HeroWindowTimeline() {
         </div>
       </div>
 
-      <p className="mt-4 text-[12px] leading-normal text-text-tertiary">
+      <p className="mt-3 text-[11.5px] leading-snug text-text-tertiary sm:mt-4 sm:text-[12px] sm:leading-normal">
         Illustrative households, federal tax only, in today&apos;s dollars. Figures from the
         optimizer. Educational scenario modeling, not tax or financial advice.
       </p>

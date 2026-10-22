@@ -19,12 +19,16 @@ export default function Home() {
       <Header />
       <main className="flex flex-col">
         {/* Hero */}
-        <section className="relative overflow-hidden px-default pb-16 pt-14 sm:px-7 lg:pb-[90px] lg:pt-20">
+        <section className="relative overflow-hidden px-default pb-12 pt-8 sm:px-7 sm:pb-16 sm:pt-14 lg:pb-[90px] lg:pt-20">
           <div className="hero-wash" />
           <div className="relative mx-auto max-w-wide">
             <div className="mx-auto max-w-[980px] text-center">
-              <Reveal className="eyebrow-pine mb-5">For the in-between years</Reveal>
-              <Reveal as="h1" delay={1} className="display-heading mb-5 text-display-xl">
+              <Reveal className="eyebrow-pine mb-3 sm:mb-5">For the in-between years</Reveal>
+              <Reveal
+                as="h1"
+                delay={1}
+                className="display-heading mb-3 text-[2.1rem] leading-[1.08] sm:mb-5 sm:text-display-xl"
+              >
                 Your <span className="whitespace-nowrap">in-between</span> years
                 <br />
                 <em>are a tax opportunity.</em>
@@ -32,13 +36,16 @@ export default function Home() {
               <Reveal
                 as="p"
                 delay={2}
-                className="mx-auto max-w-[640px] text-[1.08rem] leading-[1.65] text-text-secondary sm:text-[1.2rem]"
+                className="mx-auto max-w-[640px] text-[1rem] leading-[1.55] text-text-secondary sm:text-[1.2rem] sm:leading-[1.65]"
               >
                 Most lives have a few years when income dips. Converting to Roth in those years can
-                mean less tax over a lifetime. Pick a situation to see where the window falls.
+                mean less tax over a lifetime.{" "}
+                <span className="hidden sm:inline">
+                  Pick a situation to see where the window falls.
+                </span>
               </Reveal>
             </div>
-            <Reveal delay={3} className="mt-10">
+            <Reveal delay={3} className="mt-6 sm:mt-10">
               <HeroWindowTimeline />
             </Reveal>
           </div>
