@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 const WINDOW_YEARS = [
   "Early retirement",
   "Before Social Security and RMDs",
-  "Career break or layoff",
+  "Career break",
   "Part-time or consulting years",
 ];
 
