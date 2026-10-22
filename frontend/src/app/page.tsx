@@ -22,10 +22,10 @@ export default function Home() {
         <section className="relative overflow-hidden px-default pb-16 pt-14 sm:px-7 lg:pb-[90px] lg:pt-20">
           <div className="hero-wash" />
           <div className="relative mx-auto max-w-wide">
-            <div className="mx-auto max-w-[820px] text-center">
+            <div className="mx-auto max-w-[980px] text-center">
               <Reveal className="eyebrow-pine mb-5">For the in-between years</Reveal>
               <Reveal as="h1" delay={1} className="display-heading mb-5 text-display-xl">
-                Your in-between years
+                Your <span className="whitespace-nowrap">in-between</span> years
                 <br />
                 <em>are a tax opportunity.</em>
               </Reveal>
