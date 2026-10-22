@@ -153,8 +153,8 @@ export const flows = {
       await shot('hero', 'Hero, first screen', { element: hero })
       const chip = page.getByRole('button', { name: 'Career break', exact: true })
       if (await chip.count()) {
-        // Let the auto-advance step once, as a visitor would see it, then pick one.
-        await page.waitForTimeout(7000)
+        // Let the auto-advance step twice, as a visitor would see it, then pick one.
+        await page.waitForTimeout(14000)
         await chip.click()
         await page.waitForTimeout(1500)
         await shot('career-break', 'Hero after picking Career break', { element: hero })
