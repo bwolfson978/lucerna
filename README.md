@@ -1,100 +1,141 @@
-# Lucerna
+# Roth Conversions Optimizer
 
-See your financial future clearly.
+Multi-year Roth conversion planning for the in-between years: sabbaticals, career changes, starting a business, and early retirement before required minimum distributions.
 
-A Roth conversion optimizer that helps people in income transitions make tax-smart decisions, with AI-powered explanations.
+- **Website:** https://www.rothconversionsoptimizer.com
+- **MCP server (Claude, ChatGPT, any MCP client):** https://mcp.rothconversionsoptimizer.com/mcp
 
-## Repo Structure
+People describe their situation in a conversation (or a form), and the app finds how much to convert to Roth each year so that lifetime taxes are lowest. Results show the schedule, the tax brackets each conversion fills, and the tradeoffs, in today's dollars. The same tools run inside Claude and ChatGPT through the MCP server.
+
+The codebase still uses the original project name, **Lucerna**, in package names, paths and docs.
+
+## How it works
+
+- **Deterministic engine, AI explanation.** The engine in `backend/app/engine/` does all the math: federal and state income tax, IRMAA, ACA premium credits, RMDs, Social Security and inflation. It produces a structured reasoning trace, and the model only turns that trace into plain English. The model never computes financial results.
+- **Optimizer.** A dynamic programming search over yearly conversion amounts (`dp.py`) finds the schedule with the highest after-tax wealth. When the user sets limits (a cap per year, a bracket ceiling), SLSQP (`optimizer.py`) solves the constrained version, and a bracket-fill curve (`curve_strategy.py`) checks the result.
+- **One tool surface.** The MCP server (`backend/app/mcp/`, tool logic in `backend/app/tools/`) is the only place tools are defined. The website's assistant is an MCP client of it, so the web app, Claude and ChatGPT all call the same tools.
+- **MCP Apps.** Result cards are MCP App Views owned by the server (`mcp-views/`, built into `backend/app/mcp/views/`). They are built from the same React components in `ui/` that the website renders natively.
+
+See [docs/agent-and-mcp.md](docs/agent-and-mcp.md) for the full agent and MCP design.
+
+## Architecture
 
 ```
-lucerna/
-├── frontend/          # Next.js 14+ (App Router) + TypeScript + Tailwind (→ Vercel)
-│   └── src/
-│       ├── components/    # calculator/, demo/, results/, methodology/, ui/, common/
-│       ├── lib/api/       # Backend API client
-│       ├── lib/types/     # Shared TypeScript types
-│       └── lib/utils/     # Formatting, constants
-├── backend/           # Python + FastAPI + Pydantic (→ Railway)
-│   └── app/
-│       ├── engine/        # Optimization engine (deterministic)
-│       │   ├── types.py       # Pydantic models (ScenarioInput, OptimizationResult)
-│       │   ├── tax.py         # Federal tax bracket calculator
-│       │   ├── state_tax.py   # State income tax rates
-│       │   ├── irmaa.py       # Medicare IRMAA surcharge calculator
-│       │   ├── aca.py         # ACA premium tax credit calculator
-│       │   ├── rmd.py         # Required minimum distribution calculator
-│       │   ├── dp.py          # 3D DP optimizer (primary engine)
-│       │   ├── heuristic.py   # Greedy bracket-fill initialization
-│       │   ├── optimizer.py   # scipy SLSQP multi-year optimizer (fallback)
-│       │   ├── trace.py       # Reasoning trace (engine → AI contract)
-│       │   └── demo.py        # Margaret demo scenario
-│       ├── api/           # FastAPI route handlers
-│       └── ai/            # System prompt + tool definitions
-├── e2e/               # Playwright end-to-end tests
-├── docs/
-│   ├── design-aesthetic.md    # Visual language, colors, typography, components
-│   ├── planning/              # Project brief, execution plan, input variables spec
-│   └── research/              # Market research, competitive analysis
-├── .github/workflows/
-│   ├── test.yml               # CI: backend → frontend → e2e
-│   ├── deploy-backend.yml     # Railway deploy
-│   └── deploy-frontend.yml    # Vercel deploy
-└── README.md
+                 ┌──────────────────────────┐
+ Browser ───────▶│ frontend/  Next.js       │  Vercel
+                 │ (App Router, Tailwind)   │
+                 └────────────┬─────────────┘
+                              │ REST + SSE (/api/*)
+                 ┌────────────▼─────────────┐
+ Claude ────────▶│ backend/  FastAPI        │  Railway
+ ChatGPT ───────▶│  /mcp     MCP server     │──▶ Anthropic API (website assistant)
+                 │  /api     web API, agent │──▶ Postgres (saved scenarios)
+                 │  engine   optimizer      │──▶ PostHog (analytics, feedback)
+                 └──────────────────────────┘
 ```
-
-## Tech Stack
 
 | Layer | Choice |
-|-------|--------|
-| Frontend | Next.js 14+ (App Router), TypeScript, Tailwind CSS |
-| Backend | Python, FastAPI, Pydantic |
-| AI | Anthropic Claude Sonnet (backend only) |
-| Charts | ApexCharts + custom SVG bracket visualization |
-| Frontend hosting | Vercel |
-| Backend hosting | Railway |
-| Analytics | PostHog |
-| Observability | Prometheus + Grafana Cloud |
+|---|---|
+| Frontend | Next.js (App Router), TypeScript, Tailwind CSS, ApexCharts plus custom SVG |
+| Shared UI | `ui/`: display-only React components and the Paper & Pine theme |
+| Backend | Python, FastAPI, Pydantic, SciPy |
+| AI | Anthropic Claude Sonnet, called only from the backend |
+| MCP | Streamable HTTP server with MCP Apps Views and lazy OAuth sign-in |
+| Auth | Clerk (website sign-in and OAuth for the MCP account tools) |
+| Database | Postgres (saved scenarios) |
+| Analytics and feedback | PostHog |
+| Hosting | Vercel (frontend, Storybook), Railway (backend) |
+| Secrets | Doppler |
 
-## Demo Scenario
+## Getting started
 
-Margaret, 63, married filing jointly. Retired early with a large traditional IRA. Ten-year timeline spanning her income valley (pre-Social Security), Social Security claiming, and the onset of RMDs at age 73. The optimizer places conversions in the low-income years before RMDs force taxable distributions.
-
-## Development
+Requirements: Node 20 and Python 3.11 or newer. The setup script installs both locally if they are missing (no sudo), creates `backend/.venv`, installs npm packages and sets up git hooks.
 
 ```bash
-# First time on a machine (or after pulling a lockfile change): Node 20, Python 3.11,
-# backend/.venv, npm packages and git hooks. No sudo; skips what's already there.
 .agents/skills/setup-lucerna/scripts/setup.sh
-source .agents/skills/setup-lucerna/scripts/env.sh   # tools on PATH in this shell
+source .agents/skills/setup-lucerna/scripts/env.sh   # put the tools on PATH in each new shell
 
-# Run both services in parallel
-npm run dev
-
-# Run all tests
-npm run test:all
-
-# Lint + format
-npm run lint:all
-npm run format:all
+npm run dev   # backend on :8000 and frontend on :3000
 ```
 
-Individual commands:
+Everything is optional locally. Without keys, sign-in, saved scenarios and analytics are off, and the rest of the app works. To run the assistant without an Anthropic key, start the backend with the offline stand-in, a rule-based replacement for the model:
 
 ```bash
-npm run test:backend     # pytest
-npm run test:frontend    # Vitest
-npm run test:e2e         # Playwright
-
-npm run lint:frontend    # ESLint
-npm run lint:backend     # Ruff
-
-npm run format:frontend  # Prettier
-npm run format:backend   # Ruff format
+cd backend && AGENT_OFFLINE=1 uvicorn app.main:app --reload --port 8000
 ```
 
-## Docs
+`.agents/skills/run-lucerna/scripts/start.sh` does all of this in one step (offline agent, Clerk and PostHog off) and can run several checkouts side by side on different ports.
 
-- [Project Brief](docs/planning/Lucerna_Project_Brief.md)
-- [M1 Execution Plan](docs/planning/Lucerna_M1_Execution_Plan_Complete.md)
-- [Input Variables Spec](docs/planning/Lucerna_Input_Variables_Spec.md)
-- [Design Aesthetic](docs/design-aesthetic.md)
+### Configuration
+
+- **Backend:** every environment variable is declared once in `backend/app/config.py` and listed with its default in [`backend/.env.example`](backend/.env.example). Invalid values stop startup.
+- **Frontend:** the backend and site URLs come from `frontend/src/lib/utils/constants.ts` (`API_URL` reads `NEXT_PUBLIC_API_URL`, default `http://localhost:8000`). Clerk and PostHog turn on when their `NEXT_PUBLIC_` keys are set.
+
+### Connecting an MCP client to a local backend
+
+Point any MCP client at `http://localhost:8000/mcp`, for example `npx @modelcontextprotocol/inspector`. After changing anything in `mcp-views/` or `ui/`, rebuild the Views with `npm run build:views`; CI fails if the built Views are out of date.
+
+## Testing and linting
+
+```bash
+npm run test:backend    # pytest (engine, API, tools, agent, MCP)
+npm run test:frontend   # Vitest
+npm run test:e2e        # Playwright across both services (offline agent)
+npm run test:all        # backend, frontend and the E2E smoke test
+
+npm run lint:all        # ESLint and Ruff
+npm run format:all      # Prettier and Ruff format
+npm run format:check
+```
+
+Agent evals (scripted conversations with deterministic checks) live in `backend/evals/`:
+
+```bash
+cd backend
+python -m evals.run_agent_evals --offline   # harness smoke test
+python -m evals.run_agent_evals             # live model, spends API credit
+```
+
+Storybook is the component catalog: `cd frontend && npm run storybook`. See [docs/storybook.md](docs/storybook.md).
+
+Pre-commit hooks (husky and lint-staged) fix staged files and block commits with remaining errors. CI (`.github/workflows/test.yml`) runs lint, format checks, the Views build check, backend and frontend tests, then E2E.
+
+## Deployment
+
+| Service | Host | Deploys when |
+|---|---|---|
+| Frontend | Vercel | A push to `master` touches `frontend/` or `ui/` (`deploy-frontend.yml`). PRs get preview deployments. |
+| Storybook | Vercel | Preview builds for PRs that change components. |
+| Backend and MCP server | Railway | A push to `master` touches `backend/` (`deploy-backend.yml`), after tests pass. |
+
+Production secrets live in Doppler, the source of truth for the values set in Railway and Vercel. Never commit secrets; add a new backend setting to `Settings` in `app/config.py` and to `backend/.env.example`.
+
+Tax data (federal and state brackets in `backend/data/`) is updated once a year with the `Update Tax Data` workflow. See [docs/tax-data-update.md](docs/tax-data-update.md).
+
+## Repository layout
+
+```
+frontend/      Next.js web app
+backend/       FastAPI service: engine/, api/, tools/, agent/, mcp/, db/
+ui/            Shared display components and Paper & Pine tokens
+mcp-views/     MCP App Views, built into backend/app/mcp/views/
+shared/        Cross-language fixtures (scenario draft, View data)
+e2e/           Playwright tests and before/after capture flows
+listing/       Claude and ChatGPT directory listing kit
+docs/          Design, architecture and process docs
+.agents/       Repo skills for coding agents (setup, run, PR evidence)
+```
+
+## Documentation
+
+- [AGENTS.md](AGENTS.md): conventions and instructions for contributors and coding agents
+- [docs/agent-and-mcp.md](docs/agent-and-mcp.md): website assistant, MCP server, MCP Apps, limits and analytics
+- [docs/design-aesthetic.md](docs/design-aesthetic.md): Paper & Pine visual language
+- [docs/storybook.md](docs/storybook.md): component catalog
+- [docs/tax-data-update.md](docs/tax-data-update.md): yearly tax data update
+- [listing/README.md](listing/README.md): directory listing kit
+- [docs/research/](docs/research/): market research and risk analysis
+
+## Disclaimer
+
+Roth Conversions Optimizer provides scenario analysis for educational purposes. It is not financial, tax or legal advice.
