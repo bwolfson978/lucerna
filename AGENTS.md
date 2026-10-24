@@ -10,8 +10,7 @@ This file is the single set of instructions for any coding agent (Codex, Cursor,
 
 On a fresh clone or machine, or when `node`, `npm`, `python` or a `node_modules` folder is missing, run the `setup-lucerna` skill (`.agents/skills/setup-lucerna/scripts/setup.sh`) before anything else, then `source .agents/skills/setup-lucerna/scripts/env.sh` in each new shell.
 
-Read the current execution plan in `docs/planning/` and the project brief before starting work.
-Ask the user which workstream or task they're picking up.
+Read `README.md` for how the product and services fit together, and ask the user which task they're picking up.
 
 ## Architecture
 
@@ -65,8 +64,8 @@ The AI conversation layer must use educational framing (legal requirement):
 - The scenario draft (`app/tools/draft.py`) mirrors the calculator form; `frontend/src/lib/scenario/draft.ts` must stay in parity (shared fixtures in `shared/fixtures/`, regenerate with `python -m scripts.generate_draft_fixtures`)
 - Methodology copy lives in `backend/app/content/methodology.json` with an identical copy at `frontend/src/content/methodology.json`
 - The reasoning trace (`app/engine/trace.py`) is the contract between engine and AI — keep it structured and complete
-- **Multi-year optimizer** is the only engine mode — `scipy.optimize.minimize` (SLSQP) with greedy bracket-fill heuristic as initialization and fallback. No separate single-year path; a 1-year timeline is just `len(income_timeline) == 1`.
-- Engine files: `types.py` → `tax.py` → `heuristic.py` → `optimizer.py` → `trace.py` → `demo.py`
+- **Multi-year optimizer** is the only engine mode. `optimize()` in `optimizer.py` runs the dynamic programming search (`dp.py`), switches to `scipy.optimize.minimize` (SLSQP) when the user sets conversion limits, and checks the result against the bracket-fill curve (`curve_strategy.py`). No separate single-year path; a 1-year timeline is just `len(timeline) == 1`.
+- Engine files: `types.py` → `tax.py` / `state_tax.py` / `irmaa.py` / `aca.py` / `rmd.py` → `heuristic.py` → `dp.py` → `optimizer.py` → `trace.py` → `demo.py`
 
 ## Linting and formatting
 
@@ -117,7 +116,6 @@ lucerna/
 │       ├── tools/         # Tool + draft tests
 │       ├── agent/         # Loop, limits, demo tests (scripted model clients)
 │       └── mcp/           # MCP server tests
-├── mcp-views/             # MCP App Views (TS → single-file HTML served by the MCP server)
 ├── ui/                    # Shared display components + Paper & Pine tokens/preset
 │   ├── src/               # ResultCard, charts, ScenarioCompareCard, ScenarioSummary, MetricCard (no app context)
 │   ├── tailwind/preset.js # Theme (used by frontend and mcp-views)
@@ -133,18 +131,16 @@ lucerna/
 ├── .agents/skills/         # Repo skills (Agent Skills format): setup-lucerna, run-lucerna, pr-evidence
 ├── .claude/skills          # Symlink to .agents/skills, for Claude Code
 ├── docs/
+│   ├── agent-and-mcp.md       # Website assistant, MCP server, MCP Apps, limits, analytics
 │   ├── design-aesthetic.md    # Visual language, colors, typography, components
-│   ├── planning/              # Project brief, execution plans, input variables spec
+│   ├── storybook.md           # Component catalog
+│   ├── tax-data-update.md     # Yearly tax data update
 │   └── research/              # Market research, competitive analysis
 ├── .github/workflows/test.yml # CI: backend → frontend → e2e
 ├── package.json               # Root scripts (test:backend, test:frontend, test:e2e, test:all)
 ├── AGENTS.md                  # This file: instructions for every coding agent
 └── CLAUDE.md                  # Imports AGENTS.md for Claude Code
 ```
-
-## Current scope boundaries
-
-Check the active execution plan in `docs/planning/` for what's in scope for the current milestone. Don't build features from future milestones unless asked.
 
 ## GitHub CLI
 
