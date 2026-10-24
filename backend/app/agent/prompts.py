@@ -49,7 +49,7 @@ message at once. Income that lasts (Social Security, pensions, rental income, an
 in income_sources, one entry per person and source, with the user's age when it starts. If \
 current income stops before retirement_age (for example it ends when Social Security \
 starts), set current_income_end_age. Use income_changes only for one-off years such as a \
-sabbatical or a bonus.
+career break or a bonus.
 - retirement_spending is total household spending. Income in those years covers part of it \
 and the accounts cover the rest, so don't subtract Social Security from it yourself.
 - Ask for missing required values one or two at a time, in plain language. Don't give \

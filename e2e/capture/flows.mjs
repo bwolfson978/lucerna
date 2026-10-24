@@ -142,6 +142,54 @@ export const flows = {
     },
   },
 
+  'landing-hero': {
+    title: 'Landing hero: life situations on a timeline',
+    paths: ['frontend/src/app/page.tsx', 'frontend/src/components/landing/HeroWindowTimeline', 'shared/fixtures/landing-situations'],
+    async run(page, shot) {
+      await page.goto('/')
+      await page.getByRole('heading', { level: 1 }).waitFor()
+      const hero = page.locator('main section').first()
+      await page.waitForTimeout(2500)
+      await shot('hero', 'Hero, first screen', { element: hero })
+      const chip = page.getByRole('button', { name: 'Career break', exact: true })
+      if (await chip.count()) {
+        // Let the auto-advance step twice, as a visitor would see it, then pick one.
+        await page.waitForTimeout(14000)
+        await chip.click()
+        await page.waitForTimeout(1500)
+        await shot('career-break', 'Hero after picking Career break', { element: hero })
+      }
+    },
+  },
+
+  'example-situations': {
+    title: 'Example life situations named across the site',
+    paths: [
+      'frontend/src/app/page.tsx',
+      'frontend/src/app/about/',
+      'frontend/src/app/methodology/',
+      'frontend/src/components/connect/AssistantChatPreview',
+    ],
+    async run(page, shot) {
+      await page.goto('/')
+      const strip = page.getByText('For the in-between years', { exact: true }).locator('..')
+      await strip.scrollIntoViewIfNeeded()
+      await shot('landing-strip', 'Landing page: in-between years strip', { element: strip })
+      await page.goto('/about')
+      const about = page.locator('p', { hasText: 'in-between' }).first()
+      await about.scrollIntoViewIfNeeded()
+      await shot('about-paragraph', 'About page: who it is for', { element: about })
+      await page.goto('/methodology')
+      const why = page.getByText('Why your income trajectory matters', { exact: true }).locator('xpath=following-sibling::*[1]')
+      await why.scrollIntoViewIfNeeded()
+      await shot('methodology-trajectory', 'Methodology: why your income trajectory matters', { element: why })
+      await page.goto('/connect')
+      const chat = page.getByRole('figure', { name: /^Example chat/ })
+      await chat.scrollIntoViewIfNeeded()
+      await shot('connect-chat', 'Claude & ChatGPT page: example chat', { element: chat })
+    },
+  },
+
   'landing-margaret': {
     title: "Landing page: Margaret's schedule and spotlight",
     paths: ['frontend/src/components/landing/LandingDemo', 'backend/app/engine/demo.py'],

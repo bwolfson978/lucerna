@@ -33,7 +33,7 @@ SCENARIO = {
     "retirement_age": 63,
     "state": "CA",
     "retirement_state": "AZ",
-    "income_changes": [{"year": 2027, "gross_income": 60000, "note": "Sabbatical"}],
+    "income_changes": [{"year": 2027, "gross_income": 60000, "note": "Part-time year"}],
 }
 CHANGES = {"retirement_age": 62}
 LABEL = "Retire at 62"

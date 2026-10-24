@@ -2,7 +2,7 @@ Roth Conversions Optimizer runs a multi-year tax optimizer on your numbers and s
 
 Describe your situation in plain words: age, filing status, income, account balances and when you plan to start drawing on them. Your agent records the scenario and shows it back to you to check. It runs the numbers only once you confirm. Results show the estimated lifetime tax savings, how much to convert each year, the tax on each conversion and a chart of how each year fills the tax brackets.
 
-It is built for the in-between years: a sabbatical, a career change, starting a business, or early retirement before required minimum distributions begin. Low-income years like these are often the cheapest time to convert.
+It is built for the in-between years: early retirement, the years before Social Security and required minimum distributions begin, a career break, or winding down with part-time or consulting work. Low-income years like these are often the cheapest time to convert.
 
 What it models:
 - 2026 federal brackets, and state income tax for all 50 states and DC, including a move in retirement
@@ -10,7 +10,7 @@ What it models:
 - Medicare IRMAA surcharges
 - ACA marketplace subsidies for the years before Medicare
 - Social Security, pensions and other income that starts later
-- One-off years such as a sabbatical or a bonus
+- One-off years such as a career break or a bonus
 
 Ask what-ifs, such as "What if I retire at 58?", to see side by side how the schedule and savings change. Any result opens as a full interactive analysis on rothconversionsoptimizer.com.
 

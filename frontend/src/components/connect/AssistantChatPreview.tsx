@@ -19,7 +19,7 @@ const bracketList =
 
 const QUESTION =
   "I'm 60, married, earning $120k in California with $900k in my 401(k). " +
-  "I'm taking a sabbatical next year, then retiring to Arizona at 63. Should I look at Roth conversions?";
+  "I'm going part-time next year, then retiring to Arizona at 63. Should I look at Roth conversions?";
 
 /** What a chat with the connector looks like: a question, the tool call and its result card. */
 export function AssistantChatPreview() {

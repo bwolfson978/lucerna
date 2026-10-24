@@ -12,7 +12,7 @@
       {
         "year": 2027,
         "gross_income": 60000,
-        "note": "Sabbatical"
+        "note": "Part-time year"
       }
     ]
   },
@@ -39,7 +39,7 @@
           {
             "year": 2027,
             "gross_income": 60000.0,
-            "note": "Sabbatical"
+            "note": "Part-time year"
           }
         ]
       },
@@ -51,7 +51,7 @@
         {
           "year": 2027,
           "gross_income": 60000.0,
-          "note": "Sabbatical"
+          "note": "Part-time year"
         },
         {
           "year": 2028,
@@ -173,12 +173,12 @@
       "missing_required": [],
       "problems": [],
       "ready_to_run": true,
-      "draft_hash": "2ff59a6a3930"
+      "draft_hash": "99283866b9b4"
     }
   },
   "analyze_roth_conversions": {
     "structured_content": {
-      "result_id": "r_6b08faa3aa",
+      "result_id": "r_613a785a3a",
       "estimated_lifetime_tax_savings_todays_dollars": 36990,
       "total_conversion": 344500,
       "total_tax_on_conversions": 46566,
@@ -554,11 +554,11 @@
           {
             "year": 2027,
             "gross_income": 60000.0,
-            "note": "Sabbatical"
+            "note": "Part-time year"
           }
         ]
       },
-      "full_results_url": "https://www.rothconversionsoptimizer.com/calculator?view=results&result=r_6b08faa3aa&scenario=eyJhZ2UiOjYwLCJjdXJyZW50X2luY29tZSI6MTIwMDAwLjAsImRpc2NvdW50X3JhdGVfcGN0Ijo1LjAsImZpbGluZ19zdGF0dXMiOiJtYXJyaWVkX2ZpbGluZ19qb2ludGx5IiwiaG91c2Vob2xkX3NpemUiOjEsImluY2x1ZGVfYWNhIjpmYWxzZSwiaW5jb21lX2NoYW5nZXMiOlt7Imdyb3NzX2luY29tZSI6NjAwMDAuMCwibm90ZSI6IlNhYmJhdGljYWwiLCJ5ZWFyIjoyMDI3fV0sImluY29tZV9ncm93dGhfcmF0ZV9wY3QiOjMuMCwiaW5mbGF0aW9uX3BjdCI6Mi41LCJpbnZlc3RtZW50X3JldHVybl9wY3QiOjcuMCwibW9udGhseV9zbGNzcF9wcmVtaXVtIjo2MjAuMCwicGxhbm5pbmdfaG9yaXpvbl9hZ2UiOjkwLCJyZXRpcmVtZW50X2FnZSI6NjMsInJldGlyZW1lbnRfc3RhdGUiOiJBWiIsInJvdGhfYmFsYW5jZSI6NTAwMDAuMCwic3RhdGUiOiJDQSIsInRyYWRpdGlvbmFsX2JhbGFuY2UiOjkwMDAwMC4wfQ"
+      "full_results_url": "https://www.rothconversionsoptimizer.com/calculator?view=results&result=r_613a785a3a&scenario=eyJhZ2UiOjYwLCJjdXJyZW50X2luY29tZSI6MTIwMDAwLjAsImRpc2NvdW50X3JhdGVfcGN0Ijo1LjAsImZpbGluZ19zdGF0dXMiOiJtYXJyaWVkX2ZpbGluZ19qb2ludGx5IiwiaG91c2Vob2xkX3NpemUiOjEsImluY2x1ZGVfYWNhIjpmYWxzZSwiaW5jb21lX2NoYW5nZXMiOlt7Imdyb3NzX2luY29tZSI6NjAwMDAuMCwibm90ZSI6IlBhcnQtdGltZSB5ZWFyIiwieWVhciI6MjAyN31dLCJpbmNvbWVfZ3Jvd3RoX3JhdGVfcGN0IjozLjAsImluZmxhdGlvbl9wY3QiOjIuNSwiaW52ZXN0bWVudF9yZXR1cm5fcGN0Ijo3LjAsIm1vbnRobHlfc2xjc3BfcHJlbWl1bSI6NjIwLjAsInBsYW5uaW5nX2hvcml6b25fYWdlIjo5MCwicmV0aXJlbWVudF9hZ2UiOjYzLCJyZXRpcmVtZW50X3N0YXRlIjoiQVoiLCJyb3RoX2JhbGFuY2UiOjUwMDAwLjAsInN0YXRlIjoiQ0EiLCJ0cmFkaXRpb25hbF9iYWxhbmNlIjo5MDAwMDAuMH0"
     },
     "view_meta": {
       "bracket_fill": {
@@ -3838,7 +3838,7 @@
         ]
       }
     },
-    "result_id": "r_6b08faa3aa",
+    "result_id": "r_613a785a3a",
     "result": {
       "yearly_conversions": [
         0.0,
@@ -8760,7 +8760,7 @@
             "year": 2027,
             "gross_income": 60000.0,
             "drawdown": null,
-            "notes": "Sabbatical",
+            "notes": "Part-time year",
             "state": null,
             "social_security": null
           },
@@ -9020,8 +9020,8 @@
     "label": "Retire at 62",
     "structured_content": {
       "label": "Retire at 62",
-      "base_result_id": "r_6b08faa3aa",
-      "variant_result_id": "r_a717e5a6a6",
+      "base_result_id": "r_613a785a3a",
+      "variant_result_id": "r_52113d90dc",
       "estimated_lifetime_tax_savings": {
         "current": 36990,
         "what_if": 36292,
@@ -9229,11 +9229,11 @@
           {
             "year": 2027,
             "gross_income": 60000.0,
-            "note": "Sabbatical"
+            "note": "Part-time year"
           }
         ]
       },
-      "what_if_full_results_url": "https://www.rothconversionsoptimizer.com/calculator?view=results&result=r_a717e5a6a6&scenario=eyJhZ2UiOjYwLCJjdXJyZW50X2luY29tZSI6MTIwMDAwLjAsImRpc2NvdW50X3JhdGVfcGN0Ijo1LjAsImZpbGluZ19zdGF0dXMiOiJtYXJyaWVkX2ZpbGluZ19qb2ludGx5IiwiaG91c2Vob2xkX3NpemUiOjEsImluY2x1ZGVfYWNhIjpmYWxzZSwiaW5jb21lX2NoYW5nZXMiOlt7Imdyb3NzX2luY29tZSI6NjAwMDAuMCwibm90ZSI6IlNhYmJhdGljYWwiLCJ5ZWFyIjoyMDI3fV0sImluY29tZV9ncm93dGhfcmF0ZV9wY3QiOjMuMCwiaW5mbGF0aW9uX3BjdCI6Mi41LCJpbnZlc3RtZW50X3JldHVybl9wY3QiOjcuMCwibW9udGhseV9zbGNzcF9wcmVtaXVtIjo2MjAuMCwicGxhbm5pbmdfaG9yaXpvbl9hZ2UiOjkwLCJyZXRpcmVtZW50X2FnZSI6NjIsInJldGlyZW1lbnRfc3RhdGUiOiJBWiIsInJvdGhfYmFsYW5jZSI6NTAwMDAuMCwic3RhdGUiOiJDQSIsInRyYWRpdGlvbmFsX2JhbGFuY2UiOjkwMDAwMC4wfQ&label=Retire+at+62"
+      "what_if_full_results_url": "https://www.rothconversionsoptimizer.com/calculator?view=results&result=r_52113d90dc&scenario=eyJhZ2UiOjYwLCJjdXJyZW50X2luY29tZSI6MTIwMDAwLjAsImRpc2NvdW50X3JhdGVfcGN0Ijo1LjAsImZpbGluZ19zdGF0dXMiOiJtYXJyaWVkX2ZpbGluZ19qb2ludGx5IiwiaG91c2Vob2xkX3NpemUiOjEsImluY2x1ZGVfYWNhIjpmYWxzZSwiaW5jb21lX2NoYW5nZXMiOlt7Imdyb3NzX2luY29tZSI6NjAwMDAuMCwibm90ZSI6IlBhcnQtdGltZSB5ZWFyIiwieWVhciI6MjAyN31dLCJpbmNvbWVfZ3Jvd3RoX3JhdGVfcGN0IjozLjAsImluZmxhdGlvbl9wY3QiOjIuNSwiaW52ZXN0bWVudF9yZXR1cm5fcGN0Ijo3LjAsIm1vbnRobHlfc2xjc3BfcHJlbWl1bSI6NjIwLjAsInBsYW5uaW5nX2hvcml6b25fYWdlIjo5MCwicmV0aXJlbWVudF9hZ2UiOjYyLCJyZXRpcmVtZW50X3N0YXRlIjoiQVoiLCJyb3RoX2JhbGFuY2UiOjUwMDAwLjAsInN0YXRlIjoiQ0EiLCJ0cmFkaXRpb25hbF9iYWxhbmNlIjo5MDAwMDAuMH0&label=Retire+at+62"
     },
     "base_result": {
       "yearly_conversions": [
@@ -11173,7 +11173,7 @@
             "year": 2027,
             "gross_income": 60000.0,
             "drawdown": null,
-            "notes": "Sabbatical",
+            "notes": "Part-time year",
             "state": null,
             "social_security": null
           },
@@ -13329,7 +13329,7 @@
             "year": 2027,
             "gross_income": 60000.0,
             "drawdown": null,
-            "notes": "Sabbatical",
+            "notes": "Part-time year",
             "state": null,
             "social_security": null
           },
