@@ -108,7 +108,7 @@ Pre-commit hooks (husky and lint-staged) fix staged files and block commits with
 | Storybook | Vercel | Preview builds for PRs that change components. |
 | Backend and MCP server | Railway | A push to `master` touches `backend/` (`deploy-backend.yml`), after tests pass. |
 
-Production secrets live in Doppler (project `roth-conversions-optimizer`, config `prd`), the source of truth for the values set in Railway and Vercel. Never commit secrets; add a new backend setting to `Settings` in `app/config.py` and to `backend/.env.example`.
+Production secrets live in Doppler, the source of truth for the values set in Railway and Vercel. Never commit secrets; add a new backend setting to `Settings` in `app/config.py` and to `backend/.env.example`.
 
 Tax data (federal and state brackets in `backend/data/`) is updated once a year with the `Update Tax Data` workflow. See [docs/tax-data-update.md](docs/tax-data-update.md).
 
