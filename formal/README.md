@@ -32,7 +32,7 @@ broke as expected.
 | AgentSpend `MessagesPerClient` | broken if the proxy appends to X-Forwarded-For: `client_ip` trusts the first entry | `backend/tests/mcp/test_limits_model.py` |
 | AgentSpend `SpendWithinCap`, `SpendWithinOneMessage` | broken: turns in flight together overshoot the daily cap by all their costs | `backend/tests/agent/test_limits_model.py` |
 | AutoSave `NoSilentLossWhenSavesSucceed` | broken: a run whose result was slimmed out of session storage is dropped at sign-in, unsaved | `ScenarioWorkspace.autosave-model.test.tsx` |
-| AutoSave `NoSilentLossWhenStorageFits` | broken: a failed save while signed in hides the banner, nothing tells the person | same |
+| AutoSave `NoSilentLossWhenStorageFits` | broke on the earlier code (a failed save while signed in hid the banner); holds now that a failed save shows "Couldn't save this analysis" with Try again | same |
 | AutoSave `NoDuplicateSaves` | broke on the earlier code (every signed-in run saved a new row); holds now that a scenario keeps one saved row and saves run one at a time | `ScenarioWorkspace.identity.test.tsx` |
 | UndoDelete `HiddenWhilePending`, `DeletedStayGone` | hold | |
 | UndoDelete `ServerMatchesIntent` | broken: leaving the page while Clerk refreshes the token drops the pending delete | `page.undo-model.test.tsx` |

@@ -28,3 +28,8 @@ export const Saving: Story = {
 export const Saved: Story = {
   args: { show: true, state: "saved" },
 };
+
+/** A signed-in save that failed (database blip, expired token). */
+export const Failed: Story = {
+  args: { show: true, state: "failed", onRetry: () => {} },
+};
