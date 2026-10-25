@@ -373,21 +373,6 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
     window.history.replaceState(null, "", url.pathname + url.search);
   }, [isDemo, reset, startNewScenario, keys.ran, updateDraft]);
 
-  // Once signed in, save the runs made before. Session storage carries them across the
-  // page reload a Google sign-in brings; an id whose result isn't restored yet waits.
-  useEffect(() => {
-    if (!isSignedIn) return;
-    const unsaved = readSession<string[]>(keys.unsaved);
-    if (!unsaved?.length) return;
-    const waiting = unsaved.filter((id) => {
-      const stored = state.results[id];
-      if (!stored) return true;
-      if (stored.result) saveResult(id, stored.result.input, stored.result, draftRef.current);
-      return false;
-    });
-    writeSession(keys.unsaved, waiting);
-  }, [isSignedIn, state.results, keys.unsaved, saveResult]);
-
   // Everything the person sends from this page goes through here, so the thread can
   // bring their message to the top (a demo replay adds messages without it).
   const [followKey, setFollowKey] = useState(0);
@@ -441,6 +426,27 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
     },
     [state.results, loadResult]
   );
+
+  // Once signed in, save the runs made before. Session storage carries them across the
+  // page reload a Google sign-in brings; an id whose result isn't restored yet waits. A
+  // result too big to keep in storage comes back empty: it is recomputed from its input
+  // and saved once it arrives.
+  useEffect(() => {
+    if (!isSignedIn) return;
+    const unsaved = readSession<string[]>(keys.unsaved);
+    if (!unsaved?.length) return;
+    const waiting = unsaved.filter((id) => {
+      const stored = state.results[id];
+      if (!stored) return true;
+      if (!stored.result) {
+        ensureResult(id);
+        return true;
+      }
+      saveResult(id, stored.result.input, stored.result, draftRef.current);
+      return false;
+    });
+    if (waiting.length !== unsaved.length) writeSession(keys.unsaved, waiting);
+  }, [isSignedIn, state.results, keys.unsaved, saveResult, ensureResult]);
 
   // ------------------------------------------------------------------ views
   const [view, setView] = useState<View>(CONVERSATION);

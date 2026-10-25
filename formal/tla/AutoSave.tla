@@ -19,7 +19,7 @@
 (*    comes back from sessionStorage.                                      *)
 (*  - Once signed in, the effect walks keys.unsaved: an id with no restored*)
 (*    result yet waits; one with a result is saved; one whose result is    *)
-(*    null is dropped from the list without saving.                        *)
+(*    null waits while ensureResult recomputes it from its stored input.   *)
 (*                                                                         *)
 (* Result ids are r_<hash of the scenario> for assistant runs, so running  *)
 (* the same scenario again gives the same id.                              *)
@@ -97,15 +97,22 @@ SignInReload ==
     /\ banner' = [i \in Ids |-> "none"]
     /\ UNCHANGED <<stored, queue, inflight, saved, savedId, rows, latest, ran, slimmed, nruns>>
 
-\* The effect: save what is restored, keep what isn't, drop result: null.
+\* The effect: save what is restored, keep the rest (result: null is recomputed).
 SaveQueued ==
     /\ signedIn /\ queue # {}
     /\ LET send == {i \in queue : mem[i] = "full"}
-           wait == {i \in queue : mem[i] = "none"}
+           wait == {i \in queue : mem[i] # "full"}
        IN  /\ queue' = wait
            /\ inflight' = inflight \cup send
            /\ banner' = [i \in Ids |-> IF i \in send THEN "saving" ELSE banner[i]]
     /\ UNCHANGED <<signedIn, mem, stored, saved, savedId, rows, latest, ran, slimmed, nruns>>
+
+\* ensureResult: a result: null is recomputed from its stored input (/api/optimize).
+Recompute(i) ==
+    /\ mem[i] = "slim"
+    /\ mem' = [mem EXCEPT ![i] = "full"]
+    /\ UNCHANGED <<signedIn, stored, queue, inflight, banner, saved, savedId, rows, latest,
+                   ran, slimmed, nruns>>
 
 SaveOk(i) ==
     /\ i \in inflight
@@ -131,7 +138,7 @@ StartNew ==
     /\ UNCHANGED <<signedIn, mem, stored, inflight, banner, saved, ran, slimmed, nruns>>
 
 Next ==
-    \/ \E i \in Ids : Run(i) \/ SaveOk(i) \/ SaveFails(i)
+    \/ \E i \in Ids : Run(i) \/ Recompute(i) \/ SaveOk(i) \/ SaveFails(i)
     \/ StorageFull \/ SignInModal \/ SignInReload \/ SaveQueued \/ StartNew
 
 Spec == Init /\ [][Next]_vars
