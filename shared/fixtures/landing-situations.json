@@ -23,11 +23,11 @@
   },
   "before-social-security": {
     "start_age": 63,
-    "estimated_lifetime_tax_savings": 158630,
+    "estimated_lifetime_tax_savings": 159936,
     "after_tax_wealth_without": 1926877,
-    "after_tax_wealth_with": 2085507,
+    "after_tax_wealth_with": 2086813,
     "total_converted": 591000,
-    "average_tax_rate": 0.105,
+    "average_tax_rate": 0.102,
     "conversions_by_year": [
       113000,
       113000,

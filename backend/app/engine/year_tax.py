@@ -1,9 +1,11 @@
-"""Income tax for one timeline year, with Social Security and the 65+ deduction.
+"""Income tax for one timeline year, with Social Security and the 65+ deductions.
 
 Engine incomes count Social Security in full (it is part of ``gross_income``,
 and ACA MAGI does include all of it). Federal tax only sees the taxable part
 of the benefit, found with the IRS provisional income worksheet, and filers
-65 and older get a larger standard deduction. Most states don't tax Social
+65 and older get a larger standard deduction. Through 2028 they also get the
+2025 law's senior deduction, which phases out with income, so a conversion
+in its phase-out range adds more than itself to taxable income. Most states don't tax Social
 Security at all, and some exempt part or all of IRA and 401(k) money (see
 ``retirement_exclusion``). ``YearTax`` maps an engine income to what each tax actually
 applies to, so every caller keeps passing the same incomes it always did.
@@ -35,6 +37,19 @@ ADDITIONAL_DEDUCTION_65 = {
     FilingStatus.MFJ: 1_650,
 }
 SENIOR_DEDUCTION_AGE = 65
+
+# Senior deduction from the 2025 reconciliation law (IRC 151(d)(5)(C)), tax
+# years 2025 to 2028: $6,000 per person 65 or older, each cut by 6% of MAGI
+# over the threshold (Schedule 1-A applies the cut to each spouse's $6,000).
+# Fixed in law, not indexed. MAGI is AGI here: the foreign income it adds
+# back isn't modeled.
+SENIOR_BONUS_DEDUCTION = 6_000
+SENIOR_BONUS_YEARS = range(2025, 2029)
+SENIOR_BONUS_PHASEOUT_RATE = 0.06
+SENIOR_BONUS_PHASEOUT_START = {
+    FilingStatus.SINGLE: 75_000,
+    FilingStatus.MFJ: 150_000,
+}
 
 # States that tax some Social Security in 2026. They have their own exemptions,
 # which are not modeled: benefits are taxed in full there.
@@ -71,6 +86,8 @@ class YearTax:
     custom_state_rate: float | None = None
     social_security: float = 0.0
     extra_deduction: float = 0.0
+    # People who qualify for the senior deduction this year (0, 1 or 2)
+    senior_bonus_people: int = 0
     # Today's value of a dollar amount fixed in law this year (1.0 without inflation)
     fixed_scale: float = 1.0
     # IRMAA tiers that this year's MAGI is compared with (see ``lookback_threshold_scale``)
@@ -90,9 +107,23 @@ class YearTax:
         )
         return agi if np.ndim(income) else float(agi)
 
+    def senior_deduction(self, agi):
+        """The senior deduction left after the phase-out, at ``agi`` (scalar or array)."""
+        if self.senior_bonus_people <= 0:
+            return np.zeros_like(agi, dtype=float) if np.ndim(agi) else 0.0
+        start = SENIOR_BONUS_PHASEOUT_START[self.filing_status] * self.fixed_scale
+        excess = np.maximum(0.0, np.asarray(agi, dtype=float) - start)
+        each = np.maximum(
+            0.0,
+            SENIOR_BONUS_DEDUCTION * self.fixed_scale - SENIOR_BONUS_PHASEOUT_RATE * excess,
+        )
+        out = self.senior_bonus_people * each
+        return out if np.ndim(agi) else float(out)
+
     def _federal_base(self, income):
         """The gross income federal brackets apply to (before the standard deduction)."""
-        return self.agi(income) - self.extra_deduction
+        agi = self.agi(income)
+        return agi - self.extra_deduction - self.senior_deduction(agi)
 
     def federal(self, income):
         base = self._federal_base(income)
@@ -152,6 +183,7 @@ def year_tax(scenario: ScenarioInput, t: int, state: str | None = None) -> YearT
         custom_state_rate=scenario.custom_state_rate,
         social_security=min(entry.social_security or 0.0, entry.gross_income),
         extra_deduction=people * ADDITIONAL_DEDUCTION_65[scenario.filing_status] if senior else 0.0,
+        senior_bonus_people=people if senior and entry.year in SENIOR_BONUS_YEARS else 0,
         fixed_scale=scenario.fixed_dollar_scale(t),
         irmaa_scale=lookback_threshold_scale(scenario.inflation_rate),
         other_income=entry.gross_income,
