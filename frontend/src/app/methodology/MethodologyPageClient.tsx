@@ -29,7 +29,8 @@ const TOC_ITEMS: TocItem[] = [
   { id: "optimization", number: "06", title: "Optimization Approach" },
   { id: "aca-subsidies", number: "07", title: "ACA Subsidy Awareness" },
   { id: "rmd-impact", number: "08", title: "RMD Impact" },
-  { id: "assumptions", number: "09", title: "Assumptions & Limitations" },
+  { id: "early-withdrawals", number: "09", title: "Withdrawals Before 59½" },
+  { id: "assumptions", number: "10", title: "Assumptions & Limitations" },
 ];
 
 const SECTION_IDS = TOC_ITEMS.map((item) => item.id);
@@ -354,8 +355,33 @@ export function MethodologyPageClient() {
                 </P>
               </MethodologySection>
 
-              {/* Section 9: Assumptions & Limitations */}
-              <MethodologySection id="assumptions" number="09" title="Assumptions & Limitations">
+              {/* Section 9: Withdrawals before 59½ */}
+              <MethodologySection id="early-withdrawals" number="09" title="Withdrawals Before 59½">
+                <P>
+                  Money taken out of a Traditional account before age 59½ usually pays a 10%
+                  additional tax on top of income tax. You reach 59½ six months after your 59th
+                  birthday, which is why we ask for the month and year you were born. In the year
+                  you reach it, the penalty applies to the months before.
+                </P>
+                <SubHeading>Penalty-free money first</SubHeading>
+                <P>
+                  A Roth conversion itself is never penalized. Before 59½, spending comes from
+                  penalty-free money first: Roth contributions (we treat the Roth balance you enter
+                  as contributions), then conversions at least five years old, counted from January
+                  1 of the year you convert. After that the Traditional account pays, with the
+                  penalty. Converting a little each year so it is available five years later is
+                  often called a Roth conversion ladder, and the optimizer weighs it.
+                </P>
+                <SubHeading>What is not modeled</SubHeading>
+                <P>
+                  The rule of 55 and 72(t) substantially equal payments, which can avoid the
+                  penalty, are not included: both depend on which dollars sit in which employer
+                  plan. Income tax on Roth earnings taken out early is not included either.
+                </P>
+              </MethodologySection>
+
+              {/* Section 10: Assumptions & Limitations */}
+              <MethodologySection id="assumptions" number="10" title="Assumptions & Limitations">
                 <P>
                   Every projection requires assumptions about the future. The engine uses reasonable
                   defaults based on historical data and standard financial planning conventions. You

@@ -65,7 +65,7 @@ The AI conversation layer must use educational framing (legal requirement):
 - Methodology copy lives in `backend/app/content/methodology.json` with an identical copy at `frontend/src/content/methodology.json`
 - The reasoning trace (`app/engine/trace.py`) is the contract between engine and AI — keep it structured and complete
 - **Multi-year optimizer** is the only engine mode. `optimize()` in `optimizer.py` runs the dynamic programming search (`dp.py`), switches to `scipy.optimize.minimize` (SLSQP) when the user sets conversion limits, and checks the result against the bracket-fill curve (`curve_strategy.py`). No separate single-year path; a 1-year timeline is just `len(timeline) == 1`.
-- Engine files: `types.py` → `tax.py` / `state_tax.py` / `irmaa.py` / `aca.py` / `rmd.py` → `heuristic.py` → `dp.py` → `optimizer.py` → `trace.py` → `demo.py`
+- Engine files: `types.py` → `tax.py` / `state_tax.py` / `irmaa.py` / `aca.py` / `rmd.py` / `early_withdrawal.py` → `heuristic.py` → `dp.py` → `optimizer.py` → `trace.py` → `demo.py`
 
 ## Linting and formatting
 

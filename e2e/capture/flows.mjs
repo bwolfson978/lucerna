@@ -520,6 +520,39 @@ export const flows = {
     },
   },
 
+  'early-retiree': {
+    title: 'Early retiree drawing before 59½',
+    paths: ['backend/app/engine/early_withdrawal.py', 'frontend/src/app/methodology/'],
+    async run(page, shot) {
+      // Born June 1981, retiring at 50 on $60,000 a year with $800,000 traditional
+      const scenario = {
+        birth_year: 1981,
+        birth_month: 6,
+        filing_status: 'single',
+        current_income: 100000,
+        traditional_balance: 800000,
+        roth_balance: 50000,
+        retirement_age: 50,
+        retirement_spending: 60000,
+      }
+      const encoded = Buffer.from(JSON.stringify(scenario)).toString('base64url')
+      await page.goto(`/calculator?view=results&scenario=${encoded}`)
+      const card = page.getByTestId('results-hero')
+      await card.waitFor({ timeout: 90000 })
+      await page.waitForLoadState('networkidle')
+      await card.scrollIntoViewIfNeeded()
+      await shot('result', 'Result card for someone retiring at 50', { element: card })
+
+      await page.goto('/methodology')
+      const section = page.locator('#early-withdrawals')
+      if (await section.count()) {
+        await section.scrollIntoViewIfNeeded()
+        await page.waitForTimeout(800)
+        await shot('methodology', 'Methodology: withdrawals before 59½', { element: section })
+      }
+    },
+  },
+
   'result-single': {
     title: 'Result card in full results, single filer with Social Security',
     paths: ['frontend/src/components/results/', 'backend/app/engine/'],

@@ -34,6 +34,8 @@ export interface ScenarioInput {
   filing_status: FilingStatus;
   /** Spouse's age in the plan's first year (joint filers). Null: same as `age`. */
   spouse_age?: number | null;
+  /** Month the owner was born (1-12), for the year they reach 59½. */
+  birth_month?: number | null;
   timeline: PlanYear[]; // was income_timeline
   traditional_ira_balance: number;
   roth_ira_balance?: number;

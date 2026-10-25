@@ -127,6 +127,10 @@ async def test_calls_over_http_send_events_and_tagged_links(posthog, monkeypatch
     assert chatgpt["client"] == "chatgpt"
     assert chatgpt["is_error"] is True
     assert chatgpt["error"] == "daily_limit"
+    # Tool arguments never reach PostHog: no birth date, balances or income
+    for event in (claude, chatgpt):
+        assert not set(event) & set(SCENARIO)
+        assert not any("birth" in key for key in event)
 
 
 async def test_fresh_runs_are_counted_and_cached_ones_are_not(posthog):
