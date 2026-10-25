@@ -53,7 +53,7 @@ def greedy_bracket_fill(scenario: ScenarioInput) -> list[float]:
 
     remaining_balance = scenario.traditional_ira_balance
     conversions: list[float] = []
-    owner_rmd_start = rmd_start_age(scenario.age)
+    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
 
     for t, year_info in enumerate(scenario.timeline):
         if remaining_balance <= 0:
@@ -124,7 +124,7 @@ def _global_bracket_fill_for_cap(
         bal *= 1 + g
 
     # Build (rate, year, room) slots
-    owner_rmd_start = rmd_start_age(scenario.age)
+    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
     slots: list[tuple[float, int, float]] = []
     for t in range(n_years):
         income = scenario.timeline[t].gross_income

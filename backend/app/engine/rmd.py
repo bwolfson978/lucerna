@@ -58,12 +58,12 @@ def _load_rmd_data() -> tuple[dict[int, float], int, list[dict]]:
 UNIFORM_LIFETIME_TABLE, _MIN_RMD_AGE, _START_AGE_RULES = _load_rmd_data()
 
 
-def rmd_start_age(current_age: int, current_year: int = 2026) -> int:
+def rmd_start_age(current_age: int, current_year: int) -> int:
     """Determine the RMD start age based on birth year per SECURE 2.0.
 
     Args:
-        current_age: Owner's current age.
-        current_year: Calendar year (for computing birth year).
+        current_age: Owner's age in ``current_year``.
+        current_year: Calendar year of that age, normally the plan's first year.
 
     Returns:
         The age at which RMDs must begin.

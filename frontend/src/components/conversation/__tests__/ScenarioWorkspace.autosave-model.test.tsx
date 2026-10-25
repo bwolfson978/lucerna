@@ -50,8 +50,8 @@ function renderWorkspace() {
 
 // TLC trace (NoSilentLossWhenSavesSucceed): Run signed out -> StorageFull -> SignInReload
 // -> SaveQueued. The run was too big for session storage, so it came back from the Google
-// sign-in reload with `result: null`, and the effect drops it from the queue unsaved.
-it.fails("saves a run made before sign-in even when its result was too big to keep", async () => {
+// sign-in reload with `result: null`; it is recomputed from its input and then saved.
+it("saves a run made before sign-in even when its result was too big to keep", async () => {
   sessionStorage.setItem(
     "lucerna:conversation:v1",
     JSON.stringify({

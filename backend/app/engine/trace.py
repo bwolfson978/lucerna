@@ -186,7 +186,7 @@ def _traditional_left_after_conversions(scenario: ScenarioInput, conversions: li
     """
     last = max((t for t, c in enumerate(conversions) if c > 0), default=-1)
     balance = scenario.traditional_ira_balance
-    owner_rmd_start = rmd_start_age(scenario.age)
+    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
     for t in range(last + 1):
         owner_age = scenario.age + t
         rmd = calculate_rmd(balance, owner_age) if owner_age >= owner_rmd_start else 0.0
@@ -331,7 +331,7 @@ def _build_sensitivity_notes(
     # RMD impact note
     from app.engine.rmd import rmd_start_age
 
-    owner_rmd_start = rmd_start_age(scenario.age)
+    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
     years_to_rmd = owner_rmd_start - scenario.age
     if years_to_rmd <= 0:
         notes.append(
