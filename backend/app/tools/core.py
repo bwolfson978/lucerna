@@ -280,19 +280,21 @@ class _ResultCache:
         self._data: OrderedDict[str, OptimizationResult] = OrderedDict()
         self._lock = threading.Lock()
 
-    def has(self, scenario: ScenarioInput) -> bool:
-        with self._lock:
-            return scenario_key(scenario) in self._data
-
-    def get_or_compute(self, scenario: ScenarioInput) -> OptimizationResult:
+    def get(self, scenario: ScenarioInput) -> OptimizationResult | None:
         key = scenario_key(scenario)
         with self._lock:
             if key in self._data:
                 self._data.move_to_end(key)
                 return self._data[key]
+            return None
+
+    def get_or_compute(self, scenario: ScenarioInput) -> OptimizationResult:
+        cached = self.get(scenario)
+        if cached is not None:
+            return cached
         result = optimize(scenario)
         with self._lock:
-            self._data[key] = result
+            self._data[scenario_key(scenario)] = result
             while len(self._data) > self._size:
                 self._data.popitem(last=False)
         return result
@@ -305,9 +307,10 @@ def run_optimization(scenario: ScenarioInput) -> OptimizationResult:
     return _results.get_or_compute(scenario)
 
 
-def is_cached(scenario: ScenarioInput) -> bool:
-    """True when the result is already computed, so running it again is free."""
-    return _results.has(scenario)
+def cached_result(scenario: ScenarioInput) -> OptimizationResult | None:
+    """The already computed result, or None. Holding the result (rather than only
+    checking for it) keeps it usable even if the LRU evicts it a moment later."""
+    return _results.get(scenario)
 
 
 def scenario_input(draft: ScenarioDraft) -> ScenarioInput:

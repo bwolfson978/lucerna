@@ -1,8 +1,8 @@
 """Bugs found by model checking the analysis limits (formal/tla/McpLimits.tla).
 
-Each xfail test replays one TLC counterexample against the real code. They are
-strict: when a fix lands the test passes, pytest reports XPASS as a failure,
-and the marker comes off.
+Each test replays one TLC counterexample against the real code. Tests still
+marked xfail are known bugs; they are strict, so when a fix lands pytest reports
+XPASS as a failure and the marker comes off.
 """
 
 import datetime
@@ -40,96 +40,113 @@ def _scenario(income: float = 40_000) -> ScenarioInput:
     )
 
 
+class _EvictAfterLookup(core._ResultCache):
+    """Other traffic pushes the scenario out of the LRU right after the first lookup."""
+
+    def __init__(self):
+        super().__init__(size=1)
+        self.looked_up = False
+
+    def get(self, scenario):
+        result = super().get(scenario)
+        if not self.looked_up:
+            self.looked_up = True
+            with self._lock:
+                self._data.clear()
+        return result
+
+
 @pytest.fixture
 def evicted_between_check_and_run(monkeypatch):
     """The interleaving from the McpLimits counterexample: the scenario is cached when
     _run_drafts checks, and other traffic pushes it out of the LRU before it runs."""
-    cache = core._ResultCache(size=1)
+    cache = _EvictAfterLookup()
     monkeypatch.setattr(core, "_results", cache)
     monkeypatch.setattr(core, "scenario_input", lambda draft: draft)
     fresh_runs = []
     monkeypatch.setattr(core, "optimize", lambda scenario: fresh_runs.append(scenario) or "result")
 
     scenario = _scenario()
-    cache.get_or_compute(scenario)
-    fresh_runs.clear()
-
-    real_is_cached = core.is_cached
-
-    def is_cached_then_evicted(s):
-        cached = real_is_cached(s)
-        cache.get_or_compute(_scenario(income=99_999))  # someone else's run
-        return cached
-
-    monkeypatch.setattr(core, "is_cached", is_cached_then_evicted)
+    with cache._lock:
+        cache._data[core.scenario_key(scenario)] = "result"
     return scenario, fresh_runs
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="McpLimits EveryFreshRunIsCharged: the charge is "
-    "decided by is_cached() before the run, so an eviction in between "
-    "gives a free optimizer run",
-)
-async def test_a_run_that_turns_out_fresh_is_charged(monkeypatch, evicted_between_check_and_run):
+async def test_a_scenario_evicted_after_the_check_is_not_run_uncharged(
+    monkeypatch, evicted_between_check_and_run
+):
+    """McpLimits EveryFreshRunIsCharged."""
     scenario, fresh_runs = evicted_between_check_and_run
     monkeypatch.setattr(server, "_analysis_limiter", _limiter(per_anonymous_caller_per_day=0))
     token = limits_module.current_caller.set("ip:203.0.113.7")
     try:
-        with pytest.raises(LimitReached):
-            await server._run_drafts([scenario])
+        assert await server._run_drafts([scenario]) == [(scenario, "result")]
     finally:
         limits_module.current_caller.reset(token)
     assert fresh_runs == []
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="McpLimits FreshRunsHoldASlot: runs=0 skips the "
-    "semaphore, so the same eviction runs the optimizer past the "
-    "concurrency cap",
-)
-async def test_a_run_that_turns_out_fresh_waits_for_a_slot(
+async def test_a_scenario_evicted_after_the_check_does_not_skip_the_slot_cap(
     monkeypatch, evicted_between_check_and_run
 ):
+    """McpLimits FreshRunsHoldASlot."""
     scenario, fresh_runs = evicted_between_check_and_run
     limiter = _limiter(queue_seconds=0.05)
     monkeypatch.setattr(server, "_analysis_limiter", limiter)
     token = limits_module.current_caller.set("ip:203.0.113.7")
     try:
         async with limiter.admit("ip:198.51.100.1", 1):  # the only slot is taken
-            with pytest.raises(LimitReached) as err:
-                await server._run_drafts([scenario])
+            assert await server._run_drafts([scenario]) == [(scenario, "result")]
     finally:
         limits_module.current_caller.reset(token)
-    assert err.value.code == "busy"
     assert fresh_runs == []
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="McpLimits RefundsStayOnTheirDay: refund() never "
-    "rolls the day, so a timeout after midnight credits the new day",
-)
+async def test_a_fresh_run_is_charged_and_waits_for_a_slot(monkeypatch):
+    monkeypatch.setattr(core, "_results", core._ResultCache(size=1))
+    monkeypatch.setattr(core, "scenario_input", lambda draft: draft)
+    fresh_runs = []
+    monkeypatch.setattr(core, "optimize", lambda scenario: fresh_runs.append(scenario) or "result")
+    limiter = _limiter(queue_seconds=0.05)
+    monkeypatch.setattr(server, "_analysis_limiter", limiter)
+    token = limits_module.current_caller.set("ip:203.0.113.7")
+    try:
+        async with limiter.admit("ip:198.51.100.1", 1):
+            with pytest.raises(LimitReached) as err:
+                await server._run_drafts([_scenario()])
+        assert err.value.code == "busy"
+        assert fresh_runs == []
+        # The same scenario twice in one call is one fresh run, charged once.
+        await server._run_drafts([_scenario(), _scenario()])
+    finally:
+        limits_module.current_caller.reset(token)
+    assert len(fresh_runs) == 1
+    with pytest.raises(LimitReached):
+        limiter.charge("ip:203.0.113.7", 3)  # 1 of 3 used
+    limiter.charge("ip:203.0.113.7", 2)
+
+
 def test_a_refund_after_midnight_leaves_the_new_day_alone(monkeypatch):
+    """McpLimits RefundsStayOnTheirDay."""
     day = [datetime.date(2026, 10, 24)]
     monkeypatch.setattr(limits_module, "_today", lambda: day[0])
     limiter = _limiter(anonymous_per_day=2)
-    limiter.charge("ip:a", 1)  # 23:59:59, then waits in the queue
+    charged_on = limiter.charge("ip:a", 1)  # 23:59:59, then waits in the queue
     day[0] = datetime.date(2026, 10, 25)
     limiter.charge("ip:b", 2)  # after midnight: the new day's whole ceiling
-    limiter.refund("ip:a", 1)  # ip:a's wait times out
+    limiter.refund("ip:a", 1, charged_on)  # ip:a's wait times out
     with pytest.raises(LimitReached):
         limiter.charge("ip:c", 1)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="McpLimits NoChargeWithoutARun: a client that "
-    "disconnects while queued is cancelled, not timed out, and keeps "
-    "its charge",
-)
+def test_a_refund_on_the_same_day_gives_the_charge_back():
+    limiter = _limiter(per_anonymous_caller_per_day=1, anonymous_per_day=1)
+    limiter.refund("ip:a", 1, limiter.charge("ip:a", 1))
+    limiter.charge("ip:a", 1)
+
+
 async def test_a_request_cancelled_in_the_queue_is_refunded():
+    """McpLimits NoChargeWithoutARun."""
     limiter = _limiter(per_anonymous_caller_per_day=1, queue_seconds=5)
     async with limiter.admit("ip:other", 1):
         with anyio.move_on_after(0.05):  # the client goes away while waiting

@@ -103,10 +103,11 @@ class AnalysisLimiter:
             self._counts.clear()
             self._anonymous_total = 0
 
-    def charge(self, caller: str | None, runs: int) -> None:
-        """Count ``runs`` fresh analyses for ``caller``, or raise LimitReached."""
+    def charge(self, caller: str | None, runs: int) -> datetime.date:
+        """Count ``runs`` fresh analyses for ``caller``, or raise LimitReached. Returns
+        the day the charge was booked against, for a later refund."""
         if caller is None or runs <= 0:
-            return
+            return _today()
         signed_in = is_signed_in(caller)
         allowance = (
             self.limits.per_user_per_day if signed_in else self.limits.per_anonymous_caller_per_day
@@ -121,11 +122,17 @@ class AnalysisLimiter:
             self._counts[caller] = used + runs
             if not signed_in:
                 self._anonymous_total += runs
+            return self._day
 
-    def refund(self, caller: str | None, runs: int) -> None:
+    def refund(self, caller: str | None, runs: int, day: datetime.date) -> None:
+        """Give back a charge booked on ``day``. After midnight that day's counts are
+        gone, so there is nothing to give back (and the new day must not be credited)."""
         if caller is None or runs <= 0:
             return
         with self._lock:
+            self._roll_day()
+            if day != self._day:
+                return
             if caller in self._counts:
                 self._counts[caller] = max(0, self._counts[caller] - runs)
             if not is_signed_in(caller):
@@ -137,16 +144,19 @@ class AnalysisLimiter:
         if runs <= 0:
             yield
             return
-        self.charge(caller, runs)
+        day = self.charge(caller, runs)
         if self._slots is None:
             self._slots = anyio.Semaphore(self.limits.max_concurrent)
         slots = self._slots
         try:
             with anyio.fail_after(self.limits.queue_seconds):
                 await slots.acquire()
-        except TimeoutError:
-            self.refund(caller, runs)
-            raise LimitReached("busy") from None
+        except BaseException as err:
+            # Timed out, or cancelled because the client went away: nothing ran.
+            self.refund(caller, runs, day)
+            if isinstance(err, TimeoutError):
+                raise LimitReached("busy") from None
+            raise
         try:
             yield
         finally:
