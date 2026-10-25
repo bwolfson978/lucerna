@@ -15,7 +15,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.agent import demo as demo_conversation
-from app.agent.limits import estimate_cost, limiter
+from app.agent.limits import Turn, estimate_cost, limiter
 from app.agent.loop import ERROR_MESSAGES, count_user_messages, run_turn
 from app.agent.model import ModelUnavailable, get_model_client
 from app.agent.observability import TurnTrace
@@ -59,31 +59,35 @@ async def agent(body: AgentRequest, request: Request):
     if len(json.dumps(body.messages)) > MAX_HISTORY_BYTES:
         return _stream(_single_error("too_long"))
 
-    limit = limiter.check(client_ip(request), count_user_messages(body.messages))
-    if limit is not None:
-        return _stream(_single_error(limit))
+    turn = limiter.check(client_ip(request), count_user_messages(body.messages))
+    if not isinstance(turn, Turn):
+        return _stream(_single_error(turn))
 
     try:
         client = get_model_client()
     except ModelUnavailable:
+        turn.release()
         return _stream(_single_error("unavailable"))
 
     def on_usage(model: str, usage: dict) -> None:
-        limiter.record_spend(estimate_cost(model, usage))
+        turn.record_spend(estimate_cost(model, usage))
 
     trace = TurnTrace.from_request(request)
 
     async def events() -> AsyncIterator[str]:
-        async for event in run_turn(
-            client=client,
-            history=body.messages,
-            text=body.message,
-            draft=body.draft,
-            start_year=current_year(),
-            on_usage=on_usage,
-            trace=trace,
-        ):
-            yield _sse(event)
+        try:
+            async for event in run_turn(
+                client=client,
+                history=body.messages,
+                text=body.message,
+                draft=body.draft,
+                start_year=current_year(),
+                on_usage=on_usage,
+                trace=trace,
+            ):
+                yield _sse(event)
+        finally:
+            turn.release()
 
     return _stream(events())
 

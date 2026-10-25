@@ -44,6 +44,7 @@ async def test_streams_events_from_the_loop(async_client):
     assert events[1]["draft"]["age"] == 40
     assert len(events[-1]["messages"]) == 4
     assert limiter.spend_today > 0
+    assert limiter.reserved_today == 0
 
 
 async def test_unavailable_without_credentials(async_client, monkeypatch):

@@ -3,7 +3,7 @@
 import datetime
 
 from app.agent import demo
-from app.agent.limits import LimitConfig, UsageLimiter, estimate_cost
+from app.agent.limits import LimitConfig, Turn, UsageLimiter, estimate_cost
 from tests.agent.fakes import FunctionModelClient, text, tool_use
 from tests.agent.test_loop import assert_well_formed
 
@@ -15,20 +15,20 @@ def test_limits_per_conversation_ip_and_spend():
         LimitConfig(messages_per_conversation=3, messages_per_ip_per_day=2, daily_spend_usd=1.0)
     )
     assert limiter.check("a", 3) == "conversation_limit"
-    assert limiter.check("a", 0) is None
-    assert limiter.check("a", 0) is None
+    assert isinstance(limiter.check("a", 0), Turn)
+    assert isinstance(limiter.check("a", 0), Turn)
     assert limiter.check("a", 0) == "daily_limit"
-    assert limiter.check("b", 0) is None
+    assert isinstance(limiter.check("b", 0), Turn)
     limiter.record_spend(1.5)
     assert limiter.check("c", 0) == "unavailable"
 
 
 def test_limits_reset_each_day():
     limiter = UsageLimiter(LimitConfig(5, 1, 1.0))
-    assert limiter.check("a", 0) is None
+    assert isinstance(limiter.check("a", 0), Turn)
     assert limiter.check("a", 0) == "daily_limit"
     limiter._day = datetime.date.today() - datetime.timedelta(days=1)
-    assert limiter.check("a", 0) is None
+    assert isinstance(limiter.check("a", 0), Turn)
 
 
 def test_estimate_cost():
