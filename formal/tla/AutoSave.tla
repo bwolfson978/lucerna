@@ -5,7 +5,11 @@
 (* and the "Once signed in, save the runs made before" effect) with        *)
 (* frontend/src/lib/agent/conversation.ts (saveConversation).              *)
 (*                                                                         *)
-(*  - A signed-out run's id goes on the session list keys.unsaved.         *)
+(*  - A signed-out run's id replaces the session list keys.unsaved: only  *)
+(*    the scenario's latest run is kept.                                   *)
+(*  - A scenario keeps one saved row: the first save creates it (keys.saved*)
+(*    gets its id), later saves overwrite it. Saves run one at a time.     *)
+(*    Start over / New scenario forget keys.saved.                         *)
 (*  - A signed-in run is POSTed at once; its banner shows saving, then     *)
 (*    saved, or goes back to "prompt" if the request fails. While signed   *)
 (*    in, the banner is only shown for "saving" and "saved".               *)
@@ -31,12 +35,16 @@ VARIABLES
     queue,     \* keys.unsaved
     inflight,  \* save requests in flight
     banner,    \* saveStates[id]: "none" | "saving" | "saved" | "prompt"
-    saved,     \* rows the server holds for each id
+    saved,     \* saves of each run that reached the server
+    savedId,   \* keys.saved is set: this tab's scenario has a row
+    rows,      \* rows on the server for this tab's scenario since its start
+    latest,    \* ghost: the scenario's latest run ("none" after a start)
     ran,       \* ghost: ids the person ran
     slimmed,   \* ghost: ids whose stored result was ever slimmed
     nruns      \* ghost: bound on runs for the model checker
 
-vars == <<signedIn, mem, stored, queue, inflight, banner, saved, ran, slimmed, nruns>>
+vars == <<signedIn, mem, stored, queue, inflight, banner, saved, savedId, rows, latest,
+          ran, slimmed, nruns>>
 
 States == {"none", "full", "slim"}
 
@@ -47,6 +55,7 @@ Init ==
     /\ queue = {} /\ inflight = {}
     /\ banner = [i \in Ids |-> "none"]
     /\ saved = [i \in Ids |-> 0]
+    /\ savedId = FALSE /\ rows = 0 /\ latest = "none"
     /\ ran = {} /\ slimmed = {} /\ nruns = 0
 
 \* A run finishes; addResult then saveConversation (assume it fits for now).
@@ -60,22 +69,25 @@ Run(i) ==
           THEN /\ inflight' = inflight \cup {i}
                /\ banner' = [banner EXCEPT ![i] = "saving"]
                /\ UNCHANGED queue
-          ELSE /\ queue' = queue \cup {i}          \* !unsaved.includes(id)
+          ELSE /\ queue' = {i}                    \* writeSession(keys.unsaved, [id])
                /\ UNCHANGED <<inflight, banner>>
-    /\ UNCHANGED <<signedIn, saved, slimmed>>
+    /\ latest' = i
+    /\ UNCHANGED <<signedIn, saved, savedId, rows, slimmed>>
 
 \* saveConversation hits the quota: results are stored with result: null.
 StorageFull ==
     /\ \E i \in Ids : stored[i] = "full"
     /\ stored' = [i \in Ids |-> IF stored[i] = "full" THEN "slim" ELSE stored[i]]
     /\ slimmed' = slimmed \cup {i \in Ids : stored[i] = "full"}
-    /\ UNCHANGED <<signedIn, mem, queue, inflight, banner, saved, ran, nruns>>
+    /\ UNCHANGED <<signedIn, mem, queue, inflight, banner, saved, savedId, rows, latest,
+                   ran, nruns>>
 
 \* Sign in from a modal: no reload.
 SignInModal ==
     /\ ~signedIn
     /\ signedIn' = TRUE
-    /\ UNCHANGED <<mem, stored, queue, inflight, banner, saved, ran, slimmed, nruns>>
+    /\ UNCHANGED <<mem, stored, queue, inflight, banner, saved, savedId, rows, latest,
+                   ran, slimmed, nruns>>
 
 \* Google sign-in: a full reload. The page restores state.results from storage.
 SignInReload ==
@@ -83,7 +95,7 @@ SignInReload ==
     /\ signedIn' = TRUE
     /\ mem' = stored
     /\ banner' = [i \in Ids |-> "none"]
-    /\ UNCHANGED <<stored, queue, inflight, saved, ran, slimmed, nruns>>
+    /\ UNCHANGED <<stored, queue, inflight, saved, savedId, rows, latest, ran, slimmed, nruns>>
 
 \* The effect: save what is restored, keep what isn't, drop result: null.
 SaveQueued ==
@@ -93,24 +105,34 @@ SaveQueued ==
        IN  /\ queue' = wait
            /\ inflight' = inflight \cup send
            /\ banner' = [i \in Ids |-> IF i \in send THEN "saving" ELSE banner[i]]
-    /\ UNCHANGED <<signedIn, mem, stored, saved, ran, slimmed, nruns>>
+    /\ UNCHANGED <<signedIn, mem, stored, saved, savedId, rows, latest, ran, slimmed, nruns>>
 
 SaveOk(i) ==
     /\ i \in inflight
     /\ inflight' = inflight \ {i}
     /\ saved' = [saved EXCEPT ![i] = @ + 1]
     /\ banner' = [banner EXCEPT ![i] = "saved"]
-    /\ UNCHANGED <<signedIn, mem, stored, queue, ran, slimmed, nruns>>
+    \* The queued save reads keys.saved when its turn comes: PUT if set, else POST.
+    /\ rows' = IF savedId THEN rows ELSE rows + 1
+    /\ savedId' = TRUE
+    /\ UNCHANGED <<signedIn, mem, stored, queue, latest, ran, slimmed, nruns>>
 
 SaveFails(i) ==
     /\ i \in inflight
     /\ inflight' = inflight \ {i}
     /\ banner' = [banner EXCEPT ![i] = "prompt"]
-    /\ UNCHANGED <<signedIn, mem, stored, queue, saved, ran, slimmed, nruns>>
+    /\ UNCHANGED <<signedIn, mem, stored, queue, saved, savedId, rows, latest, ran, slimmed,
+                   nruns>>
+
+\* Start over, or New scenario: forget keys.saved and keys.unsaved.
+StartNew ==
+    /\ inflight = {}
+    /\ savedId' = FALSE /\ rows' = 0 /\ queue' = {} /\ latest' = "none"
+    /\ UNCHANGED <<signedIn, mem, stored, inflight, banner, saved, ran, slimmed, nruns>>
 
 Next ==
     \/ \E i \in Ids : Run(i) \/ SaveOk(i) \/ SaveFails(i)
-    \/ StorageFull \/ SignInModal \/ SignInReload \/ SaveQueued
+    \/ StorageFull \/ SignInModal \/ SignInReload \/ SaveQueued \/ StartNew
 
 Spec == Init /\ [][Next]_vars
 
@@ -122,10 +144,10 @@ TypeOK ==
 \* The banner the person can see for a run (ScenarioWorkspace showBanner).
 Shown(i) == ~signedIn \/ banner[i] \in {"saving", "saved"}
 
-\* Every run is saved, on its way to being saved, or the person can see that
-\* it is not ("Save your analysis" with a button).
+\* The scenario's latest run is saved, on its way to being saved, or the person
+\* can see that it is not ("Save your analysis" with a button).
 NoSilentLoss ==
-    \A i \in ran :
+    \A i \in {latest} \ {"none"} :
         \/ saved[i] > 0
         \/ i \in queue \cup inflight
         \/ (banner[i] = "prompt" /\ Shown(i))
@@ -133,7 +155,7 @@ NoSilentLoss ==
 \* The same, for runs whose stored result was never slimmed: isolates the
 \* failed-request path from the storage path.
 NoSilentLossWhenStorageFits ==
-    \A i \in ran \ slimmed :
+    \A i \in ({latest} \ {"none"}) \ slimmed :
         \/ saved[i] > 0
         \/ i \in queue \cup inflight
         \/ (banner[i] = "prompt" /\ Shown(i))
@@ -141,9 +163,10 @@ NoSilentLossWhenStorageFits ==
 \* The same, for runs whose save request never failed: isolates the storage
 \* path from the failed-request path.
 NoSilentLossWhenSavesSucceed ==
-    \A i \in ran :
+    \A i \in {latest} \ {"none"} :
         banner[i] # "prompt" => (saved[i] > 0 \/ i \in queue \cup inflight)
 
-\* One row in "My scenarios" per run id.
-NoDuplicateSaves == \A i \in Ids : saved[i] <= 1
+\* One row in "My scenarios" per scenario, however often it is run (Barry's rule:
+\* only an explicit start makes a new one).
+NoDuplicateSaves == rows <= 1
 =============================================================================

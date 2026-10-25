@@ -33,7 +33,7 @@ function EmptyState() {
           shows up here.
         </p>
       </div>
-      <Link href="/calculator" className="btn-dark">
+      <Link href="/calculator?new=1" className="btn-dark">
         Run your scenario
       </Link>
     </div>
@@ -167,7 +167,7 @@ export default function MyScenariosPage() {
               </p>
             </div>
             {isSignedIn && (
-              <Link href="/calculator" className="btn-dark">
+              <Link href="/calculator?new=1" className="btn-dark">
                 New scenario
               </Link>
             )}

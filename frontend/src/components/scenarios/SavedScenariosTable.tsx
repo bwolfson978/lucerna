@@ -32,10 +32,10 @@ export function formatSavedDate(iso: string) {
 
 function sortScenarios(list: SavedScenario[], sort: SortKey) {
   const sorted = list.slice();
-  if (sort === "oldest") sorted.sort((a, b) => a.created_at.localeCompare(b.created_at));
+  if (sort === "oldest") sorted.sort((a, b) => a.updated_at.localeCompare(b.updated_at));
   else if (sort === "savings") sorted.sort((a, b) => b.estimated_savings - a.estimated_savings);
   else if (sort === "name") sorted.sort((a, b) => a.name.localeCompare(b.name));
-  else sorted.sort((a, b) => b.created_at.localeCompare(a.created_at));
+  else sorted.sort((a, b) => b.updated_at.localeCompare(a.updated_at));
   return sorted;
 }
 
@@ -335,7 +335,7 @@ export function SavedScenariosTable({ scenarios, onDelete }: SavedScenariosTable
                   role="cell"
                   className="font-data hidden px-3 text-body-sm text-text-tertiary md:block"
                 >
-                  {formatSavedDate(s.created_at)}
+                  {formatSavedDate(s.updated_at)}
                 </div>
                 <div role="cell" className="flex items-center justify-end gap-0.5 pr-1 md:pr-3">
                   <button
@@ -446,7 +446,7 @@ export function SavedScenariosTable({ scenarios, onDelete }: SavedScenariosTable
               <li key={s.id}>
                 <span className="min-w-0 truncate">{s.name}</span>
                 <span className="font-data shrink-0 text-text-tertiary">
-                  {formatSavedDate(s.created_at)}
+                  {formatSavedDate(s.updated_at)}
                 </span>
               </li>
             ))}

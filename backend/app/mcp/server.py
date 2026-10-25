@@ -653,8 +653,9 @@ def _saved_url(saved_id: str) -> str:
     description=(
         "Save a complete scenario and its analysis to the user's Roth Conversions Optimizer "
         "account, so they can reopen it later in a chat or on the website (My scenarios). "
-        "Only call when the user asks to save or keep it. Needs the user to sign in; the "
-        "first call asks them to."
+        "Only call when the user asks to save or keep it. With `saved_id`, the saved "
+        "scenario is updated to this version; without it, a new one is saved. Needs the "
+        "user to sign in; the first call asks them to."
     ),
 )
 @_tracked
@@ -663,6 +664,15 @@ async def save_scenario(
     name: Annotated[
         str | None,
         Field(max_length=80, description="Optional name, e.g. 'Retire at 60, stay in Ohio'"),
+    ] = None,
+    saved_id: Annotated[
+        str | None,
+        Field(
+            description=(
+                "saved_id of the scenario being worked on (from open_saved_scenario or an "
+                "earlier save_scenario), to update it. Leave out to save a new scenario."
+            )
+        ),
     ] = None,
 ) -> CallToolResult:
     user_id = _signed_in_user()
@@ -678,16 +688,24 @@ async def save_scenario(
         return _error(str(err))
     except LimitReached as err:
         return _limit_error(err, draft)
+    fields = {
+        "name": name.strip() if name and name.strip() else None,
+        "scenario": core.scenario_from_draft(draft, year),
+    }
     try:
-        saved_id, saved_name = await saved_store.save(
-            user_id,
-            scenario_input,
-            result.model_dump(mode="json"),
-            name=name.strip() if name and name.strip() else None,
-            scenario=core.scenario_from_draft(draft, year),
-        )
+        if saved_id:
+            saved = await saved_store.update(
+                user_id, saved_id, scenario_input, result.model_dump(mode="json"), **fields
+            )
+            if saved is None:
+                return _error("No saved scenario with that saved_id. Call list_saved_scenarios.")
+        else:
+            saved = await saved_store.save(
+                user_id, scenario_input, result.model_dump(mode="json"), **fields
+            )
     except saved_store.StorageUnavailable:
         return _storage_unavailable()
+    saved_id, saved_name = saved
     return _result(
         {
             "saved_id": saved_id,
@@ -707,7 +725,8 @@ async def save_scenario(
     meta=_account_meta(),
     description=(
         "List the scenarios the user saved to their account (from a chat or the website), "
-        "newest first, with each one's estimated lifetime tax savings when it was saved. "
+        "most recently saved first, with each one's estimated lifetime tax savings when it "
+        "was last saved. "
         "Needs the user to sign in."
     ),
 )
@@ -726,7 +745,7 @@ async def list_saved_scenarios() -> CallToolResult:
                 {
                     "saved_id": row.id,
                     "name": row.name,
-                    "saved_on": row.created_at.date().isoformat(),
+                    "saved_on": row.updated_at.date().isoformat(),
                     "estimated_lifetime_tax_savings_todays_dollars": round(row.estimated_savings),
                     "open_url": _saved_url(row.id),
                 }
@@ -766,7 +785,7 @@ async def open_saved_scenario(
     data = {
         "saved_id": saved.id,
         "name": saved.name,
-        "saved_on": saved.created_at.date().isoformat(),
+        "saved_on": saved.updated_at.date().isoformat(),
         "estimated_lifetime_tax_savings_when_saved": round(
             float(saved.result.get("estimated_lifetime_tax_savings") or 0)
         ),

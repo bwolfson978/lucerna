@@ -33,7 +33,7 @@ broke as expected.
 | AgentSpend `SpendWithinCap`, `SpendWithinOneMessage` | broken: turns in flight together overshoot the daily cap by all their costs | `backend/tests/agent/test_limits_model.py` |
 | AutoSave `NoSilentLossWhenSavesSucceed` | broken: a run whose result was slimmed out of session storage is dropped at sign-in, unsaved | `ScenarioWorkspace.autosave-model.test.tsx` |
 | AutoSave `NoSilentLossWhenStorageFits` | broken: a failed save while signed in hides the banner, nothing tells the person | same |
-| AutoSave `NoDuplicateSaves` | broken: running the same scenario twice signed in saves it twice (same `r_<hash>` id) | none yet, product call |
+| AutoSave `NoDuplicateSaves` | broke on the earlier code (every signed-in run saved a new row); holds now that a scenario keeps one saved row and saves run one at a time | `ScenarioWorkspace.identity.test.tsx` |
 | UndoDelete `HiddenWhilePending`, `DeletedStayGone` | hold | |
 | UndoDelete `ServerMatchesIntent` | broken: leaving the page while Clerk refreshes the token drops the pending delete | `page.undo-model.test.tsx` |
 | Lean `loop_eq_vec`, `fed_mono_*`, `fed_slope_le_top_*`, `fed_slope_ge_marginal_*` | proved | `backend/tests/engine/test_formal_models.py` checks the premises against the data |

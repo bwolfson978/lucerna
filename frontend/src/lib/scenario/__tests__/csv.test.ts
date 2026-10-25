@@ -7,6 +7,7 @@ describe("scenariosToCsv", () => {
         id: "abc",
         name: 'Retire at 62, "Texas"',
         created_at: "2026-10-14T18:00:00Z",
+        updated_at: "2026-10-14T18:00:00Z",
         filing_status: "married_filing_jointly",
         num_years: 27,
         estimated_savings: 41234.6,
