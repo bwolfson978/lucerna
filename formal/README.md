@@ -24,10 +24,9 @@ broke as expected.
 | Property | Result | Test |
 | --- | --- | --- |
 | McpLimits `CallerAllowance`, `AnonymousCeiling` | hold | |
-| McpLimits `EveryFreshRunIsCharged` | broken: a cached scenario evicted between `is_cached` and the run is computed free | `backend/tests/mcp/test_limits_model.py` |
-| McpLimits `FreshRunsHoldASlot` | broken: the same run skips the concurrency semaphore | same |
-| McpLimits `RefundsStayOnTheirDay` | broken: a timeout refund after midnight credits the new day | same |
-| McpLimits `NoChargeWithoutARun` | broken: a client cancelled while queued keeps its charge | same |
+| McpLimits `EveryFreshRunIsCharged`, `FreshRunsHoldASlot` | broke on the earlier code (a cached scenario evicted between `is_cached` and the run was computed free and skipped the concurrency cap); hold now that `_run_drafts` takes cached results up front with `cached_result`, so anything it computes was charged and holds a slot | `backend/tests/mcp/test_limits_model.py` |
+| McpLimits `RefundsStayOnTheirDay` | broke on the earlier code (a timeout refund after midnight credited the new day); holds now that `charge` returns its day and `refund` gives back only a charge from the current day | same |
+| McpLimits `NoChargeWithoutARun` | broke on the earlier code (a client cancelled while queued kept its charge); holds now that `admit` refunds on cancellation too | same |
 | AgentSpend `MessagesPerIp` | holds | |
 | AgentSpend `MessagesPerClient` | broken if the proxy appends to X-Forwarded-For: `client_ip` trusts the first entry | `backend/tests/mcp/test_limits_model.py` |
 | AgentSpend `SpendWithinCap`, `SpendWithinOneMessage` | broken: turns in flight together overshoot the daily cap by all their costs | `backend/tests/agent/test_limits_model.py` |

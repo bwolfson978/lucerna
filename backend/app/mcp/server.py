@@ -334,12 +334,24 @@ async def _run_drafts(
     drafts: list[ScenarioDraft],
 ) -> list[tuple[ScenarioInput, OptimizationResult]]:
     """Run each draft through the optimizer. Only results not already cached count
-    against the caller's limits (LimitReached when one is hit)."""
+    against the caller's limits (LimitReached when one is hit). Cached results are
+    taken up front, so everything computed below has been charged and holds a slot."""
     inputs = [core.scenario_input(d) for d in drafts]
-    fresh = {core.scenario_key(i) for i in inputs if not core.is_cached(i)}
+    results: dict[str, OptimizationResult] = {}
+    fresh: dict[str, ScenarioInput] = {}
+    for scenario in inputs:
+        key = core.scenario_key(scenario)
+        if key in results or key in fresh:
+            continue
+        if (cached := core.cached_result(scenario)) is not None:
+            results[key] = cached
+        else:
+            fresh[key] = scenario
     async with _analysis_limiter.admit(current_caller.get(), len(fresh)):
         _fresh_runs.set(_fresh_runs.get() + len(fresh))
-        return [(i, await anyio.to_thread.run_sync(core.run_optimization, i)) for i in inputs]
+        for key, scenario in fresh.items():
+            results[key] = await anyio.to_thread.run_sync(core.run_optimization, scenario)
+    return [(i, results[core.scenario_key(i)]) for i in inputs]
 
 
 @mcp.tool(
