@@ -19,7 +19,7 @@ SPECS=(
   "McpLimits:TypeOK CallerAllowance AnonymousCeiling:EveryFreshRunIsCharged FreshRunsHoldASlot RefundsStayOnTheirDay NoChargeWithoutARun"
   "AgentSpend:TypeOK MessagesPerIp:MessagesPerClient SpendWithinCap SpendWithinOneMessage"
   "AutoSave:TypeOK NoDuplicateSaves NoSilentLoss NoSilentLossWhenStorageFits NoSilentLossWhenSavesSucceed:"
-  "UndoDelete:TypeOK HiddenWhilePending DeletedStayGone:ServerMatchesIntent"
+  "UndoDelete:TypeOK HiddenWhilePending DeletedStayGone ServerMatchesIntent:"
 )
 
 status=0
