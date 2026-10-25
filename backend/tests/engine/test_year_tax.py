@@ -1,4 +1,4 @@
-"""Taxable Social Security, the 65+ deduction and state benefit exemptions."""
+"""Taxable Social Security, the 65+ deductions and state benefit exemptions."""
 
 import numpy as np
 import pytest
@@ -96,8 +96,68 @@ class TestYearTaxForScenario:
     def test_mfj_counts_both_spouses(self):
         assert year_tax(_scenario(filing_status=MFJ), 0).extra_deduction == 3_300
 
+    def test_senior_deduction_for_65_and_older_through_2028(self):
+        assert year_tax(_scenario(age=65), 0).senior_bonus_people == 1
+        assert year_tax(_scenario(age=64), 0).senior_bonus_people == 0
+        assert year_tax(_scenario(filing_status=MFJ), 0).senior_bonus_people == 2
+
+    def test_senior_deduction_ends_after_2028(self):
+        scenario = _scenario(age=64).model_copy(
+            update={
+                "timeline": [PlanYear(year=2026 + t, gross_income=60_000) for t in range(5)],
+            }
+        )
+        got = [year_tax(scenario, t).senior_bonus_people for t in range(5)]
+        # Turns 65 in 2027; the deduction ends after 2028
+        assert got == [0, 1, 1, 0, 0]
+
     def test_benefits_capped_at_the_years_income(self):
         assert year_tax(_scenario(social_security=90_000), 0).social_security == 60_000
+
+
+class TestSeniorDeduction:
+    def test_full_6000_under_the_phase_out(self):
+        yt = YearTax(SINGLE, senior_bonus_people=1)
+        assert yt.senior_deduction(75_000) == 6_000
+        assert yt.federal(60_000) == pytest.approx(calculate_federal_tax(54_000, SINGLE))
+
+    def test_cut_by_6_percent_of_magi_over_75000(self):
+        # 6,000 - 6% of the 25,000 over 75,000
+        assert YearTax(SINGLE, senior_bonus_people=1).senior_deduction(100_000) == pytest.approx(
+            4_500
+        )
+
+    def test_gone_at_175000_single(self):
+        assert YearTax(SINGLE, senior_bonus_people=1).senior_deduction(175_000) == 0
+        assert YearTax(SINGLE, senior_bonus_people=1).senior_deduction(400_000) == 0
+
+    def test_mfj_cuts_each_spouses_6000(self):
+        yt = YearTax(MFJ, senior_bonus_people=2)
+        assert yt.senior_deduction(150_000) == 12_000
+        # Each spouse's 6,000 loses 6% of the 50,000 over 150,000
+        assert yt.senior_deduction(200_000) == pytest.approx(6_000)
+        assert yt.senior_deduction(250_000) == 0
+
+    def test_phase_out_uses_agi_not_full_benefits(self):
+        yt = YearTax(SINGLE, social_security=28_000, senior_bonus_people=1)
+        # Engine income 60,000 is AGI 46,700, under the threshold
+        assert yt.senior_deduction(yt.agi(60_000)) == 6_000
+
+    def test_conversion_in_the_phase_out_costs_more_than_its_bracket(self):
+        yt = YearTax(SINGLE, senior_bonus_people=1)
+        # 1,000 more income also takes 60 off the deduction, in the 22% bracket
+        cost = yt.federal(101_000) - yt.federal(100_000)
+        assert cost == pytest.approx(0.22 * 1_060)
+
+    def test_fixed_in_law_so_it_shrinks_with_inflation(self):
+        yt = YearTax(SINGLE, senior_bonus_people=1, fixed_scale=0.9)
+        assert yt.senior_deduction(0) == pytest.approx(5_400)
+        assert yt.senior_deduction(77_500) == pytest.approx(5_400 - 0.06 * 10_000)
+
+    def test_vectorized_matches_scalar(self):
+        yt = YearTax(MFJ, social_security=40_000, extra_deduction=3_300, senior_bonus_people=2)
+        incomes = np.array([30_000.0, 160_000.0, 210_000.0, 300_000.0])
+        assert yt.federal(incomes) == pytest.approx([yt.federal(float(x)) for x in incomes])
 
 
 class TestOptimizerUsesTaxableBenefits:
