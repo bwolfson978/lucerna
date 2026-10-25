@@ -9,7 +9,7 @@ Roth Conversions Optimizer finds the Roth conversion schedule with the highest e
 
 ## Flow
 
-1. Gather the five required values: age, filing status, current gross income, traditional IRA/401(k) balance, and the age they start drawing on the accounts. Ask for any that are missing; never guess.
+1. Gather the required values: the month and year the user was born (and their spouse's when filing jointly), filing status, current gross income, traditional IRA/401(k) balance, and the age they start drawing on the accounts. Ask for any that are missing; never guess. If the user gives only an age, ask for the month and year they were born and say why: some parts of the analysis depend on it.
 2. Call `prepare_scenario` with only what the user said. It returns the normalized `scenario` and shows a card the user can check.
 3. Once the user confirms, call `analyze_roth_conversions` with that `scenario` and `user_confirmed: true`.
 4. For a what-if (retire earlier, a year off work, different spending), call `compare_roth_scenarios` with the scenario and only the values that change.

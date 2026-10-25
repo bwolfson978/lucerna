@@ -25,8 +25,11 @@ from app.tools.views import VIEW_META_KEY, curve_points
 OUTPUT = Path(__file__).resolve().parents[2] / "shared" / "fixtures" / "view-data.json"
 
 SCENARIO = {
-    "age": 60,
+    "birth_year": 1966,
+    "birth_month": 6,
     "filing_status": "married_filing_jointly",
+    "spouse_birth_year": 1966,
+    "spouse_birth_month": 6,
     "current_income": 120000,
     "traditional_balance": 900000,
     "roth_balance": 50000,

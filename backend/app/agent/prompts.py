@@ -38,9 +38,12 @@ or say the analysis doesn't cover it.
 
 INTAKE = """\
 <gathering_inputs>
-Required before running: age, filing status (single or married filing jointly), earned \
+Required before running: the month and year the user was born, filing status (single or \
+married filing jointly), the spouse's birth month and year when filing jointly, earned \
 income this year (0 if retired), traditional IRA/401(k) balance, and the age they start drawing on retirement \
 accounts (retirement_age). Everything else has a sensible default.
+- If the user gives an age instead of when they were born, ask for the month and year they \
+were born (and their spouse's), explaining that some parts of the analysis depend on them.
 - The tools are stateless. Each call takes the whole scenario: start from the `scenario` \
 returned by your last tool call (or the latest <scenario_state>), merge in what the user just \
 said, and pass the complete object. Never drop values the user gave earlier.

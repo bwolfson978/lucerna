@@ -7,6 +7,8 @@ from app.agent.limits import LimitConfig, UsageLimiter, estimate_cost
 from tests.agent.fakes import FunctionModelClient, text, tool_use
 from tests.agent.test_loop import assert_well_formed
 
+THIS_YEAR = datetime.date.today().year
+
 
 def test_limits_per_conversation_ip_and_spend():
     limiter = UsageLimiter(
@@ -50,8 +52,11 @@ async def test_scripted_demo_is_valid_history_with_engine_numbers():
 
 
 SCENARIO = {
-    "age": 63,
+    "birth_year": THIS_YEAR - 63,
+    "birth_month": 6,
     "filing_status": "married_filing_jointly",
+    "spouse_birth_year": THIS_YEAR - 52,
+    "spouse_birth_month": 3,
     "current_income": 20000,
     "traditional_balance": 1400000,
     "retirement_age": 73,

@@ -5,6 +5,7 @@ import type { ScenarioInput, FilingStatus } from "@/lib/types";
 import { NumericField } from "@/components/common/NumericField";
 import { CurrencyInput } from "@/components/common/CurrencyInput";
 import { FormSelect } from "@/components/common/FormSelect";
+import { BirthDateField } from "@/components/common/BirthDateField";
 import { GlowButton } from "@/components/common/GlowButton";
 import { ChevronIcon } from "@/components/common/icons";
 import { Switch } from "@/components/ui/switch";
@@ -39,8 +40,9 @@ interface InputFormProps {
 // Order must match the on-screen layout of fields. Used to find the first
 // invalid field to scroll & focus when submit fails validation.
 const FIELD_ORDER = [
-  "age",
+  "birth",
   "filingStatus",
+  "spouseBirth",
   "currentIncome",
   "traditionalBalance",
   "retirementAge",
@@ -96,6 +98,10 @@ export function InputForm({
 
   const {
     age,
+    birth_year: birthYear,
+    birth_month: birthMonth,
+    spouse_birth_year: spouseBirthYear,
+    spouse_birth_month: spouseBirthMonth,
     filing_status: filingStatus,
     current_income: currentIncome,
     traditional_balance: traditionalBalance,
@@ -116,6 +122,11 @@ export function InputForm({
     timeline,
   } = draft;
   const horizon = planningHorizonAge ?? 90;
+  const joint = filingStatus === "married_filing_jointly";
+  const turns = (year: number | null) =>
+    year != null && year <= CURRENT_YEAR && CURRENT_YEAR - year <= 120
+      ? `You turn ${CURRENT_YEAR - year} this year`
+      : undefined;
   const sourceErrors: Record<number, string> = {};
   incomeSources.forEach((src, i) => {
     if (src.end_age != null && src.end_age < src.start_age)
@@ -171,9 +182,19 @@ export function InputForm({
     const planningHorizonVal = planningHorizonAge ?? 90;
     const hhSize = householdSize ?? 1;
 
-    if (age == null) errs.age = "Enter your age";
-    else if (age < 0 || age > 120) errs.age = "Age must be between 0 and 120";
+    const birthError = (month: number | null, year: number | null, whose: string) => {
+      if (month == null || year == null) return `Enter the month and year ${whose} born`;
+      if (year > CURRENT_YEAR || CURRENT_YEAR - year > 120)
+        return `Enter a year from ${CURRENT_YEAR - 120} to ${CURRENT_YEAR}`;
+      return undefined;
+    };
+    const birth = birthError(birthMonth, birthYear, "you were");
+    if (birth) errs.birth = birth;
     if (filingStatus == null) errs.filingStatus = "Select your filing status";
+    if (joint) {
+      const spouse = birthError(spouseBirthMonth, spouseBirthYear, "your spouse was");
+      if (spouse) errs.spouseBirth = spouse;
+    }
     if (currentIncome == null) errs.currentIncome = "Enter your earned income, or 0";
     if (traditionalBalance == null || traditionalBalance <= 0)
       errs.traditionalBalance = "Enter your traditional IRA/401(k) balance";
@@ -210,18 +231,18 @@ export function InputForm({
     <form onSubmit={handleSubmit} className="flex flex-col gap-section">
       {/* Pairs that belong together: you, income, savings, retirement, where you live. */}
       <div className="grid grid-cols-1 gap-x-default gap-y-5 sm:grid-cols-2">
-        <NumericField
+        <BirthDateField
           ref={(el) => {
-            fieldRefs.current.age = el;
+            fieldRefs.current.birth = el;
           }}
-          label="Age"
-          value={age ?? ""}
-          placeholder="e.g. 35"
-          min={0}
-          max={120}
+          label="Born"
+          month={birthMonth}
+          year={birthYear}
           required
-          error={errors.age}
-          onChange={(v) => patch({ age: v })}
+          error={errors.birth}
+          helper={turns(birthYear)}
+          tooltip="RMDs and some other rules depend on the month and year you were born."
+          onChange={({ month, year }) => patch({ birth_month: month, birth_year: year })}
         />
         <FormSelect
           ref={(el) => {
@@ -235,6 +256,24 @@ export function InputForm({
           error={errors.filingStatus}
           onChange={(e) => patch({ filing_status: e.target.value as FilingStatus })}
         />
+        {joint && (
+          <div className="grid grid-cols-1 gap-x-default sm:col-span-2 sm:grid-cols-2">
+            <BirthDateField
+              ref={(el) => {
+                fieldRefs.current.spouseBirth = el;
+              }}
+              label="Spouse born"
+              month={spouseBirthMonth}
+              year={spouseBirthYear}
+              required
+              error={errors.spouseBirth}
+              helper={turns(spouseBirthYear)?.replace("You turn", "Your spouse turns")}
+              onChange={({ month, year }) =>
+                patch({ spouse_birth_month: month, spouse_birth_year: year })
+              }
+            />
+          </div>
+        )}
         <CurrencyInput
           ref={(el) => {
             fieldRefs.current.currentIncome = el;

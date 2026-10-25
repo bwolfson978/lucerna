@@ -11,7 +11,11 @@ export type FilingStatus = "single" | "married_filing_jointly";
 /** Scenario values as recorded: the `scenario` from `prepare_scenario` (backend
  * app/tools/core.py scenario_from_draft), or the web app's draft. */
 export interface ScenarioValues {
-  age?: number | null;
+  birth_year?: number | null;
+  /** 1 (January) to 12. */
+  birth_month?: number | null;
+  spouse_birth_year?: number | null;
+  spouse_birth_month?: number | null;
   filing_status?: FilingStatus | null;
   state?: string | null;
   retirement_state?: string | null;
@@ -73,24 +77,50 @@ const ASSUMPTION_KEYS = new Set(["growth", "horizon", "return", "inflation"]);
 
 /** Labels for the fields `prepare_scenario` reports as missing. */
 export const FIELD_LABELS: Record<string, string> = {
-  age: "Age",
+  birth_year: "Year you were born",
+  birth_month: "Month you were born",
+  spouse_birth_year: "Year your spouse was born",
+  spouse_birth_month: "Month your spouse was born",
   filing_status: "Filing status",
   current_income: "Earned income this year",
   traditional_balance: "Traditional IRA/401(k) balance",
   retirement_age: "Age you start drawing",
 };
 
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+/** "May 1963", or just the year while the month is missing. */
+export function formatBorn(year?: number | null, month?: number | null): string | null {
+  if (year == null) return null;
+  const name = month != null ? MONTHS[month - 1] : undefined;
+  return name ? `${name} ${year}` : String(year);
+}
+
 function buildRows(s: ScenarioValues): Row[] {
   const notSet = "Not set";
   const household = s.household_size ?? 1;
+  const joint = s.filing_status === "married_filing_jointly";
   return [
     {
-      key: "age",
-      label: "Age",
-      value: s.age != null ? String(s.age) : notSet,
-      unset: s.age == null,
-      fields: ["age"],
-      edit: "age",
+      key: "born",
+      label: "Born",
+      value: formatBorn(s.birth_year, s.birth_month) ?? notSet,
+      unset: s.birth_year == null || s.birth_month == null,
+      fields: ["birth_year", "birth_month"],
+      formOnly: true,
     },
     {
       key: "filing",
@@ -100,6 +130,18 @@ function buildRows(s: ScenarioValues): Row[] {
       fields: ["filing_status"],
       editFiling: true,
     },
+    ...(joint
+      ? [
+          {
+            key: "spouse-born",
+            label: "Spouse born",
+            value: formatBorn(s.spouse_birth_year, s.spouse_birth_month) ?? notSet,
+            unset: s.spouse_birth_year == null || s.spouse_birth_month == null,
+            fields: ["spouse_birth_year", "spouse_birth_month"],
+            formOnly: true,
+          } satisfies Row,
+        ]
+      : []),
     {
       key: "income",
       label: "Earned income this year",
@@ -408,7 +450,7 @@ export function ScenarioSummary({
 /** The scenario in one line, for a folded summary. */
 function recap(s: ScenarioValues): string {
   return [
-    s.age != null && `Age ${s.age}`,
+    s.birth_year != null && `Born ${formatBorn(s.birth_year, s.birth_month)}`,
     filingStatusLabel(s.filing_status),
     s.current_income != null && `${formatCurrency(s.current_income)} earned income`,
     s.traditional_balance != null && `${formatCurrency(s.traditional_balance)} traditional`,

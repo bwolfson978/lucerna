@@ -29,9 +29,10 @@ export default function PrivacyPage() {
     >
       <DocSection id="what-we-collect" title="What we collect">
         <DocTerm term="The numbers you enter for an analysis.">
-          Age, filing status, state, income, account balances, the age withdrawals begin and similar
-          scenario inputs. We use them to run the analysis and send the results back. If you
-          don&apos;t save a scenario, we don&apos;t store these inputs.
+          Month and year of birth (yours, and your spouse&apos;s when you file jointly), filing
+          status, state, income, account balances, the age withdrawals begin and similar scenario
+          inputs. We use them to run the analysis and send the results back. If you don&apos;t save
+          a scenario, we don&apos;t store these inputs.
         </DocTerm>
         <DocTerm term="Saved scenarios.">
           If you sign in and save a scenario, on the website or from a chat, we store its inputs,

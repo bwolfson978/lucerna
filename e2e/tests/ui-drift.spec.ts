@@ -52,8 +52,8 @@ async function measure(scope: Locator, parts: string[]) {
 async function converse(page: Page) {
   await page.goto('/calculator')
   // The sample message lands once the page is interactive; typing before that races hydration.
-  await expect(page.getByLabel('Message')).toHaveValue(/^I'm 55 and single/)
-  await page.getByLabel('Message').fill("I'm 52, married, income $90,000 a year, $600k in my 401k, I want to retire at 60")
+  await expect(page.getByLabel('Message')).toHaveValue(/^I was born in March 1971 and I'm single/)
+  await page.getByLabel('Message').fill("I was born in June 1974 and my wife in March 1975, married, income $90,000 a year, $600k in my 401k, I want to retire at 60")
   await page.getByRole('button', { name: 'Send' }).click()
   // The scenario is captured: the panel (desktop) or the bar (phones) says it's ready.
   await page.getByText(/Ready to run/).filter({ visible: true }).first().waitFor({ timeout: 20000 })

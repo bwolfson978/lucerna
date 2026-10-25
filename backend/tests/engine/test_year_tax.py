@@ -96,6 +96,16 @@ class TestYearTaxForScenario:
     def test_mfj_counts_both_spouses(self):
         assert year_tax(_scenario(filing_status=MFJ), 0).extra_deduction == 3_300
 
+    def test_a_younger_spouse_counts_from_their_own_65th(self):
+        scenario = _scenario(filing_status=MFJ).model_copy(update={"spouse_age": 60})
+        yt = year_tax(scenario, 0)
+        assert (yt.extra_deduction, yt.senior_bonus_people) == (1_650, 1)
+        # Medicare (and IRMAA) two years on: only the user is 65 or older by then
+        assert yt.medicare_people == 1
+        older = _scenario(age=60, filing_status=MFJ).model_copy(update={"spouse_age": 63})
+        assert year_tax(older, 0).medicare_people == 1
+        assert year_tax(_scenario(age=60, filing_status=MFJ), 0).medicare_people == 0
+
     def test_senior_deduction_for_65_and_older_through_2028(self):
         assert year_tax(_scenario(age=65), 0).senior_bonus_people == 1
         assert year_tax(_scenario(age=64), 0).senior_bonus_people == 0

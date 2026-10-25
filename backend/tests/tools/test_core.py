@@ -12,8 +12,11 @@ from app.tools.models import MethodologyTopic, ScenarioUpdate
 REPO = Path(__file__).resolve().parents[3]
 
 READY = ScenarioUpdate(
-    age=52,
+    birth_year=1974,
+    birth_month=6,
     filing_status="married_filing_jointly",
+    spouse_birth_year=1975,
+    spouse_birth_month=2,
     current_income=90000,
     traditional_balance=600000,
     retirement_age=60,
@@ -26,7 +29,7 @@ def ready_draft() -> ScenarioDraft:
 
 def test_update_covers_every_draft_field():
     """Anything the form can set, a tool call can set too."""
-    draft_fields = set(ScenarioDraft.model_fields) - {"timeline"}
+    draft_fields = set(ScenarioDraft.model_fields) - {"timeline", "age"}
     update_fields = set(ScenarioUpdate.model_fields) - {"income_changes"}
     assert draft_fields == update_fields
 
@@ -51,7 +54,9 @@ def test_frontend_methodology_copy_is_identical():
 
 
 def test_describe_reports_missing_and_ready():
-    partial = core.draft_from_scenario(ScenarioUpdate(age=52, filing_status="single"), 2026)
+    partial = core.draft_from_scenario(
+        ScenarioUpdate(birth_year=1974, birth_month=6, filing_status="single"), 2026
+    )
     described = core.describe_draft(partial, 2026)
     assert described["missing_required"] == [
         "current_income",
@@ -63,8 +68,11 @@ def test_describe_reports_missing_and_ready():
 
 
 RETIRED = ScenarioUpdate(
-    age=66,
+    birth_year=1960,
+    birth_month=6,
     filing_status="married_filing_jointly",
+    spouse_birth_year=1960,
+    spouse_birth_month=6,
     state="FL",
     current_income=0,
     traditional_balance=2_600_000,

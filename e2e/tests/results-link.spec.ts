@@ -24,5 +24,5 @@ test('a full results link from another app opens the same result', async ({ page
   // Back in the conversation, the scenario is filled in and ready to talk about.
   await page.getByRole('button', { name: /Back to conversation/ }).click()
   await openDetails(page)
-  await expect(page.getByLabel('Age', { exact: true })).toHaveValue(String(fixture.scenario.age))
+  await expect(page.getByLabel('Born: year', { exact: true })).toHaveValue(String(fixture.scenario.birth_year))
 })

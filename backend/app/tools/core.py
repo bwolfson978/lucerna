@@ -21,6 +21,7 @@ from app.engine.state_tax import _TAX_DATA
 from app.engine.tax import BRACKETS, STANDARD_DEDUCTION
 from app.engine.types import FilingStatus, OptimizationResult, PlanYear, ScenarioInput
 from app.tools.draft import (
+    BIRTH_REASON,
     VALID_STATES,
     ScenarioDraft,
     build_scenario_input,
@@ -126,7 +127,7 @@ EDITED_NOTE = "Edited in the form"
 def scenario_from_draft(draft: ScenarioDraft, start_year: int) -> dict:
     """The stateless scenario for a draft: its values plus any year that differs from the
     projection. ``draft_from_scenario`` turns it back into the same timeline."""
-    scenario = draft.model_dump(mode="json", exclude={"timeline"}, exclude_none=True)
+    scenario = draft.model_dump(mode="json", exclude={"timeline", "age"}, exclude_none=True)
     if not scenario.get("income_sources"):
         scenario.pop("income_sources", None)
     projected: dict[int, float] = {}
@@ -170,7 +171,11 @@ def scenario_from_input(inputs: ScenarioInput, start_year: int) -> dict:
         growth = round((ratio - 1) * 100, 1)
     healthcare = inputs.healthcare
     draft = ScenarioDraft(
+        birth_year=timeline[0].year - inputs.age,
         age=inputs.age + max(0, start_year - timeline[0].year),
+        spouse_birth_year=(
+            timeline[0].year - inputs.spouse_age if inputs.spouse_age is not None else None
+        ),
         filing_status=inputs.filing_status,
         state=inputs.state,
         retirement_state=inputs.retirement_state,
@@ -205,6 +210,17 @@ def scenario_from_input(inputs: ScenarioInput, start_year: int) -> dict:
     return scenario
 
 
+def upgrade_scenario(scenario: dict, year: int) -> dict:
+    """A scenario saved before birth dates were asked for gives the user's age in ``year``;
+    turn it into a birth year. The month is left for the user to fill in."""
+    if "age" not in scenario:
+        return scenario
+    upgraded = {k: v for k, v in scenario.items() if k != "age"}
+    if "birth_year" not in upgraded and isinstance(scenario["age"], int):
+        upgraded["birth_year"] = year - scenario["age"]
+    return upgraded
+
+
 def draft_from_scenario(scenario: ScenarioUpdate, start_year: int) -> ScenarioDraft:
     return apply_update(ScenarioDraft(), scenario, start_year)
 
@@ -226,6 +242,7 @@ def describe_draft(draft: ScenarioDraft, start_year: int) -> dict:
         "scenario": scenario_from_draft(draft, start_year),
         "timeline": timeline,
         "missing_required": missing,
+        **({"why_birth_date": BIRTH_REASON} if any("birth" in m for m in missing) else {}),
         "problems": errors,
         "ready_to_run": not missing and not errors,
         "draft_hash": draft_hash(draft),

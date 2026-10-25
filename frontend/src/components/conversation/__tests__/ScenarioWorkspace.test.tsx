@@ -11,11 +11,15 @@ vi.mock("next/navigation", () => ({ usePathname: () => "/calculator" }));
 vi.mock("posthog-js", () => ({ default: { capture: vi.fn() } }));
 
 const API = "http://localhost:8000/api/agent";
+const BORN = `June ${new Date().getFullYear() - 52}`;
 
 const DRAFT: ScenarioDraft = {
   ...EMPTY_DRAFT,
-  age: 52,
+  birth_year: new Date().getFullYear() - 52,
+  birth_month: 6,
   filing_status: "married_filing_jointly",
+  spouse_birth_year: new Date().getFullYear() - 52,
+  spouse_birth_month: 3,
   current_income: 90000,
   traditional_balance: 600000,
   retirement_age: 60,
@@ -141,13 +145,13 @@ describe("ScenarioWorkspace (calculator)", () => {
     mockAgent(sent);
     renderWorkspace("calculator");
     const box = screen.getByLabelText("Message") as HTMLTextAreaElement;
-    expect(box.value).toMatch(/^I'm 55 and single/);
+    expect(box.value).toMatch(/^I was born in March 1971 and I'm single/);
     expect(box).toHaveClass("italic");
     expect(screen.getByText(/Sample message\. Change the numbers/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Send" }));
     await waitFor(() => expect(sent).toHaveLength(1));
-    expect(sent[0].message).toMatch(/^I'm 55 and single/);
+    expect(sent[0].message).toMatch(/^I was born in March 1971 and I'm single/);
     // After the first message the box is a plain follow-up box.
     await waitFor(() => expect(box.value).toBe(""));
     expect(screen.queryByText(/Sample message/)).not.toBeInTheDocument();
@@ -158,7 +162,7 @@ describe("ScenarioWorkspace (calculator)", () => {
     mockAgent();
     renderWorkspace("calculator");
     const box = screen.getByLabelText("Message") as HTMLTextAreaElement;
-    fireEvent.change(box, { target: { value: box.value.replace("55", "52") } });
+    fireEvent.change(box, { target: { value: box.value.replace("1971", "1974") } });
     expect(box).not.toHaveClass("italic");
     expect(screen.queryByText(/Sample message/)).not.toBeInTheDocument();
 
@@ -180,17 +184,17 @@ describe("ScenarioWorkspace (calculator)", () => {
     mockAgent(sent);
     renderWorkspace("calculator");
 
-    await sendMessage("I'm 52, married, $90k income, $600k in my 401k, retiring at 60");
+    await sendMessage("Born June 1974, married, $90k income, $600k in my 401k, retiring at 60");
     // The values land in the panel, and the bar above the message box counts them.
     await captured();
     expect(
-      screen.getByRole("button", { name: "Review your scenario. Ready to run · 5 new" })
+      screen.getByRole("button", { name: "Review your scenario. Ready to run · 6 new" })
     ).toBeInTheDocument();
-    expect(screen.getByText("Added 5 details to your scenario")).toHaveClass("sr-only");
+    expect(screen.getByText("Added 6 details to your scenario")).toHaveClass("sr-only");
     expect(screen.queryByTestId("scenario-note")).not.toBeInTheDocument();
-    expect(within(panel()).getByText("52")).toBeInTheDocument();
+    expect(within(panel()).getByText(BORN)).toBeInTheDocument();
     expect(within(panel()).getByText("$600,000")).toBeInTheDocument();
-    expect(within(panel()).getAllByText("New")).toHaveLength(5);
+    expect(within(panel()).getAllByText("New")).toHaveLength(6);
     expect(within(panel()).getByText("Ready to run")).toBeInTheDocument();
 
     // Edit a value in the panel: the shared draft changes and its "New" mark goes.
@@ -199,7 +203,7 @@ describe("ScenarioWorkspace (calculator)", () => {
     fireEvent.change(input, { target: { value: "62" } });
     fireEvent.blur(input);
     expect(within(panel()).getByRole("button", { name: "62" })).toBeInTheDocument();
-    expect(within(panel()).getAllByText("New")).toHaveLength(4);
+    expect(within(panel()).getAllByText("New")).toHaveLength(5);
 
     fireEvent.click(within(panel()).getByRole("button", { name: "Run the numbers" }));
     const headline = await screen.findByTestId("result-headline");
@@ -234,13 +238,13 @@ describe("ScenarioWorkspace (calculator)", () => {
   it("opens the full details from the panel", async () => {
     mockAgent();
     renderWorkspace("calculator");
-    await sendMessage("I'm 52, married, $90k income, $600k in my 401k, retiring at 60");
+    await sendMessage("Born June 1974, married, $90k income, $600k in my 401k, retiring at 60");
     await captured();
 
     fireEvent.click(within(panel()).getByRole("button", { name: /Income in retirement/ }));
     expect(window.location.search).toContain("view=details&section=income");
     expect(screen.getByRole("heading", { name: "All the details." })).toBeInTheDocument();
-    expect(screen.getByLabelText("Age")).toHaveValue("52");
+    expect(screen.getByLabelText("Born: year")).toHaveValue(String(new Date().getFullYear() - 52));
     // The form is the whole scenario here, so the panel steps aside.
     expect(screen.queryByRole("complementary", { name: "Your scenario" })).toBeNull();
     expect(screen.getByRole("button", { name: "Run the numbers" })).toBeInTheDocument();
@@ -255,7 +259,7 @@ describe("ScenarioWorkspace (calculator)", () => {
   it("asks before clearing the conversation", async () => {
     mockAgent();
     renderWorkspace("calculator");
-    await sendMessage("I'm 52, married, $90k income, $600k in my 401k, retiring at 60");
+    await sendMessage("Born June 1974, married, $90k income, $600k in my 401k, retiring at 60");
     await captured();
 
     fireEvent.click(await screen.findByRole("button", { name: "Start over" }));
@@ -267,7 +271,7 @@ describe("ScenarioWorkspace (calculator)", () => {
     expect(screen.queryByText("Here's what I have.")).not.toBeInTheDocument();
     // Back to the opening line; the values gathered so far stay in the scenario.
     expect(screen.getByRole("button", { name: "Run my scenario" })).toBeInTheDocument();
-    expect(within(panel()).getByText("52")).toBeInTheDocument();
+    expect(within(panel()).getByText(BORN)).toBeInTheDocument();
   });
 
   it("runs the scenario itself when the assistant is unavailable", async () => {
@@ -308,7 +312,7 @@ describe("ScenarioWorkspace (calculator)", () => {
     renderWorkspace("calculator");
     expect(await screen.findByText("Here's what I have.")).toBeInTheDocument();
     expect(screen.getByText("I'm 52")).toBeInTheDocument();
-    expect(within(panel()).getByText("52")).toBeInTheDocument();
+    expect(within(panel()).getByText(BORN)).toBeInTheDocument();
     // A scenario with values in it opens beside the conversation.
     expect(screen.queryByRole("button", { name: "Show your scenario" })).toBeNull();
   });
@@ -323,7 +327,7 @@ describe("ScenarioWorkspace (calculator)", () => {
       expect(bar()).not.toHaveClass("lg:hidden");
 
       // The assistant's first fill opens it, and the bar steps aside on desktop.
-      await sendMessage("I'm 52, married, $90k income, $600k in my 401k, retiring at 60");
+      await sendMessage("Born June 1974, married, $90k income, $600k in my 401k, retiring at 60");
       await captured();
       expect(screen.queryByRole("button", { name: "Show your scenario" })).toBeNull();
       expect(bar()).toHaveClass("lg:hidden");
@@ -396,7 +400,9 @@ describe("ScenarioWorkspace (full results links)", () => {
     expect(requests).toEqual([{ scenario: "eyJhZ2UiOjUyfQ", label: "Retire" }]);
     // The scenario stays in the address so the link can still be shared.
     expect(window.location.search).toContain("scenario=eyJhZ2UiOjUyfQ");
-    expect(JSON.parse(sessionStorage.getItem("lucerna:draft:v1")!).age).toBe(52);
+    expect(JSON.parse(sessionStorage.getItem("lucerna:draft:v1")!).birth_year).toBe(
+      new Date().getFullYear() - 52
+    );
     // Back returns to the conversation on this page, not to whatever came before.
     const backSpy = vi.spyOn(window.history, "back").mockImplementation(() => {
       window.history.replaceState(null, "", "/calculator");
@@ -470,7 +476,7 @@ describe("ScenarioWorkspace (demo)", () => {
     expect(screen.getByLabelText("Message")).not.toBeDisabled();
     // Margaret's scenario sits beside her conversation, read only.
     const demoPanel = screen.getByRole("complementary", { name: "Margaret's scenario" });
-    expect(within(demoPanel).getByText("52")).toBeInTheDocument();
+    expect(within(demoPanel).getByText(BORN)).toBeInTheDocument();
     expect(within(demoPanel).queryByRole("button", { name: "Run the numbers" })).toBeNull();
   });
 });

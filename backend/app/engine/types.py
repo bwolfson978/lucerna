@@ -103,8 +103,14 @@ class ScenarioInput(BaseModel):
     """All inputs needed to run the multi-year optimization."""
 
     # Personal
-    age: int = Field(ge=0, le=120, description="Current age")
+    age: int = Field(ge=0, le=120, description="Age in the plan's first year")
     filing_status: FilingStatus
+    spouse_age: int | None = Field(
+        default=None,
+        ge=0,
+        le=120,
+        description="Spouse's age in the plan's first year (joint filers). None = same as `age`.",
+    )
 
     # Planning timeline (replaces income_timeline)
     timeline: list[PlanYear] = Field(
@@ -186,6 +192,14 @@ class ScenarioInput(BaseModel):
     def real_discount_rate(self) -> float:
         """Discount rate after inflation, for amounts in today's dollars."""
         return real_rate(self.discount_rate, self.inflation_rate)
+
+    def people_at_least(self, age: int, t: int) -> int:
+        """How many people in the household are at least ``age`` in plan year ``t``."""
+        count = int(self.age + t >= age)
+        if self.filing_status == FilingStatus.MFJ:
+            spouse = self.age if self.spouse_age is None else self.spouse_age
+            count += int(spouse + t >= age)
+        return count
 
     def fixed_dollar_scale(self, t: float) -> float:
         """Today's value, in plan year ``t``, of a dollar amount fixed in law."""

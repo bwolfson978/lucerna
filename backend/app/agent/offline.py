@@ -30,14 +30,27 @@ def _money(text: str) -> float | None:
     return value
 
 
+_MONTHS = ("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec")
+
+
 def extract_update(text: str) -> dict:
     """Pull scenario values out of a message. Deliberately simple."""
     lowered = text.lower()
     update: dict = {}
-    if m := re.search(
-        r"\b(?:i'?m|i am|age|aged)\s+(\d{2})\b|\b(\d{2})\s*(?:years old|yo)\b", lowered
+    for i, m in enumerate(
+        re.finditer(rf"\b({'|'.join(_MONTHS)})[a-z]*,?\s+((?:19|20)\d\d)\b", lowered)
     ):
-        update["age"] = int(m.group(1) or m.group(2))
+        prefix = (
+            "spouse_"
+            if i
+            or re.search(
+                r"(?:husband|wife|spouse|partner)\S*\s+(?:was\s+)?(?:born\s+)?(?:in\s+)?$",
+                lowered[: m.start()],
+            )
+            else ""
+        )
+        update[f"{prefix}birth_month"] = _MONTHS.index(m.group(1)) + 1
+        update[f"{prefix}birth_year"] = int(m.group(2))
     if "married" in lowered or "jointly" in lowered:
         update["filing_status"] = "married_filing_jointly"
     elif "single" in lowered:
@@ -118,7 +131,7 @@ class OfflineModelClient:
             return [_tool("prepare_scenario", {"scenario": {**scenario, **update}})]
         return [
             _text(
-                "Tell me about your situation: your age, filing status, income this year, "
+                "Tell me about your situation: the month and year you were born, filing status, income this year, "
                 "your traditional IRA or 401(k) balance, and when you plan to start drawing on it."
             )
         ]

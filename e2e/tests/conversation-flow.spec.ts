@@ -17,9 +17,9 @@ test.describe('Conversation flow', () => {
     test.setTimeout(60000)
     await page.goto('/calculator')
     // The sample message lands once the page is interactive; typing before that races hydration.
-    await expect(page.getByLabel('Message')).toHaveValue(/^I'm 55 and single/)
+    await expect(page.getByLabel('Message')).toHaveValue(/^I was born in March 1971 and I'm single/)
 
-    await page.getByLabel('Message').fill("I'm 52, married, income $90,000 a year, $600k in my 401k, I want to retire at 60")
+    await page.getByLabel('Message').fill("I was born in June 1974 and my wife in March 1975, married, income $90,000 a year, $600k in my 401k, I want to retire at 60")
     await page.getByRole('button', { name: 'Send' }).click()
 
     // What the conversation captured lands in the scenario panel.
@@ -61,7 +61,7 @@ test.describe('Conversation flow', () => {
 
     // The full details hold what the conversation captured.
     await openDetails(page)
-    await expect(page.getByLabel('Age', { exact: true })).toHaveValue('52')
+    await expect(page.getByLabel('Born: year', { exact: true })).toHaveValue('1974')
     await expect(page.getByLabel('Retirement age', { exact: true })).toHaveValue('58')
 
     // No horizontal scroll at phone widths.
@@ -72,12 +72,12 @@ test.describe('Conversation flow', () => {
   test('the conversation survives a reload', async ({ page }) => {
     await page.goto('/calculator')
     // The sample message lands once the page is interactive; typing before that races hydration.
-    await expect(page.getByLabel('Message')).toHaveValue(/^I'm 55 and single/)
-    await page.getByLabel('Message').fill("I'm 40, single, income $120,000, $300k in my IRA, retire at 55")
+    await expect(page.getByLabel('Message')).toHaveValue(/^I was born in March 1971 and I'm single/)
+    await page.getByLabel('Message').fill("I was born in May 1986, single, income $120,000, $300k in my IRA, retire at 55")
     await page.getByRole('button', { name: 'Send' }).click()
     await expect((await openScenario(page)).getByText('$300,000')).toBeVisible({ timeout: 15000 })
     await page.reload()
-    await expect(page.getByText("I'm 40, single, income $120,000")).toBeVisible()
+    await expect(page.getByText("I was born in May 1986, single, income $120,000")).toBeVisible()
     const panel = await openScenario(page)
     await expect(panel.getByText('$300,000')).toBeVisible()
   })

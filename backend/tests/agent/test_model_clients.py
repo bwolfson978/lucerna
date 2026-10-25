@@ -1,5 +1,6 @@
 """Model clients: the Anthropic adapter (with a stubbed SDK) and the offline stand-in."""
 
+import datetime
 from types import SimpleNamespace
 
 import anthropic
@@ -18,6 +19,8 @@ from app.agent.model import (
 )
 from app.agent.offline import OfflineModelClient, extract_update
 from app.tools.draft import ScenarioDraft
+
+THIS_YEAR = datetime.date.today().year
 
 
 class _Block(SimpleNamespace):
@@ -122,11 +125,15 @@ def test_get_model_client_requires_credentials(monkeypatch):
 
 def test_offline_extraction():
     update = extract_update(
-        "I'm 52, married, income $90,000 a year, $600k in my 401k, Roth $40k, retire at 60"
+        "Born June 1974, my wife in March 1975, married, income $90,000 a year, "
+        "$600k in my 401k, Roth $40k, retire at 60"
     )
     assert update == {
-        "age": 52,
+        "birth_year": 1974,
+        "birth_month": 6,
         "filing_status": "married_filing_jointly",
+        "spouse_birth_year": 1975,
+        "spouse_birth_month": 3,
         "retirement_age": 60,
         "current_income": 90000,
         "traditional_balance": 600000,
@@ -141,7 +148,8 @@ async def test_offline_client_drives_a_full_conversation():
     seen: list[str] = []
     for message in (
         "hello",
-        "I'm 52, married, income $90,000 a year, $600k in my 401k, I want to retire at 60",
+        "Born June 1974, my wife in March 1975, married, income $90,000 a year, $600k in my "
+        "401k, I want to retire at 60",
         "Looks right, run it",
         "What if I retire at 58?",
         # What the comparison card's Apply button sends (ui/src/messages.ts).

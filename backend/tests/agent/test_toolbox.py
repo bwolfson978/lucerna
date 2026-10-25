@@ -1,13 +1,20 @@
 """The web assistant's MCP toolbox: tool listing, UI events and the local show tool."""
 
+import datetime
+
 import pytest
 
 from app.agent.toolbox import ToolContext, open_toolbox
 from app.tools.draft import ScenarioDraft
 
+THIS_YEAR = datetime.date.today().year
+
 SCENARIO = {
-    "age": 52,
+    "birth_year": THIS_YEAR - 52,
+    "birth_month": 6,
     "filing_status": "married_filing_jointly",
+    "spouse_birth_year": THIS_YEAR - 52,
+    "spouse_birth_month": 3,
     "current_income": 90000,
     "traditional_balance": 600000,
     "retirement_age": 60,
@@ -72,7 +79,9 @@ async def test_errors_and_show_validation():
     context = ctx()
     async with open_toolbox() as toolbox:
         assert (await toolbox.call("nope", {}, context))[1] is True
-        assert (await toolbox.call("prepare_scenario", {"scenario": {"age": "x"}}, context))[1]
+        assert (await toolbox.call("prepare_scenario", {"scenario": {"birth_year": "x"}}, context))[
+            1
+        ]
         assert (await toolbox.call("show", {"kind": "scenario_summary"}, context))[1]
         assert (await toolbox.call("show", {"kind": "balance_comparison"}, context))[1]
         assert (await toolbox.call("show", {"kind": "bracket_fill"}, context))[1]

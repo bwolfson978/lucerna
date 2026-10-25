@@ -15,7 +15,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from app.engine.irmaa import lookback_threshold_scale
+from app.engine.irmaa import IRMAA_LOOKBACK_YEARS, MEDICARE_START_AGE, lookback_threshold_scale
 from app.engine.state_tax import (
     calculate_state_tax,
     resolve_state_for_year,
@@ -88,6 +88,8 @@ class YearTax:
     extra_deduction: float = 0.0
     # People who qualify for the senior deduction this year (0, 1 or 2)
     senior_bonus_people: int = 0
+    # People on Medicare when this year's income sets IRMAA, two years on (0, 1 or 2)
+    medicare_people: int = 0
     # Today's value of a dollar amount fixed in law this year (1.0 without inflation)
     fixed_scale: float = 1.0
     # IRMAA tiers that this year's MAGI is compared with (see ``lookback_threshold_scale``)
@@ -174,16 +176,15 @@ class YearTax:
 def year_tax(scenario: ScenarioInput, t: int, state: str | None = None) -> YearTax:
     """``YearTax`` for timeline year ``t``. ``state`` overrides the year's state."""
     entry = scenario.timeline[t]
-    people = 2 if scenario.filing_status == FilingStatus.MFJ else 1
-    # Ages are the user's; a spouse is assumed to be the same age
-    senior = scenario.age + t >= SENIOR_DEDUCTION_AGE
+    seniors = scenario.people_at_least(SENIOR_DEDUCTION_AGE, t)
     return YearTax(
         filing_status=scenario.filing_status,
         state=state if state is not None else resolve_state_for_year(entry.state, scenario.state),
         custom_state_rate=scenario.custom_state_rate,
         social_security=min(entry.social_security or 0.0, entry.gross_income),
-        extra_deduction=people * ADDITIONAL_DEDUCTION_65[scenario.filing_status] if senior else 0.0,
-        senior_bonus_people=people if senior and entry.year in SENIOR_BONUS_YEARS else 0,
+        extra_deduction=seniors * ADDITIONAL_DEDUCTION_65[scenario.filing_status],
+        senior_bonus_people=seniors if entry.year in SENIOR_BONUS_YEARS else 0,
+        medicare_people=scenario.people_at_least(MEDICARE_START_AGE, t + IRMAA_LOOKBACK_YEARS),
         fixed_scale=scenario.fixed_dollar_scale(t),
         irmaa_scale=lookback_threshold_scale(scenario.inflation_rate),
         other_income=entry.gross_income,

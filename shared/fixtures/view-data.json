@@ -1,7 +1,10 @@
 {
   "scenario": {
-    "age": 60,
+    "birth_year": 1966,
+    "birth_month": 6,
     "filing_status": "married_filing_jointly",
+    "spouse_birth_year": 1966,
+    "spouse_birth_month": 6,
     "current_income": 120000,
     "traditional_balance": 900000,
     "roth_balance": 50000,
@@ -19,7 +22,10 @@
   "prepare_scenario": {
     "structured_content": {
       "scenario": {
-        "age": 60,
+        "birth_year": 1966,
+        "birth_month": 6,
+        "spouse_birth_year": 1966,
+        "spouse_birth_month": 6,
         "filing_status": "married_filing_jointly",
         "state": "CA",
         "retirement_state": "AZ",
@@ -173,12 +179,12 @@
       "missing_required": [],
       "problems": [],
       "ready_to_run": true,
-      "draft_hash": "99283866b9b4"
+      "draft_hash": "5a411550e16a"
     }
   },
   "analyze_roth_conversions": {
     "structured_content": {
-      "result_id": "r_613a785a3a",
+      "result_id": "r_1d91b4e117",
       "estimated_lifetime_tax_savings_todays_dollars": 36990,
       "total_conversion": 344500,
       "total_tax_on_conversions": 46566,
@@ -534,7 +540,10 @@
         "retirement_state": "AZ"
       },
       "scenario": {
-        "age": 60,
+        "birth_year": 1966,
+        "birth_month": 6,
+        "spouse_birth_year": 1966,
+        "spouse_birth_month": 6,
         "filing_status": "married_filing_jointly",
         "state": "CA",
         "retirement_state": "AZ",
@@ -558,7 +567,7 @@
           }
         ]
       },
-      "full_results_url": "https://www.rothconversionsoptimizer.com/calculator?view=results&result=r_613a785a3a&scenario=eyJhZ2UiOjYwLCJjdXJyZW50X2luY29tZSI6MTIwMDAwLjAsImRpc2NvdW50X3JhdGVfcGN0Ijo1LjAsImZpbGluZ19zdGF0dXMiOiJtYXJyaWVkX2ZpbGluZ19qb2ludGx5IiwiaG91c2Vob2xkX3NpemUiOjEsImluY2x1ZGVfYWNhIjpmYWxzZSwiaW5jb21lX2NoYW5nZXMiOlt7Imdyb3NzX2luY29tZSI6NjAwMDAuMCwibm90ZSI6IlBhcnQtdGltZSB5ZWFyIiwieWVhciI6MjAyN31dLCJpbmNvbWVfZ3Jvd3RoX3JhdGVfcGN0IjozLjAsImluZmxhdGlvbl9wY3QiOjIuNSwiaW52ZXN0bWVudF9yZXR1cm5fcGN0Ijo3LjAsIm1vbnRobHlfc2xjc3BfcHJlbWl1bSI6NjIwLjAsInBsYW5uaW5nX2hvcml6b25fYWdlIjo5MCwicmV0aXJlbWVudF9hZ2UiOjYzLCJyZXRpcmVtZW50X3N0YXRlIjoiQVoiLCJyb3RoX2JhbGFuY2UiOjUwMDAwLjAsInN0YXRlIjoiQ0EiLCJ0cmFkaXRpb25hbF9iYWxhbmNlIjo5MDAwMDAuMH0"
+      "full_results_url": "https://www.rothconversionsoptimizer.com/calculator?view=results&result=r_1d91b4e117&scenario=eyJiaXJ0aF9tb250aCI6NiwiYmlydGhfeWVhciI6MTk2NiwiY3VycmVudF9pbmNvbWUiOjEyMDAwMC4wLCJkaXNjb3VudF9yYXRlX3BjdCI6NS4wLCJmaWxpbmdfc3RhdHVzIjoibWFycmllZF9maWxpbmdfam9pbnRseSIsImhvdXNlaG9sZF9zaXplIjoxLCJpbmNsdWRlX2FjYSI6ZmFsc2UsImluY29tZV9jaGFuZ2VzIjpbeyJncm9zc19pbmNvbWUiOjYwMDAwLjAsIm5vdGUiOiJQYXJ0LXRpbWUgeWVhciIsInllYXIiOjIwMjd9XSwiaW5jb21lX2dyb3d0aF9yYXRlX3BjdCI6My4wLCJpbmZsYXRpb25fcGN0IjoyLjUsImludmVzdG1lbnRfcmV0dXJuX3BjdCI6Ny4wLCJtb250aGx5X3NsY3NwX3ByZW1pdW0iOjYyMC4wLCJwbGFubmluZ19ob3Jpem9uX2FnZSI6OTAsInJldGlyZW1lbnRfYWdlIjo2MywicmV0aXJlbWVudF9zdGF0ZSI6IkFaIiwicm90aF9iYWxhbmNlIjo1MDAwMC4wLCJzcG91c2VfYmlydGhfbW9udGgiOjYsInNwb3VzZV9iaXJ0aF95ZWFyIjoxOTY2LCJzdGF0ZSI6IkNBIiwidHJhZGl0aW9uYWxfYmFsYW5jZSI6OTAwMDAwLjB9"
     },
     "view_meta": {
       "bracket_fill": {
@@ -3838,7 +3847,7 @@
         ]
       }
     },
-    "result_id": "r_613a785a3a",
+    "result_id": "r_1d91b4e117",
     "result": {
       "yearly_conversions": [
         0.0,
@@ -8747,6 +8756,7 @@
       "input": {
         "age": 60,
         "filing_status": "married_filing_jointly",
+        "spouse_age": 60,
         "timeline": [
           {
             "year": 2026,
@@ -9020,8 +9030,8 @@
     "label": "Retire at 62",
     "structured_content": {
       "label": "Retire at 62",
-      "base_result_id": "r_613a785a3a",
-      "variant_result_id": "r_52113d90dc",
+      "base_result_id": "r_1d91b4e117",
+      "variant_result_id": "r_dea3ffbddb",
       "estimated_lifetime_tax_savings": {
         "current": 36990,
         "what_if": 36292,
@@ -9209,7 +9219,10 @@
         "key_tradeoff": "Pay tax now at lower rates to avoid higher rates on forced withdrawals in retirement. Converting more enters higher brackets where the cost exceeds the benefit."
       },
       "what_if_scenario": {
-        "age": 60,
+        "birth_year": 1966,
+        "birth_month": 6,
+        "spouse_birth_year": 1966,
+        "spouse_birth_month": 6,
         "filing_status": "married_filing_jointly",
         "state": "CA",
         "retirement_state": "AZ",
@@ -9233,7 +9246,7 @@
           }
         ]
       },
-      "what_if_full_results_url": "https://www.rothconversionsoptimizer.com/calculator?view=results&result=r_52113d90dc&scenario=eyJhZ2UiOjYwLCJjdXJyZW50X2luY29tZSI6MTIwMDAwLjAsImRpc2NvdW50X3JhdGVfcGN0Ijo1LjAsImZpbGluZ19zdGF0dXMiOiJtYXJyaWVkX2ZpbGluZ19qb2ludGx5IiwiaG91c2Vob2xkX3NpemUiOjEsImluY2x1ZGVfYWNhIjpmYWxzZSwiaW5jb21lX2NoYW5nZXMiOlt7Imdyb3NzX2luY29tZSI6NjAwMDAuMCwibm90ZSI6IlBhcnQtdGltZSB5ZWFyIiwieWVhciI6MjAyN31dLCJpbmNvbWVfZ3Jvd3RoX3JhdGVfcGN0IjozLjAsImluZmxhdGlvbl9wY3QiOjIuNSwiaW52ZXN0bWVudF9yZXR1cm5fcGN0Ijo3LjAsIm1vbnRobHlfc2xjc3BfcHJlbWl1bSI6NjIwLjAsInBsYW5uaW5nX2hvcml6b25fYWdlIjo5MCwicmV0aXJlbWVudF9hZ2UiOjYyLCJyZXRpcmVtZW50X3N0YXRlIjoiQVoiLCJyb3RoX2JhbGFuY2UiOjUwMDAwLjAsInN0YXRlIjoiQ0EiLCJ0cmFkaXRpb25hbF9iYWxhbmNlIjo5MDAwMDAuMH0&label=Retire+at+62"
+      "what_if_full_results_url": "https://www.rothconversionsoptimizer.com/calculator?view=results&result=r_dea3ffbddb&scenario=eyJiaXJ0aF9tb250aCI6NiwiYmlydGhfeWVhciI6MTk2NiwiY3VycmVudF9pbmNvbWUiOjEyMDAwMC4wLCJkaXNjb3VudF9yYXRlX3BjdCI6NS4wLCJmaWxpbmdfc3RhdHVzIjoibWFycmllZF9maWxpbmdfam9pbnRseSIsImhvdXNlaG9sZF9zaXplIjoxLCJpbmNsdWRlX2FjYSI6ZmFsc2UsImluY29tZV9jaGFuZ2VzIjpbeyJncm9zc19pbmNvbWUiOjYwMDAwLjAsIm5vdGUiOiJQYXJ0LXRpbWUgeWVhciIsInllYXIiOjIwMjd9XSwiaW5jb21lX2dyb3d0aF9yYXRlX3BjdCI6My4wLCJpbmZsYXRpb25fcGN0IjoyLjUsImludmVzdG1lbnRfcmV0dXJuX3BjdCI6Ny4wLCJtb250aGx5X3NsY3NwX3ByZW1pdW0iOjYyMC4wLCJwbGFubmluZ19ob3Jpem9uX2FnZSI6OTAsInJldGlyZW1lbnRfYWdlIjo2MiwicmV0aXJlbWVudF9zdGF0ZSI6IkFaIiwicm90aF9iYWxhbmNlIjo1MDAwMC4wLCJzcG91c2VfYmlydGhfbW9udGgiOjYsInNwb3VzZV9iaXJ0aF95ZWFyIjoxOTY2LCJzdGF0ZSI6IkNBIiwidHJhZGl0aW9uYWxfYmFsYW5jZSI6OTAwMDAwLjB9&label=Retire+at+62"
     },
     "base_result": {
       "yearly_conversions": [
@@ -11160,6 +11173,7 @@
       "input": {
         "age": 60,
         "filing_status": "married_filing_jointly",
+        "spouse_age": 60,
         "timeline": [
           {
             "year": 2026,
@@ -13316,6 +13330,7 @@
       "input": {
         "age": 60,
         "filing_status": "married_filing_jointly",
+        "spouse_age": 60,
         "timeline": [
           {
             "year": 2026,
