@@ -1,10 +1,10 @@
 # Formal models
 
 Small models of the parts of Lucerna where a bug hides in an interleaving or in
-arithmetic that tests sample but don't cover. Each broken property has a
-failing test next to the code it is about (`xfail(strict=True)` in pytest,
-`it.fails` in Vitest), so a fix shows up as an unexpected pass and the marker
-comes off.
+arithmetic that tests sample but don't cover. Every invariant holds and every
+proof builds; CI's `formal` job checks both on any PR that touches the code in
+`paths.yml`. A property found broken gets a failing test against the real code,
+then the fix, in the same PR. See `.agents/skills/formal-models/SKILL.md`.
 
 | Model | What it covers | Tool |
 | --- | --- | --- |
@@ -18,8 +18,8 @@ comes off.
 
 ## Results
 
-`tla/check.sh` checks every invariant on its own and says whether it held or
-broke as expected.
+`tla/check.sh` checks every invariant on its own and fails unless all of them
+hold. The Result column records what each property caught on earlier code.
 
 | Property | Result | Test |
 | --- | --- | --- |
@@ -42,20 +42,15 @@ broke as expected.
 
 ## Running
 
-TLA+ needs Java 11+ and `tla2tools.jar`:
-
 ```bash
-curl -sSL -o ~/tools/tla2tools.jar \
-  https://github.com/tlaplus/tlaplus/releases/download/v1.8.0/tla2tools.jar
-formal/tla/check.sh            # or: formal/tla/check.sh McpLimits
+.agents/skills/formal-models/scripts/install.sh   # Java check, tla2tools.jar v1.8.0, elan
+.agents/skills/formal-models/scripts/check.sh     # TLC on every spec, then lake build --wfail
+formal/tla/check.sh McpLimits                     # one spec
 ```
 
-Lean needs [elan](https://github.com/leanprover/elan); the toolchain is pinned in
-`lean/lean-toolchain` and there are no dependencies (no Mathlib):
-
-```bash
-cd formal/lean && lake build
-```
+The Lean toolchain is pinned in `lean/lean-toolchain` and there are no
+dependencies (no Mathlib). `paths.yml` lists the code each model covers; update
+it when a model gains coverage or a file moves.
 
 The models are transcriptions, so they drift if the code changes. The tests in
 `backend/tests/engine/test_formal_models.py` fail when the Lean bracket table or
