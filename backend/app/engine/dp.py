@@ -83,6 +83,11 @@ import numpy as np
 
 from app.engine.aca import aca_coverage_years, vectorized_subsidy_loss
 from app.engine.constants import round_to_resolution
+from app.engine.early_withdrawal import (
+    CONVERSION_SEASONING_YEARS,
+    early_penalty,
+    penalty_free_draws,
+)
 from app.engine.irmaa import (
     IRMAA_LOOKBACK_YEARS,
     vectorized_irmaa_surcharge_loss,
@@ -240,6 +245,7 @@ def _simulate_no_conversion_trajectory(scenario: ScenarioInput) -> float:
     owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
     trad = float(scenario.traditional_ira_balance)
     roth = float(scenario.roth_ira_balance)
+    free_draws = penalty_free_draws(scenario, [0.0] * len(scenario.timeline))
     for t, entry in enumerate(scenario.timeline):
         owner_age = scenario.age + t
         rmd = 0.0
@@ -248,7 +254,7 @@ def _simulate_no_conversion_trajectory(scenario: ScenarioInput) -> float:
             trad -= rmd
         d_amt = draw_beyond_rmd(entry.drawdown, rmd)
         if d_amt > 0:
-            trad_draw = min(d_amt, trad)
+            trad_draw = min(d_amt - free_draws[t], trad)
             trad -= trad_draw
             roth -= min(d_amt - trad_draw, roth)
         trad *= 1 + g
@@ -561,10 +567,29 @@ def _compute_retirement_values_2d(
     return result.reshape(shape)
 
 
+def _ladder_credit(
+    scenario: ScenarioInput, free_draws: list[float]
+) -> list[tuple[float, float] | None]:
+    """Per year, the discounted penalty a converted dollar avoids five years on, and
+    how many dollars can avoid it: spending then that would otherwise come from the
+    traditional account before 59½. None where a conversion avoids nothing."""
+    d = scenario.real_discount_rate
+    n_years = len(scenario.timeline)
+    credits: list[tuple[float, float] | None] = [None] * n_years
+    for t in range(n_years - CONVERSION_SEASONING_YEARS):
+        later = t + CONVERSION_SEASONING_YEARS
+        cap = (scenario.timeline[later].drawdown or 0.0) - free_draws[later]
+        rate = early_penalty(scenario, later, 1.0) * (1 + d) ** (-later)
+        if cap > 0 and rate > 0:
+            credits[t] = (rate, cap)
+    return credits
+
+
 def _dp_backward_2d(
     scenario: ScenarioInput,
     trad_grid: np.ndarray,
     roth_grid: np.ndarray,
+    free_draws: list[float] | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """2D backward induction: state = (trad_balance, roth_balance).
 
@@ -573,6 +598,12 @@ def _dp_backward_2d(
 
     The roth grid must be uniform to enable O(1) index arithmetic in the
     hot inner loop (avoiding per-element searchsorted).
+
+    ``free_draws`` is the spending each year takes from penalty-free Roth money
+    before 59½ (see ``early_withdrawal``): the existing Roth balance, from the
+    no-conversion schedule. Conversions that season into penalty-free money five
+    years on depend on history the state doesn't carry, so each conversion is
+    credited with the penalty it avoids then instead (``_ladder_credit``).
 
     Returns:
         value_table:  (n_years+1, G_T, G_R).
@@ -583,6 +614,9 @@ def _dp_backward_2d(
     n_years = len(scenario.timeline)
     g = scenario.real_growth_rate
     d = scenario.real_discount_rate
+    if free_draws is None:
+        free_draws = [0.0] * n_years
+    ladder = _ladder_credit(scenario, free_draws)
 
     initial_balance = scenario.traditional_ira_balance
     owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
@@ -701,7 +735,10 @@ def _dp_backward_2d(
 
         entry_t = scenario.timeline[t]
         income_t = entry_t.gross_income
+        # Spending left after the penalty-free Roth draw (before 59½ only)
+        free_t = free_draws[t]
         drawdown_t = float(entry_t.drawdown) if entry_t.drawdown is not None else 0.0
+        drawdown_t = max(0.0, drawdown_t - free_t)
         yr_state = resolve_state_for_year(entry_t.state, scenario.state)
         yt_t = taxes[t]
         rmd_arr_t = rmd_arrays_per_year[t]
@@ -725,7 +762,7 @@ def _dp_backward_2d(
         # drawdown_t == 0 and roth_draw is therefore zero for every (i, k).
         # next_roth[k,j] = conv_options[k]*(1+g) + scaled_roth[j]
         # → same for all trad states i; just slice [:n_opts] per state.
-        if drawdown_t == 0:
+        if drawdown_t == 0 and free_t == 0:
             roth_frac_pre = (
                 extended_trad[:, np.newaxis] * (1 + g) + scaled_roth[np.newaxis, :] - roth_grid[0]
             ) / d_roth  # (G_T, G_R)
@@ -790,6 +827,14 @@ def _dp_backward_2d(
                 cost_opts = cost_opts - discount_factor * _withdrawal_value(
                     scenario, income_t, rmd_i, conv_options, draw_from_trad, need_i, yt_t
                 )
+            # Before 59½: the penalty-free Roth draw, and 10% on everything else drawn
+            if free_t > 0 or need_i > 0:
+                cost_opts = cost_opts - discount_factor * (
+                    free_t - early_penalty(scenario, t, need_i)
+                )
+            if ladder[t] is not None:
+                rate, cap = ladder[t]
+                cost_opts = cost_opts - rate * np.minimum(conv_options, cap)
 
             # Bilinear interpolation of future_ref at (next_trad[k], next_roth[k,j])
 
@@ -822,7 +867,7 @@ def _dp_backward_2d(
                 frac_r = frac_r_pre[:n_opts]  # (n_opts, G_R)
                 roth_hi = roth_hi_pre[:n_opts]  # (n_opts, G_R)
             else:
-                delta_k = conv_options * (1 + g)  # (n_opts,)
+                delta_k = (conv_options - free_t) * (1 + g)  # (n_opts,)
                 if need_i > 0:
                     delta_k = delta_k - roth_draw * (1 + g)
                 next_roth = np.clip(
@@ -854,9 +899,12 @@ def _forward_pass_2d(
     extended_trad: np.ndarray,
     roth_grid: np.ndarray,
     policy_table: np.ndarray,
+    free_draws: list[float] | None = None,
 ) -> list[float]:
     """Extract optimal conversions by tracking (trad, roth) state forward."""
     n_years = len(scenario.timeline)
+    if free_draws is None:
+        free_draws = [0.0] * n_years
     g = scenario.real_growth_rate
     owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
     G_R = len(roth_grid)
@@ -893,14 +941,15 @@ def _forward_pass_2d(
 
         # Exact state transitions
         balance_after_conv = available_for_conv - conversion
-        drawdown_t = draw_beyond_rmd(entry.drawdown, rmd_t)
+        free_t = free_draws[t]
+        drawdown_t = max(0.0, draw_beyond_rmd(entry.drawdown, rmd_t) - free_t)
         if drawdown_t > 0:
             draw_from_trad = min(drawdown_t, balance_after_conv)
-            roth_draw = max(0.0, drawdown_t - draw_from_trad)
+            roth_draw = max(0.0, drawdown_t - draw_from_trad) + free_t
             balance_after_conv -= draw_from_trad
             current_roth = max(0.0, current_roth + conversion - roth_draw) * (1 + g)
         else:
-            current_roth = (current_roth + conversion) * (1 + g)
+            current_roth = max(0.0, current_roth + conversion - free_t) * (1 + g)
 
         current_trad = balance_after_conv * (1 + g)
 
@@ -945,13 +994,17 @@ def dp_optimize(
     max_roth = max(max_roth, scenario.roth_ira_balance * 1.1, 1.0)
     roth_grid = np.linspace(0, max_roth, roth_grid_size)
 
-    _, policy_table, extended_trad, roth_grid = _dp_backward_2d(scenario, trad_grid, roth_grid)
-    conversions = _forward_pass_2d(scenario, extended_trad, roth_grid, policy_table)
-    total = sum(conversions)
-
     from app.engine.optimizer import calculate_npv
 
-    npv = calculate_npv(scenario, conversions)
+    def solve(free_draws: list[float]) -> tuple[list[float], float]:
+        _, policy, ext_trad, r_grid = _dp_backward_2d(scenario, trad_grid, roth_grid, free_draws)
+        schedule = _forward_pass_2d(scenario, ext_trad, r_grid, policy, free_draws)
+        return schedule, calculate_npv(scenario, schedule)
+
+    # Before 59½ spending draws on penalty-free Roth money first: the existing
+    # Roth balance here, with seasoned conversions credited in _ladder_credit.
+    conversions, npv = solve(penalty_free_draws(scenario, [0.0] * n_years))
+    total = sum(conversions)
 
     return DPResult(
         yearly_conversions=conversions,
@@ -1034,6 +1087,7 @@ def _dp_backward_3d(
         budget_grid:   the budget grid (unchanged).
     """
     n_years = len(scenario.timeline)
+    free_ref = penalty_free_draws(scenario, [0.0] * n_years)
     g = scenario.real_growth_rate
     d = scenario.real_discount_rate
     years_until_drawdown = max(0, scenario.drawdown_start_age - scenario.age)
@@ -1165,6 +1219,8 @@ def _dp_backward_3d(
         entry_t = scenario.timeline[t]
         income_t = entry_t.gross_income
         drawdown_t = float(entry_t.drawdown) if entry_t.drawdown is not None else 0.0
+        # Spending left after the penalty-free Roth draw (no-conversion reference)
+        drawdown_t = max(0.0, drawdown_t - free_ref[t])
         yr_state = resolve_state_for_year(entry_t.state, scenario.state)
         yt_t = taxes[t]
         rmd_arr_t = rmd_arrays_per_year_3d[t]
@@ -1312,6 +1368,7 @@ def _forward_pass_3d(
     B = len(budget_grid)
     conversions = []
 
+    free_ref = penalty_free_draws(scenario, [0.0] * n_years)
     current_balance = scenario.traditional_ira_balance
     current_budget = budget_cap
 
@@ -1326,7 +1383,7 @@ def _forward_pass_3d(
             if owner_age >= owner_rmd_start:
                 rmd_t = min(calculate_rmd(current_balance, owner_age), current_balance)
             after_rmd = max(0.0, current_balance - rmd_t)
-            drawdown_t = draw_beyond_rmd(entry.drawdown, rmd_t)
+            drawdown_t = max(0.0, draw_beyond_rmd(entry.drawdown, rmd_t) - free_ref[t])
             after_draw = max(0.0, after_rmd - min(drawdown_t, after_rmd))
             current_balance = after_draw * (1 + g)
             continue
@@ -1364,7 +1421,7 @@ def _forward_pass_3d(
 
         # State transition: after conversion + drawdown, then grow
         balance_after_conv = available_for_conv - conversion
-        drawdown_t = draw_beyond_rmd(entry.drawdown, rmd_t)
+        drawdown_t = max(0.0, draw_beyond_rmd(entry.drawdown, rmd_t) - free_ref[t])
         if drawdown_t > 0:
             balance_after_conv -= min(drawdown_t, balance_after_conv)
         current_balance = balance_after_conv * (1 + g)

@@ -268,6 +268,7 @@ export function buildScenarioInput(draft: ScenarioDraft): ScenarioInput {
     age: startYear - draft.birth_year!,
     filing_status: draft.filing_status!,
     spouse_age: joint ? startYear - draft.spouse_birth_year! : null,
+    birth_month: draft.birth_month,
     timeline: draft.timeline,
     traditional_ira_balance: draft.traditional_balance!,
     roth_ira_balance: draft.roth_balance ?? 0,

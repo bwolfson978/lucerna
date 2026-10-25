@@ -98,3 +98,25 @@ async def test_bad_links_are_400s():
             response = await client.post("/api/scenario-links/open", json={"scenario": scenario})
             assert response.status_code == 400, scenario
             assert response.json()["detail"]
+
+
+async def test_links_from_before_birth_dates_still_open():
+    # Links shared before the birth month was asked for carry only an age
+    legacy = {
+        "age": 52,
+        "filing_status": "married_filing_jointly",
+        "current_income": 90000,
+        "traditional_balance": 600000,
+        "retirement_age": 60,
+    }
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post(
+            "/api/scenario-links/open", json={"scenario": encode_scenario(legacy)}
+        )
+    assert response.status_code == 200, response.text
+    opened = response.json()
+    assert opened["draft"]["birth_year"] == THIS_YEAR - 52
+    # The form still asks for the months on the next run
+    assert opened["draft"]["birth_month"] is None
+    assert opened["draft"]["spouse_birth_month"] is None
+    assert opened["result"]["estimated_lifetime_tax_savings"] is not None

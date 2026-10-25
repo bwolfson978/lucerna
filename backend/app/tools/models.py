@@ -216,6 +216,7 @@ class MethodologyTopic(StrEnum):
     WHAT_IS_A_ROTH_CONVERSION = "what-is-a-roth-conversion"
     HOW_THE_OPTIMIZER_WORKS = "how-the-optimizer-works"
     RMDS = "rmds"
+    EARLY_WITHDRAWALS = "early-withdrawals"
     ACA_SUBSIDIES = "aca-subsidies"
     IRMAA = "irmaa"
     STATE_TAXES = "state-taxes"

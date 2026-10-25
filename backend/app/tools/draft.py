@@ -283,6 +283,7 @@ def build_scenario_input(draft: ScenarioDraft) -> ScenarioInput:
         age=start_year - draft.birth_year,
         filing_status=draft.filing_status,
         spouse_age=start_year - draft.spouse_birth_year if joint else None,
+        birth_month=draft.birth_month,
         timeline=draft.timeline,
         traditional_ira_balance=draft.traditional_balance,
         roth_ira_balance=draft.roth_balance or 0,

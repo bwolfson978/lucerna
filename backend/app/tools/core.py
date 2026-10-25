@@ -176,6 +176,7 @@ def scenario_from_input(inputs: ScenarioInput, start_year: int) -> dict:
         spouse_birth_year=(
             timeline[0].year - inputs.spouse_age if inputs.spouse_age is not None else None
         ),
+        birth_month=inputs.birth_month,
         filing_status=inputs.filing_status,
         state=inputs.state,
         retirement_state=inputs.retirement_state,
@@ -405,7 +406,7 @@ def summarize_result(result: OptimizationResult, result_id: str) -> dict:
             or "federal only",
         },
     }
-    for key in ("rmd_summary", "irmaa_summary", "aca_summary"):
+    for key in ("rmd_summary", "irmaa_summary", "aca_summary", "early_withdrawal_summary"):
         value = getattr(trace, key)
         if value:
             summary["reasoning"][key] = value

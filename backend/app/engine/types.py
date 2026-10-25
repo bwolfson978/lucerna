@@ -111,6 +111,12 @@ class ScenarioInput(BaseModel):
         le=120,
         description="Spouse's age in the plan's first year (joint filers). None = same as `age`.",
     )
+    birth_month: int | None = Field(
+        default=None,
+        ge=1,
+        le=12,
+        description="Month the owner was born (1-12), for the year they reach 59½. None = midyear.",
+    )
 
     # Planning timeline (replaces income_timeline)
     timeline: list[PlanYear] = Field(
@@ -292,6 +298,9 @@ class ReasoningTrace(BaseModel):
 
     # IRMAA impact analysis
     irmaa_summary: dict | None = None
+
+    # Withdrawals before 59½ (populated when the plan spends from the accounts before then)
+    early_withdrawal_summary: dict | None = None
 
 
 class RmdYearDetail(BaseModel):

@@ -201,6 +201,7 @@
       "scenario": {
         "age": 45,
         "filing_status": "single",
+        "birth_month": 6,
         "timeline": [
           {
             "year": 2026,
@@ -645,6 +646,7 @@
         "age": 52,
         "filing_status": "married_filing_jointly",
         "spouse_age": 58,
+        "birth_month": 6,
         "timeline": [
           {
             "year": 2026,
@@ -1101,6 +1103,7 @@
       "scenario": {
         "age": 40,
         "filing_status": "single",
+        "birth_month": 6,
         "timeline": [
           {
             "year": 2026,
@@ -1488,6 +1491,7 @@
         "age": 66,
         "filing_status": "married_filing_jointly",
         "spouse_age": 58,
+        "birth_month": 6,
         "timeline": [
           {
             "year": 2026,
@@ -1778,6 +1782,7 @@
       "scenario": {
         "age": 58,
         "filing_status": "single",
+        "birth_month": 6,
         "timeline": [
           {
             "year": 2026,
@@ -2222,6 +2227,7 @@
       "scenario": {
         "age": 30,
         "filing_status": "single",
+        "birth_month": 6,
         "timeline": [
           {
             "year": 2026,
@@ -2735,6 +2741,7 @@
         "age": 63,
         "filing_status": "married_filing_jointly",
         "spouse_age": 58,
+        "birth_month": 6,
         "timeline": [
           {
             "year": 2026,
@@ -3136,6 +3143,7 @@
       "scenario": {
         "age": 55,
         "filing_status": "single",
+        "birth_month": 6,
         "timeline": [
           {
             "year": 2026,
@@ -3500,6 +3508,7 @@
       "scenario": {
         "age": 60,
         "filing_status": "single",
+        "birth_month": 6,
         "timeline": [
           {
             "year": 2026,
@@ -3847,6 +3856,7 @@
       "scenario": {
         "age": 50,
         "filing_status": "single",
+        "birth_month": 6,
         "timeline": [
           {
             "year": 2026,
@@ -4223,6 +4233,7 @@
         "age": 66,
         "filing_status": "married_filing_jointly",
         "spouse_age": 58,
+        "birth_month": 6,
         "timeline": [
           {
             "year": 2026,

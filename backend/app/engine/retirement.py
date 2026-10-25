@@ -95,6 +95,7 @@ def terminal_tax_rate(scenario: ScenarioInput) -> float:
     if cached is not None and cached[0] is scenario:
         return cached[1]
 
+    from app.engine.early_withdrawal import penalty_free_draws
     from app.engine.rmd import calculate_rmd, rmd_start_age
 
     n_years = len(scenario.timeline)
@@ -112,12 +113,13 @@ def terminal_tax_rate(scenario: ScenarioInput) -> float:
         owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
         trad = scenario.traditional_ira_balance
         roth = scenario.roth_ira_balance
+        free_draws = penalty_free_draws(scenario, [0.0] * n_years)
         for t, entry in enumerate(scenario.timeline):
             owner_age = scenario.age + t
             rmd = calculate_rmd(trad, owner_age) if owner_age >= owner_rmd_start else 0.0
             rmd = min(rmd, trad)
             need = draw_beyond_rmd(entry.drawdown, rmd)
-            trad_draw = min(need, trad - rmd)
+            trad_draw = min(need - free_draws[t], trad - rmd)
             trad -= rmd + trad_draw
             roth -= min(need - trad_draw, roth)
             trad *= 1 + g
@@ -221,9 +223,11 @@ def conversion_bases(scenario: ScenarioInput, conversions: list[float]) -> list[
     Walks the balance the way the optimizer does: RMD, conversion and spending
     draw, then growth.
     """
+    from app.engine.early_withdrawal import penalty_free_draws
     from app.engine.rmd import calculate_rmd, rmd_start_age
 
     owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
+    free_draws = penalty_free_draws(scenario, conversions)
     balance = scenario.traditional_ira_balance
     bases = []
     for t, entry in enumerate(scenario.timeline):
@@ -232,7 +236,7 @@ def conversion_bases(scenario: ScenarioInput, conversions: list[float]) -> list[
         rmd = min(rmd, balance)
         available = balance - rmd
         conversion = min(max(0.0, conversions[t]), available)
-        need = draw_beyond_rmd(entry.drawdown, rmd)
+        need = draw_beyond_rmd(entry.drawdown, rmd) - free_draws[t]
         base, _ = conversion_magi(entry.gross_income + rmd, available, need, conversion)
         bases.append(float(base))
         balance = (available - conversion - min(need, available - conversion)) * (
