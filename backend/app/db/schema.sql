@@ -29,3 +29,13 @@ CREATE INDEX IF NOT EXISTS scenarios_user_date
 -- The MCP tools' `scenario` for scenarios saved from a chat (Claude, ChatGPT), so a
 -- later chat can pick it up exactly. NULL for scenarios saved on the website.
 ALTER TABLE scenarios ADD COLUMN IF NOT EXISTS scenario JSONB;
+
+-- When the scenario was last saved. A scenario keeps its id while the person edits
+-- and re-runs it, so its row is overwritten; rows from before this column take
+-- their creation time.
+ALTER TABLE scenarios ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ;
+UPDATE scenarios SET updated_at = created_at WHERE updated_at IS NULL;
+ALTER TABLE scenarios ALTER COLUMN updated_at SET DEFAULT NOW();
+ALTER TABLE scenarios ALTER COLUMN updated_at SET NOT NULL;
+CREATE INDEX IF NOT EXISTS scenarios_user_updated
+  ON scenarios (clerk_user_id, updated_at DESC);

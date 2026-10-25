@@ -20,7 +20,7 @@ function cell(value: string | number): string {
 export function scenariosToCsv(scenarios: SavedScenario[]): string {
   const rows = scenarios.map((s) => [
     s.name,
-    s.created_at.slice(0, 10),
+    s.updated_at.slice(0, 10),
     s.filing_status === "married_filing_jointly" ? "Married filing jointly" : "Single",
     Math.round(s.ira_balance),
     s.num_years,
