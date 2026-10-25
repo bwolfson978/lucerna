@@ -54,7 +54,9 @@ INSTRUCTIONS = """Roth Conversions Optimizer runs a deterministic multi-year opt
 conversion schedule with the highest after-tax wealth for a scenario, using 2026 federal and \
 state brackets, RMDs, IRMAA and ACA subsidies. Results are educational scenario analysis, not \
 financial advice: present them as "the analysis shows" and as trade-offs, never as \
-instructions. Quote numbers only from tool results. Required inputs: age, filing status, \
+instructions. Quote numbers only from tool results. Required inputs: the month and year the user was \
+born (and their spouse's when filing jointly; if the user gives only an age, ask for them: some \
+parts of the analysis depend on the month and year you were born), filing status, \
 current gross income, traditional IRA/401(k) balance and the age withdrawals begin \
 (retirement_age). Ask the user for any that are missing instead of guessing. Tools are \
 stateless: pass the `scenario` returned by the previous call, with any new values merged in. \
@@ -277,6 +279,9 @@ def _ready_or_error(draft: ScenarioDraft) -> CallToolResult | None:
     return _error(
         "The scenario is incomplete. Ask the user for the missing values.",
         missing_required=described["missing_required"],
+        **(
+            {"why_birth_date": described["why_birth_date"]} if "why_birth_date" in described else {}
+        ),
         problems=described["problems"],
         scenario=described["scenario"],
     )
@@ -342,7 +347,8 @@ async def _run_drafts(
     annotations=_READ_ONLY,
     meta=_tool_ui(SCENARIO_SUMMARY_URI),
     description=(
-        "Check and normalize a scenario as the user describes it (age, filing status, income, "
+        "Check and normalize a scenario as the user describes it (birth month and year, filing "
+        "status, income, "
         "balances, retirement age, state, assumptions, per-year income changes). Include only "
         "values the user stated; never guess. Returns the normalized `scenario` to pass to later "
         "calls, the projected income timeline, and which required values are still missing."
@@ -781,7 +787,11 @@ async def open_saved_scenario(
     if saved is None:
         return _error("No saved scenario with that saved_id. Call list_saved_scenarios.")
     approximate = saved.scenario is None
-    scenario = saved.scenario or core.scenario_from_input(saved.inputs, current_year())
+    scenario = (
+        core.upgrade_scenario(saved.scenario, saved.updated_at.year)
+        if saved.scenario
+        else core.scenario_from_input(saved.inputs, current_year())
+    )
     data = {
         "saved_id": saved.id,
         "name": saved.name,

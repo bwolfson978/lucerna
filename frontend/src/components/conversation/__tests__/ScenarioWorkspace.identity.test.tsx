@@ -26,15 +26,18 @@ vi.mock("@/lib/auth", () => ({
 const API = "http://localhost:8000";
 const DRAFT = {
   ...EMPTY_DRAFT,
-  age: 52,
+  birth_year: new Date().getFullYear() - 52,
+  birth_month: 6,
   filing_status: "married_filing_jointly",
+  spouse_birth_year: new Date().getFullYear() - 52,
+  spouse_birth_month: 3,
   current_income: 90000,
   traditional_balance: 600000,
   retirement_age: 60,
   timeline: [{ year: 2026, gross_income: 90000 }],
 };
 
-type Call = { method: string; path: string; body: { draft?: { age?: number } } };
+type Call = { method: string; path: string; body: { draft?: { birth_year?: number } } };
 
 beforeAll(() => {
   globalThis.ResizeObserver ??= class {
@@ -118,7 +121,7 @@ it("overwrites the saved scenario when the same one is run again", async () => {
     "POST /api/scenarios",
     "PUT /api/scenarios/new-1",
   ]);
-  expect(calls[0].body.draft?.age).toBe(52);
+  expect(calls[0].body.draft?.birth_year).toBe(new Date().getFullYear() - 52);
 });
 
 it("saves a new copy when the saved one was deleted elsewhere", async () => {
@@ -157,7 +160,7 @@ it("keeps working on a saved scenario opened from My scenarios", async () => {
         updated_at: "2026-10-13T00:00:00Z",
         inputs: sampleOptimizationResult.input,
         result: {},
-        draft: { ...DRAFT, age: 61 },
+        draft: { ...DRAFT, birth_year: 1965 },
       })
     )
   );
@@ -169,7 +172,7 @@ it("keeps working on a saved scenario opened from My scenarios", async () => {
   await run(calls, 1);
   expect(calls[0].method).toBe("PUT");
   expect(calls[0].path).toBe("/api/scenarios/abc");
-  expect(calls[0].body.draft?.age).toBe(61);
+  expect(calls[0].body.draft?.birth_year).toBe(1965);
 });
 
 it("remembers only the latest signed-out run", async () => {

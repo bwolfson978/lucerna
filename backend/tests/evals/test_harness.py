@@ -36,7 +36,7 @@ async def test_offline_case_runs_end_to_end():
         "id": "x",
         "category": "intake",
         "turns": [
-            "I'm 52, married, income $90,000 a year, $600k in my 401k, I want to retire at 60"
+            "Born June 1974, my wife in March 1975, married, income $90,000 a year, $600k in my 401k, I want to retire at 60"
         ],
         "expect": {"tools_called": ["prepare_scenario"], "parts_shown": ["scenario_summary"]},
     }

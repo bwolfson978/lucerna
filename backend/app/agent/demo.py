@@ -44,7 +44,7 @@ _APP_DIR = Path(__file__).resolve().parents[1]
 logger = logging.getLogger(__name__)
 
 DEMO_MESSAGES: tuple[str, ...] = (
-    "Hi, I'm Margaret. I'm 63 and my husband and I file jointly. I retired last year after "
+    "Hi, I'm Margaret. I was born in May 1963, my husband in October 1963, and we file jointly. I retired last year after "
     "35 years as a nurse, and we're living off our brokerage account, so our income is only "
     "about $20,000 a year until Social Security starts. I have $1.4 million in a traditional "
     "401(k) and $52,000 in a Roth IRA. I'll claim Social Security at 67, about $46,000 a year, "
@@ -57,8 +57,11 @@ DEMO_MESSAGES: tuple[str, ...] = (
 # What the scripted fallback records from Margaret's message. Matches the facts in
 # DEMO_MESSAGES[0]; the real agent extracts the same values itself.
 _SCRIPTED_SCENARIO = ScenarioUpdate(
-    age=63,
+    birth_year=1963,
+    birth_month=5,
     filing_status="married_filing_jointly",
+    spouse_birth_year=1963,
+    spouse_birth_month=10,
     current_income=20_000,
     income_growth_rate_pct=0,
     traditional_balance=1_400_000,

@@ -1,5 +1,6 @@
 """POST /api/agent (server-sent events) and GET /api/agent/demo."""
 
+import datetime
 import json
 
 import pytest
@@ -8,6 +9,8 @@ from app.agent import demo
 from app.agent.limits import LimitConfig, limiter
 from app.agent.model import set_model_client
 from tests.agent.fakes import ScriptedModelClient, text, tool_use
+
+THIS_YEAR = datetime.date.today().year
 
 
 def parse_sse(body: str) -> list[dict]:
@@ -27,7 +30,10 @@ def reset_limits():
 async def test_streams_events_from_the_loop(async_client):
     set_model_client(
         ScriptedModelClient(
-            [[tool_use("t1", "prepare_scenario", {"scenario": {"age": 40}})], [text("Thanks!")]]
+            [
+                [tool_use("t1", "prepare_scenario", {"scenario": {"birth_year": THIS_YEAR - 40}})],
+                [text("Thanks!")],
+            ]
         )
     )
     response = await async_client.post("/api/agent", json={"message": "I'm 40"})
@@ -102,7 +108,9 @@ async def test_rejects_oversized_history_and_bad_input(async_client):
     assert events[0]["code"] == "too_long"
     assert (await async_client.post("/api/agent", json={"message": ""})).status_code == 422
     assert (
-        await async_client.post("/api/agent", json={"message": "a", "draft": {"age": 500}})
+        await async_client.post(
+            "/api/agent", json={"message": "a", "draft": {"birth_year": THIS_YEAR - 500}}
+        )
     ).status_code == 422
 
 
@@ -137,7 +145,10 @@ async def test_ai_generations_carry_usage_and_never_the_conversation(async_clien
     monkeypatch.setattr(error_tracking, "_client", posthog)
     set_model_client(
         ScriptedModelClient(
-            [[tool_use("t1", "prepare_scenario", {"scenario": {"age": 40}})], [text("Thanks!")]]
+            [
+                [tool_use("t1", "prepare_scenario", {"scenario": {"birth_year": THIS_YEAR - 40}})],
+                [text("Thanks!")],
+            ]
         )
     )
     headers = {"x-posthog-distinct-id": "visitor-1", "x-posthog-session-id": "session-1"}

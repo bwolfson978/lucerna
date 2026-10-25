@@ -5,7 +5,7 @@ from __future__ import annotations
 from enum import StrEnum
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.engine.types import FilingStatus
 
@@ -65,8 +65,28 @@ class ScenarioUpdate(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    age: int | None = Field(default=None, ge=0, le=120, description="Current age")
+    @model_validator(mode="before")
+    @classmethod
+    def _no_age(cls, data):
+        if isinstance(data, dict) and "age" in data:
+            raise ValueError(
+                "age is not an input: ask the user for the month and year they were born "
+                "(birth_month, birth_year), and their spouse's when filing jointly. Tell them: "
+                "some parts of the analysis depend on the month and year you were born."
+            )
+        return data
+
+    birth_year: int | None = Field(default=None, ge=1900, le=2100, description="Year born")
+    birth_month: int | None = Field(
+        default=None, ge=1, le=12, description="Month born, 1 (January) to 12 (December)"
+    )
     filing_status: FilingStatus | None = None
+    spouse_birth_year: int | None = Field(
+        default=None, ge=1900, le=2100, description="Spouse's year born, when filing jointly"
+    )
+    spouse_birth_month: int | None = Field(
+        default=None, ge=1, le=12, description="Spouse's month born, 1 to 12, when filing jointly"
+    )
     current_income: float | None = Field(
         default=None,
         ge=0,

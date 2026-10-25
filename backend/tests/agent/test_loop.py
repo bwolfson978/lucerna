@@ -1,5 +1,6 @@
 """Agent loop: event stream, tool dispatch, history shape and failure handling."""
 
+import datetime
 import json
 
 from app.agent.loop import (
@@ -15,9 +16,14 @@ from app.tools.draft import ScenarioDraft
 from app.tools.models import ScenarioUpdate
 from tests.agent.fakes import UNAVAILABLE, ScriptedModelClient, text, tool_use
 
+THIS_YEAR = datetime.date.today().year
+
 READY = {
-    "age": 52,
+    "birth_year": THIS_YEAR - 52,
+    "birth_month": 6,
     "filing_status": "married_filing_jointly",
+    "spouse_birth_year": THIS_YEAR - 52,
+    "spouse_birth_month": 3,
     "current_income": 90000,
     "traditional_balance": 600000,
     "retirement_age": 60,
@@ -110,7 +116,7 @@ async def test_tool_errors_are_returned_to_the_model():
                 tool_use(
                     "t1",
                     "analyze_roth_conversions",
-                    {"scenario": {"age": 5}, "user_confirmed": True},
+                    {"scenario": {"birth_year": THIS_YEAR - 5}, "user_confirmed": True},
                 )
             ],
             [text("I need more info.")],
@@ -137,7 +143,10 @@ async def test_refusal_drops_the_exchange():
 async def test_truncated_tool_call_gets_an_error_result():
     client = ScriptedModelClient(
         [
-            ([tool_use("t1", "prepare_scenario", {"scenario": {"age": 5}})], "max_tokens"),
+            (
+                [tool_use("t1", "prepare_scenario", {"scenario": {"birth_year": THIS_YEAR - 5}})],
+                "max_tokens",
+            ),
             [text("Sorry, retrying.")],
         ]
     )

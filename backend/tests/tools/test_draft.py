@@ -24,7 +24,8 @@ FIXTURES = Path(__file__).resolve().parents[3] / "shared" / "fixtures" / "scenar
 
 def complete(**overrides) -> ScenarioDraft:
     values = dict(
-        age=45,
+        birth_year=1981,
+        birth_month=6,
         filing_status="single",
         current_income=85000,
         traditional_balance=250000,
@@ -119,14 +120,46 @@ def test_sync_clears_timeline_when_inputs_missing():
 
 def test_missing_fields_and_build_errors():
     assert missing_fields(ScenarioDraft()) == [
-        "age",
+        "birth_year",
+        "birth_month",
         "filing_status",
         "current_income",
         "traditional_balance",
         "retirement_age",
     ]
-    with pytest.raises(ValueError, match="missing age"):
+    with pytest.raises(ValueError, match="missing birth_year"):
         build_scenario_input(ScenarioDraft())
+
+
+def test_joint_filers_need_the_spouse_birth_date():
+    draft = complete(filing_status="married_filing_jointly")
+    assert missing_fields(draft) == ["spouse_birth_year", "spouse_birth_month"]
+    draft = complete(
+        filing_status="married_filing_jointly", spouse_birth_year=1984, spouse_birth_month=11
+    )
+    assert missing_fields(draft) == []
+    scenario = build_scenario_input(draft)
+    assert (scenario.age, scenario.spouse_age) == (45, 42)
+
+
+def test_age_is_the_age_turned_in_the_first_year():
+    draft = complete(birth_year=1960, birth_month=12)
+    assert draft.age == 66
+    assert build_scenario_input(draft).age == 66
+
+
+def test_a_birth_year_after_the_plan_starts_is_an_error():
+    draft = complete(birth_year=2030)
+    assert "birth_year 2030 is after 2026" in validation_errors(draft)
+
+
+def test_a_draft_saved_with_only_an_age_gets_a_birth_year():
+    """Drafts from before birth dates were asked for: the age was the first year's."""
+    legacy = ScenarioDraft.model_validate(
+        {"age": 66, "timeline": [{"year": 2026, "gross_income": 0}]}
+    )
+    assert (legacy.birth_year, legacy.birth_month) == (1960, None)
+    assert "birth_month" in missing_fields(legacy)
 
 
 def test_invalid_state_is_reported():
@@ -152,7 +185,7 @@ def test_build_maps_form_semantics():
 
 def test_draft_hash_changes_with_values():
     assert draft_hash(complete()) == draft_hash(complete())
-    assert draft_hash(complete()) != draft_hash(complete(age=46))
+    assert draft_hash(complete()) != draft_hash(complete(birth_year=1980))
 
 
 def test_shared_parity_fixture_matches_reference():

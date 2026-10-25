@@ -67,10 +67,13 @@ def _irmaa_exposed_years(scenario: ScenarioInput) -> set[int]:
     """Timeline year indices (0-based) where a conversion creates IRMAA exposure.
 
     A conversion in timeline year t causes IRMAA in year t+2. IRMAA applies
-    from Medicare start age (65). So we need: age + t + LOOKBACK >= MEDICARE_START_AGE.
+    from Medicare start age (65), so someone in the household must be 65 by year t+2.
     """
-    threshold = MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS
-    return {t for t in range(len(scenario.timeline)) if scenario.age + t >= threshold}
+    return {
+        t
+        for t in range(len(scenario.timeline))
+        if scenario.people_at_least(MEDICARE_START_AGE, t + IRMAA_LOOKBACK_YEARS)
+    }
 
 
 def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> float:
@@ -147,7 +150,11 @@ def _npv_parts(scenario: ScenarioInput, yearly_conversions: list[float]) -> tupl
             # IRMAA MAGI counts only the taxable part of Social Security
             agi_base = yt.agi(base)
             irmaa_cost = irmaa_surcharge_loss(
-                agi_base, yt.agi(base + added) - agi_base, filing_status, yt.irmaa_scale
+                agi_base,
+                yt.agi(base + added) - agi_base,
+                filing_status,
+                yt.irmaa_scale,
+                yt.medicare_people,
             )
             if irmaa_cost > 0:
                 irmaa_discount = (1 + d) ** (-(t + IRMAA_LOOKBACK_YEARS))
@@ -485,7 +492,11 @@ def _build_year_detail(
             agi_base = yt.agi(base)
             agi_with = yt.agi(base + added)
             irmaa_cost = irmaa_surcharge_loss(
-                agi_base, agi_with - agi_base, scenario.filing_status, yt.irmaa_scale
+                agi_base,
+                agi_with - agi_base,
+                scenario.filing_status,
+                yt.irmaa_scale,
+                yt.medicare_people,
             )
             irmaa_tier = irmaa_tier_index(agi_with, scenario.filing_status, yt.irmaa_scale)
 
@@ -595,7 +606,9 @@ def _build_irmaa_projection(
             yt = year_tax(scenario, t)
             magi = yt.agi(entry.gross_income + rmd + actual_conv + trad_draw)
 
-            irmaa_cost = calculate_irmaa(magi, scenario.filing_status, yt.irmaa_scale)
+            irmaa_cost = calculate_irmaa(
+                magi, scenario.filing_status, yt.irmaa_scale, yt.medicare_people
+            )
             tier = irmaa_tier_index(magi, scenario.filing_status, yt.irmaa_scale)
 
             if irmaa_cost > 0:

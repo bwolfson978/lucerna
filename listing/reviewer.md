@@ -18,7 +18,7 @@ Paste into Claude's "Test and launch" step and ChatGPT's "Review details". The p
 > The same account works on the website: sign in at https://www.rothconversionsoptimizer.com/my-scenarios to see the saved scenarios there.
 >
 > Suggested path through all 10 tools:
-> 1. Describe a household (age, filing status, income, IRA balance, retirement age). This calls prepare_scenario and shows the scenario card.
+> 1. Describe a household (month and year born, filing status, income, IRA balance, retirement age). This calls prepare_scenario and shows the scenario card.
 > 2. Press "Run the numbers" on the card, or say "Looks right. Run the numbers." This calls analyze_roth_conversions.
 > 3. Ask "What if I retire at 58?". This calls compare_roth_scenarios.
 > 4. Ask "What are the 2026 brackets in Colorado?" and "How does the optimizer pick amounts?". These call get_tax_brackets and explain_methodology.

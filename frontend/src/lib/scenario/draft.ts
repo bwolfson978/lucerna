@@ -21,6 +21,13 @@ import {
 export type { IncomeSource } from "@/lib/utils/timeline";
 
 export interface ScenarioDraft {
+  birth_year: number | null;
+  /** 1 (January) to 12. */
+  birth_month: number | null;
+  /** Required when filing jointly. */
+  spouse_birth_year: number | null;
+  spouse_birth_month: number | null;
+  /** Age the user turns in the plan's first year, worked out from `birth_year`. */
   age: number | null;
   filing_status: FilingStatus | null;
   /** State code, "custom", or null for federal only. */
@@ -56,6 +63,10 @@ export type DraftPatch = Partial<ScenarioDraft>;
 export const DEFAULT_INFLATION_PCT = 2.5;
 
 export const EMPTY_DRAFT: ScenarioDraft = {
+  birth_year: null,
+  birth_month: null,
+  spouse_birth_year: null,
+  spouse_birth_month: null,
   age: null,
   filing_status: null,
   state: null,
@@ -81,14 +92,18 @@ export const EMPTY_DRAFT: ScenarioDraft = {
 };
 
 export const REQUIRED_FIELDS = [
-  "age",
+  "birth_year",
+  "birth_month",
   "filing_status",
   "current_income",
   "traditional_balance",
   "retirement_age",
 ] as const;
 
-export type RequiredField = (typeof REQUIRED_FIELDS)[number];
+/** Also required when filing jointly. */
+export const SPOUSE_FIELDS = ["spouse_birth_year", "spouse_birth_month"] as const;
+
+export type RequiredField = (typeof REQUIRED_FIELDS)[number] | (typeof SPOUSE_FIELDS)[number];
 
 const TIMELINE_BASE_FIELDS = [
   "age",
@@ -113,6 +128,11 @@ export function normalizeDraft(value: Partial<ScenarioDraft> | null | undefined)
     income_sources: value?.income_sources ?? [],
     timeline: value?.timeline ?? [],
   };
+  if (draft.birth_year == null && draft.age != null) {
+    // Saved before birth dates were asked for: the age was the first year's.
+    const year = draft.timeline[0]?.year ?? new Date().getFullYear();
+    draft.birth_year = year - draft.age;
+  }
   if (value && !("inflation_pct" in value) && draft.timeline.length > 0) {
     return syncTimeline(draft, null, draft.timeline[0].year);
   }
@@ -125,6 +145,7 @@ export function syncTimeline(
   previous: ScenarioDraft | null,
   startYear: number
 ): ScenarioDraft {
+  draft = { ...draft, age: ageInYear(draft.birth_year, startYear) };
   if (
     previous &&
     TIMELINE_BASE_FIELDS.every(
@@ -140,6 +161,13 @@ export function syncTimeline(
     ...draft,
     timeline: draft.timeline.length === 0 ? fresh : mergeTimeline(fresh, draft.timeline),
   };
+}
+
+/** The age someone born in `birthYear` turns in `year`, or null if out of range. */
+export function ageInYear(birthYear: number | null, year: number): number | null {
+  if (birthYear == null) return null;
+  const age = year - birthYear;
+  return age >= 0 && age <= 120 ? age : null;
 }
 
 /** The timeline a complete draft projects before any per-year edits. */
@@ -181,7 +209,11 @@ export function applyDraftPatch(
 }
 
 export function missingFields(draft: ScenarioDraft): RequiredField[] {
-  return REQUIRED_FIELDS.filter((name) => {
+  const required: RequiredField[] =
+    draft.filing_status === "married_filing_jointly"
+      ? [...REQUIRED_FIELDS.slice(0, 2), ...SPOUSE_FIELDS, ...REQUIRED_FIELDS.slice(2)]
+      : [...REQUIRED_FIELDS];
+  return required.filter((name) => {
     const value = draft[name];
     if (value == null) return true;
     if (name === "traditional_balance" && (value as number) <= 0) return true;
@@ -194,8 +226,17 @@ export function isDraftReady(draft: ScenarioDraft): boolean {
     missingFields(draft).length === 0 &&
     draft.timeline.length > 0 &&
     draft.timeline.every((y) => y.gross_income >= 0) &&
-    incomeSourceErrors(draft).length === 0
+    incomeSourceErrors(draft).length === 0 &&
+    birthYearErrors(draft).length === 0
   );
+}
+
+/** Birth years after the plan's first year. */
+export function birthYearErrors(draft: ScenarioDraft): string[] {
+  const year = draft.timeline[0]?.year ?? new Date().getFullYear();
+  return (["birth_year", "spouse_birth_year"] as const)
+    .filter((f) => draft[f] != null && draft[f]! > year)
+    .map((f) => `${f} ${draft[f]} is after ${year}`);
 }
 
 /** True when the user has entered anything beyond the defaults. */
@@ -221,9 +262,12 @@ export function buildScenarioInput(draft: ScenarioDraft): ScenarioInput {
         has_employer_coverage_after: draft.employer_coverage_year,
       }
     : null;
+  const startYear = draft.timeline[0].year;
+  const joint = draft.filing_status === "married_filing_jointly";
   return {
-    age: draft.age!,
+    age: startYear - draft.birth_year!,
     filing_status: draft.filing_status!,
+    spouse_age: joint ? startYear - draft.spouse_birth_year! : null,
     timeline: draft.timeline,
     traditional_ira_balance: draft.traditional_balance!,
     roth_ira_balance: draft.roth_balance ?? 0,

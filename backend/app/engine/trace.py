@@ -203,7 +203,7 @@ def _traditional_left_after_conversions(scenario: ScenarioInput, conversions: li
 
 def _just_under_irmaa_threshold(scenario: ScenarioInput, t: int, magi: float) -> bool:
     """Whether year t's income lands just below an IRMAA tier boundary it is exposed to."""
-    if scenario.age + t < MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS:
+    if not scenario.people_at_least(MEDICARE_START_AGE, t + IRMAA_LOOKBACK_YEARS):
         return False
     key = "mfj_max" if scenario.filing_status == FilingStatus.MFJ else "single_max"
     scale = lookback_threshold_scale(scenario.inflation_rate)

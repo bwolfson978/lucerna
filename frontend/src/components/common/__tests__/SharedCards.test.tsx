@@ -109,21 +109,22 @@ it("renders the what-if card with its actions", () => {
 
 it("renders the scenario summary read-only or editable", () => {
   const onEdit = vi.fn();
-  const { rerender } = render(<ScenarioSummary data={recorded} missing={["age"]} />);
+  const { rerender } = render(<ScenarioSummary data={recorded} missing={["birth_month"]} />);
   expect(screen.getByText("California, then Arizona")).toBeInTheDocument();
   expect(screen.getByText(/Part-time year/)).toBeInTheDocument();
-  expect(screen.getByText("Still needed: age.")).toBeInTheDocument();
+  expect(screen.getByText("Still needed: month you were born.")).toBeInTheDocument();
   // Read-only: nothing to edit, only the assumptions disclosure.
   expect(screen.getAllByRole("button").map((b) => b.getAttribute("aria-expanded"))).toEqual([
     "false",
   ]);
 
   rerender(<ScenarioSummary data={recorded} onEdit={onEdit} onRun={vi.fn()} />);
-  fireEvent.click(screen.getByRole("button", { name: "60" }));
-  const input = screen.getByLabelText("Age");
-  fireEvent.change(input, { target: { value: "61" } });
+  expect(screen.getAllByText("June 1966")).toHaveLength(2);
+  fireEvent.click(screen.getByRole("button", { name: "63" }));
+  const input = screen.getByLabelText("Start drawing at age");
+  fireEvent.change(input, { target: { value: "64" } });
   fireEvent.blur(input);
-  expect(onEdit).toHaveBeenCalledWith({ age: 61 });
+  expect(onEdit).toHaveBeenCalledWith({ retirement_age: 64 });
 });
 
 it("folds a summary already run to a one-line recap", () => {
@@ -133,7 +134,7 @@ it("folds a summary already run to a one-line recap", () => {
   expect(screen.getByText("Confirmed")).toBeInTheDocument();
   expect(screen.queryByText("California, then Arizona")).not.toBeInTheDocument();
   expect(
-    screen.getByText(/^Age \d+ · .+ income · .+ traditional · drawing at \d+$/)
+    screen.getByText(/^Born \w+ \d{4} · .+ income · .+ traditional · drawing at \d+$/)
   ).toBeInTheDocument();
 
   fireEvent.click(header);
@@ -189,7 +190,7 @@ it("asks for a rate when the state is Other", () => {
 
 it("as the website's scenario panel, offers Add for missing values and marks new ones", () => {
   const onEdit = vi.fn();
-  const data = { ...recorded, scenario: { ...recorded.scenario, age: null } };
+  const data = { ...recorded, scenario: { ...recorded.scenario, retirement_age: null } };
   const { container } = render(
     <ScenarioSummary
       data={data}
@@ -206,11 +207,11 @@ it("as the website's scenario panel, offers Add for missing values and marks new
   expect(screen.queryByRole("button", { name: "Run the numbers" })).not.toBeInTheDocument();
   expect(screen.getAllByText("New")).toHaveLength(1);
 
-  fireEvent.click(screen.getByRole("button", { name: "Add age" }));
-  const age = screen.getByLabelText("Age");
+  fireEvent.click(screen.getByRole("button", { name: "Add start drawing at age" }));
+  const age = screen.getByLabelText("Start drawing at age");
   fireEvent.change(age, { target: { value: "58" } });
   fireEvent.blur(age);
-  expect(onEdit).toHaveBeenLastCalledWith({ age: 58 });
+  expect(onEdit).toHaveBeenLastCalledWith({ retirement_age: 58 });
 });
 
 it("web MetricCard wraps the shared one", () => {

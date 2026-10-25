@@ -1,5 +1,6 @@
 """The MCP server, exercised the way clients use it: through an MCP client session."""
 
+import datetime
 import json
 from unittest.mock import MagicMock
 
@@ -17,9 +18,14 @@ from app.mcp.server import RESULTS_META_KEY, UI_META_KEY, mcp
 from app.tools import feedback
 from app.tools.views import VIEW_META_KEY
 
+THIS_YEAR = datetime.date.today().year
+
 SCENARIO = {
-    "age": 52,
+    "birth_year": THIS_YEAR - 52,
+    "birth_month": 6,
     "filing_status": "married_filing_jointly",
+    "spouse_birth_year": THIS_YEAR - 52,
+    "spouse_birth_month": 3,
     "current_income": 90000,
     "traditional_balance": 600000,
     "retirement_age": 60,
@@ -71,7 +77,9 @@ async def test_lists_tools_and_resources():
 
 async def test_record_then_analyze_with_the_returned_scenario():
     async with create_connected_server_and_client_session(mcp) as session:
-        recorded = await session.call_tool("prepare_scenario", {"scenario": {"age": 52}})
+        recorded = await session.call_tool(
+            "prepare_scenario", {"scenario": {"birth_year": THIS_YEAR - 52}}
+        )
         assert not recorded.isError
         assert recorded.structuredContent["ready_to_run"] is False
 
@@ -85,7 +93,7 @@ async def test_record_then_analyze_with_the_returned_scenario():
         )
         data = analyzed.structuredContent
         assert data["estimated_lifetime_tax_savings_todays_dollars"] > 0
-        assert data["scenario"]["age"] == 52
+        assert data["scenario"]["birth_year"] == THIS_YEAR - 52 and "age" not in data["scenario"]
         # Chart series for the View ride in _meta; the full engine output only when the
         # client asks for UI payloads.
         assert set(analyzed.meta) == {VIEW_META_KEY}
@@ -144,7 +152,8 @@ async def test_feedback_from_the_web_assistant(monkeypatch):
 async def test_errors_are_tool_errors():
     async with create_connected_server_and_client_session(mcp) as session:
         incomplete = await session.call_tool(
-            "analyze_roth_conversions", {"scenario": {"age": 52}, "user_confirmed": True}
+            "analyze_roth_conversions",
+            {"scenario": {"birth_year": THIS_YEAR - 52, "birth_month": 6}, "user_confirmed": True},
         )
         assert incomplete.isError
         assert incomplete.structuredContent["missing_required"][0] == "filing_status"
@@ -164,8 +173,13 @@ async def test_errors_are_tool_errors():
         )
         assert brackets.isError
 
-        invalid = await session.call_tool("prepare_scenario", {"scenario": {"age": "old"}})
+        invalid = await session.call_tool("prepare_scenario", {"scenario": {"birth_year": "old"}})
         assert invalid.isError
+
+        # An age alone isn't enough: the tool asks for the birth month and year, and why.
+        age = await session.call_tool("prepare_scenario", {"scenario": {"age": 62}})
+        assert age.isError
+        assert "month and year you were born" in age.content[0].text
 
         methodology = await session.call_tool("explain_methodology", {"topic": "aca-subsidies"})
         assert "ACA" in methodology.structuredContent["text"]
@@ -187,7 +201,7 @@ async def test_http_endpoint_client_and_analysis_limits(monkeypatch):
             return await session.call_tool(tool, args)
 
     async with mcp.session_manager.run():
-        first = {**SCENARIO, "age": 47}
+        first = {**SCENARIO, "birth_year": THIS_YEAR - 47}
         result = await call("analyze_roth_conversions", {"scenario": first, "user_confirmed": True})
         assert result.structuredContent["estimated_lifetime_tax_savings_todays_dollars"] > 0
 
@@ -197,7 +211,7 @@ async def test_http_endpoint_client_and_analysis_limits(monkeypatch):
         assert not (await call("prepare_scenario", {"scenario": SCENARIO})).isError
 
         # A fresh analysis over the limit gets a message and a way to keep going.
-        second = {**SCENARIO, "age": 48}
+        second = {**SCENARIO, "birth_year": THIS_YEAR - 48}
         limited = await call(
             "analyze_roth_conversions", {"scenario": second, "user_confirmed": True}
         )
@@ -219,7 +233,7 @@ async def test_http_endpoint_client_and_analysis_limits(monkeypatch):
         # The web app's own agent (AGENT_MCP_URL) skips the per-caller limits with the
         # shared internal token, and only with the right one.
         monkeypatch.setenv("MCP_INTERNAL_TOKEN", "s3cret")
-        third = {**SCENARIO, "age": 49}
+        third = {**SCENARIO, "birth_year": THIS_YEAR - 49}
         args = {"scenario": third, "user_confirmed": True}
         wrong = await call("analyze_roth_conversions", args, {server.INTERNAL_HEADER: "nope"})
         assert wrong.isError
@@ -265,7 +279,7 @@ async def test_http_endpoint_client_and_analysis_limits(monkeypatch):
 
 async def test_compare_counts_only_fresh_runs(monkeypatch):
     monkeypatch.setattr(server, "_analysis_limiter", AnalysisLimiter(_limits(per_ip=1)))
-    base = {**SCENARIO, "age": 50}
+    base = {**SCENARIO, "birth_year": THIS_YEAR - 50}
     args = {"scenario": base, "changes": {"retirement_age": 62}, "label": "Retire at 62"}
 
     async def call(caller: str | None, tool: str, arguments: dict):

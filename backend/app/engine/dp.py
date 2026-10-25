@@ -85,7 +85,6 @@ from app.engine.aca import aca_coverage_years, vectorized_subsidy_loss
 from app.engine.constants import round_to_resolution
 from app.engine.irmaa import (
     IRMAA_LOOKBACK_YEARS,
-    MEDICARE_START_AGE,
     vectorized_irmaa_surcharge_loss,
 )
 from app.engine.retirement import (
@@ -113,7 +112,11 @@ def _irmaa_loss(yt: YearTax, base, added):
     """IRMAA surcharge loss on MAGI that counts only the taxable part of Social Security."""
     agi_base = yt.agi(base)
     return vectorized_irmaa_surcharge_loss(
-        agi_base, yt.agi(base + added) - agi_base, yt.filing_status, yt.irmaa_scale
+        agi_base,
+        yt.agi(base + added) - agi_base,
+        yt.filing_status,
+        yt.irmaa_scale,
+        yt.medicare_people,
     )
 
 
@@ -375,7 +378,7 @@ def _dp_backward(
     for t in range(n_years):
         if rmd_arrays_per_year[t] is not None:
             continue  # handled per-state in loop
-        if scenario.age + t >= MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS:
+        if taxes[t].medicare_people > 0:
             income_t = scenario.timeline[t].gross_income
             irmaa_arr = np.array(
                 [
@@ -396,14 +399,13 @@ def _dp_backward(
         future_ref = value_table[t + 1]
 
         entry_t = scenario.timeline[t]
-        owner_age_t = scenario.age + t
         income_t = entry_t.gross_income
         drawdown_t = float(entry_t.drawdown) if entry_t.drawdown is not None else 0.0
         yr_state = resolve_state_for_year(entry_t.state, scenario.state)
         yt_t = taxes[t]
         rmd_arr_t = rmd_arrays_per_year[t]
         has_rmd = rmd_arr_t is not None
-        irmaa_exposed_t = owner_age_t >= MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS
+        irmaa_exposed_t = taxes[t].medicare_people > 0
 
         # Pre-built discounted cost_row for non-RMD years
         if not has_rmd:
@@ -678,7 +680,7 @@ def _dp_backward_2d(
     for t in range(n_years):
         if rmd_arrays_per_year[t] is not None:
             continue
-        if scenario.age + t >= MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS:
+        if taxes[t].medicare_people > 0:
             income_t = scenario.timeline[t].gross_income
             irmaa_cost_by_year[t] = (
                 _irmaa_loss(taxes[t], income_t, extended_trad) * irmaa_discount_ratio
@@ -698,14 +700,13 @@ def _dp_backward_2d(
         future_ref = value_table[t + 1]  # (G_T, G_R)
 
         entry_t = scenario.timeline[t]
-        owner_age_t = scenario.age + t
         income_t = entry_t.gross_income
         drawdown_t = float(entry_t.drawdown) if entry_t.drawdown is not None else 0.0
         yr_state = resolve_state_for_year(entry_t.state, scenario.state)
         yt_t = taxes[t]
         rmd_arr_t = rmd_arrays_per_year[t]
         has_rmd = rmd_arr_t is not None
-        irmaa_exposed_t = owner_age_t >= MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS
+        irmaa_exposed_t = taxes[t].medicare_people > 0
 
         if not has_rmd:
             cost_row = tax_cost_by_year[t].copy()
@@ -1148,7 +1149,7 @@ def _dp_backward_3d(
     for t in range(n_years):
         if rmd_arrays_per_year_3d[t] is not None:
             continue  # per-state in loop (income base includes rmd(grid[i]))
-        if scenario.age + t >= MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS:
+        if taxes[t].medicare_people > 0:
             income_t = scenario.timeline[t].gross_income
             irmaa_arr = _irmaa_loss(taxes[t], income_t, extended_grid)
             irmaa_cost_by_year_3d[t] = irmaa_arr * irmaa_discount_ratio
@@ -1162,14 +1163,13 @@ def _dp_backward_3d(
         future_ref = value_table[t + 1]  # shape (G, B)
 
         entry_t = scenario.timeline[t]
-        owner_age_t = scenario.age + t
         income_t = entry_t.gross_income
         drawdown_t = float(entry_t.drawdown) if entry_t.drawdown is not None else 0.0
         yr_state = resolve_state_for_year(entry_t.state, scenario.state)
         yt_t = taxes[t]
         rmd_arr_t = rmd_arrays_per_year_3d[t]
         has_rmd = rmd_arr_t is not None
-        irmaa_exposed_t = owner_age_t >= MEDICARE_START_AGE - IRMAA_LOOKBACK_YEARS
+        irmaa_exposed_t = taxes[t].medicare_people > 0
 
         # Build shared cost_row for non-RMD years (cost_row[j] = cost of converting grid[j])
         if not has_rmd:

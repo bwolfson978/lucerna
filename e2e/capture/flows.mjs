@@ -12,7 +12,19 @@
  *   fullPage:  capture the whole scrollable page
  */
 
-const MESSAGE = "I'm 52, married, income $90,000 a year, $600k in my 401k, I want to retire at 60"
+// "I'm 52" for the age field on older bases; the birth dates for the month and year fields.
+const MESSAGE = "I'm 52 (born June 1974), my wife was born in March 1975, married, income $90,000 a year, $600k in my 401k, I want to retire at 60"
+
+/** The month and year born fields, where the form has them: June of the year that makes `age`. */
+async function fillBorn(page, age) {
+  for (const label of ['Born', 'Spouse born']) {
+    const month = page.getByLabel(label, { exact: true }).first()
+    if (!(await month.count()) || !(await month.isVisible())) continue
+    await month.click()
+    await page.getByRole('option', { name: 'June', exact: true }).click()
+    await page.getByLabel(`${label}: year`, { exact: true }).first().fill(String(new Date().getFullYear() - age))
+  }
+}
 
 /**
  * The scenario once the conversation has captured it, waiting for Run the numbers: the
@@ -44,7 +56,7 @@ async function scenarioReady(page, onCaptured = async () => {}) {
 async function waitForSample(page) {
   await page
     .waitForFunction(
-      () => document.getElementById('conversation-input')?.value.startsWith("I'm 55 and single"),
+      () => /^(I'm 55|I was born in March 1971) and/.test(document.getElementById('conversation-input')?.value ?? ''),
       null,
       { timeout: 8000 }
     )
@@ -307,6 +319,31 @@ export const flows = {
     },
   },
 
+  'birth-date': {
+    title: 'Month and year born',
+    paths: ['frontend/src/components/common/BirthDateField', 'ui/src/ScenarioSummary', 'backend/app/tools/draft.py'],
+    async run(page, shot) {
+      await page.goto('/calculator')
+      await openForm(page)
+      await page.getByRole('heading', { level: 1 }).waitFor()
+      await shot('form-top', 'Top of the form, empty')
+      await page.getByLabel('Filing status').click()
+      await page.getByRole('option', { name: /Married/ }).click()
+      const age = page.getByLabel('Age', { exact: true }).first()
+      if (await age.count()) await age.fill('52')
+      await fillBorn(page, 52)
+      await shot('form-joint', 'Filing jointly, with both birth dates filled in')
+
+      // The conversation fills the same values into the scenario panel.
+      await page.goto('/calculator')
+      await waitForSample(page)
+      await page.getByLabel('Message').fill(MESSAGE)
+      await page.getByRole('button', { name: 'Send' }).click()
+      const panel = await scenarioReady(page)
+      await shot('panel', 'Scenario panel after the conversation', { element: panel })
+    },
+  },
+
   'calculator-form': {
     title: 'Calculator form',
     paths: ['frontend/src/app/calculator/', 'frontend/src/components/calculator/', 'frontend/src/components/ui/'],
@@ -324,6 +361,7 @@ export const flows = {
       await fill('Age', 63)
       await page.getByLabel('Filing status').click()
       await page.getByRole('option', { name: /Married/ }).click()
+      await fillBorn(page, 63)
       await fill('Current income', 20000)
       await fill('Traditional IRA/401(k) balance', 1400000)
       await fill('Retirement age', 73)
@@ -394,6 +432,7 @@ export const flows = {
       await fill('Age', 66)
       await page.getByLabel('Filing status').click()
       await page.getByRole('option', { name: /Married/ }).click()
+      await fillBorn(page, 66)
       await fill('Current income', 0)
       await fill('Earned income', 0)
       await fill('Traditional IRA/401(k) balance', 2600000)
@@ -637,6 +676,7 @@ export const flows = {
       await page.getByRole('heading', { level: 1 }).waitFor()
       const fill = (label, value) => page.getByLabel(label, { exact: true }).first().fill(String(value))
       await fill('Age', 40)
+      await fillBorn(page, 40)
       await fill('Current income', 70000)
       await fill('Traditional IRA/401(k) balance', 150000)
       await fill('Retirement age', 65)

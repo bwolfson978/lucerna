@@ -1,6 +1,7 @@
 """MCP analytics: each tool call sends one PostHog event naming the client, and links
 handed to a chat app carry utm tags."""
 
+import datetime
 from unittest.mock import MagicMock
 from urllib.parse import parse_qs, urlparse
 
@@ -17,9 +18,14 @@ from app.mcp import analytics, server
 from app.mcp.limits import AnalysisLimiter, AnalysisLimits
 from app.mcp.server import mcp
 
+THIS_YEAR = datetime.date.today().year
+
 SCENARIO = {
-    "age": 52,
+    "birth_year": THIS_YEAR - 52,
+    "birth_month": 6,
     "filing_status": "married_filing_jointly",
+    "spouse_birth_year": THIS_YEAR - 52,
+    "spouse_birth_month": 3,
     "current_income": 90000,
     "traditional_balance": 600000,
     "retirement_age": 60,
@@ -101,7 +107,7 @@ async def test_calls_over_http_send_events_and_tagged_links(posthog, monkeypatch
             queue_seconds=10,
         )
         monkeypatch.setattr(server, "_analysis_limiter", AnalysisLimiter(no_analyses))
-        args = {"scenario": {**SCENARIO, "age": 54}, "user_confirmed": True}
+        args = {"scenario": {**SCENARIO, "birth_year": THIS_YEAR - 54}, "user_confirmed": True}
         limited = await _call(app, "analyze_roth_conversions", args, user_agent="openai-mcp/1.0.0")
         assert limited.isError
         assert "utm_source=chatgpt" in limited.structuredContent["full_results_url"]
@@ -124,7 +130,7 @@ async def test_calls_over_http_send_events_and_tagged_links(posthog, monkeypatch
 
 
 async def test_fresh_runs_are_counted_and_cached_ones_are_not(posthog):
-    scenario = {**SCENARIO, "age": 53}
+    scenario = {**SCENARIO, "birth_year": THIS_YEAR - 53}
     async with create_connected_server_and_client_session(mcp) as session:
         args = {"scenario": scenario, "user_confirmed": True}
         await session.call_tool("analyze_roth_conversions", args)
@@ -139,7 +145,8 @@ async def test_fresh_runs_are_counted_and_cached_ones_are_not(posthog):
 async def test_errors_are_recorded(posthog):
     async with create_connected_server_and_client_session(mcp) as session:
         result = await session.call_tool(
-            "analyze_roth_conversions", {"scenario": {"age": 52}, "user_confirmed": True}
+            "analyze_roth_conversions",
+            {"scenario": {"birth_year": THIS_YEAR - 52}, "user_confirmed": True},
         )
     assert result.isError
     [event] = _events(posthog)

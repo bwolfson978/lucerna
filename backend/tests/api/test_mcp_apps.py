@@ -1,13 +1,19 @@
 """MCP Apps host endpoints: View resources, brokered tool calls and the sandbox proxy."""
 
+import datetime
 import json
 
 from app.api.mcp_apps import build_csp
 from app.mcp.server import APP_MIME_TYPE, RESULT_CARD_URI
 
+THIS_YEAR = datetime.date.today().year
+
 SCENARIO = {
-    "age": 52,
+    "birth_year": THIS_YEAR - 52,
+    "birth_month": 6,
     "filing_status": "married_filing_jointly",
+    "spouse_birth_year": THIS_YEAR - 52,
+    "spouse_birth_month": 3,
     "current_income": 90000,
     "traditional_balance": 600000,
     "retirement_age": 60,

@@ -66,7 +66,11 @@ def _unavailable() -> HTTPException:
 def _draft(saved: store.SavedScenario) -> dict[str, Any] | None:
     year = current_year()
     try:
-        scenario = saved.scenario or core.scenario_from_input(saved.inputs, year)
+        scenario = (
+            core.upgrade_scenario(saved.scenario, saved.updated_at.year)
+            if saved.scenario
+            else core.scenario_from_input(saved.inputs, year)
+        )
         update = ScenarioUpdate.model_validate(scenario)
         return core.draft_from_scenario(update, year).model_dump(mode="json")
     except (ValueError, core.ToolError):

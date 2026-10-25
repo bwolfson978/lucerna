@@ -9,8 +9,11 @@ import { EMPTY_DRAFT, type ScenarioDraft } from "./draft";
 
 /** Draft fields the scenario panel shows, in the order it shows them. */
 const SHOWN_FIELDS = [
-  "age",
+  "birth_year",
+  "birth_month",
   "filing_status",
+  "spouse_birth_year",
+  "spouse_birth_month",
   "current_income",
   "current_income_end_age",
   "income_growth_rate_pct",
@@ -34,6 +37,8 @@ type ShownField = (typeof SHOWN_FIELDS)[number];
 
 /** Fields that read as one detail to the person: state now and later, the ACA settings. */
 const DETAIL_OF: Partial<Record<ShownField, ShownField>> = {
+  birth_month: "birth_year",
+  spouse_birth_month: "spouse_birth_year",
   current_income_end_age: "current_income",
   retirement_state: "state",
   custom_state_rate_pct: "state",

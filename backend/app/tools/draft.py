@@ -16,7 +16,7 @@ import json
 import math
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.engine.state_tax import _TAX_DATA
 from app.engine.types import FilingStatus, HealthcareInput, PlanYear, ScenarioInput
@@ -26,12 +26,19 @@ VALID_STATES: frozenset[str] = frozenset(_TAX_DATA.get("states", {}).keys()) | {
 
 # Required before the optimizer can run, in the order the conversation asks for them.
 REQUIRED_FIELDS: tuple[str, ...] = (
-    "age",
+    "birth_year",
+    "birth_month",
     "filing_status",
     "current_income",
     "traditional_balance",
     "retirement_age",
 )
+
+# Also required when filing jointly.
+SPOUSE_FIELDS: tuple[str, ...] = ("spouse_birth_year", "spouse_birth_month")
+
+# Shown with missing birth fields, so the user knows why we ask.
+BIRTH_REASON = "Some parts of the analysis depend on the month and year you were born."
 
 # Inputs that regenerate the income timeline when they change (matches the form).
 _TIMELINE_BASE_FIELDS = (
@@ -72,6 +79,11 @@ class IncomeSource(BaseModel):
 class ScenarioDraft(BaseModel):
     """Scenario inputs as the user gives them. ``None`` means not provided yet."""
 
+    birth_year: int | None = Field(default=None, ge=1900, le=2100)
+    birth_month: int | None = Field(default=None, ge=1, le=12)
+    spouse_birth_year: int | None = Field(default=None, ge=1900, le=2100)
+    spouse_birth_month: int | None = Field(default=None, ge=1, le=12)
+    # Age the user turns in the plan's first year, worked out from ``birth_year``
     age: int | None = Field(default=None, ge=0, le=120)
     filing_status: FilingStatus | None = None
     state: str | None = Field(
@@ -98,6 +110,18 @@ class ScenarioDraft(BaseModel):
     employer_coverage_year: int | None = None
     income_sources: list[IncomeSource] = Field(default_factory=list)
     timeline: list[PlanYear] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _birth_year_from_age(cls, data):
+        """Drafts saved before birth dates were asked for have only an age: the age in
+        the timeline's first year (or this year), which gives the birth year."""
+        if isinstance(data, dict) and data.get("age") is not None and not data.get("birth_year"):
+            timeline = data.get("timeline") or []
+            first = timeline[0] if timeline else None
+            year = first.get("year") if isinstance(first, dict) else getattr(first, "year", None)
+            data = {**data, "birth_year": (year or current_year()) - data["age"]}
+        return data
 
 
 def generate_timeline(
@@ -176,8 +200,16 @@ def merge_timeline(fresh: list[PlanYear], existing: list[PlanYear]) -> list[Plan
     return [pinned.get(row.year, row) for row in fresh]
 
 
+def sync_age(draft: ScenarioDraft, start_year: int) -> None:
+    """Set ``age`` to the age the user turns in ``start_year`` (mutates ``draft``)."""
+    draft.age = None if draft.birth_year is None else start_year - draft.birth_year
+    if draft.age is not None and not 0 <= draft.age <= 120:
+        draft.age = None
+
+
 def sync_timeline(draft: ScenarioDraft, previous: ScenarioDraft | None, start_year: int) -> None:
     """Regenerate the timeline when the inputs it depends on change (mutates ``draft``)."""
+    sync_age(draft, start_year)
     if previous is not None and all(
         getattr(draft, f) == getattr(previous, f) for f in _TIMELINE_BASE_FIELDS
     ):
@@ -191,7 +223,10 @@ def sync_timeline(draft: ScenarioDraft, previous: ScenarioDraft | None, start_ye
 
 def missing_fields(draft: ScenarioDraft) -> list[str]:
     missing = []
-    for name in REQUIRED_FIELDS:
+    required = REQUIRED_FIELDS
+    if draft.filing_status == FilingStatus.MFJ:
+        required = (*required[:2], *SPOUSE_FIELDS, *required[2:])
+    for name in required:
         value = getattr(draft, name)
         if value is None or (name == "traditional_balance" and value <= 0):
             missing.append(name)
@@ -201,6 +236,11 @@ def missing_fields(draft: ScenarioDraft) -> list[str]:
 def validation_errors(draft: ScenarioDraft) -> list[str]:
     """Problems that block a run beyond missing fields (mirrors the form's checks)."""
     errors = []
+    year = draft.timeline[0].year if draft.timeline else current_year()
+    for field in ("birth_year", "spouse_birth_year"):
+        value = getattr(draft, field)
+        if value is not None and value > year:
+            errors.append(f"{field} {value} is after {year}")
     for field in ("state", "retirement_state"):
         value = getattr(draft, field)
         if value is not None and value not in VALID_STATES:
@@ -237,9 +277,12 @@ def build_scenario_input(draft: ScenarioDraft) -> ScenarioInput:
         if draft.retirement_state is not None and draft.retirement_state != draft.state
         else None
     )
+    start_year = draft.timeline[0].year
+    joint = draft.filing_status == FilingStatus.MFJ
     return ScenarioInput(
-        age=draft.age,
+        age=start_year - draft.birth_year,
         filing_status=draft.filing_status,
+        spouse_age=start_year - draft.spouse_birth_year if joint else None,
         timeline=draft.timeline,
         traditional_ira_balance=draft.traditional_balance,
         roth_ira_balance=draft.roth_balance or 0,

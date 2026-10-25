@@ -16,10 +16,13 @@ from app.mcp import server
 from app.mcp.limits import AnalysisLimiter, AnalysisLimits, current_caller
 from app.mcp.server import mcp
 
+THIS_YEAR = datetime.date.today().year
+
 ISSUER = "https://clerk.example.com"
 
 SCENARIO = {
-    "age": 55,
+    "birth_year": THIS_YEAR - 55,
+    "birth_month": 6,
     "filing_status": "single",
     "current_income": 70000,
     "traditional_balance": 400000,
@@ -302,7 +305,7 @@ async def test_save_list_and_open(issuer, store):
 
     opened = await _tool("user:u1", "open_saved_scenario", {"saved_id": data["saved_id"]})
     content = opened.structuredContent
-    assert content["scenario"]["age"] == 55 and "note" not in content
+    assert content["scenario"]["birth_year"] == THIS_YEAR - 55 and "note" not in content
     # The opened scenario runs as is.
     again = await _tool(
         "user:u1",
@@ -348,8 +351,32 @@ async def test_open_a_website_save(issuer, store):
     assert "note" in opened
     assert opened["estimated_lifetime_tax_savings_when_saved"] == 1234
     assert opened["scenario"]["traditional_balance"] == DEMO_SCENARIO.traditional_ira_balance
+    assert opened["scenario"]["birth_year"] == 2026 - DEMO_SCENARIO.age
     recorded = await _tool("user:u1", "prepare_scenario", {"scenario": opened["scenario"]})
-    assert recorded.structuredContent["ready_to_run"]
+    # Saved before birth months were asked for: the chat asks for them.
+    assert recorded.structuredContent["missing_required"] == [
+        "birth_month",
+        "spouse_birth_year",
+        "spouse_birth_month",
+    ]
+    assert "month and year you were born" in recorded.structuredContent["why_birth_date"]
+
+
+async def test_open_a_chat_save_from_before_birth_dates(issuer, store):
+    """A chat save that has an age: the age it had when last saved gives the birth year."""
+    legacy = {k: v for k, v in SCENARIO.items() if not k.startswith("birth")}
+    store.rows["old"] = saved_store.SavedScenario(
+        id="old",
+        name="Old chat save",
+        created_at=datetime.datetime(2026, 9, 1, tzinfo=datetime.UTC),
+        updated_at=datetime.datetime(2026, 9, 1, tzinfo=datetime.UTC),
+        inputs=DEMO_SCENARIO,
+        result={},
+        scenario={**legacy, "age": 55},
+    )
+    store.owners["old"] = "u1"
+    opened = (await _tool("user:u1", "open_saved_scenario", {"saved_id": "old"})).structuredContent
+    assert opened["scenario"]["birth_year"] == 1971 and "age" not in opened["scenario"]
 
 
 async def test_saving_counts_against_the_signed_in_limit(issuer, store, monkeypatch):
@@ -361,7 +388,7 @@ async def test_saving_counts_against_the_signed_in_limit(issuer, store, monkeypa
         queue_seconds=1,
     )
     monkeypatch.setattr(server, "_analysis_limiter", AnalysisLimiter(limits))
-    fresh = {**SCENARIO, "age": 56}
+    fresh = {**SCENARIO, "birth_year": THIS_YEAR - 56}
     result = await _tool("user:u1", "save_scenario", {"scenario": fresh})
     assert result.structuredContent["limit_reached"] == "daily_limit"
     # Signed in already: no sign-in pitch.

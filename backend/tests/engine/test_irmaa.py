@@ -256,3 +256,10 @@ class TestIrmaaIntegration:
         conversions = [50_000.0]
         proj = _build_irmaa_projection(scenario, conversions)
         assert proj is None
+
+
+def test_surcharge_counts_only_the_people_on_medicare():
+    magi = IRMAA_TIERS[2]["mfj_max"] - 1
+    both = calculate_irmaa(magi, FilingStatus.MFJ)
+    assert calculate_irmaa(magi, FilingStatus.MFJ, persons=1) == both / 2
+    assert calculate_irmaa(magi, FilingStatus.MFJ, persons=0) == 0

@@ -85,8 +85,11 @@ it("tells a signed-in person when saving their run failed", async () => {
     "lucerna:draft:v1",
     JSON.stringify({
       ...EMPTY_DRAFT,
-      age: 52,
+      birth_year: new Date().getFullYear() - 52,
+      birth_month: 6,
       filing_status: "married_filing_jointly",
+      spouse_birth_year: new Date().getFullYear() - 52,
+      spouse_birth_month: 3,
       current_income: 90000,
       traditional_balance: 600000,
       retirement_age: 60,

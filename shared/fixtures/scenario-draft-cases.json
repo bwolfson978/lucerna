@@ -5,7 +5,8 @@
       "name": "working, single, federal only",
       "start_year": 2026,
       "draft": {
-        "age": 45,
+        "birth_year": 1981,
+        "birth_month": 6,
         "filing_status": "single",
         "current_income": 85000,
         "traditional_balance": 250000,
@@ -445,8 +446,11 @@
       "name": "married with state, roth, spending, custom assumptions",
       "start_year": 2026,
       "draft": {
-        "age": 52,
+        "birth_year": 1974,
+        "birth_month": 6,
         "filing_status": "married_filing_jointly",
+        "spouse_birth_year": 1968,
+        "spouse_birth_month": 9,
         "current_income": 90000,
         "income_growth_rate_pct": 2.5,
         "traditional_balance": 600000,
@@ -640,6 +644,7 @@
       "scenario": {
         "age": 52,
         "filing_status": "married_filing_jointly",
+        "spouse_age": 58,
         "timeline": [
           {
             "year": 2026,
@@ -878,7 +883,8 @@
       "name": "retirement state same as state is dropped",
       "start_year": 2026,
       "draft": {
-        "age": 40,
+        "birth_year": 1986,
+        "birth_month": 6,
         "filing_status": "single",
         "current_income": 120000,
         "traditional_balance": 300000,
@@ -1366,8 +1372,11 @@
       "name": "already retired keeps income for life",
       "start_year": 2026,
       "draft": {
-        "age": 66,
+        "birth_year": 1960,
+        "birth_month": 6,
         "filing_status": "married_filing_jointly",
+        "spouse_birth_year": 1968,
+        "spouse_birth_month": 9,
         "current_income": 30000,
         "income_growth_rate_pct": 0,
         "traditional_balance": 900000,
@@ -1478,6 +1487,7 @@
       "scenario": {
         "age": 66,
         "filing_status": "married_filing_jointly",
+        "spouse_age": 58,
         "timeline": [
           {
             "year": 2026,
@@ -1618,7 +1628,8 @@
       "name": "custom state rate and ACA",
       "start_year": 2026,
       "draft": {
-        "age": 58,
+        "birth_year": 1968,
+        "birth_month": 6,
         "filing_status": "single",
         "current_income": 45000,
         "traditional_balance": 500000,
@@ -1954,7 +1965,8 @@
       "name": "half-dollar growth rounding",
       "start_year": 2026,
       "draft": {
-        "age": 30,
+        "birth_year": 1996,
+        "birth_month": 6,
         "filing_status": "single",
         "current_income": 50001,
         "income_growth_rate_pct": 3,
@@ -2530,8 +2542,11 @@
       "name": "income sources replace current income",
       "start_year": 2026,
       "draft": {
-        "age": 63,
+        "birth_year": 1963,
+        "birth_month": 6,
         "filing_status": "married_filing_jointly",
+        "spouse_birth_year": 1968,
+        "spouse_birth_month": 9,
         "current_income": 20000,
         "income_growth_rate_pct": 0,
         "current_income_end_age": 66,
@@ -2719,6 +2734,7 @@
       "scenario": {
         "age": 63,
         "filing_status": "married_filing_jointly",
+        "spouse_age": 58,
         "timeline": [
           {
             "year": 2026,
@@ -2917,7 +2933,8 @@
       "name": "inflation: raises less inflation, pension shrinks, Social Security keeps up",
       "start_year": 2026,
       "draft": {
-        "age": 55,
+        "birth_year": 1971,
+        "birth_month": 6,
         "filing_status": "single",
         "current_income": 100000,
         "income_growth_rate_pct": 3,
@@ -3338,7 +3355,8 @@
       "name": "no inflation",
       "start_year": 2026,
       "draft": {
-        "age": 60,
+        "birth_year": 1966,
+        "birth_month": 6,
         "filing_status": "single",
         "current_income": 80000,
         "inflation_pct": 0,
@@ -3652,7 +3670,8 @@
       "name": "zero spending means 4% rule",
       "start_year": 2026,
       "draft": {
-        "age": 50,
+        "birth_year": 1976,
+        "birth_month": 6,
         "filing_status": "single",
         "current_income": 70000,
         "traditional_balance": 200000,
@@ -4048,8 +4067,11 @@
       "name": "retired couple, no work income, Social Security later",
       "start_year": 2026,
       "draft": {
-        "age": 66,
+        "birth_year": 1960,
+        "birth_month": 6,
         "filing_status": "married_filing_jointly",
+        "spouse_birth_year": 1968,
+        "spouse_birth_month": 9,
         "state": "FL",
         "current_income": 0,
         "traditional_balance": 2600000,
@@ -4200,6 +4222,7 @@
       "scenario": {
         "age": 66,
         "filing_status": "married_filing_jointly",
+        "spouse_age": 58,
         "timeline": [
           {
             "year": 2026,
@@ -4368,7 +4391,8 @@
       "name": "empty",
       "draft": {},
       "missing": [
-        "age",
+        "birth_year",
+        "birth_month",
         "filing_status",
         "current_income",
         "traditional_balance",
@@ -4378,10 +4402,45 @@
     {
       "name": "partial",
       "draft": {
-        "age": 45,
+        "birth_year": 1981,
         "filing_status": "single"
       },
       "missing": [
+        "birth_month",
+        "current_income",
+        "traditional_balance",
+        "retirement_age"
+      ]
+    },
+    {
+      "name": "joint without the spouse's birth date",
+      "draft": {
+        "birth_year": 1981,
+        "birth_month": 6,
+        "filing_status": "married_filing_jointly"
+      },
+      "missing": [
+        "spouse_birth_year",
+        "spouse_birth_month",
+        "current_income",
+        "traditional_balance",
+        "retirement_age"
+      ]
+    },
+    {
+      "name": "saved with only an age",
+      "draft": {
+        "age": 66,
+        "timeline": [
+          {
+            "year": 2026,
+            "gross_income": 0
+          }
+        ]
+      },
+      "missing": [
+        "birth_month",
+        "filing_status",
         "current_income",
         "traditional_balance",
         "retirement_age"
@@ -4390,7 +4449,8 @@
     {
       "name": "zero income",
       "draft": {
-        "age": 45,
+        "birth_year": 1981,
+        "birth_month": 6,
         "filing_status": "single",
         "current_income": 0,
         "traditional_balance": 1000,
@@ -4401,7 +4461,8 @@
     {
       "name": "zero traditional balance",
       "draft": {
-        "age": 45,
+        "birth_year": 1981,
+        "birth_month": 6,
         "filing_status": "single",
         "current_income": 50000,
         "traditional_balance": 0,

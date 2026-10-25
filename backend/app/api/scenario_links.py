@@ -33,7 +33,9 @@ class OpenLinkResponse(BaseModel):
 async def open_scenario_link(body: OpenLinkRequest):
     error: str | None = None
     try:
-        update = ScenarioUpdate.model_validate(decode_scenario(body.scenario))
+        update = ScenarioUpdate.model_validate(
+            core.upgrade_scenario(decode_scenario(body.scenario), current_year())
+        )
         draft = core.draft_from_scenario(update, current_year())
         scenario_input, result = await anyio.to_thread.run_sync(core.run_draft, draft)
     except ValidationError:

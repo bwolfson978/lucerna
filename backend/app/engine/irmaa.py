@@ -81,15 +81,22 @@ def irmaa_tier_index(magi: float, filing_status: FilingStatus, threshold_scale: 
 
 
 def calculate_irmaa(
-    magi: float, filing_status: FilingStatus, threshold_scale: float = 1.0
+    magi: float,
+    filing_status: FilingStatus,
+    threshold_scale: float = 1.0,
+    persons: int | None = None,
 ) -> float:
     """Annual IRMAA household surcharge for a given MAGI.
 
-    Returns the total annual surcharge for the household (both spouses for MFJ,
-    one person for SINGLE). Part B and Part D.
+    Returns the total annual surcharge for the ``persons`` on Medicare (default: both
+    spouses for MFJ, one person for SINGLE). Part B and Part D.
     """
     idx = irmaa_tier_index(magi, filing_status, threshold_scale)
-    return IRMAA_TIERS[idx]["annual_per_person"] * _PERSONS[filing_status]
+    return IRMAA_TIERS[idx]["annual_per_person"] * _persons(filing_status, persons)
+
+
+def _persons(filing_status: FilingStatus, persons: int | None) -> int:
+    return _PERSONS[filing_status] if persons is None else persons
 
 
 def irmaa_surcharge_loss(
@@ -97,14 +104,15 @@ def irmaa_surcharge_loss(
     conversion: float,
     filing_status: FilingStatus,
     threshold_scale: float = 1.0,
+    persons: int | None = None,
 ) -> float:
     """Marginal IRMAA cost of adding `conversion` on top of `base_magi`.
 
     Step-function: zero unless the conversion crosses an IRMAA tier boundary.
     """
     return calculate_irmaa(
-        base_magi + conversion, filing_status, threshold_scale
-    ) - calculate_irmaa(base_magi, filing_status, threshold_scale)
+        base_magi + conversion, filing_status, threshold_scale, persons
+    ) - calculate_irmaa(base_magi, filing_status, threshold_scale, persons)
 
 
 def vectorized_irmaa_surcharge_loss(
@@ -112,6 +120,7 @@ def vectorized_irmaa_surcharge_loss(
     conversions: np.ndarray,
     filing_status: FilingStatus,
     threshold_scale: float = 1.0,
+    persons: int | None = None,
 ) -> np.ndarray:
     """Vectorized marginal IRMAA cost for an array of conversion amounts.
 
@@ -120,7 +129,7 @@ def vectorized_irmaa_surcharge_loss(
     """
     thresholds = _MFJ_THRESHOLDS if filing_status == FilingStatus.MFJ else _SINGLE_THRESHOLDS
     thresholds = thresholds * threshold_scale
-    persons = _PERSONS[filing_status]
+    persons = _persons(filing_status, persons)
 
     base_tier = irmaa_tier_index(base_magi, filing_status, threshold_scale)
     base_cost = IRMAA_TIERS[base_tier]["annual_per_person"]

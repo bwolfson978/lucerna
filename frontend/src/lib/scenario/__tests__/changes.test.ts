@@ -4,8 +4,11 @@ import { scenarioStatus } from "@/components/conversation/ScenarioPanel";
 
 const READY: ScenarioDraft = {
   ...EMPTY_DRAFT,
-  age: 52,
+  birth_year: new Date().getFullYear() - 52,
+  birth_month: 6,
   filing_status: "married_filing_jointly",
+  spouse_birth_year: new Date().getFullYear() - 52,
+  spouse_birth_month: 3,
   current_income: 90000,
   traditional_balance: 600000,
   retirement_age: 60,
@@ -14,8 +17,8 @@ const READY: ScenarioDraft = {
 
 describe("changedFields", () => {
   it("lists the shown fields that differ", () => {
-    expect(changedFields(EMPTY_DRAFT, { ...EMPTY_DRAFT, age: 52, state: "CA" })).toEqual([
-      "age",
+    expect(changedFields(EMPTY_DRAFT, { ...EMPTY_DRAFT, birth_year: 1974, state: "CA" })).toEqual([
+      "birth_year",
       "state",
     ]);
     // The timeline isn't a value in the panel.
@@ -25,7 +28,7 @@ describe("changedFields", () => {
 
 describe("detailChanges", () => {
   it("counts a state and its retirement state as one detail", () => {
-    const after = { ...EMPTY_DRAFT, state: "CA", retirement_state: "NV", age: 52 };
+    const after = { ...EMPTY_DRAFT, state: "CA", retirement_state: "NV", birth_year: 1974 };
     expect(detailChanges(EMPTY_DRAFT, after)).toEqual({ count: 2, allNew: true });
   });
 
@@ -49,7 +52,7 @@ describe("draftKey", () => {
     const { state: _state, ...withoutState } = READY;
     expect(draftKey(reordered)).toBe(draftKey(READY));
     expect(draftKey(withoutState as ScenarioDraft)).toBe(draftKey(READY));
-    expect(draftKey({ ...READY, age: 53 })).not.toBe(draftKey(READY));
+    expect(draftKey({ ...READY, birth_year: 1973 })).not.toBe(draftKey(READY));
   });
 });
 
@@ -61,6 +64,6 @@ describe("scenarioStatus", () => {
     );
     expect(scenarioStatus(READY, null)).toEqual({ tone: "ready", text: "Ready to run" });
     expect(scenarioStatus(READY, draftKey(READY))).toEqual({ tone: "done", text: "Up to date" });
-    expect(scenarioStatus({ ...READY, age: 53 }, draftKey(READY)).tone).toBe("stale");
+    expect(scenarioStatus({ ...READY, birth_year: 1973 }, draftKey(READY)).tone).toBe("stale");
   });
 });

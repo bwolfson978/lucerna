@@ -21,7 +21,8 @@ BUILD_CASES: list[tuple[str, dict]] = [
     (
         "working, single, federal only",
         dict(
-            age=45,
+            birth_year=1981,
+            birth_month=6,
             filing_status="single",
             current_income=85000,
             traditional_balance=250000,
@@ -31,8 +32,11 @@ BUILD_CASES: list[tuple[str, dict]] = [
     (
         "married with state, roth, spending, custom assumptions",
         dict(
-            age=52,
+            birth_year=1974,
+            birth_month=6,
             filing_status="married_filing_jointly",
+            spouse_birth_year=1968,
+            spouse_birth_month=9,
             current_income=90000,
             income_growth_rate_pct=2.5,
             traditional_balance=600000,
@@ -49,7 +53,8 @@ BUILD_CASES: list[tuple[str, dict]] = [
     (
         "retirement state same as state is dropped",
         dict(
-            age=40,
+            birth_year=1986,
+            birth_month=6,
             filing_status="single",
             current_income=120000,
             traditional_balance=300000,
@@ -61,8 +66,11 @@ BUILD_CASES: list[tuple[str, dict]] = [
     (
         "already retired keeps income for life",
         dict(
-            age=66,
+            birth_year=1960,
+            birth_month=6,
             filing_status="married_filing_jointly",
+            spouse_birth_year=1968,
+            spouse_birth_month=9,
             current_income=30000,
             income_growth_rate_pct=0,
             traditional_balance=900000,
@@ -72,7 +80,8 @@ BUILD_CASES: list[tuple[str, dict]] = [
     (
         "custom state rate and ACA",
         dict(
-            age=58,
+            birth_year=1968,
+            birth_month=6,
             filing_status="single",
             current_income=45000,
             traditional_balance=500000,
@@ -88,7 +97,8 @@ BUILD_CASES: list[tuple[str, dict]] = [
     (
         "half-dollar growth rounding",
         dict(
-            age=30,
+            birth_year=1996,
+            birth_month=6,
             filing_status="single",
             current_income=50001,
             income_growth_rate_pct=3,
@@ -99,8 +109,11 @@ BUILD_CASES: list[tuple[str, dict]] = [
     (
         "income sources replace current income",
         dict(
-            age=63,
+            birth_year=1963,
+            birth_month=6,
             filing_status="married_filing_jointly",
+            spouse_birth_year=1968,
+            spouse_birth_month=9,
             current_income=20000,
             income_growth_rate_pct=0,
             current_income_end_age=66,
@@ -126,7 +139,8 @@ BUILD_CASES: list[tuple[str, dict]] = [
     (
         "inflation: raises less inflation, pension shrinks, Social Security keeps up",
         dict(
-            age=55,
+            birth_year=1971,
+            birth_month=6,
             filing_status="single",
             current_income=100000,
             income_growth_rate_pct=3,
@@ -143,7 +157,8 @@ BUILD_CASES: list[tuple[str, dict]] = [
     (
         "no inflation",
         dict(
-            age=60,
+            birth_year=1966,
+            birth_month=6,
             filing_status="single",
             current_income=80000,
             inflation_pct=0,
@@ -155,7 +170,8 @@ BUILD_CASES: list[tuple[str, dict]] = [
     (
         "zero spending means 4% rule",
         dict(
-            age=50,
+            birth_year=1976,
+            birth_month=6,
             filing_status="single",
             current_income=70000,
             traditional_balance=200000,
@@ -166,8 +182,11 @@ BUILD_CASES: list[tuple[str, dict]] = [
     (
         "retired couple, no work income, Social Security later",
         dict(
-            age=66,
+            birth_year=1960,
+            birth_month=6,
             filing_status="married_filing_jointly",
+            spouse_birth_year=1968,
+            spouse_birth_month=9,
             state="FL",
             current_income=0,
             traditional_balance=2600000,
@@ -184,11 +203,20 @@ BUILD_CASES: list[tuple[str, dict]] = [
 
 MISSING_CASES: list[tuple[str, dict]] = [
     ("empty", {}),
-    ("partial", dict(age=45, filing_status="single")),
+    ("partial", dict(birth_year=1981, filing_status="single")),
+    (
+        "joint without the spouse's birth date",
+        dict(birth_year=1981, birth_month=6, filing_status="married_filing_jointly"),
+    ),
+    (
+        "saved with only an age",
+        dict(age=66, timeline=[{"year": 2026, "gross_income": 0}]),
+    ),
     (
         "zero income",
         dict(
-            age=45,
+            birth_year=1981,
+            birth_month=6,
             filing_status="single",
             current_income=0,
             traditional_balance=1000,
@@ -198,7 +226,8 @@ MISSING_CASES: list[tuple[str, dict]] = [
     (
         "zero traditional balance",
         dict(
-            age=45,
+            birth_year=1981,
+            birth_month=6,
             filing_status="single",
             current_income=50000,
             traditional_balance=0,

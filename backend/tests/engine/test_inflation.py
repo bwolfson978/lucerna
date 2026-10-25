@@ -109,7 +109,8 @@ class TestEndToEnd:
         """Bug #3: 3% raises compounded against frozen 2026 tables pushed a $70K earner
         into the 24% bracket and IRMAA. With inflation, real pay grows about 0.5% a year."""
         draft = ScenarioDraft(
-            age=40,
+            birth_year=1986,
+            birth_month=6,
             filing_status="single",
             current_income=70_000,
             traditional_balance=150_000,

@@ -1115,7 +1115,7 @@ function AssistantIntro({
           text={
             hasDraft
               ? "I can see the scenario you've started. Tell me what's different, or ask me to run it."
-              : "Let's map out your situation. Tell me your age, whether you file single or jointly, your income this year, your traditional IRA or 401(k) balance, and when you plan to start drawing on it. A sentence or two is plenty. See the starter prompt below."
+              : "Let's map out your situation. Tell me the month and year you were born, whether you file single or jointly, your income this year, your traditional IRA or 401(k) balance, and when you plan to start drawing on it. A sentence or two is plenty. See the starter prompt below."
           }
         />
         {!hasDraft && (
@@ -1154,7 +1154,7 @@ function AssistantIntro({
 
 /** Starts the message box on the calculator, in the order the scenario asks for things. */
 const SAMPLE_MESSAGE =
-  "I'm 55 and single, with $95,000 of income this year. I have $650,000 in a traditional 401(k) and plan to start drawing on it at 62.";
+  "I was born in March 1971 and I'm single, with $95,000 of income this year. I have $650,000 in a traditional 401(k) and plan to start drawing on it at 62.";
 
 /** Clearing the conversation can't be undone, so it asks once, inline. */
 function StartOver({ onConfirm }: { onConfirm: () => void }) {

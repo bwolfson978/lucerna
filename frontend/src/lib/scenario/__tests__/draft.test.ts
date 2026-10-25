@@ -50,7 +50,8 @@ describe("normalizeDraft", () => {
   it("re-projects a timeline saved before inflation was modeled", () => {
     const saved = syncTimeline(
       normalizeDraft({
-        age: 45,
+        birth_year: 1981,
+        birth_month: 6,
         filing_status: "single",
         current_income: 100000,
         traditional_balance: 200000,
@@ -75,7 +76,8 @@ describe("applyDraftPatch", () => {
   const base = applyDraftPatch(
     EMPTY_DRAFT,
     {
-      age: 45,
+      birth_year: 1981,
+      birth_month: 6,
       filing_status: "single",
       current_income: 100000,
       traditional_balance: 200000,
@@ -149,6 +151,6 @@ describe("applyDraftPatch", () => {
   });
 
   it("refuses to build an incomplete draft", () => {
-    expect(() => buildScenarioInput(EMPTY_DRAFT)).toThrow(/missing age/);
+    expect(() => buildScenarioInput(EMPTY_DRAFT)).toThrow(/missing birth_year/);
   });
 });

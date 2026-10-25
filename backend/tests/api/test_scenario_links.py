@@ -1,6 +1,7 @@
 """Full results links: what a View (or a model in another app) links to, and the
 endpoint the website opens them with."""
 
+import datetime
 from urllib.parse import parse_qs, urlparse
 
 from httpx import ASGITransport, AsyncClient
@@ -10,9 +11,14 @@ from app.main import app
 from app.mcp.server import mcp
 from app.tools.links import decode_scenario, encode_scenario, full_results_url
 
+THIS_YEAR = datetime.date.today().year
+
 SCENARIO = {
-    "age": 52,
+    "birth_year": THIS_YEAR - 52,
+    "birth_month": 6,
     "filing_status": "married_filing_jointly",
+    "spouse_birth_year": THIS_YEAR - 52,
+    "spouse_birth_month": 3,
     "current_income": 90000,
     "traditional_balance": 600000,
     "retirement_age": 60,
@@ -84,7 +90,11 @@ async def test_tool_links_open_the_same_result():
 
 async def test_bad_links_are_400s():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        for scenario in ["!!!", encode_scenario({"age": "old"}), encode_scenario({"age": 52})]:
+        for scenario in [
+            "!!!",
+            encode_scenario({"birth_year": "old"}),
+            encode_scenario({"birth_year": THIS_YEAR - 52}),
+        ]:
             response = await client.post("/api/scenario-links/open", json={"scenario": scenario})
             assert response.status_code == 400, scenario
             assert response.json()["detail"]

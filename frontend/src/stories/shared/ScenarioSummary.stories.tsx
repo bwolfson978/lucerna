@@ -52,8 +52,11 @@ export const RetiredNoWorkIncome: Story = {
       ...recordedScenario,
       scenario: {
         ...recordedScenario.scenario,
-        age: 66,
+        birth_year: 1960,
+        birth_month: 4,
         filing_status: "married_filing_jointly",
+        spouse_birth_year: 1961,
+        spouse_birth_month: 9,
         current_income: 0,
         traditional_balance: 2600000,
         roth_balance: 80000,
@@ -83,7 +86,7 @@ export const RunDisabled: Story = {
     onEdit: fn(),
     onRun: fn(),
     runDisabled: true,
-    hint: "Add your age to run the analysis.",
+    hint: "Add the month and year you were born to run the analysis.",
   },
 };
 
@@ -138,7 +141,12 @@ export const Panel: Story = {
     variant: "panel",
     data: {
       ...recordedScenario,
-      scenario: { ...recordedScenario.scenario, age: null, state: null },
+      scenario: {
+        ...recordedScenario.scenario,
+        birth_year: null,
+        birth_month: null,
+        state: null,
+      },
     },
     highlight: ["traditional_balance", "retirement_age"],
     onEdit: fn(),
