@@ -5,11 +5,11 @@
 (*                                                                         *)
 (* One request runs one draft. Its steps, as in the code:                  *)
 (*                                                                         *)
-(*   check    fresh := ~core.is_cached(input)          (server.py)         *)
+(*   check    core.cached_result(input): a hit is held and returned with  *)
+(*            no charge and no slot; a miss is fresh       (server.py)     *)
 (*   charge   AnalysisLimiter.charge(caller, runs)     (limits.py)         *)
-(*            runs = 0 skips charge AND the semaphore                       *)
 (*   acquire  slots.acquire() under fail_after(queue_seconds);             *)
-(*            on timeout refund(caller, runs)                               *)
+(*            on timeout or cancellation refund(caller, runs, day)         *)
 (*   compute  core.run_optimization(input): cache hit or a fresh optimize  *)
 (*   release  slots.release()                                               *)
 (*                                                                         *)
@@ -63,19 +63,16 @@ Init ==
     /\ cache = {}
     /\ uncharged = 0 /\ unslotted = 0 /\ paidNothing = 0 /\ crossDay = 0
 
-\* fresh = {key for input in inputs if not core.is_cached(input)}
+\* cached_result(input): a hit hands back the result itself, so a later
+\* eviction can't turn it into a run; the request is done. A miss is fresh.
 Check(r) ==
     /\ pc[r] = "check"
-    /\ runs' = [runs EXCEPT ![r] = IF key[r] \in cache THEN 0 ELSE 1]
-    /\ pc' = [pc EXCEPT ![r] = "charge"]
+    /\ IF key[r] \in cache
+          THEN /\ pc' = [pc EXCEPT ![r] = "done"]
+               /\ UNCHANGED runs
+          ELSE /\ pc' = [pc EXCEPT ![r] = "charge"]
+               /\ runs' = [runs EXCEPT ![r] = 1]
     /\ UNCHANGED <<caller, key, chargedDay, clock, limDay, counts, anonTotal,
-                   free, holds, cache, uncharged, unslotted, paidNothing, crossDay>>
-
-\* admit(): runs <= 0 yields straight away, with no charge and no slot.
-SkipAdmit(r) ==
-    /\ pc[r] = "charge" /\ runs[r] = 0
-    /\ pc' = [pc EXCEPT ![r] = "compute"]
-    /\ UNCHANGED <<caller, key, runs, chargedDay, clock, limDay, counts, anonTotal,
                    free, holds, cache, uncharged, unslotted, paidNothing, crossDay>>
 
 \* charge(): _roll_day() then the two checks, all under the lock.
@@ -104,24 +101,32 @@ Acquire(r) ==
     /\ UNCHANGED <<caller, key, runs, chargedDay, clock, limDay, counts, anonTotal,
                    cache, uncharged, unslotted, paidNothing, crossDay>>
 
-\* fail_after(queue_seconds) fires: refund() with no _roll_day().
-Timeout(r) ==
-    /\ pc[r] = "acquire" /\ free = 0
-    /\ counts' = [counts EXCEPT ![caller[r]] = IF @ >= runs[r] THEN @ - runs[r] ELSE 0]
-    /\ anonTotal' = IF anonTotal >= runs[r] THEN anonTotal - runs[r] ELSE 0
-    /\ crossDay' = crossDay + (IF limDay # chargedDay[r] THEN 1 ELSE 0)
-    /\ pc' = [pc EXCEPT ![r] = "refused"]
-    /\ UNCHANGED <<caller, key, runs, chargedDay, clock, limDay, free, holds, cache,
-                   uncharged, unslotted, paidNothing>>
+\* refund(caller, runs, day): _roll_day(), then give back only a charge booked
+\* on the limiter's current day. After midnight the old day's counts are gone.
+Refund(r, outcome) ==
+    /\ LET rolled == limDay # clock
+           cnt    == IF rolled THEN [c \in Callers |-> 0] ELSE counts
+           tot    == IF rolled THEN 0 ELSE anonTotal
+           same   == chargedDay[r] = clock
+       IN  /\ limDay' = clock
+           /\ counts' = IF same
+                           THEN [cnt EXCEPT ![caller[r]] = IF @ >= runs[r] THEN @ - runs[r] ELSE 0]
+                           ELSE cnt
+           /\ anonTotal' = IF same THEN (IF tot >= runs[r] THEN tot - runs[r] ELSE 0) ELSE tot
+           \* ghosts judge the counters, not the branch taken above
+           /\ crossDay' = crossDay + (IF ~same /\ anonTotal' < tot THEN 1 ELSE 0)
+           /\ paidNothing' = paidNothing +
+                 (IF same /\ counts'[caller[r]] + runs[r] > cnt[caller[r]] THEN 1 ELSE 0)
+    /\ pc' = [pc EXCEPT ![r] = outcome]
+    /\ UNCHANGED <<caller, key, runs, chargedDay, clock, free, holds, cache,
+                   uncharged, unslotted>>
 
-\* The client goes away while waiting: anyio cancels the scope. The exception
-\* is a cancellation, not TimeoutError, so admit() does not refund.
-Cancel(r) ==
-    /\ pc[r] = "acquire"
-    /\ paidNothing' = paidNothing + 1
-    /\ pc' = [pc EXCEPT ![r] = "cancelled"]
-    /\ UNCHANGED <<caller, key, runs, chargedDay, clock, limDay, counts, anonTotal,
-                   free, holds, cache, uncharged, unslotted, crossDay>>
+\* fail_after(queue_seconds) fires.
+Timeout(r) == pc[r] = "acquire" /\ free = 0 /\ Refund(r, "refused")
+
+\* The client goes away while waiting: anyio cancels the scope, and admit()
+\* refunds on any exception before re-raising.
+Cancel(r) == pc[r] = "acquire" /\ Refund(r, "cancelled")
 
 \* _ResultCache.get_or_compute: a hit is free, a miss runs optimize().
 Compute(r) ==
@@ -157,7 +162,7 @@ Midnight ==
                    free, holds, cache, uncharged, unslotted, paidNothing, crossDay>>
 
 Next ==
-    \/ \E r \in Reqs : Check(r) \/ SkipAdmit(r) \/ Charge(r) \/ Acquire(r)
+    \/ \E r \in Reqs : Check(r) \/ Charge(r) \/ Acquire(r)
                        \/ Timeout(r) \/ Cancel(r) \/ Compute(r) \/ Release(r)
     \/ \E k \in Keys : Evict(k)
     \/ Midnight

@@ -24,19 +24,18 @@ broke as expected.
 | Property | Result | Test |
 | --- | --- | --- |
 | McpLimits `CallerAllowance`, `AnonymousCeiling` | hold | |
-| McpLimits `EveryFreshRunIsCharged` | broken: a cached scenario evicted between `is_cached` and the run is computed free | `backend/tests/mcp/test_limits_model.py` |
-| McpLimits `FreshRunsHoldASlot` | broken: the same run skips the concurrency semaphore | same |
-| McpLimits `RefundsStayOnTheirDay` | broken: a timeout refund after midnight credits the new day | same |
-| McpLimits `NoChargeWithoutARun` | broken: a client cancelled while queued keeps its charge | same |
+| McpLimits `EveryFreshRunIsCharged`, `FreshRunsHoldASlot` | broke on the earlier code (a cached scenario evicted between `is_cached` and the run was computed free and skipped the concurrency cap); hold now that `_run_drafts` takes cached results up front with `cached_result`, so anything it computes was charged and holds a slot | `backend/tests/mcp/test_limits_model.py` |
+| McpLimits `RefundsStayOnTheirDay` | broke on the earlier code (a timeout refund after midnight credited the new day); holds now that `charge` returns its day and `refund` gives back only a charge from the current day | same |
+| McpLimits `NoChargeWithoutARun` | broke on the earlier code (a client cancelled while queued kept its charge); holds now that `admit` refunds on cancellation too | same |
 | AgentSpend `MessagesPerIp` | holds | |
 | AgentSpend `MessagesPerClient` | holds. The first model let a client choose its X-Forwarded-For value; a live probe (2026-10-25) showed Railway's edge drops client-sent X-Forwarded-For and X-Real-IP and writes `<client>, <edge hop>`, so the first entry `client_ip` uses is the real address. Model and test corrected, code unchanged apart from documenting this | `backend/tests/mcp/test_limits_model.py` |
-| AgentSpend `SpendWithinCap`, `SpendWithinOneMessage` | broken: turns in flight together overshoot the daily cap by all their costs | `backend/tests/agent/test_limits_model.py` |
+| AgentSpend `SpendWithinCap`, `SpendWithinOneMessage` | broke on the earlier code (turns in flight together overshot the daily cap by all their costs); hold now that each admitted message reserves a worst-case turn cost and is admitted only if spend plus reservations fits under the cap | `backend/tests/agent/test_limits_model.py` |
 | AutoSave `NoSilentLossWhenSavesSucceed` | broke on the earlier code (a run whose result was slimmed out of session storage was dropped at sign-in, unsaved); holds now that a slimmed result is recomputed from its input and then saved | `ScenarioWorkspace.autosave-model.test.tsx` |
 | AutoSave `NoSilentLossWhenStorageFits` | broke on the earlier code (a failed save while signed in hid the banner); holds now that a failed save shows "Couldn't save this analysis" with Try again | same |
 | AutoSave `NoSilentLoss` | holds now that both of the above are fixed | same |
 | AutoSave `NoDuplicateSaves` | broke on the earlier code (every signed-in run saved a new row); holds now that a scenario keeps one saved row and saves run one at a time | `ScenarioWorkspace.identity.test.tsx` |
 | UndoDelete `HiddenWhilePending`, `DeletedStayGone` | hold | |
-| UndoDelete `ServerMatchesIntent` | broken: leaving the page while Clerk refreshes the token drops the pending delete | `page.undo-model.test.tsx` |
+| UndoDelete `ServerMatchesIntent` | broke on the earlier code (leaving the page while Clerk refreshed the token dropped the pending delete); holds now that the page keeps the token from the list load fresh, so the leave-the-page flush never waits | `page.undo-model.test.tsx` |
 | Lean `loop_eq_vec`, `fed_mono_*`, `fed_slope_le_top_*`, `fed_slope_ge_marginal_*` | proved | `backend/tests/engine/test_formal_models.py` checks the premises against the data |
 | Lean `code_eq_worksheet`, `taxable_bounds`, `taxable_mono`, `taxable_slope` | proved | same file cross-checks Python against the worksheet |
 | Lean `old_engine_misses_spec_from_2027`, `old_wrong_exactly_when` | broke on the earlier code (from 2027 a 67-year-old born 1960 got RMDs at 73, not 75); `engine_meets_spec` proves it holds now that callers pass the plan's first year (PR #198) | `test_rmds_start_by_birth_year_for_a_plan_starting_in_2027` |
