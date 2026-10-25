@@ -77,10 +77,10 @@ it("saves a run made before sign-in even when its result was too big to keep", a
   await waitFor(() => expect(saves).toHaveLength(1), { timeout: 2000 });
 });
 
-// TLC trace (NoSilentLossWhenStorageFits): SignIn -> Run -> SaveFails. The banner goes
-// back to "prompt", which is only shown to signed-out visitors, so nothing says the run
-// was not saved.
-it.fails("tells a signed-in person when saving their run failed", async () => {
+// TLC trace (NoSilentLossWhenStorageFits): SignIn -> Run -> SaveFails. The banner used to
+// go back to "prompt", which is only shown to signed-out visitors, so nothing said the run
+// was not saved. It now shows "failed" with Try again.
+it("tells a signed-in person when saving their run failed", async () => {
   sessionStorage.setItem(
     "lucerna:draft:v1",
     JSON.stringify({
@@ -121,5 +121,9 @@ it.fails("tells a signed-in person when saving their run failed", async () => {
   const headline = await screen.findByTestId("result-headline");
   await waitFor(() => expect(attempts).toBe(1));
   fireEvent.click(within(headline).getByRole("button", { name: "See full results" }));
-  expect(await screen.findByText(/save/i, {}, { timeout: 2000 })).toBeInTheDocument();
+  const alert = await screen.findByRole("alert", {}, { timeout: 2000 });
+  expect(within(alert).getByText("Couldn't save this analysis")).toBeInTheDocument();
+
+  fireEvent.click(within(alert).getByRole("button", { name: "Try again" }));
+  await waitFor(() => expect(attempts).toBe(2));
 });

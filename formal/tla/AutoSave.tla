@@ -11,8 +11,9 @@
 (*    gets its id), later saves overwrite it. Saves run one at a time.     *)
 (*    Start over / New scenario forget keys.saved.                         *)
 (*  - A signed-in run is POSTed at once; its banner shows saving, then     *)
-(*    saved, or goes back to "prompt" if the request fails. While signed   *)
-(*    in, the banner is only shown for "saving" and "saved".               *)
+(*    saved, or "failed" (Couldn't save, with Try again) if the request    *)
+(*    fails. While signed in, the banner is shown for "saving", "saved"    *)
+(*    and "failed".                                                        *)
 (*  - saveConversation writes results to sessionStorage; when that is over *)
 (*    quota it writes them again with result: null ("slim").              *)
 (*  - Google sign-in reloads the page; the conversation, results included, *)
@@ -34,7 +35,7 @@ VARIABLES
     stored,    \* the sessionStorage copy of the same
     queue,     \* keys.unsaved
     inflight,  \* save requests in flight
-    banner,    \* saveStates[id]: "none" | "saving" | "saved" | "prompt"
+    banner,    \* saveStates[id]: "none" | "saving" | "saved" | "prompt" | "failed"
     saved,     \* saves of each run that reached the server
     savedId,   \* keys.saved is set: this tab's scenario has a row
     rows,      \* rows on the server for this tab's scenario since its start
@@ -127,7 +128,15 @@ SaveOk(i) ==
 SaveFails(i) ==
     /\ i \in inflight
     /\ inflight' = inflight \ {i}
-    /\ banner' = [banner EXCEPT ![i] = "prompt"]
+    /\ banner' = [banner EXCEPT ![i] = "failed"]
+    /\ UNCHANGED <<signedIn, mem, stored, queue, saved, savedId, rows, latest, ran, slimmed,
+                   nruns>>
+
+\* Try again on the failed banner: the same save, queued again.
+Retry(i) ==
+    /\ signedIn /\ banner[i] = "failed"
+    /\ inflight' = inflight \cup {i}
+    /\ banner' = [banner EXCEPT ![i] = "saving"]
     /\ UNCHANGED <<signedIn, mem, stored, queue, saved, savedId, rows, latest, ran, slimmed,
                    nruns>>
 
@@ -138,7 +147,7 @@ StartNew ==
     /\ UNCHANGED <<signedIn, mem, stored, inflight, banner, saved, ran, slimmed, nruns>>
 
 Next ==
-    \/ \E i \in Ids : Run(i) \/ Recompute(i) \/ SaveOk(i) \/ SaveFails(i)
+    \/ \E i \in Ids : Run(i) \/ Recompute(i) \/ SaveOk(i) \/ SaveFails(i) \/ Retry(i)
     \/ StorageFull \/ SignInModal \/ SignInReload \/ SaveQueued \/ StartNew
 
 Spec == Init /\ [][Next]_vars
@@ -149,15 +158,15 @@ TypeOK ==
     /\ queue \subseteq Ids /\ inflight \subseteq Ids
 
 \* The banner the person can see for a run (ScenarioWorkspace showBanner).
-Shown(i) == ~signedIn \/ banner[i] \in {"saving", "saved"}
+Shown(i) == ~signedIn \/ banner[i] \in {"saving", "saved", "failed"}
 
 \* The scenario's latest run is saved, on its way to being saved, or the person
-\* can see that it is not ("Save your analysis" with a button).
+\* can see that it is not ("Save your analysis" or "Couldn't save", with a button).
 NoSilentLoss ==
     \A i \in {latest} \ {"none"} :
         \/ saved[i] > 0
         \/ i \in queue \cup inflight
-        \/ (banner[i] = "prompt" /\ Shown(i))
+        \/ (banner[i] \in {"prompt", "failed"} /\ Shown(i))
 
 \* The same, for runs whose stored result was never slimmed: isolates the
 \* failed-request path from the storage path.
@@ -165,13 +174,13 @@ NoSilentLossWhenStorageFits ==
     \A i \in ({latest} \ {"none"}) \ slimmed :
         \/ saved[i] > 0
         \/ i \in queue \cup inflight
-        \/ (banner[i] = "prompt" /\ Shown(i))
+        \/ (banner[i] \in {"prompt", "failed"} /\ Shown(i))
 
 \* The same, for runs whose save request never failed: isolates the storage
 \* path from the failed-request path.
 NoSilentLossWhenSavesSucceed ==
     \A i \in {latest} \ {"none"} :
-        banner[i] # "prompt" => (saved[i] > 0 \/ i \in queue \cup inflight)
+        banner[i] \notin {"prompt", "failed"} => (saved[i] > 0 \/ i \in queue \cup inflight)
 
 \* One row in "My scenarios" per scenario, however often it is run (Barry's rule:
 \* only an explicit start makes a new one).

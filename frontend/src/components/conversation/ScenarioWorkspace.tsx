@@ -293,6 +293,10 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
   // Saves run one at a time, so a second run can't create a copy while the first
   // save is still waiting for its id.
   const saveQueue = useRef<Promise<void>>(Promise.resolve());
+  // What each failed save needs to be tried again from the banner.
+  const failedSaves = useRef<Record<string, [ScenarioInput, OptimizationResult, ScenarioDraft]>>(
+    {}
+  );
 
   const saveResult = useCallback(
     (id: string, input: ScenarioInput, result: OptimizationResult, draft: ScenarioDraft) => {
@@ -303,6 +307,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
       }
       setBannerDismissed(false);
       setSaveStates((s) => ({ ...s, [id]: "saving" }));
+      delete failedSaves.current[id];
       const api = createScenariosApi(getToken);
       saveQueue.current = saveQueue.current.then(async () => {
         try {
@@ -317,7 +322,8 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
           if (!updated) writeSession(keys.saved, (await api.save(input, result, draft)).id);
           setSaveStates((s) => ({ ...s, [id]: "saved" }));
         } catch {
-          setSaveStates((s) => ({ ...s, [id]: "prompt" }));
+          failedSaves.current[id] = [input, result, draft];
+          setSaveStates((s) => ({ ...s, [id]: "failed" }));
         }
       });
     },
@@ -796,7 +802,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
       isOwn &&
       isLoaded &&
       !bannerDismissed &&
-      (!isSignedIn || saveState === "saving" || saveState === "saved");
+      (!isSignedIn || saveState === "saving" || saveState === "saved" || saveState === "failed");
     body = (
       <FullResultsView
         stored={openStored}
@@ -809,6 +815,10 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
               show
               state={isSignedIn ? saveState : "prompt"}
               onDismiss={() => setBannerDismissed(true)}
+              onRetry={() => {
+                const failed = failedSaves.current[view.id];
+                if (failed) saveResult(view.id, ...failed);
+              }}
               signInButton={
                 <SignInButton>
                   <GlowButton size="sm">Save with a free account</GlowButton>
