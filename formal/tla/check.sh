@@ -31,7 +31,7 @@ for entry in "${SPECS[@]}"; do
     sed '/^INVARIANTS/d' "$spec.cfg" >"$cfg"
     echo "INVARIANTS $inv" >>"$cfg"
     log="$OUT/$spec-$inv.log"
-    java -XX:+UseParallelGC -cp "$JAR" tlc2.TLC -workers auto -deadlock -dumpTrace tla "$OUT/$spec-$inv.trace.tla" \
+    java -XX:+UseParallelGC -cp "$JAR" tlc2.TLC -workers auto -deadlock \
       -metadir "$OUT/states-$spec-$inv" -config "$cfg" "$spec.tla" >"$log" 2>&1
     if grep -q "is violated" "$log"; then got=fail; else got=hold; fi
     if grep -q "Error:" "$log" && [[ $got == hold ]]; then got=error; fi
@@ -40,4 +40,5 @@ for entry in "${SPECS[@]}"; do
     printf '%-11s %-28s %-5s (expected %s)  %s\n' "$spec" "$inv" "$got" "$want" "$mark"
   done
 done
+rm -f ./*_TTrace_*.tla ./*_TTrace_*.bin  # TLC 1.8 writes these next to the spec; the logs have the traces
 exit $status
