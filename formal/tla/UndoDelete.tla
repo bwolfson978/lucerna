@@ -5,16 +5,18 @@
 (*                                                                         *)
 (*  - handleDelete commits any earlier pending batch, hides the new rows   *)
 (*    and starts an 8 second timer. It also starts getToken() into         *)
-(*    tokenRef.                                                            *)
+(*    tokenRef. tokenRef is first filled when the list loads (a Delete     *)
+(*    needs the list) and re-read every 30 seconds, so it is always set.   *)
 (*  - undo clears the timer and shows the rows again.                      *)
 (*  - commit sends one DELETE per id. Each request first awaits a token:   *)
-(*    getToken() normally, or tokenRef when unloading (keepalive), falling *)
-(*    back to getToken() if tokenRef is still null.                        *)
+(*    getToken() normally, or tokenRef when unloading (keepalive), which   *)
+(*    never waits since tokenRef is set.                                   *)
 (*  - When the requests settle, deleted rows leave the list, failed ones   *)
 (*    come back with an error message.                                     *)
-(*  - pagehide (and unmount) flush the pending batch with keepalive.       *)
+(*  - pagehide (and unmount) flush the pending batch, and any committed    *)
+(*    request still waiting for its token, with keepalive.                 *)
 (*                                                                         *)
-(* A request still waiting for its token when the page goes away is never  *)
+(* A request still waiting for its token when the page is gone is never    *)
 (* sent: the page's JavaScript stops running.                              *)
 (***************************************************************************)
 EXTENDS Naturals, FiniteSets
@@ -90,11 +92,16 @@ Failed(r) ==
     /\ intent' = intent \ {r}
     /\ UNCHANGED <<server, list, pending, waiting, alive>>
 
-\* pagehide: flush with keepalive, then the page is gone. Requests still
-\* waiting for a token die with it.
-PageHide(haveToken) ==
+\* pagehide: flush with keepalive using the kept token, then the page is gone.
+\* The flush also takes over earlier requests still waiting for a token
+\* (awaitingToken), which would otherwise die with the page. (The earlier code
+\* filled tokenRef only when a delete's getToken() resolved and left waiting
+\* requests behind: ServerMatchesIntent failed on Delete -> PageHide.)
+PageHide ==
     /\ alive
-    /\ CommitTo(haveToken)
+    /\ intent' = intent \cup pending
+    /\ sent' = sent \cup pending \cup waiting
+    /\ waiting' = {}
     /\ pending' = {}
     /\ alive' = FALSE
     /\ UNCHANGED <<server, list, hidden, told>>
@@ -103,7 +110,7 @@ Next ==
     \/ \E S \in SUBSET Rows : Delete(S)
     \/ Timer \/ Undo
     \/ \E r \in Rows : TokenArrives(r) \/ Deleted(r) \/ Failed(r)
-    \/ \E b \in BOOLEAN : PageHide(b)
+    \/ PageHide
 
 Spec == Init /\ [][Next]_vars
 

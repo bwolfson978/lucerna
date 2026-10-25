@@ -36,7 +36,7 @@ broke as expected.
 | AutoSave `NoSilentLoss` | holds now that both of the above are fixed | same |
 | AutoSave `NoDuplicateSaves` | broke on the earlier code (every signed-in run saved a new row); holds now that a scenario keeps one saved row and saves run one at a time | `ScenarioWorkspace.identity.test.tsx` |
 | UndoDelete `HiddenWhilePending`, `DeletedStayGone` | hold | |
-| UndoDelete `ServerMatchesIntent` | broken: leaving the page while Clerk refreshes the token drops the pending delete | `page.undo-model.test.tsx` |
+| UndoDelete `ServerMatchesIntent` | broke on the earlier code (leaving the page while Clerk refreshed the token dropped the pending delete); holds now that the page keeps the token from the list load fresh, so the leave-the-page flush never waits | `page.undo-model.test.tsx` |
 | Lean `loop_eq_vec`, `fed_mono_*`, `fed_slope_le_top_*`, `fed_slope_ge_marginal_*` | proved | `backend/tests/engine/test_formal_models.py` checks the premises against the data |
 | Lean `code_eq_worksheet`, `taxable_bounds`, `taxable_mono`, `taxable_slope` | proved | same file cross-checks Python against the worksheet |
 | Lean `old_engine_misses_spec_from_2027`, `old_wrong_exactly_when` | broke on the earlier code (from 2027 a 67-year-old born 1960 got RMDs at 73, not 75); `engine_meets_spec` proves it holds now that callers pass the plan's first year (PR #198) | `test_rmds_start_by_birth_year_for_a_plan_starting_in_2027` |

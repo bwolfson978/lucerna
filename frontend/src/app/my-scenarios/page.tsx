@@ -13,6 +13,8 @@ import { createScenariosApi } from "@/lib/api/scenarios";
 import type { SavedScenario } from "@/lib/types";
 
 const UNDO_MS = 8000;
+// Clerk session tokens last a minute, so re-read the token well inside that.
+const TOKEN_REFRESH_MS = 30_000;
 
 function EmptyState() {
   return (
@@ -40,6 +42,9 @@ function EmptyState() {
   );
 }
 
+/** A delete whose token arrived after the page-leave flush had already sent it. */
+class HandedOff extends Error {}
+
 function deletedMessage(ids: string[], scenarios: SavedScenario[]) {
   if (ids.length > 1) return `Deleted ${ids.length} scenarios`;
   const name = scenarios.find((s) => s.id === ids[0])?.name;
@@ -52,12 +57,20 @@ export default function MyScenariosPage() {
   const [scenarios, setScenarios] = useState<SavedScenario[]>([]);
   const [loadingList, setLoadingList] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // The latest token, kept so leaving the page can send pending deletes without waiting on
+  // Clerk (it may be mid refresh, and the page is gone before a network round trip ends).
+  const tokenRef = useRef<string | null>(null);
+  const getAndKeepToken = useCallback(async () => {
+    const token = await getToken();
+    if (token) tokenRef.current = token;
+    return token;
+  }, [getToken]);
 
   const fetchScenarios = useCallback(async () => {
     setLoadingList(true);
     setLoadError(null);
     try {
-      const api = createScenariosApi(getToken);
+      const api = createScenariosApi(getAndKeepToken);
       const data = await api.list();
       setScenarios(data);
     } catch {
@@ -65,7 +78,7 @@ export default function MyScenariosPage() {
     } finally {
       setLoadingList(false);
     }
-  }, [getToken]);
+  }, [getAndKeepToken]);
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
@@ -73,12 +86,23 @@ export default function MyScenariosPage() {
     }
   }, [isLoaded, isSignedIn, fetchScenarios]);
 
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
+    const keepFresh = () => void getAndKeepToken().catch(() => {});
+    const timer = setInterval(keepFresh, TOKEN_REFRESH_MS);
+    const onVisible = () => document.visibilityState === "visible" && keepFresh();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [isLoaded, isSignedIn, getAndKeepToken]);
+
   // Deletes wait out an undo window: the rows hide at once and the requests go out when
   // the toast ends, is dismissed, another delete starts, or the page is left.
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
   const [toast, setToast] = useState<{ ids: string[]; message: string } | null>(null);
   const pending = useRef<{ ids: string[]; timer: ReturnType<typeof setTimeout> } | null>(null);
-  const tokenRef = useRef<string | null>(null);
 
   const unhide = (ids: string[]) =>
     setPendingIds((prev) => {
@@ -87,38 +111,61 @@ export default function MyScenariosPage() {
       return next;
     });
 
+  // Deletes already committed whose request still waits on getToken(). Leaving the page
+  // takes them over and sends them with the kept token, or they would never go out.
+  const awaitingToken = useRef<Set<string>>(new Set());
+
   const commit = useCallback(
     (opts?: { keepalive?: boolean }) => {
       const current = pending.current;
-      if (!current) return;
-      clearTimeout(current.timer);
-      pending.current = null;
-      setToast(null);
-      const { ids } = current;
-      // While unloading there's no time to wait for a fresh token, so use the one fetched
-      // when the delete started.
-      const api = createScenariosApi(
-        opts?.keepalive ? async () => tokenRef.current ?? getToken() : getToken
-      );
-      void Promise.allSettled(ids.map((id) => api.delete(id, opts))).then((results) => {
-        const failed = new Set(ids.filter((_, i) => results[i].status === "rejected"));
-        setScenarios((prev) => prev.filter((s) => !ids.includes(s.id) || failed.has(s.id)));
-        unhide(ids);
+      const ids = [...(current?.ids ?? [])];
+      if (current) {
+        clearTimeout(current.timer);
+        pending.current = null;
+        setToast(null);
+      }
+      if (opts?.keepalive) {
+        ids.push(...awaitingToken.current);
+        awaitingToken.current.clear();
+      }
+      if (ids.length === 0) return;
+      // While unloading there's no time to wait for a fresh token, so use the kept one.
+      const tokenFor = (id: string) =>
+        opts?.keepalive
+          ? async () => tokenRef.current ?? getToken()
+          : async () => {
+              awaitingToken.current.add(id);
+              const token = getAndKeepToken();
+              await token.catch(() => {});
+              if (!awaitingToken.current.delete(id)) throw new HandedOff();
+              return token;
+            };
+      const requests = ids.map((id) => createScenariosApi(tokenFor(id)).delete(id, opts));
+      void Promise.allSettled(requests).then((results) => {
+        // A request the page-leave flush took over is settled there.
+        const handedOff = (r: PromiseSettledResult<unknown>) =>
+          r.status === "rejected" && r.reason instanceof HandedOff;
+        const mine = ids.filter((_, i) => !handedOff(results[i]));
+        const failed = new Set(
+          ids.filter((_, i) => results[i].status === "rejected" && !handedOff(results[i]))
+        );
+        setScenarios((prev) => prev.filter((s) => !mine.includes(s.id) || failed.has(s.id)));
+        unhide(mine);
         if (failed.size > 0) setLoadError("Could not delete the scenario. Please try again.");
       });
     },
-    [getToken]
+    [getToken, getAndKeepToken]
   );
 
   const handleDelete = useCallback(
     (ids: string[]) => {
       commit();
       setPendingIds((prev) => new Set([...prev, ...ids]));
-      void getToken().then((t) => (tokenRef.current = t));
+      void getAndKeepToken().catch(() => {});
       pending.current = { ids, timer: setTimeout(() => commit(), UNDO_MS) };
       setToast({ ids, message: deletedMessage(ids, scenarios) });
     },
-    [commit, getToken, scenarios]
+    [commit, getAndKeepToken, scenarios]
   );
 
   const undo = () => {
