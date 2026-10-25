@@ -31,7 +31,7 @@ for entry in "${SPECS[@]}"; do
     sed '/^INVARIANTS/d' "$spec.cfg" >"$cfg"
     echo "INVARIANTS $inv" >>"$cfg"
     log="$OUT/$spec-$inv.log"
-    java -XX:+UseParallelGC -cp "$JAR" tlc2.TLC -workers auto -deadlock \
+    java -XX:+UseParallelGC -cp "$JAR" tlc2.TLC -workers auto -deadlock -dumpTrace tla "$OUT/$spec-$inv.trace.tla" \
       -metadir "$OUT/states-$spec-$inv" -config "$cfg" "$spec.tla" >"$log" 2>&1
     if grep -q "is violated" "$log"; then got=fail; else got=hold; fi
     if grep -q "Error:" "$log" && [[ $got == hold ]]; then got=error; fi
