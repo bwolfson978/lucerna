@@ -1,3 +1,4 @@
+import type { ScenarioDraft } from "@/lib/scenario/draft";
 export type FilingStatus = "single" | "married_filing_jointly";
 
 export interface PlanYear {
@@ -240,6 +241,8 @@ export interface SavedScenario {
   id: string;
   name: string;
   created_at: string;
+  /** When it was last saved: a scenario is overwritten as the person keeps working on it. */
+  updated_at: string;
   filing_status: FilingStatus;
   num_years: number;
   estimated_savings: number;
@@ -250,7 +253,10 @@ export interface SavedScenarioDetail {
   id: string;
   name: string;
   created_at: string;
+  updated_at: string;
   inputs: ScenarioInput;
+  /** The scenario as the form's draft, to keep working on it (null if it can't be rebuilt). */
+  draft: Partial<ScenarioDraft> | null;
   /** OptimizationResult without conversion_curve or reasoning_trace. */
   result: Omit<OptimizationResult, "conversion_curve" | "reasoning_trace"> & {
     conversion_curve: [];

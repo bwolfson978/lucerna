@@ -63,6 +63,7 @@ class FakeStore:
             id=saved_id,
             name=name,
             created_at=datetime.datetime(2026, 10, 13, tzinfo=datetime.UTC),
+            updated_at=datetime.datetime(2026, 10, 13, tzinfo=datetime.UTC),
             inputs=inputs,
             result=result,
             scenario=scenario,
@@ -70,12 +71,28 @@ class FakeStore:
         self.owners[saved_id] = user_id
         return saved_id, name
 
+    async def update(self, user_id, saved_id, inputs, result, *, name=None, scenario=None):
+        if self.owners.get(saved_id) != user_id:
+            return None
+        row = self.rows[saved_id]
+        self.rows[saved_id] = saved_store.SavedScenario(
+            id=saved_id,
+            name=name or row.name,
+            created_at=row.created_at,
+            updated_at=datetime.datetime(2026, 10, 20, tzinfo=datetime.UTC),
+            inputs=inputs,
+            result=result,
+            scenario=scenario or row.scenario,
+        )
+        return saved_id, self.rows[saved_id].name
+
     async def list_for(self, user_id):
         return [
             saved_store.SavedSummary(
                 id=row.id,
                 name=row.name,
                 created_at=row.created_at,
+                updated_at=row.updated_at,
                 filing_status=str(row.inputs.filing_status),
                 num_years=len(row.inputs.timeline),
                 estimated_savings=float(row.result.get("estimated_lifetime_tax_savings") or 0),
@@ -94,7 +111,7 @@ class FakeStore:
 @pytest.fixture
 def store(monkeypatch):
     fake = FakeStore()
-    for name in ("save", "list_for", "get"):
+    for name in ("save", "update", "list_for", "get"):
         monkeypatch.setattr(saved_store, name, getattr(fake, name))
     return fake
 
@@ -295,11 +312,33 @@ async def test_save_list_and_open(issuer, store):
     assert not again.isError
 
 
+async def test_saving_with_a_saved_id_updates_that_scenario(issuer, store):
+    first = (await _tool("user:u1", "save_scenario", {"scenario": SCENARIO})).structuredContent
+    changed = {**SCENARIO, "retirement_age": 60}
+    again = await _tool(
+        "user:u1", "save_scenario", {"scenario": changed, "saved_id": first["saved_id"]}
+    )
+    assert again.structuredContent["saved_id"] == first["saved_id"]
+    assert len(store.rows) == 1
+    assert store.rows[first["saved_id"]].scenario["retirement_age"] == 60
+    listed = (await _tool("user:u1", "list_saved_scenarios")).structuredContent["scenarios"]
+    assert listed[0]["saved_on"] == "2026-10-20"
+    # Someone else's id, or one that doesn't exist, is not touched.
+    other = await _tool(
+        "user:u2", "save_scenario", {"scenario": SCENARIO, "saved_id": first["saved_id"]}
+    )
+    assert other.isError and len(store.rows) == 1
+    # Without an id it is a new scenario.
+    await _tool("user:u1", "save_scenario", {"scenario": changed})
+    assert len(store.rows) == 2
+
+
 async def test_open_a_website_save(issuer, store):
     store.rows["web"] = saved_store.SavedScenario(
         id="web",
         name="From the website",
         created_at=datetime.datetime(2026, 9, 1, tzinfo=datetime.UTC),
+        updated_at=datetime.datetime(2026, 9, 1, tzinfo=datetime.UTC),
         inputs=DEMO_SCENARIO,
         result={"estimated_lifetime_tax_savings": 1234.4},
         scenario=None,

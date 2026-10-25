@@ -74,3 +74,28 @@ async def test_schema_upgrades_an_existing_table(db):
     await session.init_db()
     saved_id, _ = await store.save("user_a", DEMO_SCENARIO, {}, scenario={"age": 1})
     assert (await store.get("user_a", saved_id)).scenario == {"age": 1}
+
+
+async def test_update_overwrites_the_users_scenario_in_place(db):
+    result = {"estimated_lifetime_tax_savings": 100.0}
+    auto_id, _ = await store.save("user_a", DEMO_SCENARIO, result)
+    named_id, _ = await store.save("user_a", DEMO_SCENARIO, result, name="Mine", scenario={"a": 1})
+    changed = DEMO_SCENARIO.model_copy(update={"traditional_ira_balance": 250_000})
+
+    assert await store.update("user_b", auto_id, changed, result) is None
+    assert await store.update("user_a", "not-a-uuid", changed, result) is None
+
+    saved_id, name = await store.update(
+        "user_a", auto_id, changed, {"estimated_lifetime_tax_savings": 999.0}
+    )
+    assert saved_id == auto_id and name == store.auto_name(changed)  # automatic name follows
+    _, kept = await store.update("user_a", named_id, changed, result)
+    assert kept == "Mine"
+    assert (await store.get("user_a", named_id)).scenario == {"a": 1}  # chat copy kept
+
+    listed = await store.list_for("user_a")
+    assert [row.id for row in listed] == [named_id, auto_id]  # last saved first
+    assert len(listed) == 2 and listed[1].estimated_savings == 999.0
+    row = await store.get("user_a", auto_id)
+    assert row.inputs.traditional_ira_balance == 250_000
+    assert row.updated_at > row.created_at

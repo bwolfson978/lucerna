@@ -1,0 +1,6 @@
+name = "lucerna"
+version = "0.1.0"
+defaultTargets = ["Lucerna"]
+
+[[lean_lib]]
+name = "Lucerna"

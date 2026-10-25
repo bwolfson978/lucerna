@@ -27,7 +27,7 @@ import {
 } from "@/components/methodology/MethodologyContext";
 import { MethodologyLayout } from "@/components/methodology/MethodologyLayout";
 import { apiClient } from "@/lib/api/client";
-import { createScenariosApi } from "@/lib/api/scenarios";
+import { ScenariosApiError, createScenariosApi } from "@/lib/api/scenarios";
 import { fetchDemoConversation } from "@/lib/agent/client";
 import { loadConversation, latestResultId } from "@/lib/agent/conversation";
 import type { AgentErrorCode, AgentEvent, DemoConversation } from "@/lib/agent/types";
@@ -71,12 +71,14 @@ const KEYS = {
     draft: "lucerna:draft:v1",
     ran: "lucerna:draft-ran:v1",
     unsaved: "lucerna:unsaved-runs:v1",
+    saved: "lucerna:saved-scenario:v1",
   },
   demo: {
     conversation: "lucerna:demo-conversation:v1",
     draft: "lucerna:demo-draft:v1",
     ran: "lucerna:demo-draft-ran:v1",
     unsaved: "lucerna:demo-unsaved-runs:v1",
+    saved: "lucerna:demo-saved-scenario:v1",
   },
 } as const;
 
@@ -94,6 +96,14 @@ function writeSession(key: string, value: unknown): void {
     sessionStorage.setItem(key, JSON.stringify(value));
   } catch {
     // Storage unavailable; state lives for this page view.
+  }
+}
+
+function removeSession(key: string): void {
+  try {
+    sessionStorage.removeItem(key);
+  } catch {
+    // Storage unavailable.
   }
 }
 
@@ -270,31 +280,55 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
     [variant]
   );
 
-  // Signed-in runs of the person's own scenario are saved to "My scenarios". Signed-out
-  // runs are remembered for this tab and saved as soon as the person signs in or creates
-  // an account, from the header or the save banner.
+  // Signed-in runs of the person's own scenario are saved to "My scenarios". A scenario
+  // keeps one saved copy: the first run creates it, and later runs, edited or not,
+  // overwrite it (keys.saved holds its id for this tab). Only an explicit start (Start
+  // over, or New scenario on My scenarios) begins a new one. Signed-out, the latest run
+  // is remembered for this tab and saved as soon as the person signs in or creates an
+  // account, from the header or the save banner.
   const { isLoaded, isSignedIn } = useUser();
   const { getToken } = useAuth();
   const [saveStates, setSaveStates] = useState<Record<string, SaveBannerState>>({});
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  // Saves run one at a time, so a second run can't create a copy while the first
+  // save is still waiting for its id.
+  const saveQueue = useRef<Promise<void>>(Promise.resolve());
 
   const saveResult = useCallback(
-    (id: string, input: ScenarioInput, result: OptimizationResult) => {
+    (id: string, input: ScenarioInput, result: OptimizationResult, draft: ScenarioDraft) => {
       if (!AUTH_ENABLED || isDemo) return;
       if (!isSignedIn) {
-        const unsaved = readSession<string[]>(keys.unsaved) ?? [];
-        if (!unsaved.includes(id)) writeSession(keys.unsaved, [...unsaved, id]);
+        writeSession(keys.unsaved, [id]);
         return;
       }
       setBannerDismissed(false);
       setSaveStates((s) => ({ ...s, [id]: "saving" }));
-      createScenariosApi(getToken)
-        .save(input, result)
-        .then(() => setSaveStates((s) => ({ ...s, [id]: "saved" })))
-        .catch(() => setSaveStates((s) => ({ ...s, [id]: "prompt" })));
+      const api = createScenariosApi(getToken);
+      saveQueue.current = saveQueue.current.then(async () => {
+        try {
+          const savedId = readSession<string>(keys.saved);
+          const updated = savedId
+            ? await api.update(savedId, input, result, draft).catch((err: unknown) => {
+                // Deleted since (here or in a chat): save it again as new.
+                if (err instanceof ScenariosApiError && err.status === 404) return null;
+                throw err;
+              })
+            : null;
+          if (!updated) writeSession(keys.saved, (await api.save(input, result, draft)).id);
+          setSaveStates((s) => ({ ...s, [id]: "saved" }));
+        } catch {
+          setSaveStates((s) => ({ ...s, [id]: "prompt" }));
+        }
+      });
     },
-    [isDemo, isSignedIn, getToken, keys.unsaved]
+    [isDemo, isSignedIn, getToken, keys.unsaved, keys.saved]
   );
+
+  /** Begin a new scenario: later runs save a new copy instead of overwriting. */
+  const startNewScenario = useCallback(() => {
+    removeSession(keys.saved);
+    removeSession(keys.unsaved);
+  }, [keys.saved, keys.unsaved]);
 
   // A run from the Run button is waiting for the assistant's result.
   const pendingRun = useRef(false);
@@ -307,7 +341,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
       if (pendingRun.current) {
         pendingRun.current = false;
         posthog.capture("scenario_completed", { via: "assistant" });
-        saveResult(event.result_id, event.result.input, event.result);
+        saveResult(event.result_id, event.result.input, event.result, draftRef.current);
       }
     },
     [markRan, saveResult]
@@ -324,6 +358,21 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
   });
   const { state, send: sendMessage, replay, reset, loadResult, addResult } = conversation;
 
+  // "New scenario" (?new=1) starts from a blank form and a new saved copy, even in a tab
+  // that was working on another one.
+  useEffect(() => {
+    if (isDemo) return;
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("new")) return;
+    reset();
+    startNewScenario();
+    removeSession(keys.ran);
+    setRanKey(null);
+    updateDraft(EMPTY_DRAFT);
+    url.searchParams.delete("new");
+    window.history.replaceState(null, "", url.pathname + url.search);
+  }, [isDemo, reset, startNewScenario, keys.ran, updateDraft]);
+
   // Once signed in, save the runs made before. Session storage carries them across the
   // page reload a Google sign-in brings; an id whose result isn't restored yet waits.
   useEffect(() => {
@@ -333,7 +382,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
     const waiting = unsaved.filter((id) => {
       const stored = state.results[id];
       if (!stored) return true;
-      if (stored.result) saveResult(id, stored.result.input, stored.result);
+      if (stored.result) saveResult(id, stored.result.input, stored.result, draftRef.current);
       return false;
     });
     writeSession(keys.unsaved, waiting);
@@ -521,6 +570,15 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
         const result = (await apiClient.optimize(
           detail.inputs as unknown as Record<string, unknown>
         )) as OptimizationResult;
+        // Keep working on this scenario: its values fill the form, and later runs
+        // update it rather than saving a copy.
+        if (detail.draft) {
+          const opened = normalizeDraft(detail.draft);
+          updateDraft(opened);
+          markRan(opened);
+        }
+        removeSession(keys.unsaved);
+        writeSession(keys.saved, savedId);
         addResult({ result_id: id, label: detail.name, result });
         posthog.capture("saved_scenario_opened");
         window.history.replaceState(null, "", window.location.pathname);
@@ -536,7 +594,18 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
         setSavedError(true);
         setLinkStatus("idle");
       });
-  }, [isDemo, isLoaded, isSignedIn, getToken, keys.conversation, addResult]);
+  }, [
+    isDemo,
+    isLoaded,
+    isSignedIn,
+    getToken,
+    keys.conversation,
+    keys.saved,
+    keys.unsaved,
+    addResult,
+    updateDraft,
+    markRan,
+  ]);
 
   const applyWhatIf = useCallback(
     (id: string) => {
@@ -580,7 +649,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
         addResult({ result_id: id, label: "Your scenario", result });
         markRan(current);
         posthog.capture("scenario_completed", { via: "direct" });
-        saveResult(id, input, result);
+        saveResult(id, input, result, current);
         openView({ kind: "results", id });
       } catch {
         setRunError("Your scenario couldn't be run just now. Try again in a moment.");
@@ -816,6 +885,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
           <StartOver
             onConfirm={() => {
               reset();
+              startNewScenario();
               setFollowKey(0);
               setHighlight([]);
               assistantDown.current = null;

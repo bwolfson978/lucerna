@@ -67,7 +67,7 @@ export default function AccountPage() {
   if (!isLoaded) return null;
 
   const newest = scenarios?.reduce<string | null>(
-    (latest, s) => (latest === null || s.created_at > latest ? s.created_at : latest),
+    (latest, s) => (latest === null || s.updated_at > latest ? s.updated_at : latest),
     null
   );
 

@@ -29,6 +29,7 @@ class SavedSummary:
     id: str
     name: str
     created_at: datetime
+    updated_at: datetime
     filing_status: str
     num_years: int
     estimated_savings: float
@@ -40,6 +41,7 @@ class SavedScenario:
     id: str
     name: str
     created_at: datetime
+    updated_at: datetime
     inputs: ScenarioInput
     result: dict[str, Any]
     # The MCP tools' `scenario` when it was saved from a chat; None for website saves.
@@ -105,16 +107,70 @@ async def save(
     return scenario_id, name
 
 
+async def update(
+    user_id: str,
+    scenario_id: str,
+    inputs: ScenarioInput,
+    result: dict[str, Any],
+    *,
+    name: str | None = None,
+    scenario: dict[str, Any] | None = None,
+) -> tuple[str, str] | None:
+    """Overwrite one of ``user_id``'s scenarios with its latest inputs and result.
+
+    Returns (id, name), or None when the user has no scenario with that id. A name the
+    person gave is kept; an automatic one follows the new inputs. ``scenario`` replaces
+    the chat copy only when given, so a website save keeps what a chat stored.
+    """
+    pool = _pool()
+    if not _valid_id(scenario_id):
+        return None
+    result_snapshot = {k: v for k, v in result.items() if k not in _STRIP_FIELDS}
+    estimated_savings = float(result.get("estimated_lifetime_tax_savings") or 0)
+
+    async with pool.acquire() as conn, conn.transaction():
+        row = await conn.fetchrow(
+            "SELECT name, inputs FROM scenarios WHERE id = $1 AND clerk_user_id = $2 FOR UPDATE",
+            scenario_id,
+            user_id,
+        )
+        if row is None:
+            return None
+        if not name:
+            was_automatic = row["name"] == auto_name(ScenarioInput.model_validate(row["inputs"]))
+            name = auto_name(inputs) if was_automatic else row["name"]
+        await conn.execute(
+            """
+            UPDATE scenarios
+            SET name = $3, inputs = $4, result_snapshot = $5, filing_status = $6,
+                num_years = $7, estimated_savings = $8, ira_balance = $9,
+                scenario = COALESCE($10, scenario), updated_at = NOW()
+            WHERE id = $1 AND clerk_user_id = $2
+            """,
+            scenario_id,
+            user_id,
+            name,
+            inputs.model_dump(),
+            result_snapshot,
+            inputs.filing_status,
+            len(inputs.timeline),
+            estimated_savings,
+            float(inputs.traditional_ira_balance),
+            scenario,
+        )
+    return scenario_id, name
+
+
 async def list_for(user_id: str) -> list[SavedSummary]:
     pool = _pool()
     async with pool.acquire() as conn:
         rows = await conn.fetch(
             """
-            SELECT id, name, created_at, filing_status, num_years,
+            SELECT id, name, created_at, updated_at, filing_status, num_years,
                    estimated_savings, ira_balance
             FROM scenarios
             WHERE clerk_user_id = $1
-            ORDER BY created_at DESC
+            ORDER BY updated_at DESC
             LIMIT $2
             """,
             user_id,
@@ -125,6 +181,7 @@ async def list_for(user_id: str) -> list[SavedSummary]:
             id=str(row["id"]),
             name=row["name"],
             created_at=row["created_at"],
+            updated_at=row["updated_at"],
             filing_status=row["filing_status"],
             num_years=row["num_years"],
             estimated_savings=float(row["estimated_savings"]),
@@ -141,7 +198,7 @@ async def get(user_id: str, scenario_id: str) -> SavedScenario | None:
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
             """
-            SELECT id, name, created_at, inputs, result_snapshot, scenario
+            SELECT id, name, created_at, updated_at, inputs, result_snapshot, scenario
             FROM scenarios
             WHERE id = $1 AND clerk_user_id = $2
             """,
@@ -154,6 +211,7 @@ async def get(user_id: str, scenario_id: str) -> SavedScenario | None:
         id=str(row["id"]),
         name=row["name"],
         created_at=row["created_at"],
+        updated_at=row["updated_at"],
         inputs=ScenarioInput.model_validate(row["inputs"]),
         result=row["result_snapshot"],
         scenario=row["scenario"],

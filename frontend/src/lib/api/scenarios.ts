@@ -4,7 +4,18 @@ import type {
   SavedScenarioDetail,
   ScenarioInput,
 } from "@/lib/types";
+import type { ScenarioDraft } from "@/lib/scenario/draft";
 import { API_URL } from "@/lib/utils/constants";
+
+/** A failed request, with its HTTP status (404 when the scenario is gone). */
+export class ScenariosApiError extends Error {
+  constructor(
+    readonly status: number,
+    statusText: string
+  ) {
+    super(`API error: ${status} ${statusText}`);
+  }
+}
 
 async function authedRequest<T>(
   path: string,
@@ -20,7 +31,7 @@ async function authedRequest<T>(
     ...options,
   });
   if (!res.ok) {
-    throw new Error(`API error: ${res.status} ${res.statusText}`);
+    throw new ScenariosApiError(res.status, res.statusText);
   }
   if (res.status === 204) return undefined as T;
   return res.json();
@@ -28,10 +39,18 @@ async function authedRequest<T>(
 
 export function createScenariosApi(getToken: () => Promise<string | null>) {
   return {
-    save(input: ScenarioInput, result: OptimizationResult) {
+    /** Save a new scenario. `draft` lets it reopen exactly, here and in a chat. */
+    save(input: ScenarioInput, result: OptimizationResult, draft?: ScenarioDraft) {
       return authedRequest<{ id: string; name: string }>("/api/scenarios", getToken, {
         method: "POST",
-        body: JSON.stringify({ input, result }),
+        body: JSON.stringify({ input, result, draft }),
+      });
+    },
+    /** Overwrite a saved scenario with its latest inputs and results. */
+    update(id: string, input: ScenarioInput, result: OptimizationResult, draft?: ScenarioDraft) {
+      return authedRequest<{ id: string; name: string }>(`/api/scenarios/${id}`, getToken, {
+        method: "PUT",
+        body: JSON.stringify({ input, result, draft }),
       });
     },
     list() {

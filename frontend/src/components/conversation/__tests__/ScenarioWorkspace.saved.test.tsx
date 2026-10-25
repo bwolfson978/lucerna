@@ -46,6 +46,7 @@ it("re-runs a saved scenario from its link without saving a copy", async () => {
         id: "abc",
         name: "Saved",
         created_at: "2026-10-13T00:00:00Z",
+        updated_at: "2026-10-13T00:00:00Z",
         inputs: sampleOptimizationResult.input,
         result: {},
       })
