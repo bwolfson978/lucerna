@@ -37,9 +37,17 @@ current_caller: contextvars.ContextVar[str | None] = contextvars.ContextVar(
 
 
 def client_ip(request: Request) -> str:
+    """The caller's address, as the one proxy in front of us (Railway's edge) saw it.
+
+    The edge appends the address it saw to X-Forwarded-For, so that last entry is the
+    only one we can trust: anything before it is whatever the client sent. With no
+    header (local runs, tests) the socket peer is the caller.
+    """
     forwarded = request.headers.get("x-forwarded-for", "")
     if forwarded:
-        return forwarded.split(",")[0].strip()
+        last = forwarded.rsplit(",", 1)[-1].strip()
+        if last:
+            return last
     return request.client.host if request.client else "unknown"
 
 
