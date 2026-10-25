@@ -708,6 +708,15 @@ export const flows = {
       await limits.scrollIntoViewIfNeeded()
       await page.waitForTimeout(800)
       await shot('not-included', "How it works: What's not included", { element: limits })
+
+      // The Social Security paragraph, which also covers the 65+ deductions
+      const brackets = page.locator('#methodology-bracket-filling:visible').first()
+      await brackets.getByRole('button', { name: /Tax Bracket Filling/ }).click()
+      await page.waitForTimeout(600)
+      const benefits = brackets.locator('p', { hasText: 'Only part of Social Security is taxed' })
+      await benefits.scrollIntoViewIfNeeded()
+      await page.waitForTimeout(800)
+      await shot('social-security', 'How it works: Social Security and 65+ deductions', { element: benefits })
     },
   },
 }
