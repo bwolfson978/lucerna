@@ -1,0 +1,27 @@
+# The code each formal model covers. CI runs the models when any of these change
+# (dorny/paths-filter reads this file), and warns when one changes without its
+# model. Keep it current: a new model or a moved file updates this list.
+McpLimits:
+  - backend/app/mcp/limits.py
+  - backend/app/mcp/server.py
+  - backend/app/tools/core.py
+AgentSpend:
+  - backend/app/agent/limits.py
+  - backend/app/api/agent.py
+AutoSave:
+  - frontend/src/components/conversation/ScenarioWorkspace.tsx
+  - frontend/src/lib/agent/conversation.ts
+UndoDelete:
+  - frontend/src/app/my-scenarios/page.tsx
+FederalTax:
+  - backend/app/engine/tax.py
+  - backend/data/tax_brackets_*.json
+SocialSecurity:
+  - backend/app/engine/year_tax.py
+RmdStartAge:
+  - backend/app/engine/rmd.py
+  - backend/data/rmd_tables.json
+models:
+  - formal/**
+  - .agents/skills/formal-models/**
+  - .github/workflows/test.yml

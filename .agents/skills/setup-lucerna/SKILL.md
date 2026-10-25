@@ -48,3 +48,6 @@ terminal can add the `source` line to their shell profile; ask before doing that
 - If you changed `ui/` or `mcp-views/`, run `npm run build:views` and commit
   `backend/app/mcp/views/`: CI fails when the built Views don't match their source.
 - Run the app with `run-lucerna`; capture before/after screenshots with `pr-evidence`.
+- Working on code in `formal/paths.yml`? The formal models need their own tools (Java,
+  tla2tools.jar, Lean): `.agents/skills/formal-models/scripts/install.sh`. Setup leaves them
+  out because the Lean toolchain is about 3 GB.

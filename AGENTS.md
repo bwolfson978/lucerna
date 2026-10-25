@@ -27,6 +27,7 @@ Read `README.md` for how the product and services fit together, and ask the user
 - **One definition per card.** Cards shown both natively and in MCP App Views live in `ui/` (display-only React, shared Tailwind preset and tokens). The web app imports them; Views render them through preact/compat. Change the shared component, not a copy. See `docs/agent-and-mcp.md`.
 - **Storybook is the component catalog.** Adding or changing a component in `ui/src/`, `components/ui/` or `components/common/` means adding or updating its stories in the same PR. See `docs/storybook.md`.
 - **UI PRs show before and after.** A PR that changes `frontend/`, `ui/` or `mcp-views/` (or backend output the UI renders) carries side-by-side screenshots at desktop and phone width in its Before / After section, and the same images go in the chat message that says the PR is up. Use the `pr-evidence` skill; `run-lucerna` covers starting the app. Both live in `.agents/skills/`.
+- **Model the tricky parts.** Ordering-sensitive state and tax rules have formal models in `formal/`, kept in step with the code. See "Formal models".
 - **Mobile-first.** All UI must be responsive from the start — many users arrive from Reddit on phones.
 
 ## Design aesthetic
@@ -66,6 +67,15 @@ The AI conversation layer must use educational framing (legal requirement):
 - The reasoning trace (`app/engine/trace.py`) is the contract between engine and AI — keep it structured and complete
 - **Multi-year optimizer** is the only engine mode. `optimize()` in `optimizer.py` runs the dynamic programming search (`dp.py`), switches to `scipy.optimize.minimize` (SLSQP) when the user sets conversion limits, and checks the result against the bracket-fill curve (`curve_strategy.py`). No separate single-year path; a 1-year timeline is just `len(timeline) == 1`.
 - Engine files: `types.py` → `tax.py` / `state_tax.py` / `irmaa.py` / `aca.py` / `rmd.py` / `early_withdrawal.py` → `heuristic.py` → `dp.py` → `optimizer.py` → `trace.py` → `demo.py`
+
+## Formal models
+
+`formal/` holds TLA+ and Lean models of the code where bugs hide in orderings or edge-case math: analysis limits, the assistant spend cap, auto-save, undo delete, federal tax, Social Security taxation and RMD start age. `formal/paths.yml` lists the files each model covers. Use the `formal-models` skill (`.agents/skills/formal-models/`) for any of the below.
+
+- **Same PR.** A PR that changes a file in `formal/paths.yml` updates the model to match, or says in its "Formal models" section why the change doesn't affect it (for example, a log message or a rename). Run `.agents/skills/formal-models/scripts/check.sh` before pushing; CI runs the same checks.
+- **Model first.** A new feature with state, retries, sign-in, concurrency or tax rules gets its model and invariants in the proposal, before any code. Plain UI, copy and layout changes skip this.
+- **Red, then green.** A property the model shows broken gets a test against the real code that fails, committed before the fix in the same PR.
+- **No exceptions.** Every invariant holds and every test passes. Nothing merges with an expected-to-fail invariant, an `xfail` or `it.fails` marker, a skipped test or a bypassed check. Either fix the bug now, or, if the behavior is actually fine, rewrite the invariant or test to say exactly what we accept.
 
 ## Linting and formatting
 
@@ -122,13 +132,14 @@ lucerna/
 │   └── styles/tokens.css  # CSS variables + component classes
 ├── mcp-views/             # MCP App Views: entries around ui/ components, built into backend/app/mcp/views/
 ├── shared/fixtures/       # Cross-language fixtures (scenario draft, View data)
+├── formal/                # TLA+ and Lean models; paths.yml maps each to the code it covers
 ├── listing/               # Claude and ChatGPT directory listing kit: copy, test cases, screenshots, plugin ZIP build
 ├── e2e/                   # Playwright E2E tests (spans both services)
 │   ├── playwright.config.ts
 │   ├── capture/           # Before/after capture flows (pr-evidence skill)
 │   ├── fixtures/          # test.ts: the `test` every spec imports (fails on uncaught page errors)
 │   └── tests/
-├── .agents/skills/         # Repo skills (Agent Skills format): setup-lucerna, run-lucerna, pr-evidence
+├── .agents/skills/         # Repo skills (Agent Skills format): setup-lucerna, run-lucerna, pr-evidence, formal-models
 ├── .claude/skills          # Symlink to .agents/skills, for Claude Code
 ├── docs/
 │   ├── agent-and-mcp.md       # Website assistant, MCP server, MCP Apps, limits, analytics
@@ -136,7 +147,7 @@ lucerna/
 │   ├── storybook.md           # Component catalog
 │   ├── tax-data-update.md     # Yearly tax data update
 │   └── research/              # Market research, competitive analysis
-├── .github/workflows/test.yml # CI: backend → frontend → e2e
+├── .github/workflows/test.yml # CI: backend → frontend → e2e, formal models
 ├── package.json               # Root scripts (test:backend, test:frontend, test:e2e, test:all)
 ├── AGENTS.md                  # This file: instructions for every coding agent
 └── CLAUDE.md                  # Imports AGENTS.md for Claude Code

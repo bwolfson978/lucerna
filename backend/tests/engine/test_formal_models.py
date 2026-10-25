@@ -4,7 +4,7 @@ The Lean proofs are about transcriptions of the engine code and of the 2026 data
 These tests check the transcriptions still match: the bracket tables meet the
 premises of `loop_eq_vec`, the Lean bracket constants equal the JSON, and the
 Python Social Security formula agrees with the IRS worksheet the Lean model
-proves it equal to. The xfail test is the RMD counterexample.
+proves it equal to. The RMD test replays the counterexample the Lean model found.
 """
 
 import json

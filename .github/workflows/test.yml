@@ -102,3 +102,66 @@ jobs:
         working-directory: e2e
       - run: npx playwright test ui-drift.spec.ts scenario-view.spec.ts results-link.spec.ts --reporter=list
         working-directory: e2e
+
+  formal:
+    # The TLA+ and Lean models in formal/ (see the formal-models skill). Runs when a PR
+    # touches a file in formal/paths.yml, and on every push to master. Every invariant
+    # must hold and every proof must build without `sorry`; there are no expected failures.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: formal/paths.yml
+
+      - id: run
+        run: echo "models=${{ github.event_name == 'push' || steps.filter.outputs.changes != '[]' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Models whose code changed without the model
+        if: github.event_name == 'pull_request' && steps.run.outputs.models == 'true'
+        run: |
+          .agents/skills/formal-models/scripts/affected.sh "origin/${{ github.base_ref }}" | tee affected.txt
+          grep '^drift: ' affected.txt | sed 's/^drift: //' | while read -r line; do
+            echo "::warning title=Formal model not updated::$line. Update the model, or say why it is unaffected in the PR's Formal models section."
+            echo "- $line" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - uses: actions/setup-java@v4
+        if: steps.run.outputs.models == 'true'
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: actions/cache@v4
+        if: steps.run.outputs.models == 'true'
+        with:
+          path: ~/tools/tla2tools.jar
+          key: tla2tools-v1.8.0
+
+      - name: Install TLC and elan
+        if: steps.run.outputs.models == 'true'
+        run: |
+          .agents/skills/formal-models/scripts/install.sh
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: TLC, every invariant
+        if: steps.run.outputs.models == 'true'
+        run: formal/tla/check.sh
+
+      - name: Lean proofs
+        if: steps.run.outputs.models == 'true'
+        working-directory: formal/lean
+        run: lake build --wfail
+
+      - name: Upload TLC counterexamples
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tlc-logs
+          path: formal/tla/out/*.log
+          if-no-files-found: ignore
