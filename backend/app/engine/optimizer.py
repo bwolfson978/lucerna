@@ -100,7 +100,7 @@ def _npv_parts(scenario: ScenarioInput, yearly_conversions: list[float]) -> tupl
     aca_years = _aca_coverage_years(scenario)
     irmaa_exposed = _irmaa_exposed_years(scenario)
     hc = scenario.healthcare
-    owner_rmd_start = rmd_start_age(scenario.age)
+    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
     taxes = year_taxes(scenario)
 
     # ── Unified timeline loop ────────────────────────────────────────────────
@@ -427,7 +427,7 @@ def _build_year_detail(
     irmaa_exposed = _irmaa_exposed_years(scenario)
     aca_details: list[AcaSubsidyDetail] | None = [] if hc else None
 
-    owner_rmd_start = rmd_start_age(scenario.age)
+    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
     trad_balance = scenario.traditional_ira_balance
     roth_balance = scenario.roth_ira_balance
 
@@ -571,7 +571,7 @@ def _build_irmaa_projection(
     """Build IRMAA surcharge projection for a given conversion schedule."""
     n_years = len(scenario.timeline)
     irmaa_exposed = _irmaa_exposed_years(scenario)
-    owner_rmd_start = rmd_start_age(scenario.age)
+    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
 
     trad_balance = scenario.traditional_ira_balance
     yearly_detail: list[IrmaaYearDetail] = []
@@ -683,7 +683,7 @@ def _build_rmd_projection(
     roth_balance = scenario.roth_ira_balance
 
     # Apply timeline conversions and track balance
-    owner_rmd_start = rmd_start_age(scenario.age)
+    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
     first_year = scenario.timeline[0].year
     yearly_detail: list[RmdYearDetail] = []
     total_rmd_taxes = 0.0
@@ -1056,7 +1056,7 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
     trad_balance = scenario.traditional_ira_balance
     roth_balance = scenario.roth_ira_balance
     g = scenario.real_growth_rate
-    owner_rmd_start = rmd_start_age(scenario.age)
+    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
 
     # Balances when drawdowns begin ("at retirement"), or after the timeline if later.
     drawdown_offset = scenario.drawdown_start_age - scenario.age

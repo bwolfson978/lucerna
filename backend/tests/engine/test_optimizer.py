@@ -650,3 +650,34 @@ class TestRmdUsesPreGrowthBalance:
         assert abs(first.rmd_amount - post_growth_rmd) > 100, (
             "RMD appears to be using the post-growth balance (old buggy behavior)."
         )
+
+
+class TestRmdStartAgeFollowsPlanYear:
+    """The RMD start age comes from the birth year implied by the plan's first year."""
+
+    def _scenario(self, age: int, first_year: int) -> ScenarioInput:
+        return ScenarioInput(
+            age=age,
+            filing_status=FilingStatus.SINGLE,
+            timeline=[PlanYear(year=first_year, gross_income=0)],
+            traditional_ira_balance=800_000,
+            drawdown_start_age=age,
+            planning_horizon_age=90,
+        )
+
+    def test_born_1959_starts_at_73(self):
+        projection = _build_rmd_projection(self._scenario(67, 2026), [0.0])
+        assert projection is not None
+        assert projection.rmd_start_age == 73
+
+    def test_born_1960_starts_at_75_in_a_2027_plan(self):
+        # 67 in 2027 means born 1960, so RMDs start at 75, not 73
+        projection = _build_rmd_projection(self._scenario(67, 2027), [0.0])
+        assert projection is not None
+        assert projection.rmd_start_age == 75
+        assert projection.rmd_start_year == 2035
+
+    def test_optimize_uses_plan_year(self):
+        result = optimize(self._scenario(67, 2027))
+        assert result.rmd_projection is not None
+        assert result.rmd_projection.rmd_start_age == 75

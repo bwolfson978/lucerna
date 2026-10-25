@@ -182,7 +182,7 @@ def _compute_retirement_values(
     npv = np.zeros_like(trad)
 
     # RMD parameters
-    owner_rmd_start = rmd_start_age(scenario.age)
+    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
 
     for year in range(phase3_start, last_year + 1):
         owner_age = scenario.age + year
@@ -234,7 +234,7 @@ def _simulate_no_conversion_trajectory(scenario: ScenarioInput) -> float:
     marginally conservative but never wildly wrong.
     """
     g = scenario.real_growth_rate
-    owner_rmd_start = rmd_start_age(scenario.age)
+    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
     trad = float(scenario.traditional_ira_balance)
     roth = float(scenario.roth_ira_balance)
     for t, entry in enumerate(scenario.timeline):
@@ -273,7 +273,7 @@ def _dp_backward(
     growth_factor = (1 + g) ** remaining_growth_years if remaining_growth_years > 0 else 1.0
 
     initial_balance = scenario.traditional_ira_balance
-    owner_rmd_start = rmd_start_age(scenario.age)
+    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
 
     # Grid upper bound: the balance peaks at the drawdown-start year (before
     # withdrawals reduce it). Capping at min(n_years, years_until_drawdown)
@@ -474,7 +474,7 @@ def _forward_pass(
     """Read optimal conversion schedule by following the policy forward."""
     n_years = len(scenario.timeline)
     g = scenario.real_growth_rate
-    owner_rmd_start = rmd_start_age(scenario.age)
+    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
     conversions = []
 
     current_balance = scenario.traditional_ira_balance
@@ -583,7 +583,7 @@ def _dp_backward_2d(
     d = scenario.real_discount_rate
 
     initial_balance = scenario.traditional_ira_balance
-    owner_rmd_start = rmd_start_age(scenario.age)
+    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
     years_until_drawdown = max(0, scenario.drawdown_start_age - scenario.age)
     remaining_growth_years = max(0, years_until_drawdown) - n_years
     growth_factor = (1 + g) ** remaining_growth_years if remaining_growth_years > 0 else 1.0
@@ -857,7 +857,7 @@ def _forward_pass_2d(
     """Extract optimal conversions by tracking (trad, roth) state forward."""
     n_years = len(scenario.timeline)
     g = scenario.real_growth_rate
-    owner_rmd_start = rmd_start_age(scenario.age)
+    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
     G_R = len(roth_grid)
     d_roth = (roth_grid[-1] - roth_grid[0]) / max(G_R - 1, 1)
     conversions = []
@@ -1082,7 +1082,7 @@ def _dp_backward_3d(
     aca_years = _aca_coverage_years(scenario)
 
     # RMD start age for the owner
-    owner_rmd_start = rmd_start_age(scenario.age)
+    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
 
     # Pre-compute tax costs (same as 2D)
     taxes = year_taxes(scenario)
@@ -1308,7 +1308,7 @@ def _forward_pass_3d(
     """
     n_years = len(scenario.timeline)
     g = scenario.real_growth_rate
-    owner_rmd_start = rmd_start_age(scenario.age)
+    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
     B = len(budget_grid)
     conversions = []
 
