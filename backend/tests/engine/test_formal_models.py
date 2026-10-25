@@ -104,12 +104,6 @@ def test_rmd_start_age_rules_match_the_lean_model():
         assert rmd_start_age(2026 - birth_year, 2026) == start
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="RmdStartAge engine_misses_spec_from_2027: every "
-    "caller uses rmd_start_age(scenario.age), which assumes the plan "
-    "starts in 2026",
-)
 def test_rmds_start_by_birth_year_for_a_plan_starting_in_2027():
     # Born 1960: RMDs start at 75. In a plan built in 2027 this person is 67.
     scenario = ScenarioInput(
