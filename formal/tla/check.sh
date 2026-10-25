@@ -18,7 +18,7 @@ mkdir -p "$OUT"
 SPECS=(
   "McpLimits:TypeOK CallerAllowance AnonymousCeiling:EveryFreshRunIsCharged FreshRunsHoldASlot RefundsStayOnTheirDay NoChargeWithoutARun"
   "AgentSpend:TypeOK MessagesPerIp:MessagesPerClient SpendWithinCap SpendWithinOneMessage"
-  "AutoSave:TypeOK NoDuplicateSaves:NoSilentLoss NoSilentLossWhenStorageFits NoSilentLossWhenSavesSucceed"
+  "AutoSave:TypeOK NoDuplicateSaves NoSilentLossWhenSavesSucceed:NoSilentLoss NoSilentLossWhenStorageFits"
   "UndoDelete:TypeOK HiddenWhilePending DeletedStayGone:ServerMatchesIntent"
 )
 
