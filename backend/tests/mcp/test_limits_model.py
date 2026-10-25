@@ -150,18 +150,18 @@ def _request(forwarded_for: str) -> Request:
     )
 
 
-def test_a_client_cannot_pick_its_own_rate_limit_key():
-    # A proxy appends the address it saw; whatever comes before is the client's text.
+def test_the_rate_limit_key_is_the_address_railways_edge_saw():
+    # Railway's edge replaces any X-Forwarded-For the client sends with
+    # "<client>, <edge hop>", and the hop varies (both seen in the 2026-10-25 probe).
     real = "198.51.100.23"
-    keys = {client_ip(_request(f"{fake}, {real}")) for fake in ("1.1.1.1", "2.2.2.2")}
-    assert len(keys) == 1
+    keys = {client_ip(_request(f"{real}, {hop}")) for hop in ("152.233.30.104", "152.233.76.10")}
+    assert keys == {real}
 
 
-def test_an_edge_that_overwrites_the_header_still_keys_on_the_caller():
-    assert client_ip(_request("198.51.100.23")) == "198.51.100.23"
-    no_header = Request({"type": "http", "method": "POST", "path": "/mcp", "headers": []})
-    assert client_ip(no_header) == "unknown"
+def test_without_a_proxy_the_socket_peer_is_the_caller():
     peer = Request(
         {"type": "http", "method": "POST", "path": "/mcp", "headers": [], "client": ("10.0.0.2", 1)}
     )
     assert client_ip(peer) == "10.0.0.2"
+    no_peer = Request({"type": "http", "method": "POST", "path": "/mcp", "headers": []})
+    assert client_ip(no_peer) == "unknown"

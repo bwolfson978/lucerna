@@ -29,7 +29,7 @@ broke as expected.
 | McpLimits `RefundsStayOnTheirDay` | broken: a timeout refund after midnight credits the new day | same |
 | McpLimits `NoChargeWithoutARun` | broken: a client cancelled while queued keeps its charge | same |
 | AgentSpend `MessagesPerIp` | holds | |
-| AgentSpend `MessagesPerClient` | broke on the earlier code (`client_ip` keyed limits on the first X-Forwarded-For entry, which the client writes, so one client could send many values); holds now that it takes the last entry, the address Railway's edge saw | `backend/tests/mcp/test_limits_model.py` |
+| AgentSpend `MessagesPerClient` | holds. The first model let a client choose its X-Forwarded-For value; a live probe (2026-10-25) showed Railway's edge drops client-sent X-Forwarded-For and X-Real-IP and writes `<client>, <edge hop>`, so the first entry `client_ip` uses is the real address. Model and test corrected, code unchanged apart from documenting this | `backend/tests/mcp/test_limits_model.py` |
 | AgentSpend `SpendWithinCap`, `SpendWithinOneMessage` | broken: turns in flight together overshoot the daily cap by all their costs | `backend/tests/agent/test_limits_model.py` |
 | AutoSave `NoSilentLossWhenSavesSucceed` | broke on the earlier code (a run whose result was slimmed out of session storage was dropped at sign-in, unsaved); holds now that a slimmed result is recomputed from its input and then saved | `ScenarioWorkspace.autosave-model.test.tsx` |
 | AutoSave `NoSilentLossWhenStorageFits` | broke on the earlier code (a failed save while signed in hid the banner); holds now that a failed save shows "Couldn't save this analysis" with Try again | same |

@@ -81,23 +81,12 @@ async def test_daily_ip_limit_uses_forwarded_for(async_client):
         messages_per_conversation=10, messages_per_ip_per_day=1, daily_spend_usd=10
     )
     set_model_client(ScriptedModelClient([[text("one")], [text("two")]]))
-    # The edge appends the address it saw; a value the client wrote before it doesn't
-    # get a new allowance.
+    headers = {"x-forwarded-for": "203.0.113.9, 10.0.0.1"}
     first = parse_sse(
-        (
-            await async_client.post(
-                "/api/agent", json={"message": "a"}, headers={"x-forwarded-for": "203.0.113.9"}
-            )
-        ).text
+        (await async_client.post("/api/agent", json={"message": "a"}, headers=headers)).text
     )
     second = parse_sse(
-        (
-            await async_client.post(
-                "/api/agent",
-                json={"message": "b"},
-                headers={"x-forwarded-for": "10.9.9.9, 203.0.113.9"},
-            )
-        ).text
+        (await async_client.post("/api/agent", json={"message": "b"}, headers=headers)).text
     )
     other = parse_sse(
         (

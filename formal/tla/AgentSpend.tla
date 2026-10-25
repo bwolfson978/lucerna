@@ -1,7 +1,7 @@
 ---------------------------- MODULE AgentSpend ----------------------------
 (***************************************************************************)
 (* The website assistant's limits: backend/app/agent/limits.py             *)
-(* (UsageLimiter) as used by POST /api/agent (backend/app/api/agent.py).    *)
+(* (UsageLimiter) as used by POST /api/agent (backend/app/api/agent.py).   *)
 (*                                                                         *)
 (* A message is admitted by check(ip, ...), under the lock, if today's     *)
 (* spend is still below the cap. The turn then makes up to Calls model     *)
@@ -9,11 +9,11 @@
 (* re-checks the cap between calls or holds a reservation for messages in  *)
 (* flight.                                                                 *)
 (*                                                                         *)
-(* The ip is client_ip(request): the LAST X-Forwarded-For entry, which    *)
-(* Railway's edge appends (backend/app/mcp/limits.py). A client can put    *)
-(* anything before it but not change it, so the key is its own address.    *)
-(* The key used to be the first entry, which the client writes; TLC then  *)
-(* broke MessagesPerClient with one client sending three header values.   *)
+(* The ip is client_ip(request): the first X-Forwarded-For entry           *)
+(* (backend/app/mcp/limits.py). Railway's edge drops whatever the client   *)
+(* sent there and writes the address it saw (probed 2026-10-25), so the    *)
+(* key is the client's own address. The first version of this model let    *)
+(* each message pick its header, which a client can't do behind Railway.   *)
 (***************************************************************************)
 EXTENDS Naturals, FiniteSets
 

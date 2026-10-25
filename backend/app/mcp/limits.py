@@ -37,17 +37,17 @@ current_caller: contextvars.ContextVar[str | None] = contextvars.ContextVar(
 
 
 def client_ip(request: Request) -> str:
-    """The caller's address, as the one proxy in front of us (Railway's edge) saw it.
+    """The caller's address: the first X-Forwarded-For entry.
 
-    The edge appends the address it saw to X-Forwarded-For, so that last entry is the
-    only one we can trust: anything before it is whatever the client sent. With no
-    header (local runs, tests) the socket peer is the caller.
+    Railway's edge drops any X-Forwarded-For or X-Real-IP the client sends and writes
+    "<client>, <edge hop>" itself (probed live on 2026-10-25), so the first entry is
+    the address the edge saw and a client can't pick its own key. The last entry is a
+    Railway address that changes between requests. With no header (local runs, tests)
+    the socket peer is the caller.
     """
     forwarded = request.headers.get("x-forwarded-for", "")
     if forwarded:
-        last = forwarded.rsplit(",", 1)[-1].strip()
-        if last:
-            return last
+        return forwarded.split(",")[0].strip()
     return request.client.host if request.client else "unknown"
 
 
