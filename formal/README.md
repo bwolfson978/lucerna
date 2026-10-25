@@ -38,7 +38,7 @@ broke as expected.
 | UndoDelete `ServerMatchesIntent` | broken: leaving the page while Clerk refreshes the token drops the pending delete | `page.undo-model.test.tsx` |
 | Lean `loop_eq_vec`, `fed_mono_*`, `fed_slope_le_top_*`, `fed_slope_ge_marginal_*` | proved | `backend/tests/engine/test_formal_models.py` checks the premises against the data |
 | Lean `code_eq_worksheet`, `taxable_bounds`, `taxable_mono`, `taxable_slope` | proved | same file cross-checks Python against the worksheet |
-| Lean `engine_misses_spec_from_2027`, `wrong_exactly_when` | counterexample: from 2027 a 67-year-old (born 1960) gets RMDs at 73, not 75 | `test_rmds_start_by_birth_year_for_a_plan_starting_in_2027` |
+| Lean `old_engine_misses_spec_from_2027`, `old_wrong_exactly_when` | broke on the earlier code (from 2027 a 67-year-old born 1960 got RMDs at 73, not 75); `engine_meets_spec` proves it holds now that callers pass the plan's first year (PR #198) | `test_rmds_start_by_birth_year_for_a_plan_starting_in_2027` |
 
 ## Running
 

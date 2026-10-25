@@ -71,6 +71,10 @@ class TestRmdStartAge:
         # Born 1990 → age 36 in 2026
         assert rmd_start_age(36, 2026) == 75
 
+    def test_born_1960_in_a_2027_plan_starts_at_75(self):
+        # Born 1960 → age 67 in 2027
+        assert rmd_start_age(67, 2027) == 75
+
     def test_different_current_year(self):
         # Born 1955 → age 75 in 2030
         assert rmd_start_age(75, 2030) == 73

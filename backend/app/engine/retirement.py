@@ -109,7 +109,7 @@ def terminal_tax_rate(scenario: ScenarioInput) -> float:
     else:
         # The final plan year is in the post-timeline phase: walk there without conversions
         g = scenario.real_growth_rate
-        owner_rmd_start = rmd_start_age(scenario.age)
+        owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
         trad = scenario.traditional_ira_balance
         roth = scenario.roth_ira_balance
         for t, entry in enumerate(scenario.timeline):
@@ -223,7 +223,7 @@ def conversion_bases(scenario: ScenarioInput, conversions: list[float]) -> list[
     """
     from app.engine.rmd import calculate_rmd, rmd_start_age
 
-    owner_rmd_start = rmd_start_age(scenario.age)
+    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
     balance = scenario.traditional_ira_balance
     bases = []
     for t, entry in enumerate(scenario.timeline):
