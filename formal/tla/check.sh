@@ -17,7 +17,7 @@ mkdir -p "$OUT"
 # spec : invariants expected to HOLD : invariants expected to FAIL (known bugs)
 SPECS=(
   "McpLimits:TypeOK CallerAllowance AnonymousCeiling:EveryFreshRunIsCharged FreshRunsHoldASlot RefundsStayOnTheirDay NoChargeWithoutARun"
-  "AgentSpend:TypeOK MessagesPerIp:MessagesPerClient SpendWithinCap SpendWithinOneMessage"
+  "AgentSpend:TypeOK MessagesPerIp SpendWithinCap SpendWithinOneMessage:MessagesPerClient"
   "AutoSave:TypeOK NoDuplicateSaves NoSilentLoss NoSilentLossWhenStorageFits NoSilentLossWhenSavesSucceed:"
   "UndoDelete:TypeOK HiddenWhilePending DeletedStayGone:ServerMatchesIntent"
 )

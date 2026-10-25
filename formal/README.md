@@ -30,7 +30,7 @@ broke as expected.
 | McpLimits `NoChargeWithoutARun` | broken: a client cancelled while queued keeps its charge | same |
 | AgentSpend `MessagesPerIp` | holds | |
 | AgentSpend `MessagesPerClient` | broken if the proxy appends to X-Forwarded-For: `client_ip` trusts the first entry | `backend/tests/mcp/test_limits_model.py` |
-| AgentSpend `SpendWithinCap`, `SpendWithinOneMessage` | broken: turns in flight together overshoot the daily cap by all their costs | `backend/tests/agent/test_limits_model.py` |
+| AgentSpend `SpendWithinCap`, `SpendWithinOneMessage` | broke on the earlier code (turns in flight together overshot the daily cap by all their costs); hold now that each admitted message reserves a worst-case turn cost and is admitted only if spend plus reservations fits under the cap | `backend/tests/agent/test_limits_model.py` |
 | AutoSave `NoSilentLossWhenSavesSucceed` | broke on the earlier code (a run whose result was slimmed out of session storage was dropped at sign-in, unsaved); holds now that a slimmed result is recomputed from its input and then saved | `ScenarioWorkspace.autosave-model.test.tsx` |
 | AutoSave `NoSilentLossWhenStorageFits` | broke on the earlier code (a failed save while signed in hid the banner); holds now that a failed save shows "Couldn't save this analysis" with Try again | same |
 | AutoSave `NoSilentLoss` | holds now that both of the above are fixed | same |

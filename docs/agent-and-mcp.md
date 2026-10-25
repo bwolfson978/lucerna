@@ -88,7 +88,7 @@ Chart series the model doesn't need (yearly income, required withdrawals, conver
 | `AGENT_EFFORT` | `medium` | `output_config.effort` for each model call. |
 | `AGENT_MESSAGES_PER_CONVERSATION` | `20` | User messages per conversation. |
 | `AGENT_MESSAGES_PER_IP_PER_DAY` | `60` | Agent messages per client IP per day. |
-| `AGENT_DAILY_SPEND_USD` | `50` | Estimated model spend per day before the assistant pauses. |
+| `AGENT_DAILY_SPEND_USD` | `50` | Estimated model spend per day before the assistant pauses. Each message in progress holds a worst-case turn cost (about $4.50 on Sonnet) against it until it finishes, so turns running together cannot go over. |
 | `AGENT_CACHE_DIR` | `backend/.cache` | Where the generated demo conversation is cached. |
 | `MCP_ANALYSES_PER_IP_PER_DAY` | `25` | Fresh analyses (optimizer runs that aren't cached) per anonymous caller per day, keyed by client IP. Other tool calls and cached results are free. |
 | `MCP_ANALYSES_PER_USER_PER_DAY` | `100` | The same, for signed-in callers (once MCP sign-in lands). |
