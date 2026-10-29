@@ -23,7 +23,6 @@ import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import Request
@@ -55,8 +54,7 @@ class TurnTrace:
     # Langfuse observations for this turn, when conversation tracing is on.
     _root: Any = field(default=None, init=False, repr=False)
     _attributes: Any = field(default=None, init=False, repr=False)
-    _generation: Any = field(default=None, init=False, repr=False)
-    _started: datetime | None = field(default=None, init=False, repr=False)
+    _context_token: Any = field(default=None, init=False, repr=False)
     _reply: str = field(default="", init=False, repr=False)
     _error: str | None = field(default=None, init=False, repr=False)
 
@@ -78,16 +76,11 @@ class TurnTrace:
         error: str | None = None,
         output: list[dict] | None = None,
     ) -> None:
-        """Send one ``$ai_generation`` and end the Langfuse generation, if one is open.
+        """Send one ``$ai_generation`` and note the reply for the Langfuse trace.
         Never raises: analytics must not break a turn."""
-        self._end_generation(
-            model=model,
-            usage=usage,
-            time_to_first_token=time_to_first_token,
-            stop_reason=stop_reason,
-            error=error,
-            output=output,
-        )
+        text = _text_of(output)
+        if text:
+            self._reply = text
         posthog = error_tracking.client()
         if posthog is None:
             return
@@ -157,76 +150,15 @@ class TurnTrace:
         except Exception:  # noqa: BLE001
             logger.warning("Could not start a Langfuse trace", exc_info=True)
             self._root = None
-
-    def start_generation(self, *, model: str, system: str, messages: list[dict]) -> None:
-        """Open a Langfuse generation for one model call."""
-        if self._root is None:
             return
         try:
-            self._started = datetime.now(UTC)
-            self._generation = self._root.start_observation(
-                name="claude",
-                as_type="generation",
-                model=model,
-                input=[{"role": "system", "content": system}, *messages],
-            )
-        except Exception:  # noqa: BLE001
-            logger.warning("Could not start a Langfuse generation", exc_info=True)
-            self._generation = None
+            # The Anthropic SDK's spans for this turn's model calls nest under the root.
+            from opentelemetry import context, trace
 
-    def _end_generation(
-        self,
-        *,
-        model: str,
-        usage: dict[str, Any] | None,
-        time_to_first_token: float | None,
-        stop_reason: str | None,
-        error: str | None,
-        output: list[dict] | None,
-    ) -> None:
-        generation, self._generation = self._generation, None
-        if generation is None:
-            return
-        try:
-            usage = usage or {}
-            counts = {
-                "input": int(usage.get("input_tokens") or 0),
-                "output": int(usage.get("output_tokens") or 0),
-                "cache_read_input_tokens": int(usage.get("cache_read_input_tokens") or 0),
-                "cache_creation_input_tokens": int(usage.get("cache_creation_input_tokens") or 0),
-            }
-            price = prices_per_mtok(model)
-            cost = {
-                "input": counts["input"] * price["input"] / 1_000_000,
-                "output": counts["output"] * price["output"] / 1_000_000,
-                "cache_read_input_tokens": counts["cache_read_input_tokens"]
-                * price["cache_read"]
-                / 1_000_000,
-                "cache_creation_input_tokens": counts["cache_creation_input_tokens"]
-                * price["cache_write"]
-                / 1_000_000,
-            }
-            cost["total"] = sum(cost.values())
-            first_token = (
-                self._started + timedelta(seconds=time_to_first_token)
-                if self._started is not None and time_to_first_token is not None
-                else None
-            )
-            generation.update(
-                model=model,
-                output=output,
-                usage_details=counts,
-                cost_details=cost,
-                completion_start_time=first_token,
-                metadata={"stop_reason": stop_reason},
-                **({"level": "ERROR", "status_message": error} if error else {}),
-            )
-            generation.end()
-            text = _text_of(output)
-            if text:
-                self._reply = text
+            span = trace.set_span_in_context(self._root._otel_span)
+            self._context_token = context.attach(span)
         except Exception:  # noqa: BLE001
-            logger.warning("Could not end a Langfuse generation", exc_info=True)
+            logger.warning("Could not nest model calls under the Langfuse trace", exc_info=True)
 
     @contextmanager
     def tool(self, name: str, arguments: Any) -> Iterator[ToolRecord]:
@@ -261,7 +193,12 @@ class TurnTrace:
         """Close the turn's Langfuse trace with the reply it ended with."""
         root, self._root = self._root, None
         attributes, self._attributes = self._attributes, None
+        token, self._context_token = self._context_token, None
         try:
+            if token is not None:
+                from opentelemetry import context
+
+                context.detach(token)
             if root is not None:
                 root.update(
                     output=self._reply or None,

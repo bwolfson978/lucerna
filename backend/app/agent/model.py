@@ -12,6 +12,7 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from typing import Protocol
 
+from app.agent import tracing
 from app.config import settings
 
 MODEL = settings().agent_model
@@ -78,7 +79,12 @@ class AnthropicModelClient:
         import anthropic
 
         self._anthropic = anthropic
-        self._client = anthropic.AsyncAnthropic(api_key=api_key(), timeout=120.0, max_retries=2)
+        self._client = anthropic.AsyncAnthropic(
+            api_key=api_key(),
+            timeout=120.0,
+            max_retries=2,
+            open_telemetry=tracing.anthropic_open_telemetry(),
+        )
 
     async def stream(
         self, *, system: str, tools: list[dict], messages: list[dict]

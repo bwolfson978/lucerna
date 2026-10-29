@@ -7,7 +7,9 @@ That is why it is off unless ``LANGFUSE_TRACING`` is true and both keys are set,
 and why email addresses and phone numbers are masked before anything is sent.
 
 Each user message is one trace: a root ``website_assistant`` observation with one
-generation per model call and one tool observation per tool call. The trace carries
+generation per model call and one tool observation per tool call. The generations are
+the Anthropic SDK's own OpenTelemetry spans (GenAI conventions, with usage), recorded
+with their content when tracing is on and masked like everything else. The trace carries
 the visitor's PostHog distinct id and session id, so it lines up with the PostHog
 session. ``LANGFUSE_TRACING_ENVIRONMENT`` (production, ci or dev) separates
 production traffic from CI eval runs in every Langfuse view.
@@ -48,6 +50,42 @@ def mask(*, data: Any, **_: Any) -> Any:
     return data
 
 
+# The Anthropic SDK's instrumentation scope: its spans are the trace's model calls.
+ANTHROPIC_SCOPE = "com.anthropic.sdk.python"
+
+
+def should_export(span: Any) -> bool:
+    """Our own observations and the Anthropic SDK's model calls; nothing else."""
+    from langfuse.span_filter import is_langfuse_span
+
+    scope = getattr(span, "instrumentation_scope", None)
+    return is_langfuse_span(span) or getattr(scope, "name", None) == ANTHROPIC_SCOPE
+
+
+def mask_otel_spans(*, params: Any) -> Any:
+    """Apply ``mask`` to the text attributes of spans Langfuse didn't create, such as
+    the SDK's ``gen_ai.input.messages``, which hold the conversation as JSON."""
+    from langfuse.types import MaskOtelSpansResult, OtelSpanPatch
+
+    patches = {}
+    for key, span in params.spans.items():
+        changed = {
+            name: masked
+            for name, value in span.attributes.items()
+            if isinstance(value, str) and (masked := mask(data=value)) != value
+        }
+        if changed:
+            patches[key] = OtelSpanPatch(set_attributes=changed)
+    return MaskOtelSpansResult(span_patches=patches)
+
+
+def anthropic_open_telemetry() -> dict:
+    """The ``open_telemetry`` option for the agent's Anthropic client: with tracing on,
+    its spans carry the messages and reply; otherwise only metadata, which goes nowhere
+    without a tracer."""
+    return {"traces": {"content_mode": "content" if enabled() else "metadata_only"}}
+
+
 def enabled() -> bool:
     config = settings()
     return bool(
@@ -62,7 +100,6 @@ def client() -> Any:
         return _client
     try:
         from langfuse import Langfuse
-        from langfuse.span_filter import is_langfuse_span
 
         config = settings()
         _client = Langfuse(
@@ -72,9 +109,8 @@ def client() -> Any:
             environment=config.langfuse_tracing_environment,
             release=config.railway_git_commit_sha or None,
             mask=mask,
-            # Only our own observations. The Anthropic SDK emits OpenTelemetry spans of its
-            # own; exported too, they would bypass the mask and count each call's cost twice.
-            should_export_span=is_langfuse_span,
+            mask_otel_spans=mask_otel_spans,
+            should_export_span=should_export,
         )
     except Exception:  # noqa: BLE001
         logger.warning("Could not start Langfuse tracing", exc_info=True)

@@ -198,8 +198,6 @@ async def _run_turn(
         start = time.monotonic()
         first_token: float | None = None
         messages = [*history, *new_messages]
-        if trace is not None:
-            trace.start_generation(model=MODEL, system=SYSTEM_PROMPT, messages=messages)
         try:
             async for event in client.stream(system=SYSTEM_PROMPT, tools=tools, messages=messages):
                 if first_token is None and isinstance(event, TextDelta | ToolStart):
