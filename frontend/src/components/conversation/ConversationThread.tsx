@@ -58,6 +58,7 @@ export function ConversationThread({
   // remounts (and reloads its card) when the next turn starts.
   const spaceLastTurn = followKey > 0 && lastUserIndex >= 0;
   const spacerRef = useRef<HTMLDivElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
 
   // Sized directly (not through state) so it is in place before the scroll above runs.
   useLayoutEffect(() => {
@@ -76,10 +77,12 @@ export function ConversationThread({
       el.style.height = `${Math.max(0, Math.round(window.innerHeight - TURN_ROOM - turn))}px`;
     };
     measure();
-    const parent = el.parentElement;
-    if (!parent || typeof ResizeObserver === "undefined") return;
+    // Watches the messages, not the list the spacer sits in: resizing the spacer from
+    // the callback would resize what it watches, a loop the browser reports as an error.
+    const content = contentRef.current;
+    if (!content || typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(measure);
-    observer.observe(parent);
+    observer.observe(content);
     window.addEventListener("resize", measure);
     return () => {
       observer.disconnect();
@@ -123,8 +126,10 @@ export function ConversationThread({
 
   return (
     <div className="flex flex-col gap-comfortable" aria-live="polite" aria-busy={streaming}>
-      <div className={cn("empty:hidden", noAnchor)}>{intro}</div>
-      {messages.map(renderMessage)}
+      <div ref={contentRef} className="flex flex-col gap-comfortable">
+        <div className={cn("empty:hidden", noAnchor)}>{intro}</div>
+        {messages.map(renderMessage)}
+      </div>
       {/* Cancels the list gap above it, so it adds nothing when it has no height. */}
       <div
         ref={spacerRef}
