@@ -70,6 +70,29 @@ describe("ConversationThread", () => {
     expect(screen.getByText("Hello")).toBe(earlier);
   });
 
+  it("re-measures the spacer from the messages, never from a box that holds the spacer", () => {
+    // A ResizeObserver whose callback resizes what it watches loops, and the browser
+    // reports "ResizeObserver loop completed with undelivered notifications".
+    const observed: Element[] = [];
+    const original = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = class {
+      observe(el: Element) {
+        observed.push(el);
+      }
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver;
+    try {
+      renderThread(stateWith([user("u1", "Hi"), assistant("a1", "Hello")]), { followKey: 1 });
+    } finally {
+      globalThis.ResizeObserver = original;
+    }
+    const spacer = screen.getByTestId("turn-spacer");
+    expect(observed).toHaveLength(1);
+    expect(observed[0]).toHaveTextContent("Hello");
+    expect(observed[0].contains(spacer)).toBe(false);
+  });
+
   it("keeps the previous turn mounted when the next one is sent", () => {
     const sent = stateWith([user("u1", "Hi"), assistant("a1", "Here's your scenario")]);
     const { rerender } = renderThread(sent, { followKey: 1 });
