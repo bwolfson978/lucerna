@@ -1,0 +1,63 @@
+# Keeps the vendored Langfuse agent skill (.agents/skills/langfuse) in step with
+# upstream langfuse/skills. Weekly, it copies upstream skills/langfuse over the folder;
+# when the files differ it bumps the commit pinned in UPSTREAM.md and opens a PR.
+# No auto-merge: a skill is instructions every agent in this repo follows, so a
+# person reads the diff first.
+#
+# PRs opened with GITHUB_TOKEN don't trigger other workflows; the skill is markdown
+# only, so nothing in test.yml covers it anyway.
+name: Update Langfuse skill
+
+on:
+  schedule:
+    - cron: "0 14 * * 1" # Mondays 14:00 UTC
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Copy upstream skill
+        id: copy
+        run: |
+          dir=.agents/skills/langfuse
+          pinned=$(grep -oE '[0-9a-f]{40}' "$dir/UPSTREAM.md" | head -1)
+          git clone --quiet --filter=blob:none https://github.com/langfuse/skills.git "$RUNNER_TEMP/upstream"
+          latest=$(git -C "$RUNNER_TEMP/upstream" rev-parse HEAD)
+          date=$(git -C "$RUNNER_TEMP/upstream" log -1 --format=%cs HEAD)
+          find "$dir" -mindepth 1 -maxdepth 1 ! -name UPSTREAM.md -exec rm -rf {} +
+          cp -R "$RUNNER_TEMP/upstream/skills/langfuse/." "$dir/"
+          cp "$RUNNER_TEMP/upstream/LICENSE" "$dir/LICENSE" # the license sits at upstream's root
+          git add -A "$dir"
+          if git diff --cached --quiet; then
+            echo "Langfuse skill matches upstream $latest"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          sed -i -E "s/\`[0-9a-f]{40}\` \([0-9-]+\)/\`$latest\` ($date)/" "$dir/UPSTREAM.md"
+          {
+            echo "Upstream [langfuse/skills](https://github.com/langfuse/skills/compare/$pinned...$latest) changed \`skills/langfuse\` since the pinned commit:"
+            echo
+            git -C "$RUNNER_TEMP/upstream" log --format='- %s (%h)' "$pinned..$latest" -- skills/langfuse
+            echo
+            echo "Read the diff before merging: every agent in this repo follows these instructions."
+          } > "$RUNNER_TEMP/changes.md"
+          { echo "changed=true"; echo "latest=$latest"; echo "date=$date"; } >> "$GITHUB_OUTPUT"
+
+      - name: Open pull request
+        if: steps.copy.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "Update Langfuse skill to ${{ steps.copy.outputs.latest }}"
+          title: "Update Langfuse skill (${{ steps.copy.outputs.date }})"
+          body-path: ${{ runner.temp }}/changes.md
+          branch: auto/update-langfuse-skill
+          delete-branch: true
+          labels: type:improvement
+          assignees: bwolfson978

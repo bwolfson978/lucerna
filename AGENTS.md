@@ -74,7 +74,7 @@ The AI conversation layer must use educational framing (legal requirement):
 Website assistant turns can be traced to Langfuse (US cloud, project `lucerna-agent-evals`) with their full content: messages, replies, tool calls, tokens and cost. Code: `app/agent/tracing.py` (client, masking) and `TurnTrace` in `app/agent/observability.py`. It is off unless `LANGFUSE_TRACING` is true and both keys are set.
 
 - **Environments:** `LANGFUSE_TRACING_ENVIRONMENT` is `production` on Railway, `ci` in GitHub Actions and `dev` everywhere else. Filter on it in every Langfuse query.
-- **Tooling:** the `langfuse` skill (`.agents/skills/langfuse`, vendored from upstream, see its `UPSTREAM.md`) covers the CLI, docs and eval workflows. The cloud environment installs the CLI (`langfuse`); elsewhere use `npx @langfuse/cli`. Keys come from Doppler: `doppler run -- langfuse api <resource> <action>`.
+- **Tooling:** the `langfuse` skill (`.agents/skills/langfuse`, vendored from upstream, see its `UPSTREAM.md`; a weekly Action, `update-langfuse-skill.yml`, opens a PR when upstream changes, so don't edit it by hand) covers the CLI, docs and eval workflows. The cloud environment installs the CLI (`langfuse`); elsewhere use `npx @langfuse/cli`. Keys come from Doppler: `doppler run -- langfuse api <resource> <action>`.
 - **Privacy:** production traces are real people's finances. Read them to debug or to write eval cases, but never paste their content into the repo, PRs or chats; turn a revealing conversation into a scrubbed case in `backend/evals/agent_cases.json` instead. PostHog stays content-free (see `observability.py`). Changing what is traced means updating the privacy policy (`frontend/src/app/privacy/page.tsx`) in the same PR.
 
 ## Formal models
