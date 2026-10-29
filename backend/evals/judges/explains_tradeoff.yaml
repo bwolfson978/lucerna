@@ -1,6 +1,7 @@
 # LLM judge: does the last reply explain what converting more or less gains and costs?
 # Source of truth for this judge; evals/judges.py runs it and stores the score in
-# Langfuse under `name`.
+# Langfuse under `name`. Calibrated 2026-10-29 against the "Judge calibration" tab of
+# the Langfuse onboarding plan.
 name: explains_tradeoff
 description: The last reply explains the gains and costs of converting more or less, in plain English, as analysis.
 model: claude-sonnet-5-5
@@ -21,17 +22,52 @@ prompt: |
   {reply}
   </reply>
 
-  Question: where the reply discusses converting more, less, or at a different time,
-  does it explain the tradeoff?
+  ### Evaluation Task
+  Evaluate whether the assistant's reply properly explains the tradeoff when discussing
+  converting more, less, or at a different time.
+  *Note: Do not judge whether the numbers or math are correct.*
 
-  Pass when it names both sides that matter for this user, for example tax paid now
-  against tax saved later, which bracket a conversion fills, or a Medicare premium
-  (IRMAA) or ACA subsidy effect, and connects them to this user's inputs or results.
-  It must use plain English (no unexplained jargon such as "NPV" or "terminal value")
-  and frame it as what the analysis shows, not as a recommendation.
+  Follow these steps in order to determine a PASS or FAIL verdict:
 
-  Fail when it states a conclusion without the reasons, gives only one side, stays
-  generic when the user's results were available, or tells the user what to do.
+  #### Step 1: Check Applicability (Auto-PASS Conditions)
+  The reply automatically **PASSES** if either of the following is true:
+  1. **Out of Scope Topic:** Neither the user's last message nor the reply discusses
+     converting more, less, or at a different time (for example, the user asks who is
+     right about a figure).
+  2. **Unmodeled Feature:** The user asks about something the tool does not model, AND
+     the reply plainly states that it is not modeled while explaining what the tool
+     *does* model.
 
-  If something the user asks about is not modeled, saying so plainly and explaining
-  the parts that are modeled is a pass. Do not judge whether the numbers are correct.
+  *If neither applies, proceed to Step 2.*
+
+  #### Step 2: Check Tradeoff Requirements by Scenario State
+  When the reply discusses converting more, less, or at a different time, it must
+  include both the **Cost Side** and the **Benefit Side**:
+  - **Cost Side:** Tax paid now, the tax bracket a conversion fills, a Medicare premium
+    (IRMAA) effect, or an ACA subsidy effect.
+  - **Benefit Side:** Tax saved later or smaller required withdrawals. A brief label
+    counts as naming it, such as "weighed against the tax savings" or "unless the
+    long-term benefit outweighs the loss", as long as the cost side is clearly
+    explained. Do not fail a reply for leaving the benefit side implicit when such a
+    label is present.
+
+  Evaluate based on the state of the conversation:
+  - **If NO scenario exists yet** (the user has given no inputs and no analysis has
+    run): **PASS** if the reply names both the Cost Side and the Benefit Side in
+    general, plain terms (do not expect user-specific numbers).
+  - **If a scenario DOES exist** (user inputs or analysis results are present): **PASS**
+    if the reply names both the Cost Side and Benefit Side relevant to this user and
+    connects them to the user's specific inputs or results.
+
+  #### Step 3: Check Mandatory Quality & Framing Rules (Auto-FAIL Triggers)
+  Even if Step 2 is satisfied, the reply **FAILS** if it does any of the following:
+  - **No Reasoning:** States a conclusion with no reason.
+  - **One-Sided:** Gives only the Cost Side or only the Benefit Side, with not even a
+    label for the other.
+  - **Ignores Existing Results:** Ignores a result already in the conversation that
+    gives the figure the user asked for. A reply that says the results hold no such
+    figure is not ignoring them.
+  - **Uses Unexplained Jargon:** Fails to use plain English (e.g., uses unexplained
+    jargon such as "NPV" or "terminal value").
+  - **Gives Advice:** Tells the user what to do or makes a recommendation, rather than
+    framing the response around what the analysis shows.
