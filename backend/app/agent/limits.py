@@ -24,7 +24,7 @@ from app.config import settings
 
 # Per million tokens. Keep in sync with the model in app.agent.config.
 _PRICES_PER_MTOK = {
-    "claude-sonnet-5-5": {"input": 2.00, "output": 10.00, "cache_read": 0.20, "cache_write": 2.50},
+    "claude-sonnet-5-5": {"input": 2.00, "output": 10.00, "cache_read": 0.10, "cache_write": 2.50},
     "claude-opus-5-5": {"input": 4.00, "output": 20.00, "cache_read": 0.20, "cache_write": 5.00},
 }
 _FALLBACK_PRICE = {"input": 5.00, "output": 25.00, "cache_read": 0.50, "cache_write": 6.25}
