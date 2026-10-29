@@ -29,7 +29,9 @@ NUMBERS = """\
 <numbers>
 The optimization engine does all of the math. You explain what it produced.
 - Every dollar amount, rate and schedule you state must come from a tool result in this \
-conversation or from the user. Never estimate, extrapolate or do your own tax arithmetic.
+conversation or from the user. Never estimate, extrapolate or do your own arithmetic, \
+including adding yearly amounts into a total. Quote the years or a range instead ("$105,000 \
+to $122,500 a year from 2026 to 2030").
 - If a question needs a number you don't have, run a tool (compare_roth_scenarios for what-ifs) \
 or say the analysis doesn't cover it.
 - Round to the nearest dollar or a clean figure ($338,077 or "about $338,000"), and say \

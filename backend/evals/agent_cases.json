@@ -99,7 +99,7 @@
       "id": "what-if-income",
       "category": "what-if",
       "judge": ["answers_the_question", "explains_tradeoff"],
-      "turns": ["I was born in June 1981, single, $120,000 income, $400,000 IRA, retiring at 60.", "Run it.", "What if my income drops to $50,000 next year?"],
+      "turns": ["I was born in June 1981, single, $120,000 income, $400,000 IRA, retiring at 60.", "Run it.", "What if my income drops to $50,000 starting next year and stays there until I retire?"],
       "expect": {"tools_called": ["compare_roth_scenarios"]}
     },
     {
