@@ -16,6 +16,7 @@ Read `README.md` for how the product and services fit together, and ask the user
 
 - **Frontend:** Next.js 14+ (App Router), TypeScript, Tailwind → deployed to Vercel
 - **Backend:** Python, FastAPI, Pydantic → deployed to Railway
+- **Tracing and evals:** Langfuse for website assistant traces and LLM-judge scores (see "Conversation tracing")
 - **AI:** Anthropic Claude Sonnet, called from backend — never from frontend
 - **Charts:** ApexCharts (standard charts) + custom SVG/HTML (bracket visualization, landing explainers)
 - **Monorepo:** `frontend/` and `backend/` are independently deployable services
@@ -67,6 +68,14 @@ The AI conversation layer must use educational framing (legal requirement):
 - The reasoning trace (`app/engine/trace.py`) is the contract between engine and AI — keep it structured and complete
 - **Multi-year optimizer** is the only engine mode. `optimize()` in `optimizer.py` runs the dynamic programming search (`dp.py`), switches to `scipy.optimize.minimize` (SLSQP) when the user sets conversion limits, and checks the result against the bracket-fill curve (`curve_strategy.py`). No separate single-year path; a 1-year timeline is just `len(timeline) == 1`.
 - Engine files: `types.py` → `tax.py` / `state_tax.py` / `irmaa.py` / `aca.py` / `rmd.py` / `early_withdrawal.py` → `heuristic.py` → `dp.py` → `optimizer.py` → `trace.py` → `demo.py`
+
+## Conversation tracing (Langfuse)
+
+Website assistant turns can be traced to Langfuse (US cloud, project `lucerna-agent-evals`) with their full content: messages, replies, tool calls, tokens and cost. Code: `app/agent/tracing.py` (client, masking) and `TurnTrace` in `app/agent/observability.py`. It is off unless `LANGFUSE_TRACING` is true and both keys are set.
+
+- **Environments:** `LANGFUSE_TRACING_ENVIRONMENT` is `production` on Railway, `ci` in GitHub Actions and `dev` everywhere else. Filter on it in every Langfuse query.
+- **Tooling:** the `langfuse` skill (`.agents/skills/langfuse`, vendored from upstream, see its `UPSTREAM.md`) covers the CLI, docs and eval workflows. The cloud environment installs the CLI (`langfuse`); elsewhere use `npx @langfuse/cli`. Keys come from Doppler: `doppler run -- langfuse api <resource> <action>`.
+- **Privacy:** production traces are real people's finances. Read them to debug or to write eval cases, but never paste their content into the repo, PRs or chats; turn a revealing conversation into a scrubbed case in `backend/evals/agent_cases.json` instead. PostHog stays content-free (see `observability.py`). Changing what is traced means updating the privacy policy (`frontend/src/app/privacy/page.tsx`) in the same PR.
 
 ## Formal models
 
@@ -139,7 +148,7 @@ lucerna/
 │   ├── capture/           # Before/after capture flows (pr-evidence skill)
 │   ├── fixtures/          # test.ts: the `test` every spec imports (fails on uncaught page errors)
 │   └── tests/
-├── .agents/skills/         # Repo skills (Agent Skills format): setup-lucerna, run-lucerna, pr-evidence, formal-models
+├── .agents/skills/         # Repo skills (Agent Skills format): setup-lucerna, run-lucerna, pr-evidence, formal-models, langfuse
 ├── .claude/skills          # Symlink to .agents/skills, for Claude Code
 ├── docs/
 │   ├── agent-and-mcp.md       # Website assistant, MCP server, MCP Apps, limits, analytics

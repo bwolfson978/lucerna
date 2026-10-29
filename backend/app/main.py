@@ -12,6 +12,7 @@ from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from app import error_tracking
+from app.agent import tracing as agent_tracing
 from app.config import settings
 from app.mcp import analytics as mcp_analytics
 from app.mcp.auth import router as mcp_auth_router
@@ -49,6 +50,7 @@ async def lifespan(app: FastAPI):
     await close_db()
     await mcp_analytics.flush()
     error_tracking.shutdown()
+    agent_tracing.shutdown()
 
 
 app = FastAPI(title="Lucerna API", lifespan=lifespan)

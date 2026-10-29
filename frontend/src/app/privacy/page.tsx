@@ -16,14 +16,15 @@ export default function PrivacyPage() {
   return (
     <DocPage
       title="Privacy Policy"
-      updated="October 14, 2026"
+      updated="October 29, 2026"
       intro={
         <>
           Roth Conversions Optimizer is run by Barry Wolfson, an individual developer based in the
           United States. This policy covers the website at rothconversionsoptimizer.com and the Roth
           Conversions Optimizer app for Claude and ChatGPT (our MCP server at
           mcp.rothconversionsoptimizer.com). The short version: you can use the analysis without an
-          account, we don&apos;t sell your data, and we only keep what you choose to save.
+          account, we don&apos;t sell your data, and apart from website chat conversations, which we
+          keep to improve the assistant, we only keep what you choose to save.
         </>
       }
     >
@@ -32,7 +33,8 @@ export default function PrivacyPage() {
           Month and year of birth (yours, and your spouse&apos;s when you file jointly), filing
           status, state, income, account balances, the age withdrawals begin and similar scenario
           inputs. We use them to run the analysis and send the results back. If you don&apos;t save
-          a scenario, we don&apos;t store these inputs.
+          a scenario, we don&apos;t store these inputs, except as part of a website chat
+          conversation (below).
         </DocTerm>
         <DocTerm term="Saved scenarios.">
           If you sign in and save a scenario, on the website or from a chat, we store its inputs,
@@ -62,9 +64,13 @@ export default function PrivacyPage() {
         </DocTerm>
         <DocTerm term="Website chat messages.">
           When you use the chat on the website, your messages are sent to Anthropic&apos;s Claude
-          API to generate replies. We don&apos;t store chat transcripts on our servers. For each
-          reply we record usage data (the model, its token count and cost, how long it took and any
-          error) with that visit&apos;s usage analytics, never your messages or the replies.
+          API to generate replies. To find and fix problems with the assistant&apos;s answers, we
+          keep a record of each conversation in Langfuse: your messages, the replies, the
+          calculations the assistant ran, and their token counts and cost. Email addresses and phone
+          numbers are removed before it is sent. The record is linked to that visit&apos;s analytics
+          ID, not your name or account, and is kept until you ask us to delete it. The usage
+          analytics we keep for each reply (the model, its token count and cost, how long it took
+          and any error) never include your messages or the replies.
         </DocTerm>
       </DocSection>
 
@@ -121,6 +127,10 @@ export default function PrivacyPage() {
           <li>
             <strong>Anthropic</strong>: generates replies for the chat on the website.
           </li>
+          <li>
+            <strong>Langfuse</strong>: stores website chat conversations so we can review and
+            improve the assistant&apos;s answers.
+          </li>
         </ul>
         <p>
           We may also disclose information if the law requires it, or to protect the service and its
@@ -134,9 +144,13 @@ export default function PrivacyPage() {
           <li>Account details: until you delete your account.</li>
           <li>Usage-limit counters: reset daily, never written to our database.</li>
           <li>Hosting request logs: kept by our hosting providers for up to 30 days.</li>
+          <li>Website chat conversations: until you ask us to delete them.</li>
           <li>Usage analytics, session replays and error reports: up to 12 months.</li>
           <li>Feedback and problem reports: until they are resolved, and at most 12 months.</li>
-          <li>Unsaved analysis inputs: not stored after the response is sent.</li>
+          <li>
+            Unsaved analysis inputs: not stored after the response is sent, except inside a website
+            chat conversation.
+          </li>
         </ul>
       </DocSection>
 
@@ -149,8 +163,9 @@ export default function PrivacyPage() {
             removes your account details and every saved scenario right away.
           </li>
           <li>
-            Ask us to delete the usage analytics, session replays or feedback linked to you, or for
-            a copy of your data, by emailing {mail}. We respond within 30 days.
+            Ask us to delete the usage analytics, session replays, chat conversations or feedback
+            linked to you, or for a copy of your data, by emailing {mail}. We respond within 30
+            days.
           </li>
           <li>
             Disconnect the app in Claude or ChatGPT at any time from that app&apos;s connector or

@@ -11,3 +11,4 @@ asyncpg
 PyJWT[crypto]
 httpx
 posthog==7.75.11  # posthog.mcp (MCP Analytics) is in beta: pinned per PostHog docs
+langfuse==5.0.4  # conversation tracing (app/agent/tracing.py); off unless LANGFUSE_TRACING
