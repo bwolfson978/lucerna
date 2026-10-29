@@ -70,36 +70,42 @@
     {
       "id": "explain-why-not-more",
       "category": "explanation",
+      "judge": ["answers_the_question", "explains_tradeoff"],
       "turns": ["I was born in June 1974, my spouse in March 1974, married, $90,000 income, $600,000 traditional 401(k), retiring at 60.", "Run the numbers.", "Why not convert more?"],
       "expect": {"reply_mentions_any": ["bracket", "rate"]}
     },
     {
       "id": "explain-which-years",
       "category": "explanation",
+      "judge": ["answers_the_question", "explains_tradeoff"],
       "turns": ["I was born in June 1963, my spouse in March 1963, married, living on $20,000 a year, $1.4 million in a traditional 401(k), drawing from it at 73.", "Run it.", "Why are the conversions concentrated in the early years?"],
       "expect": {"reply_mentions_any": ["income", "bracket", "RMD", "required minimum"]}
     },
     {
       "id": "walk-through-years",
       "category": "explanation",
+      "judge": ["answers_the_question"],
       "turns": ["I was born in June 1963, my spouse in March 1963, married, living on $20,000 a year, $1.4 million in a traditional 401(k), drawing from it at 73.", "Run it.", "Walk me through what happens over the years."],
       "expect": {"reply_shape": "steps"}
     },
     {
       "id": "what-if-retirement-age",
       "category": "what-if",
+      "judge": ["answers_the_question", "explains_tradeoff"],
       "turns": ["I was born in June 1974, my spouse in March 1974, married, $90,000 income, $600,000 traditional 401(k), retiring at 60.", "Run the numbers.", "What if I retire at 58 instead?"],
       "expect": {"tools_called": ["compare_roth_scenarios"], "parts_shown": ["mcp_app"]}
     },
     {
       "id": "what-if-income",
       "category": "what-if",
+      "judge": ["answers_the_question", "explains_tradeoff"],
       "turns": ["I was born in June 1981, single, $120,000 income, $400,000 IRA, retiring at 60.", "Run it.", "What if my income drops to $50,000 next year?"],
       "expect": {"tools_called": ["compare_roth_scenarios"]}
     },
     {
       "id": "what-if-spending",
       "category": "what-if",
+      "judge": ["answers_the_question", "explains_tradeoff"],
       "turns": ["I was born in June 1963, my spouse in March 1963, married, $20,000 income, $1.4 million 401(k), drawing at 73, spending $95,000 a year.", "Run the numbers.", "What if we only spend $70,000 a year?"],
       "expect": {"tools_called": ["compare_roth_scenarios"]}
     },
@@ -112,6 +118,7 @@
     {
       "id": "methodology-how-it-works",
       "category": "methodology",
+      "judge": ["answers_the_question"],
       "turns": ["How does this tool decide how much to convert?"],
       "expect": {"tools_called": ["explain_methodology"]}
     },
@@ -130,12 +137,14 @@
     {
       "id": "methodology-irmaa",
       "category": "methodology",
+      "judge": ["answers_the_question", "explains_tradeoff"],
       "turns": ["Will conversions affect my Medicare premiums?"],
       "expect": {"tools_called": ["explain_methodology"], "reply_mentions_any": ["IRMAA", "surcharge", "premium"]}
     },
     {
       "id": "methodology-aca",
       "category": "methodology",
+      "judge": ["answers_the_question", "explains_tradeoff"],
       "turns": ["How do conversions interact with ACA subsidies?"],
       "expect": {"tools_called": ["explain_methodology"]}
     },
@@ -154,12 +163,14 @@
     {
       "id": "point-in-time",
       "category": "explanation",
+      "judge": ["answers_the_question"],
       "turns": ["I was born in June 1974, my spouse in March 1974, married, $90,000 income, $600,000 traditional 401(k), retiring at 60.", "Run the numbers.", "What point in time does the savings number correspond to?"],
       "expect": {"reply_mentions_any": ["today's dollars", "today"]}
     },
     {
       "id": "should-i-do-this",
       "category": "legal",
+      "judge": ["answers_the_question", "explains_tradeoff"],
       "turns": ["I was born in June 1974, my spouse in March 1974, married, $90,000 income, $600,000 traditional 401(k), retiring at 60.", "Run the numbers.", "So should I do this?"],
       "expect": {"reply_mentions_any": ["tax professional", "professional", "advisor"]}
     },
@@ -172,6 +183,7 @@
     {
       "id": "estate-question",
       "category": "scope",
+      "judge": ["answers_the_question", "explains_tradeoff"],
       "turns": ["I was born in June 1956, my spouse in March 1956, married, $80,000 income, $2 million IRA, already drawing at 70.", "Run it.", "What about leaving money to my kids?"],
       "expect": {"reply_mentions_any": ["not modeled", "doesn't model", "does not model", "estate", "heirs"]}
     },
@@ -204,6 +216,48 @@
       "category": "intake",
       "turns": ["I was born in June 1959, single, already retired, income is $40,000 from Social Security, $800,000 IRA, I started drawing at 65."],
       "expect": {"tools_called": ["prepare_scenario"], "parts_shown": ["scenario_summary"]}
+    },
+    {
+      "id": "survivor-single-brackets",
+      "category": "explanation",
+      "judge": ["answers_the_question", "explains_tradeoff"],
+      "turns": ["Born April 1955 and October 1957, married, both retired with no earned income. I get $40,000 a year of Social Security, started at 70, and my wife gets a $30,000 pension, started at 65. $1.5 million IRA, drawing at 73.", "Run it.", "What happens to our taxes if one of us dies first?"],
+      "expect": {"tools_called": ["analyze_roth_conversions"], "reply_mentions_any": ["single", "survivor", "filing status", "not modeled", "doesn't model"]}
+    },
+    {
+      "id": "aca-subsidy-tradeoff",
+      "category": "explanation",
+      "judge": ["answers_the_question", "explains_tradeoff"],
+      "turns": ["Born February 1967, single, retired last year with no earned income, I spend about $35,000 a year and I've drawn it from my $650,000 IRA since age 58, ACA plan until Medicare.", "Go ahead and run it.", "Wouldn't converting more cost me my health insurance subsidy?"],
+      "expect": {"tools_called": ["analyze_roth_conversions"], "reply_mentions_any": ["subsid", "ACA", "premium tax credit"]}
+    },
+    {
+      "id": "wrong-premise-convert-everything",
+      "category": "legal",
+      "judge": ["answers_the_question", "explains_tradeoff"],
+      "turns": ["Roth conversions always save money, right? I'm born July 1972, single, $110,000 income, $500,000 IRA, and I want to convert all of it this year."],
+      "expect": {"tools_not_called": ["analyze_roth_conversions"]}
+    },
+    {
+      "id": "pushback-on-savings",
+      "category": "explanation",
+      "judge": ["answers_the_question"],
+      "turns": ["Born June 1974, spouse March 1974, married, $90,000 income, $600,000 traditional 401(k), retiring at 60.", "Run the numbers.", "That savings number seems way too low. My advisor said I'd save $200,000. Who's right?"],
+      "expect": {"tools_called": ["analyze_roth_conversions"]}
+    },
+    {
+      "id": "three-questions-at-once",
+      "category": "intake",
+      "judge": ["answers_the_question", "explains_tradeoff"],
+      "turns": ["Born March 1968, wife born November 1970, $150,000 income, $1.1 million 401(k), retiring at 62, and we're moving from New York to Florida when we retire. How much should we convert, in which years, and will it push us into higher Medicare premiums?", "Yes, those are right, run it."],
+      "expect": {"tools_called": ["analyze_roth_conversions"], "reply_mentions_any": ["IRMAA", "Medicare"]}
+    },
+    {
+      "id": "medicare-premium-worth-it",
+      "category": "explanation",
+      "judge": ["answers_the_question", "explains_tradeoff"],
+      "turns": ["Born January 1960 and June 1961, married, both on Medicare, $90,000 income, $2 million IRA, drawing at 73.", "Run it.", "Is it worth paying higher Medicare premiums to convert more?"],
+      "expect": {"tools_called": ["analyze_roth_conversions"], "reply_mentions_any": ["IRMAA", "premium", "surcharge"]}
     }
   ]
 }

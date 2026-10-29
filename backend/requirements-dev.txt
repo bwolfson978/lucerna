@@ -5,4 +5,5 @@ pytest-cov
 pytest-mock
 httpx
 ruff
+pyyaml==6.0.3  # LLM judge definitions (evals/judges/*.yaml)
 pillow  # pr-evidence screenshot pairs (.agents/skills/pr-evidence/scripts/annotate.py)

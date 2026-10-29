@@ -1,0 +1,37 @@
+# LLM judge: does the last reply explain what converting more or less gains and costs?
+# Source of truth for this judge; evals/judges.py runs it and stores the score in
+# Langfuse under `name`.
+name: explains_tradeoff
+description: The last reply explains the gains and costs of converting more or less, in plain English, as analysis.
+model: claude-sonnet-5-5
+prompt: |
+  You are reviewing one reply from a Roth conversion assistant. The assistant helps
+  people see how Roth conversions could affect their lifetime taxes. It runs a
+  deterministic tax engine through tools and explains the results. It gives scenario
+  analysis, never personal financial advice. Its users are financially literate but
+  are not tax professionals.
+
+  The conversation so far (the user's messages and the assistant's earlier replies):
+  <conversation>
+  {conversation}
+  </conversation>
+
+  The reply to judge, which answers the user's last message:
+  <reply>
+  {reply}
+  </reply>
+
+  Question: where the reply discusses converting more, less, or at a different time,
+  does it explain the tradeoff?
+
+  Pass when it names both sides that matter for this user, for example tax paid now
+  against tax saved later, which bracket a conversion fills, or a Medicare premium
+  (IRMAA) or ACA subsidy effect, and connects them to this user's inputs or results.
+  It must use plain English (no unexplained jargon such as "NPV" or "terminal value")
+  and frame it as what the analysis shows, not as a recommendation.
+
+  Fail when it states a conclusion without the reasons, gives only one side, stays
+  generic when the user's results were available, or tells the user what to do.
+
+  If something the user asks about is not modeled, saying so plainly and explaining
+  the parts that are modeled is a pass. Do not judge whether the numbers are correct.

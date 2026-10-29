@@ -1,0 +1,109 @@
+# Live agent evals: the LLM-judged cases in backend/evals/agent_cases.json, run against
+# the real model with the judges in backend/evals/judges/, as a Langfuse experiment
+# (environment "ci"). Runs on PRs that change the assistant; no schedule.
+#
+# The job fails on the deterministic checks (no "you should", grounded numbers, ...).
+# Judge verdicts are reported in the job summary and in Langfuse but don't fail it
+# until the judges are calibrated. --max-cost caps one run's spend.
+#
+# On merge to master, the judged cases are copied to the Langfuse "agent-evals" dataset.
+#
+# Secrets: ANTHROPIC_API_KEY_EVALS, LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY. PRs from
+# forks get no secrets, so the eval job skips there.
+name: Agent evals
+
+on:
+  pull_request:
+    branches: [master, main]
+    paths:
+      - backend/app/agent/**
+      - backend/app/tools/**
+      - backend/app/engine/trace.py
+      - backend/app/content/methodology.json
+      - backend/evals/**
+      - .github/workflows/agent-evals.yml
+  push:
+    branches: [master, main]
+    paths:
+      - backend/evals/agent_cases.json
+  workflow_dispatch:
+
+concurrency:
+  group: agent-evals-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  LANGFUSE_TRACING: "true"
+  LANGFUSE_TRACING_ENVIRONMENT: ci
+  LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+  LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+
+jobs:
+  live:
+    if: github.event_name != 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      LUCERNA_ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY_EVALS }}
+      # Names the Langfuse run: the PR and its head commit (not the merge commit).
+      RUN_LABEL: ${{ github.event.pull_request.number && format('PR {0}', github.event.pull_request.number) || github.ref_name }} ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for secrets
+        id: secrets
+        run: |
+          if [ -z "$LUCERNA_ANTHROPIC_API_KEY" ]; then
+            echo "No ANTHROPIC_API_KEY_EVALS secret (fork PR?); skipping the live evals." >> "$GITHUB_STEP_SUMMARY"
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.secrets.outputs.ok == 'true'
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+
+      - if: steps.secrets.outputs.ok == 'true'
+        run: pip install -r requirements-dev.txt && pip install -e .
+
+      - name: Run the judged cases
+        if: steps.secrets.outputs.ok == 'true'
+        run: |
+          set -o pipefail
+          python -m evals.run_agent_evals --judged --max-cost 4 --label "$RUN_LABEL" | tee "$RUNNER_TEMP/evals.txt"
+
+      - name: Summary
+        if: always() && steps.secrets.outputs.ok == 'true'
+        run: |
+          {
+            echo '### Agent evals'
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/evals.txt" 2>/dev/null || echo "No output."
+            echo '```'
+            echo
+            echo "Langfuse: dataset agent-evals, experiment agent-evals, environment ci."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  sync-dataset:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+      - run: pip install -r requirements-dev.txt && pip install -e .
+      - run: python -m evals.sync_langfuse

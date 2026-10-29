@@ -4,6 +4,7 @@ Usage (from backend/):
     python -m evals.run_agent_evals                 # live model, needs ANTHROPIC_API_KEY
     python -m evals.run_agent_evals --offline       # harness smoke test, no API calls
     python -m evals.run_agent_evals --case run-after-confirmation --repeat 3
+    python -m evals.run_agent_evals --judged --max-cost 5   # the LLM-judged set, capped
 
 Every case is a scripted conversation run through the real agent loop and tools.
 Checks on every assistant reply:
@@ -15,6 +16,12 @@ Checks on every assistant reply:
   - analyze_roth_conversions only runs after a scenario summary was shown
 Plus the case's own expectations (tools called or not, cards shown, final draft
 values, reply content and shape). Results are written to evals/results/.
+
+Cases with a "judge" list are also scored by the LLM judges in evals/judges/ (live runs
+only). With Langfuse tracing on (LANGFUSE_TRACING and keys), the run is a Langfuse
+experiment on the "agent-evals" dataset (evals/sync_langfuse.py keeps it in step with
+this file): one trace per case, with the judges' verdicts as scores on it. Judge
+verdicts are reported but don't change the exit code until the judges are calibrated.
 """
 
 from __future__ import annotations
@@ -25,17 +32,23 @@ import json
 import re
 import sys
 import time
+import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from app.agent import tracing
 from app.agent.limits import estimate_cost
 from app.agent.loop import run_turn
 from app.agent.model import ModelClient
+from app.agent.observability import TurnTrace
+from app.config import settings
 from app.tools.draft import ScenarioDraft
+from evals.judges import JudgeClient, load_judges
 
 HERE = Path(__file__).resolve().parent
 CASES_FILE = HERE / "agent_cases.json"
 RESULTS_DIR = HERE / "results"
+DATASET = "agent-evals"
 
 _MONEY = re.compile(r"\$\s?(\d[\d,]*(?:\.\d+)?)\s*(k|m|million|thousand|billion)?\b", re.I)
 _NUMBER = re.compile(r"\d[\d,]*(?:\.\d+)?")
@@ -124,6 +137,8 @@ class CaseResult:
     cost_usd: float
     seconds: float
     transcript: list[dict]
+    judges: list[dict] = field(default_factory=list)
+    skipped: bool = False
 
 
 async def run_case(case: dict, client: ModelClient) -> CaseResult:
@@ -137,14 +152,22 @@ async def run_case(case: dict, client: ModelClient) -> CaseResult:
         nonlocal cost
         cost += estimate_cost(model, usage)
 
+    session_id = f"eval-{case['id']}-{time.strftime('%Y%m%d-%H%M%S')}"
     for user_text in case["turns"]:
         record = TurnRecord(user=user_text)
+        # Without Langfuse tracing the trace only feeds PostHog, which evals leave alone.
+        trace = (
+            TurnTrace(distinct_id="agent-evals", session_id=session_id)
+            if tracing.client()
+            else None
+        )
         async for event in run_turn(
             client=client,
             history=history,
             text=user_text,
             draft=draft,
             on_usage=on_usage,
+            trace=trace,
         ):
             kind = event["type"]
             if kind == "text_delta":
@@ -255,37 +278,178 @@ def make_client(offline: bool) -> ModelClient:
     return AnthropicModelClient()
 
 
-async def main(argv: list[str] | None = None) -> int:
+class Budget:
+    """Stops starting new cases once the run has spent ``limit`` dollars (None: no cap)."""
+
+    def __init__(self, limit: float | None) -> None:
+        self.limit = limit
+        self.spent = 0.0
+
+    def exhausted(self) -> bool:
+        return self.limit is not None and self.spent >= self.limit
+
+
+class Evaluator:
+    """Runs one case, then the judges listed on it, within the run's budget."""
+
+    def __init__(self, *, offline: bool, budget: Budget) -> None:
+        self.offline = offline
+        self.budget = budget
+        self.judges = load_judges()
+        self._client: ModelClient | None = None
+        self._judge_client: JudgeClient | None = None
+
+    async def __call__(self, case: dict) -> CaseResult:
+        # Clients are made on first use, inside the event loop that runs the cases.
+        if self._client is None:
+            self._client = make_client(self.offline)
+        if self.budget.exhausted():
+            return CaseResult(case["id"], case["category"], False, [], 0.0, 0.0, [], skipped=True)
+        try:
+            result = await run_case(case, self._client)
+        except Exception as error:  # noqa: BLE001
+            return CaseResult(
+                case["id"], case["category"], False, [f"crashed: {error}"], 0.0, 0.0, []
+            )
+        self.budget.spent += result.cost_usd
+        names = case.get("judge", [])
+        if names and not self.offline:
+            if self._judge_client is None:
+                self._judge_client = JudgeClient()
+            try:
+                verdicts = await asyncio.gather(
+                    *(self._judge_client.judge(self.judges[n], result.transcript) for n in names)
+                )
+            except Exception as error:  # noqa: BLE001
+                result.failures.append(f"judge crashed: {error}")
+                result.passed = False
+                return result
+            result.judges = [v.__dict__ for v in verdicts]
+            judge_cost = sum(v.cost_usd for v in verdicts)
+            result.cost_usd = round(result.cost_usd + judge_cost, 5)
+            self.budget.spent += judge_cost
+        return result
+
+
+def run_local(
+    cases: list[dict], evaluate: Evaluator, repeat: int, concurrency: int, label: str = ""
+) -> list:
+    async def go() -> list[CaseResult]:
+        semaphore = asyncio.Semaphore(concurrency)
+
+        async def guarded(case: dict) -> CaseResult:
+            async with semaphore:
+                return await evaluate(case)
+
+        return await asyncio.gather(*(guarded(c) for c in cases for _ in range(repeat)))
+
+    return asyncio.run(go())
+
+
+def run_in_langfuse(
+    cases: list[dict], evaluate: Evaluator, repeat: int, concurrency: int, label: str = ""
+) -> list:
+    """Runs the cases as a Langfuse experiment: dataset items where they exist (so runs
+    line up in the dataset's comparison view), and the judges' verdicts as scores."""
+    from langfuse import Evaluation
+
+    langfuse = tracing.client()
+    by_id = {c["id"]: c for c in cases}
+    try:
+        items = [
+            i
+            for i in langfuse.get_dataset(DATASET).items
+            if (i.metadata or {}).get("case_id") in by_id
+        ]
+    except Exception:  # noqa: BLE001
+        items = []
+    synced = {i.metadata["case_id"] for i in items}
+    missing = [c for c in cases if c["id"] not in synced]
+    if missing:
+        print(f"Not in the {DATASET} dataset yet, run as local items: {[c['id'] for c in missing]}")
+    data = items + [{"input": c["turns"], "metadata": {"case_id": c["id"]}} for c in missing]
+
+    results: dict[str, CaseResult] = {}
+
+    async def task(*, item, **_):
+        metadata = item["metadata"] if isinstance(item, dict) else item.metadata
+        result = await evaluate(by_id[metadata["case_id"]])
+        run_key = uuid.uuid4().hex
+        results[run_key] = result
+        reply = result.transcript[-1]["assistant"] if result.transcript else None
+        return {"case_id": result.id, "reply": reply, "run_key": run_key}
+
+    def judge_scores(*, output, **_):
+        result = results[output["run_key"]]
+        return [
+            Evaluation(name=v["judge"], value=v["passed"], comment=v["reason"], data_type="BOOLEAN")
+            for v in result.judges
+        ]
+
+    environment = settings().langfuse_tracing_environment
+    for n in range(repeat):
+        langfuse.run_experiment(
+            name="agent-evals",
+            run_name=f"{environment} {label or time.strftime('%Y-%m-%d %H:%M:%S')}"
+            + (f" #{n + 1}" if repeat > 1 else ""),
+            data=data,
+            task=task,
+            evaluators=[judge_scores],
+            max_concurrency=concurrency,
+            metadata={"environment": environment, "label": label or "local"},
+        )
+    tracing.shutdown()
+    return list(results.values())
+
+
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--offline", action="store_true", help="use the offline stand-in model")
     parser.add_argument("--case", action="append", help="run only these case ids")
+    parser.add_argument("--judged", action="store_true", help="run only the LLM-judged cases")
     parser.add_argument("--repeat", type=int, default=1, help="runs per case")
     parser.add_argument("--concurrency", type=int, default=4)
+    parser.add_argument(
+        "--max-cost", type=float, help="stop starting new cases after this many dollars"
+    )
+    parser.add_argument("--label", default="", help="names the Langfuse run, e.g. a PR and commit")
     args = parser.parse_args(argv)
 
     cases = json.loads(CASES_FILE.read_text())["cases"]
     if args.case:
         cases = [c for c in cases if c["id"] in set(args.case)]
-    client = make_client(args.offline)
-    semaphore = asyncio.Semaphore(args.concurrency)
+    if args.judged:
+        cases = [c for c in cases if c.get("judge")]
+    evaluate = Evaluator(offline=args.offline, budget=Budget(args.max_cost))
+    in_langfuse = not args.offline and tracing.client() is not None
+    run = run_in_langfuse if in_langfuse else run_local
+    results = run(cases, evaluate, args.repeat, args.concurrency, args.label)
 
-    async def guarded(case: dict) -> CaseResult:
-        async with semaphore:
-            return await run_case(case, client)
-
-    results = await asyncio.gather(*(guarded(c) for c in cases for _ in range(args.repeat)))
-
-    passed = sum(r.passed for r in results)
-    total_cost = sum(r.cost_usd for r in results)
+    ran = [r for r in results if not r.skipped]
+    passed = sum(r.passed for r in ran)
+    total_cost = sum(r.cost_usd for r in ran)
     for r in results:
+        if r.skipped:
+            print(f"SKIP  {r.id:<34} over the --max-cost budget")
+            continue
         mark = "PASS" if r.passed else "FAIL"
         print(f"{mark}  {r.id:<34} ${r.cost_usd:.4f}  {r.seconds:>5}s")
         for failure in r.failures:
             print(f"        - {failure}")
+        for v in r.judges:
+            print(
+                f"        {'judge ok ' if v['passed'] else 'judge NO '} {v['judge']}: {v['reason']}"
+            )
+    verdicts = [v for r in ran for v in r.judges]
     print(
-        f"\n{passed}/{len(results)} passed. Total cost ${total_cost:.4f}, "
-        f"${total_cost / max(1, len(results)):.4f} per conversation."
+        f"\n{passed}/{len(ran)} passed. Total cost ${total_cost:.4f}, "
+        f"${total_cost / max(1, len(ran)):.4f} per conversation."
     )
+    if verdicts:
+        print(f"Judges: {sum(v['passed'] for v in verdicts)}/{len(verdicts)} verdicts passed.")
+    skipped = len(results) - len(ran)
+    if skipped:
+        print(f"{skipped} skipped: the run reached --max-cost ${args.max_cost:.2f}.")
 
     RESULTS_DIR.mkdir(exist_ok=True)
     stamp = time.strftime("%Y%m%d-%H%M%S")
@@ -296,4 +460,4 @@ async def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(asyncio.run(main()))
+    sys.exit(main())
