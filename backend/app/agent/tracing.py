@@ -62,6 +62,7 @@ def client() -> Any:
         return _client
     try:
         from langfuse import Langfuse
+        from langfuse.span_filter import is_langfuse_span
 
         config = settings()
         _client = Langfuse(
@@ -71,6 +72,9 @@ def client() -> Any:
             environment=config.langfuse_tracing_environment,
             release=config.railway_git_commit_sha or None,
             mask=mask,
+            # Only our own observations. The Anthropic SDK emits OpenTelemetry spans of its
+            # own; exported too, they would bypass the mask and count each call's cost twice.
+            should_export_span=is_langfuse_span,
         )
     except Exception:  # noqa: BLE001
         logger.warning("Could not start Langfuse tracing", exc_info=True)

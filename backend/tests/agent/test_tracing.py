@@ -87,6 +87,21 @@ def test_mask_removes_contact_details_but_keeps_figures():
     }
 
 
+def test_client_exports_only_langfuse_spans(monkeypatch):
+    from langfuse.span_filter import is_langfuse_span
+
+    created = {}
+    monkeypatch.setattr(tracing, "_client", None)
+    monkeypatch.setenv("LANGFUSE_TRACING", "true")
+    monkeypatch.setenv("LANGFUSE_PUBLIC_KEY", "pk-lf-test")
+    monkeypatch.setenv("LANGFUSE_SECRET_KEY", "sk-lf-test")
+    monkeypatch.setattr("langfuse.Langfuse", lambda **kwargs: created.update(kwargs) or object())
+    assert tracing.client() is not None
+    assert created["mask"] is tracing.mask
+    assert created["should_export_span"] is is_langfuse_span
+    tracing._client = None
+
+
 async def test_turn_without_tracing_records_nothing(monkeypatch):
     monkeypatch.setattr(tracing, "_client", None)
     trace = TurnTrace()
