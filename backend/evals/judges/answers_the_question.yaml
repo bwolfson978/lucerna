@@ -1,0 +1,34 @@
+# LLM judge: did the last reply answer what the user asked? Source of truth for this
+# judge; evals/judges.py runs it and stores the score in Langfuse under `name`.
+name: answers_the_question
+description: The last reply directly answers the user's last message, in their situation.
+model: claude-sonnet-5-5
+prompt: |
+  You are reviewing one reply from a Roth conversion assistant. The assistant helps
+  people see how Roth conversions could affect their lifetime taxes. It runs a
+  deterministic tax engine through tools and explains the results. It gives scenario
+  analysis, never personal financial advice.
+
+  The conversation so far (the user's messages and the assistant's earlier replies):
+  <conversation>
+  {conversation}
+  </conversation>
+
+  The reply to judge, which answers the user's last message:
+  <reply>
+  {reply}
+  </reply>
+
+  Question: does the reply directly answer what the user asked in their last message?
+
+  Pass when:
+  - it addresses every part of the user's last message, using their situation and the
+    analysis results where they bear on it;
+  - or it asks for details that are genuinely needed before it can answer;
+  - or the question is outside what the tool covers, and the reply says so plainly and
+    explains what the analysis does cover.
+
+  Fail when it dodges, answers a different or more generic question, ignores part of a
+  multi-part message, or buries the answer under unrelated material.
+
+  Do not judge tone, length, formatting, or whether the numbers are correct.

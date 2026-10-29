@@ -75,6 +75,13 @@ class Settings(BaseSettings):
     posthog_project_id: str = ""
     posthog_api_host: str = "https://us.posthog.com"
 
+    # --- Conversation tracing (Langfuse) ----------------------------------------
+    langfuse_tracing: bool = False  # off: no conversation leaves the server
+    langfuse_public_key: str = ""
+    langfuse_secret_key: str = ""
+    langfuse_base_url: str = "https://us.cloud.langfuse.com"
+    langfuse_tracing_environment: str = "dev"  # production, ci or dev
+
     @property
     def site_origin(self) -> str:
         return self.site_url.rstrip("/")

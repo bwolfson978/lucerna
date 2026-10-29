@@ -249,6 +249,9 @@ export const flows = {
       for (const [id, caption] of [
         ['what-we-collect', 'Privacy: what we collect'],
         ['claude-and-chatgpt', 'Privacy: in Claude and ChatGPT'],
+        ['who-processes-it', 'Privacy: who processes it'],
+        ['retention', 'Privacy: how long we keep it'],
+        ['your-choices', 'Privacy: your choices'],
       ]) {
         const section = page.locator(`#${id}`)
         await section.scrollIntoViewIfNeeded()

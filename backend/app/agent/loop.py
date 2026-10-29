@@ -26,7 +26,7 @@ import logging
 import re
 import time
 from collections.abc import AsyncIterator, Callable
-from contextlib import AbstractAsyncContextManager
+from contextlib import AbstractAsyncContextManager, nullcontext
 
 from app import error_tracking
 from app.agent.model import MODEL, Final, ModelClient, ModelUnavailable, TextDelta, ToolStart
@@ -138,6 +138,8 @@ async def run_turn(
     queue: asyncio.Queue[dict | None] = asyncio.Queue()
 
     async def worker() -> None:
+        if trace is not None:
+            trace.start(text)
         try:
             async with toolbox_factory() as toolbox:
                 async for event in _run_turn(
@@ -150,13 +152,19 @@ async def run_turn(
                     on_usage=on_usage,
                     trace=trace,
                 ):
+                    if trace is not None and event["type"] == "error":
+                        trace.error(event["code"])
                     await queue.put(event)
         except Exception as exc:
             logger.exception("Agent turn failed")
             error_tracking.capture_exception(exc, source="agent_turn")
+            if trace is not None:
+                trace.error("unavailable")
             await queue.put(_error("unavailable"))
             await queue.put({"type": "done", "messages": []})
         finally:
+            if trace is not None:
+                trace.end()
             await queue.put(None)
 
     task = asyncio.create_task(worker())
@@ -189,10 +197,9 @@ async def _run_turn(
         turn = None
         start = time.monotonic()
         first_token: float | None = None
+        messages = [*history, *new_messages]
         try:
-            async for event in client.stream(
-                system=SYSTEM_PROMPT, tools=tools, messages=[*history, *new_messages]
-            ):
+            async for event in client.stream(system=SYSTEM_PROMPT, tools=tools, messages=messages):
                 if first_token is None and isinstance(event, TextDelta | ToolStart):
                     first_token = time.monotonic() - start
                 if isinstance(event, TextDelta):
@@ -229,6 +236,7 @@ async def _run_turn(
                 latency=time.monotonic() - start,
                 time_to_first_token=first_token,
                 stop_reason=turn.stop_reason,
+                output=turn.content,
             )
 
         if turn.stop_reason == "refusal":
@@ -270,7 +278,15 @@ async def _run_turn(
                 content, is_error = {"error": "Tool call limit reached for this message."}, True
             else:
                 before = len(ctx.events)
-                content, is_error = await toolbox.call(block["name"], block.get("input"), ctx)
+                span = (
+                    trace.tool(block["name"], block.get("input"))
+                    if trace is not None
+                    else nullcontext(None)
+                )
+                with span as record:
+                    content, is_error = await toolbox.call(block["name"], block.get("input"), ctx)
+                    if record is not None:
+                        record(content, is_error)
                 for event in ctx.events[before:]:
                     yield event
             results.append(
