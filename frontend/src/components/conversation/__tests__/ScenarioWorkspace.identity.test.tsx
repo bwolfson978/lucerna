@@ -124,6 +124,22 @@ it("overwrites the saved scenario when the same one is run again", async () => {
   expect(calls[0].body.draft?.birth_year).toBe(new Date().getFullYear() - 52);
 });
 
+it("keeps overwriting the same saved scenario after a message is edited", async () => {
+  const calls = setUp();
+  renderWorkspace();
+  await run(calls, 1);
+  fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+  const box = screen.getByRole("textbox", { name: "Edit your message" });
+  fireEvent.change(box, { target: { value: "Run it with retirement at 62" } });
+  fireEvent.click(within(box.closest("form")!).getByRole("button", { name: "Send" }));
+  await screen.findByText("Run it with retirement at 62");
+  await run(calls, 2);
+  expect(calls.map((c) => `${c.method} ${c.path}`)).toEqual([
+    "POST /api/scenarios",
+    "PUT /api/scenarios/new-1",
+  ]);
+});
+
 it("saves a new copy when the saved one was deleted elsewhere", async () => {
   const calls = setUp({ updateStatus: 404 });
   sessionStorage.setItem("lucerna:saved-scenario:v1", JSON.stringify("gone"));

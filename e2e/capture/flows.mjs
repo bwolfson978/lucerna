@@ -795,4 +795,42 @@ export const flows = {
       await shot('social-security', 'How it works: Social Security and 65+ deductions', { element: benefits })
     },
   },
+
+  'message-actions': {
+    title: "Copy and edit on the person's own messages",
+    paths: [
+      'frontend/src/components/conversation/ConversationThread',
+      'frontend/src/components/conversation/UserMessage',
+      'frontend/src/hooks/useConversation',
+      'frontend/src/lib/agent/conversation',
+    ],
+    async run(page, shot) {
+      await page.goto('/calculator')
+      await waitForSample(page)
+      await page.getByLabel('Message').fill(MESSAGE)
+      await page.getByRole('button', { name: 'Send' }).click()
+      await page.getByText(/Ready to run/).filter({ visible: true }).first().waitFor({ timeout: 30000 })
+      await page.getByRole('status').waitFor({ state: 'detached', timeout: 30000 }).catch(() => {})
+      const bubble = page.getByText(MESSAGE, { exact: true })
+      await bubble.scrollIntoViewIfNeeded()
+      await bubble.hover()
+      await page.waitForTimeout(400)
+      await shot('actions', 'Your message, pointer over it: Copy and Edit below')
+
+      // Builds from before this change have no Edit; their side of the pairs is empty.
+      const edit = page.getByRole('button', { name: 'Edit' })
+      if (!(await edit.count())) return
+      await edit.click()
+      const box = page.getByRole('textbox', { name: 'Edit your message' })
+      await box.fill(MESSAGE.replace('retire at 60', 'retire at 62'))
+      await page.waitForTimeout(300)
+      await shot('editing', 'Editing the message in place')
+      await box.locator('xpath=ancestor::form').getByRole('button', { name: 'Send' }).click()
+      await page.getByText(/retire at 62$/).waitFor()
+      await page.getByRole('status').waitFor({ state: 'detached', timeout: 30000 }).catch(() => {})
+      await page.getByText(/Ready to run/).filter({ visible: true }).first().waitFor({ timeout: 30000 })
+      await page.waitForTimeout(800)
+      await shot('edited', 'After Send: the conversation reruns from the edited message')
+    },
+  },
 }

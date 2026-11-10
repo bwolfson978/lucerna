@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import type { UiMessage, UiPart } from "@/lib/agent/types";
 import { cn } from "@/lib/utils";
 import type { ConversationState } from "@/lib/agent/conversation";
@@ -9,6 +9,7 @@ import { usePrefersReducedMotion } from "@/hooks/useInView";
 import { McpAppFrame } from "./parts/McpAppFrame";
 import { PartBoundary } from "./parts/PartBoundary";
 import { ResultHeadlineCard, ScenarioCompareCard, SuggestionChips } from "./parts/ResultCards";
+import { UserMessage } from "./UserMessage";
 
 /** Screen height the header, composer and margins take: what the latest turn needn't fill. */
 const TURN_ROOM = 192;
@@ -18,6 +19,7 @@ export function ConversationThread({
   intro,
   followKey = 0,
   followOnRestore = false,
+  onEdit,
 }: {
   state: ConversationState;
   /** Shown above the messages (the assistant's opening line). */
@@ -30,28 +32,38 @@ export function ConversationThread({
   followKey?: number;
   /** Bring the last message into view when a saved conversation is restored. */
   followOnRestore?: boolean;
+  /**
+   * Replace one of the person's messages and rerun the conversation from it. Messages
+   * that can't be rerun (a replayed example) offer Copy only. Omit to offer Copy only.
+   */
+  onEdit?: (messageId: string, text: string) => void;
 }) {
   const { messages, streaming, status } = state;
   const lastUserRef = useRef<HTMLDivElement | null>(null);
   const userCount = messages.filter((m) => m.role === "user").length;
+  const lastUserIndex = messages.map((m) => m.role).lastIndexOf("user");
+  // An edit replaces the latest question without adding one, so a new id marks a send.
+  const lastUserId = lastUserIndex >= 0 ? messages[lastUserIndex].id : null;
   const prevCount = useRef(userCount);
+  const prevLastId = useRef(lastUserId);
   const prevFollow = useRef(followKey);
   const reducedMotion = usePrefersReducedMotion();
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    const added = userCount > prevCount.current;
+    const added = lastUserId !== null && lastUserId !== prevLastId.current;
     const sent = added && followKey !== prevFollow.current;
     const restored = added && !sent && prevCount.current === 0 && followOnRestore;
     prevCount.current = userCount;
+    prevLastId.current = lastUserId;
     prevFollow.current = followKey;
     if (!(sent || restored) || !lastUserRef.current) return;
     lastUserRef.current.scrollIntoView({
       behavior: sent && !reducedMotion ? "smooth" : "auto",
       block: "start",
     });
-  }, [userCount, followKey, followOnRestore, reducedMotion]);
+  }, [userCount, lastUserId, followKey, followOnRestore, reducedMotion]);
 
-  const lastUserIndex = messages.map((m) => m.role).lastIndexOf("user");
   // The turn just sent fills the screen, so its question can sit at the top while the
   // reply arrives below it instead of behind the message box. A spacer after the last
   // message makes up the difference; messages stay in one flat list so none of them
@@ -88,7 +100,7 @@ export function ConversationThread({
       observer.disconnect();
       window.removeEventListener("resize", measure);
     };
-  }, [spaceLastTurn, lastUserIndex]);
+  }, [spaceLastTurn, lastUserId]);
 
   // Scroll anchoring keeps the newest question still while the reply grows below it and
   // cards above it change. Everything else is opted out, so the browser can't anchor to
@@ -99,16 +111,18 @@ export function ConversationThread({
     if (message.role === "user") {
       const text = message.parts[0]?.kind === "text" ? message.parts[0].text : "";
       const isLastUser = index === lastUserIndex;
+      const editable = onEdit && message.apiIndex !== undefined;
       return (
-        <div
+        <UserMessage
           key={message.id}
           ref={isLastUser ? lastUserRef : undefined}
-          className={cn("flex scroll-mt-24 justify-end", !isLastUser && noAnchor)}
-        >
-          <div className="max-w-[85%] whitespace-pre-wrap rounded-[20px] rounded-br-md bg-pine-deep px-4 py-2.5 text-[15.5px] leading-relaxed text-[#f5f2ea]">
-            {text}
-          </div>
-        </div>
+          text={text}
+          busy={streaming}
+          onEdit={editable ? (next) => onEdit(message.id, next) : undefined}
+          editing={editingId === message.id}
+          onEditingChange={(open) => setEditingId(open ? message.id : null)}
+          className={cn(!isLastUser && noAnchor)}
+        />
       );
     }
     const isLast = index === messages.length - 1;
