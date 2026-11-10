@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { BracketFillChart, isBracketFillData, type BracketFillData } from "./BracketFillChart";
 import { ConversionSlider } from "./ConversionSlider";
 import { ConversionStrip, type ConversionYear } from "./ConversionStrip";
+import { MostSavingsNote } from "./MostSavingsNote";
 import { federalTax, isConversionCurveData, sampleCurve, type ConversionCurveData } from "./curve";
 import { formatCompactCurrency, formatCurrency, formatSavings } from "./format";
 import { Stat } from "./Stat";
@@ -156,18 +157,24 @@ export function ResultCard({
         <span className="metric-value-hero text-pine" data-ui="hero">
           {formatSavings(savings)}
         </span>
-        {atOptimal ? (
+        {curve ? (
+          <MostSavingsNote
+            atOptimal={atOptimal}
+            shortfall={shortfall}
+            onBack={() => move(optimal)}
+            caption="in today's dollars, compared with not converting"
+          />
+        ) : (
           <span className="text-caption text-text-tertiary">
             In today&apos;s dollars, compared with not converting
-          </span>
-        ) : (
-          <span className="text-caption text-negative" data-ui="shortfall">
-            {formatCurrency(shortfall)} less than the most savings
           </span>
         )}
       </div>
       <div className="grid grid-cols-3 gap-3">
-        <Stat label="Converted" value={formatCompactCurrency(atOptimal ? optimal : total)} />
+        <Stat
+          label="Converted"
+          value={curve ? formatCurrency(total) : formatCompactCurrency(optimal)}
+        />
         <Stat label="Tax cost" value={formatCompactCurrency(taxCost)} />
         <Stat label="Years" value={String(years)} />
       </div>
@@ -177,6 +184,7 @@ export function ResultCard({
           max={max}
           optimalValue={optimal}
           onChange={move}
+          savings={curve.points}
           maxLabel={`${formatCompactCurrency(max)}, your whole balance`}
         />
       )}
