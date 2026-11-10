@@ -367,6 +367,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
     state,
     send: sendMessage,
     edit: editMessage,
+    rate,
     replay,
     reset,
     loadResult,
@@ -895,6 +896,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
           followKey={followKey}
           followOnRestore={!isDemo}
           onEdit={(messageId, text) => void edit(messageId, text)}
+          onRate={rate}
           intro={
             isDemo ? (
               <DemoIntro error={demoError} onRetry={() => void startDemo(false)} />

@@ -249,3 +249,32 @@ describe("ConversationThread", () => {
     });
   });
 });
+
+describe("rating replies", () => {
+  const rated = (extra: Partial<UiMessage> = {}): ConversationState =>
+    stateWith([user("u1", "Hi"), { ...assistant("a1", "Hello"), ...extra }]);
+
+  function renderRateable(state: ConversationState, onRate = vi.fn()) {
+    render(
+      <ConversationContext.Provider value={context}>
+        <ConversationThread state={state} onRate={onRate} />
+      </ConversationContext.Provider>
+    );
+    return onRate;
+  }
+
+  it("shows thumbs under a finished reply that has a trace id", async () => {
+    const onRate = renderRateable(rated({ traceId: "t1" }));
+    await userEvent.click(screen.getByRole("button", { name: "Good reply" }));
+    expect(onRate).toHaveBeenCalledWith("a1", { value: "up" });
+  });
+
+  it("shows none without a trace id, while streaming, or on a reply with no text", () => {
+    renderRateable(rated());
+    renderRateable({ ...rated({ traceId: "t1" }), streaming: true });
+    renderRateable(
+      stateWith([user("u1", "Hi"), { id: "a1", role: "assistant", traceId: "t1", parts: [] }])
+    );
+    expect(screen.queryByRole("button", { name: "Good reply" })).not.toBeInTheDocument();
+  });
+});

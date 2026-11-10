@@ -1,6 +1,6 @@
 import posthog from "posthog-js";
 import type { ScenarioDraft } from "@/lib/scenario/draft";
-import type { AgentEvent, DemoConversation } from "./types";
+import type { AgentEvent, DemoConversation, ReplyRating } from "./types";
 import { API_URL } from "@/lib/utils/constants";
 
 export interface AgentRequest {
@@ -97,6 +97,34 @@ export async function streamAgent(
         "We couldn't reach the assistant. Your scenario is saved, so you can keep adjusting it and run the numbers yourself.",
     });
     onEvent({ type: "done", messages: [] });
+  }
+}
+
+/**
+ * Store the person's rating of one reply (null clears it). Resolves true when the
+ * server answered; a newer request for the same reply may already have replaced it.
+ */
+export async function sendReplyRating(
+  traceId: string,
+  seq: number,
+  rating: ReplyRating | null
+): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_URL}/api/agent/feedback`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...posthogHeaders() },
+      body: JSON.stringify({
+        trace_id: traceId,
+        seq,
+        rating: rating?.value ?? null,
+        reason: rating?.reason ?? null,
+        note: rating?.note || null,
+      }),
+      keepalive: true,
+    });
+    return res.ok;
+  } catch {
+    return false;
   }
 }
 

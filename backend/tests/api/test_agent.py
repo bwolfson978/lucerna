@@ -43,6 +43,8 @@ async def test_streams_events_from_the_loop(async_client):
     assert [e["type"] for e in events] == ["tool_start", "draft", "text_delta", "done"]
     assert events[1]["draft"]["age"] == 40
     assert len(events[-1]["messages"]) == 4
+    # The reply's trace id, which the page sends back with a rating.
+    assert len(events[-1]["trace_id"]) == 32 and int(events[-1]["trace_id"], 16) >= 0
     assert limiter.spend_today > 0
     assert limiter.reserved_today == 0
 

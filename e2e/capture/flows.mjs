@@ -288,6 +288,47 @@ export const flows = {
     },
   },
 
+  'reply-feedback': {
+    title: 'Thumbs under assistant replies',
+    paths: [
+      'frontend/src/components/conversation/ReplyFeedback',
+      'frontend/src/components/conversation/ConversationThread',
+      'frontend/src/lib/agent/replyRating',
+      'backend/app/agent/feedback',
+    ],
+    async run(page, shot) {
+      await page.goto('/calculator')
+      await waitForSample(page)
+      await page.getByLabel('Message').fill(MESSAGE)
+      await page.getByRole('button', { name: 'Send' }).click()
+      const reply = page.getByTestId('assistant-message').first()
+      // Thumbs appear when the reply is finished (bases without them stop after this shot).
+      await page.getByText(/Ready to run/).filter({ visible: true }).first().waitFor({ timeout: 30000 })
+      await shot('reply', 'A finished reply', { element: reply })
+      await reply.getByRole('button', { name: 'Bad reply' }).click()
+      const form = page.getByRole('dialog', { name: 'What went wrong?' })
+      await form.waitFor()
+      // The dropdown on larger screens, the list on phones.
+      const list = form.locator('label', { hasText: 'Hard to follow' })
+      if (await list.isVisible()) await list.click()
+      else {
+        await form.getByRole('combobox').click()
+        await page.getByRole('option', { name: 'Hard to follow' }).click()
+      }
+      await form.getByLabel('Details').fill('It used terms I had to look up.')
+      await page.waitForTimeout(400)
+      await shot('form', 'Thumbs down: the short form')
+      await form.getByRole('button', { name: /^Send/ }).click()
+      await form.waitFor({ state: 'hidden' })
+      await shot('rated', 'After sending', { element: reply })
+      await reply.getByRole('button', { name: 'Bad reply' }).click()
+      await reply.getByRole('button', { name: 'Good reply' }).click()
+      await page.getByRole('dialog', { name: 'What worked well?' }).waitFor()
+      await page.waitForTimeout(400)
+      await shot('up-form', 'Thumbs up: one optional question')
+    },
+  },
+
   'signed-out-links': {
     title: 'Saved-scenario links while signed out',
     paths: ['frontend/src/app/my-scenarios/', 'frontend/src/components/common/SignInRequired'],

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import type { UiMessage, UiPart } from "@/lib/agent/types";
+import type { ReplyRating, UiMessage, UiPart } from "@/lib/agent/types";
 import { cn } from "@/lib/utils";
 import type { ConversationState } from "@/lib/agent/conversation";
 import { Markdown } from "./Markdown";
@@ -9,6 +9,7 @@ import { usePrefersReducedMotion } from "@/hooks/useInView";
 import { McpAppFrame } from "./parts/McpAppFrame";
 import { PartBoundary } from "./parts/PartBoundary";
 import { ResultHeadlineCard, ScenarioCompareCard, SuggestionChips } from "./parts/ResultCards";
+import { ReplyFeedback } from "./ReplyFeedback";
 import { UserMessage } from "./UserMessage";
 
 /** Screen height the header, composer and margins take: what the latest turn needn't fill. */
@@ -20,6 +21,7 @@ export function ConversationThread({
   followKey = 0,
   followOnRestore = false,
   onEdit,
+  onRate,
 }: {
   state: ConversationState;
   /** Shown above the messages (the assistant's opening line). */
@@ -37,6 +39,8 @@ export function ConversationThread({
    * that can't be rerun (a replayed example) offer Copy only. Omit to offer Copy only.
    */
   onEdit?: (messageId: string, text: string) => void;
+  /** Save the person's rating of a reply (null clears it). Omit to show no thumbs. */
+  onRate?: (messageId: string, rating: ReplyRating | null) => void;
 }) {
   const { messages, streaming, status } = state;
   const lastUserRef = useRef<HTMLDivElement | null>(null);
@@ -133,6 +137,7 @@ export function ConversationThread({
         isLast={isLast}
         streaming={streaming && isLast}
         status={isLast ? status : null}
+        onRate={onRate ? (rating) => onRate(message.id, rating) : undefined}
         className={noAnchor}
       />
     );
@@ -160,22 +165,33 @@ function AssistantMessage({
   isLast,
   streaming,
   status,
+  onRate,
   className,
 }: {
   message: UiMessage;
   isLast: boolean;
   streaming: boolean;
   status: string | null;
+  onRate?: (rating: ReplyRating | null) => void;
   className?: string;
 }) {
   const showThinking = streaming && (message.parts.length === 0 || status);
+  const parts = suggestionsLast(message.parts);
+  // A finished reply the server gave an id to, with something written to rate.
+  const rateable =
+    !!onRate && !streaming && !!message.traceId && message.parts.some((p) => p.kind === "text");
+  const renderPart = ({ part, i }: { part: UiPart; i: number }) => (
+    <PartBoundary key={i} kind={part.kind}>
+      <PartView part={part} interactive={isLast && !streaming} />
+    </PartBoundary>
+  );
   return (
     <div className={cn("flex flex-col gap-default", className)} data-testid="assistant-message">
-      {suggestionsLast(message.parts).map(({ part, i }) => (
-        <PartBoundary key={i} kind={part.kind}>
-          <PartView part={part} interactive={isLast && !streaming} />
-        </PartBoundary>
-      ))}
+      {parts.filter(({ part }) => part.kind !== "suggestions").map(renderPart)}
+      {rateable && onRate && (
+        <ReplyFeedback rating={message.rating} onRate={onRate} className="-mt-2.5" />
+      )}
+      {parts.filter(({ part }) => part.kind === "suggestions").map(renderPart)}
       {showThinking && (
         <div className="flex items-center gap-2 text-body-sm text-text-tertiary" role="status">
           <span className="blink-dot inline-block h-2 w-2 rounded-full bg-sage" />

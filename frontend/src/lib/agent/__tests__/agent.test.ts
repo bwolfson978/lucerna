@@ -37,6 +37,47 @@ describe("parseSseChunk", () => {
   });
 });
 
+describe("rating a reply", () => {
+  const answered = (): ConversationState => {
+    let state = conversationReducer(INITIAL_CONVERSATION, { type: "user", id: "m1", text: "Hi" });
+    state = conversationReducer(state, {
+      type: "event",
+      event: { type: "text_delta", text: "Hello" },
+    });
+    return conversationReducer(state, {
+      type: "event",
+      event: { type: "done", messages: [{}, {}], trace_id: "a".repeat(32) },
+    });
+  };
+
+  it("keeps the reply's trace id from the done event", () => {
+    expect(answered().messages[1].traceId).toBe("a".repeat(32));
+  });
+
+  it("leaves a turn without a trace id unrateable", () => {
+    let state = conversationReducer(INITIAL_CONVERSATION, { type: "user", id: "m1", text: "Hi" });
+    state = conversationReducer(state, { type: "event", event: { type: "done", messages: [] } });
+    state = conversationReducer(state, {
+      type: "rate",
+      messageId: "m1-a",
+      rating: { value: "up" },
+    });
+    expect(state.messages[1].traceId).toBeUndefined();
+    expect(state.messages[1].rating).toBeUndefined();
+  });
+
+  it("sets, replaces and clears the rating", () => {
+    let state = conversationReducer(answered(), {
+      type: "rate",
+      messageId: "m1-a",
+      rating: { value: "down", reason: "hard_to_follow" },
+    });
+    expect(state.messages[1].rating).toEqual({ value: "down", reason: "hard_to_follow" });
+    state = conversationReducer(state, { type: "rate", messageId: "m1-a", rating: null });
+    expect("rating" in state.messages[1]).toBe(false);
+  });
+});
+
 describe("streamAgent", () => {
   it("emits each streamed event", async () => {
     server.use(

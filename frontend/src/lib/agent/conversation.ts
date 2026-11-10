@@ -7,7 +7,7 @@
  */
 
 import type { ScenarioDraft } from "@/lib/scenario/draft";
-import type { AgentEvent, StoredResult, UiMessage, UiPart } from "./types";
+import type { AgentEvent, ReplyRating, StoredResult, UiMessage, UiPart } from "./types";
 
 export interface ConversationState {
   messages: UiMessage[];
@@ -38,6 +38,8 @@ export type ConversationAction =
    */
   | { type: "edit"; messageId: string; id: string; text: string; draft?: ScenarioDraft }
   | { type: "event"; event: AgentEvent }
+  /** The person rated a reply, changed the rating, or cleared it (null). */
+  | { type: "rate"; messageId: string; rating: ReplyRating | null }
   | { type: "result_loaded"; id: string; result: StoredResult["result"] }
   | { type: "load"; state: ConversationState }
   | { type: "reset" };
@@ -79,6 +81,15 @@ export function conversationReducer(
     }
     case "event":
       return applyEvent(state, action.event);
+    case "rate":
+      return {
+        ...state,
+        messages: state.messages.map((m) => {
+          if (m.id !== action.messageId || m.role !== "assistant" || !m.traceId) return m;
+          const { rating: _previous, ...rest } = m;
+          return action.rating ? { ...rest, rating: action.rating } : rest;
+        }),
+      };
     case "result_loaded": {
       const existing = state.results[action.id];
       if (!existing) return state;
@@ -174,13 +185,20 @@ function applyEvent(state: ConversationState, event: AgentEvent): ConversationSt
           { kind: "notice", code: event.code, message: event.message },
         ]),
       };
-    case "done":
+    case "done": {
+      const last = state.messages[state.messages.length - 1];
+      const traceId = event.trace_id;
       return {
         ...state,
         streaming: false,
         status: null,
         apiMessages: [...state.apiMessages, ...event.messages],
+        messages:
+          traceId && last?.role === "assistant"
+            ? [...state.messages.slice(0, -1), { ...last, traceId }]
+            : state.messages,
       };
+    }
   }
 }
 
