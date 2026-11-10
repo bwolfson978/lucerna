@@ -77,6 +77,21 @@ def reply_shape(text: str) -> str:
     return "prose"
 
 
+# Where a display sits differs by device and app, so a reply can't point at one by position
+# ("check the summary above"). Tax talk such as "income above the threshold" is fine.
+_ON_SCREEN = r"(?:summary|scenario|chart|card|table|panel|button|numbers|results?)"
+_POSITION = r"(?:above|below|(?:on|to) (?:the|your) (?:right|left))"
+_LAYOUT = re.compile(
+    rf"\b{_ON_SCREEN} {_POSITION}(?![ -]\w)|\b{_POSITION} (?:is|are|shows?)\b"
+    rf"|\b(?:see|shown|check|listed|is|are|sits?) {_POSITION}(?![ -]\w)",
+    re.I,
+)
+
+
+def mentions_layout(text: str) -> bool:
+    return bool(_LAYOUT.search(text))
+
+
 def gives_advice(text: str) -> bool:
     return bool(_YOU_SHOULD.search(_DECLINING.sub("", text)))
 
@@ -222,6 +237,8 @@ def check(case: dict, turns: list[TurnRecord], draft: ScenarioDraft) -> list[str
             failures.append(f"turn {i}: no written reply")
         if gives_advice(t.text):
             failures.append(f"turn {i}: says 'you should'")
+        if mentions_layout(t.text):
+            failures.append(f"turn {i}: says where something sits on screen")
         if "—" in t.text:
             failures.append(f"turn {i}: uses an em dash")
         for amount in money_amounts(t.text):

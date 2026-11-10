@@ -4,7 +4,15 @@ import json
 
 from app.agent.offline import OfflineModelClient
 from app.tools.draft import ScenarioDraft
-from evals.run_agent_evals import CASES_FILE, TurnRecord, check, grounded, money_amounts, run_case
+from evals.run_agent_evals import (
+    CASES_FILE,
+    TurnRecord,
+    check,
+    grounded,
+    mentions_layout,
+    money_amounts,
+    run_case,
+)
 
 
 def test_money_parsing_and_grounding():
@@ -23,6 +31,28 @@ def test_checks_flag_framing_dashes_and_ungrounded_numbers():
     assert any("you should" in f for f in failures)
     assert any("em dash" in f for f in failures)
     assert any("$999,999" in f for f in failures)
+
+
+def test_checks_flag_pointing_at_a_place_on_screen():
+    turn = TurnRecord(user="hi", text="I have what I need. Please check the summary above.")
+    failures = check({"expect": {}}, [turn], ScenarioDraft())
+    assert any("sits on screen" in f for f in failures)
+
+    for pointing in (
+        "The chart below shows each year.",
+        "Your scenario is in the panel on the right.",
+        "See below: the yearly amounts.",
+        "Your scenario summary is above. Check it, then tap Run the numbers.",
+    ):
+        assert mentions_layout(pointing), pointing
+    for fine in (
+        "Please check your scenario and tap Run the numbers.",
+        "Income above the threshold raises Medicare premiums.",
+        "That keeps your income below 400% of the federal poverty level.",
+        "In 2031 your income is above the Medicare premium threshold.",
+        "The results below-market returns would give are not modeled.",
+    ):
+        assert not mentions_layout(fine), fine
 
 
 def test_cases_file_is_well_formed():
