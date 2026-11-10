@@ -76,9 +76,7 @@ jobs:
     # MCP App Views end to end, against the offline stand-in model: shared cards (ui/)
     # look the same natively and as Views, the scenario View renders, and a View's
     # "See full results" link opens on the site.
-    # Pinned: Playwright can't install its browser on the ubuntu-26.04 image that
-    # ubuntu-latest is rolling out to.
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
