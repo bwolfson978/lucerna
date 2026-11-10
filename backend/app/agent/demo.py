@@ -135,6 +135,10 @@ async def generate_with_agent(client: ModelClient, source: str = "agent") -> dic
                 history.extend(event["messages"])
             else:
                 events.append(event)
+        if not any(e["type"] == "text_delta" and e["text"].strip() for e in events):
+            # The replay would show this turn as a blank reply. Don't keep it: the caller
+            # falls back to the scripted version and the next start tries the model again.
+            raise ModelUnavailable("empty_reply")
         exchanges.append({"user": text, "events": events})
     return _package(exchanges, history, draft, source=source)
 

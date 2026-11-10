@@ -134,6 +134,17 @@ E2E (uses the offline stand-in automatically): `cd e2e && npx playwright test`. 
 
 The browser stores `messages` exactly as returned and sends them back. Never edit earlier turns: thinking blocks and prompt caching depend on an unchanged prefix.
 
+## The /demo tour
+
+`/demo` replays Margaret's cached conversation (`GET /api/agent/demo`) through
+`useConversation().replay`, which can wait at named stops (`ReplayStop`). The tour in
+`frontend/src/lib/demo/` explains five of them: `tourSteps.ts` holds the copy and which
+stop each step belongs to, and `tour.ts` shows the step with [Driver.js](https://driverjs.com)
+(spotlight, popover, keyboard) styled by `tour.css`. Closing the tour lets the rest play
+through; with reduced motion the conversation appears at once and there is no tour. A
+generated demo with a turn that has no written reply is not cached; the scripted version
+is served until the next start.
+
 ## Evals
 
 ```bash

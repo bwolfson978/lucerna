@@ -40,6 +40,8 @@ export function McpAppFrame({ resourceUri, toolName, toolInput, toolResult }: Mc
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState(320);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  // The View has reported its own height (until then the frame holds a placeholder one).
+  const [sized, setSized] = useState(false);
 
   // Handlers read the latest results without re-mounting the View.
   const latest = useRef({ results, openResults, send, streaming });
@@ -99,7 +101,9 @@ export function McpAppFrame({ resourceUri, toolName, toolInput, toolResult }: Mc
         );
         bridge = appBridge;
         appBridge.onsizechange = ({ height: next }) => {
-          if (typeof next === "number" && next > 0) setHeight(Math.min(next, MAX_HEIGHT));
+          if (typeof next !== "number" || next <= 0) return;
+          setHeight(Math.min(next, MAX_HEIGHT));
+          setSized(true);
         };
         appBridge.onopenlink = async ({ url }) => {
           const action = routeOpenLink(url, Object.keys(latest.current.results));
@@ -168,7 +172,7 @@ export function McpAppFrame({ resourceUri, toolName, toolInput, toolResult }: Mc
   const hasFallback = !ready && hasViewFallback(toolResult);
 
   return (
-    <div className="relative" data-testid="mcp-app" data-status={status}>
+    <div className="relative" data-testid="mcp-app" data-status={status} data-sized={sized}>
       {hasFallback && (
         <div data-testid="mcp-app-fallback">
           <ViewFallback toolResult={toolResult} openResult={openResult} sendMessage={send} />

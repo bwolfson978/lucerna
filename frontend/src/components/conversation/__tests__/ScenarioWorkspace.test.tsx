@@ -426,46 +426,54 @@ describe("ScenarioWorkspace (full results links)", () => {
   });
 });
 
+function serveDemo() {
+  server.use(
+    http.get(`${API}/demo`, () =>
+      HttpResponse.json({
+        persona: { name: "Margaret", age: 63, occupation: "Nurse", situation: "" },
+        exchanges: [
+          {
+            user: "Hi, I'm Margaret.",
+            events: [
+              { type: "draft", draft: DRAFT, missing: [] },
+              { type: "part", part: { kind: "scenario_summary", draft: DRAFT, draft_hash: "a" } },
+            ],
+          },
+          {
+            user: "Run the numbers.",
+            events: [
+              {
+                type: "result",
+                result_id: "r_0000000001",
+                label: "Your scenario",
+                result: sampleOptimizationResult,
+              },
+              { type: "part", part: { kind: "result_headline", result_id: "r_0000000001" } },
+              { type: "text_delta", text: "Margaret's window is open." },
+            ],
+          },
+        ],
+        messages: [{ role: "user", content: "x" }],
+        draft: DRAFT,
+        source: "scripted",
+        cache_key: "k",
+      })
+    )
+  );
+}
+
+function reduceMotion() {
+  window.matchMedia = vi.fn().mockReturnValue({
+    matches: true, // reduced motion: replay instantly
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  }) as unknown as typeof window.matchMedia;
+}
+
 describe("ScenarioWorkspace (demo)", () => {
   it("replays the example conversation and then accepts follow-ups", async () => {
-    server.use(
-      http.get(`${API}/demo`, () =>
-        HttpResponse.json({
-          persona: { name: "Margaret", age: 63, occupation: "Nurse", situation: "" },
-          exchanges: [
-            {
-              user: "Hi, I'm Margaret.",
-              events: [
-                { type: "draft", draft: DRAFT, missing: [] },
-                { type: "part", part: { kind: "scenario_summary", draft: DRAFT, draft_hash: "a" } },
-              ],
-            },
-            {
-              user: "Run the numbers.",
-              events: [
-                {
-                  type: "result",
-                  result_id: "r_0000000001",
-                  label: "Your scenario",
-                  result: sampleOptimizationResult,
-                },
-                { type: "part", part: { kind: "result_headline", result_id: "r_0000000001" } },
-                { type: "text_delta", text: "Margaret's window is open." },
-              ],
-            },
-          ],
-          messages: [{ role: "user", content: "x" }],
-          draft: DRAFT,
-          source: "scripted",
-          cache_key: "k",
-        })
-      )
-    );
-    window.matchMedia = vi.fn().mockReturnValue({
-      matches: true, // reduced motion: replay instantly
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    }) as unknown as typeof window.matchMedia;
+    serveDemo();
+    reduceMotion();
     renderWorkspace("demo");
     expect(await screen.findByText("Margaret's window is open.")).toBeInTheDocument();
     expect(screen.getByText("Hi, I'm Margaret.")).toBeInTheDocument();
@@ -478,5 +486,25 @@ describe("ScenarioWorkspace (demo)", () => {
     const demoPanel = screen.getByRole("complementary", { name: "Margaret's scenario" });
     expect(within(demoPanel).getByText(BORN)).toBeInTheDocument();
     expect(within(demoPanel).queryByRole("button", { name: "Run the numbers" })).toBeNull();
+  });
+
+  it("starts the example over when this tab left the replay partway", async () => {
+    // Saved after Margaret's first exchange: no history yet, so follow-ups couldn't work.
+    sessionStorage.setItem(
+      "lucerna:demo-conversation:v1",
+      JSON.stringify({
+        messages: [
+          { id: "m1", role: "user", parts: [{ kind: "text", text: "Hi, I'm Margaret." }] },
+        ],
+        apiMessages: [],
+        results: {},
+      })
+    );
+    serveDemo();
+    reduceMotion();
+    renderWorkspace("demo");
+    expect(await screen.findByText("Margaret's window is open.")).toBeInTheDocument();
+    expect(screen.getAllByText("Hi, I'm Margaret.")).toHaveLength(1);
+    expect(screen.getByLabelText("Message")).not.toBeDisabled();
   });
 });
