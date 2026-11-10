@@ -22,8 +22,8 @@ const Diamond = () => (
 /**
  * The line under a savings headline that says where the conversion slider stands: at
  * the most savings (with the diamond that marks that spot on the slider's track), or
- * how much less the chosen amount saves, with the way back. One line tall in both
- * states, so nothing below it moves as the slider runs.
+ * how much less the chosen amount saves, with the way back. One line where there is
+ * room; on a phone both states wrap to two.
  */
 export function MostSavingsNote({ atOptimal, shortfall, onBack, caption }: MostSavingsNoteProps) {
   return (

@@ -113,11 +113,15 @@ export function ResultsView({ result }: ResultsViewProps) {
             </div>
             <div className="flex flex-col gap-1">
               <span className="metric-value-hero text-pine">{formatSavings(estimatedSavings)}</span>
-              <MostSavingsNote
-                atOptimal={isAtOptimal}
-                shortfall={Math.abs(savingsDifference)}
-                onBack={() => setSliderValue(result.total_conversion)}
-              />
+              {/* Room for the note's two lines on a phone, so nothing moves while the
+                  slider runs. */}
+              <div className="min-h-[50px] sm:min-h-0">
+                <MostSavingsNote
+                  atOptimal={isAtOptimal}
+                  shortfall={Math.abs(savingsDifference)}
+                  onBack={() => setSliderValue(result.total_conversion)}
+                />
+              </div>
             </div>
             <span className="text-caption text-text-tertiary">
               In today&apos;s dollars, compared with not converting
@@ -137,10 +141,10 @@ export function ResultsView({ result }: ResultsViewProps) {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-x-10 gap-y-3">
+        <div className="grid grid-cols-3 gap-3 sm:flex sm:gap-10">
           <Stat label="Converted" value={formatCurrency(sliderValue)} />
           <Stat label="Tax cost" value={formatCurrency(totalTaxCost)} />
-          <Stat label="Years converting" value={String(conversionYears)} />
+          <Stat label="Years" value={String(conversionYears)} />
         </div>
 
         <BracketChart
