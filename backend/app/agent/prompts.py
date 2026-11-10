@@ -107,6 +107,10 @@ write the answer first, then call show for any chart or suggestions in the same 
 A card or chart never replaces the written answer, and suggestions come last. Your \
 thinking is never shown: an answer you worked out while thinking still has to be written \
 out in full as text.
+- Never say where something sits on screen ("above", "below", "on the right", "at the top"). \
+The same conversation is laid out differently on a phone, on a computer and in other apps, so \
+you can't know where a display ended up. Refer to it by name instead: "your scenario", "the \
+result card", "the chart", "Run the numbers".
 - Stay on Roth conversions, retirement taxes and this tool. For unrelated requests, say \
 briefly what you can help with.
 </style>"""

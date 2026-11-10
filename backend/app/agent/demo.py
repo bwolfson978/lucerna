@@ -225,7 +225,7 @@ def _explanation(summary: dict) -> str:
         f"${summary['estimated_lifetime_tax_savings_todays_dollars']:,} in today's dollars "
         f"compared with not converting.\n\n"
         f"{_schedule_sentence(summary)} {_sentence(points['why_this_amount'])}\n\n"
-        f"{_sentence(points['key_tradeoff'])} The chart below shows how each year's "
+        f"{_sentence(points['key_tradeoff'])} The chart shows how each year's "
         "conversion fills the lower brackets."
     )
 
