@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { OptimizationResult, ScenarioInput } from "@/lib/types";
 import { ChartLegend } from "@/components/common/ChartLegend";
-import { BracketChart, ConversionSlider, Stat } from "@lucerna/ui";
+import { BracketChart, ConversionSlider, MostSavingsNote, Stat } from "@lucerna/ui";
 import { formatCurrency, formatSavings } from "@/lib/utils/formatting";
 import { CHART_COLORS, buildResultsDisclaimer } from "@/lib/utils/constants";
 import { ScenarioCards } from "./ScenarioCards";
@@ -85,6 +85,14 @@ export function ResultsView({ result }: ResultsViewProps) {
     }));
   }, [result.input, yearlyRmds, yearlyConversions]);
 
+  // Savings at each total on the curve, which the slider's track shades by.
+  const sliderSavings = useMemo(() => {
+    return (result.conversion_curve ?? []).map((p) => ({
+      total: p.total_cap,
+      savings: p.npv - result.npv_at_zero,
+    }));
+  }, [result.conversion_curve, result.npv_at_zero]);
+
   const snapThreshold = computeSnapThreshold(0, result.input.traditional_ira_balance);
   const isAtOptimal = Math.abs(sliderValue - result.total_conversion) <= snapThreshold;
   const savingsDifference = result.estimated_lifetime_tax_savings - estimatedSavings;
@@ -105,15 +113,15 @@ export function ResultsView({ result }: ResultsViewProps) {
             </div>
             <div className="flex flex-col gap-1">
               <span className="metric-value-hero text-pine">{formatSavings(estimatedSavings)}</span>
-              {/* Always on its own line, and its line kept at the optimum, so nothing moves
-                  while the slider runs. */}
-              <span
-                className={`font-data whitespace-nowrap text-body-sm font-semibold text-negative ${isAtOptimal ? "invisible" : ""}`}
-                aria-hidden={isAtOptimal || undefined}
-              >
-                {formatCurrency(Math.max(1, Math.abs(savingsDifference)))} less than the most
-                savings
-              </span>
+              {/* Room for the note's two lines on a phone, so nothing moves while the
+                  slider runs. */}
+              <div className="min-h-[50px] sm:min-h-0">
+                <MostSavingsNote
+                  atOptimal={isAtOptimal}
+                  shortfall={Math.abs(savingsDifference)}
+                  onBack={() => setSliderValue(result.total_conversion)}
+                />
+              </div>
             </div>
             <span className="text-caption text-text-tertiary">
               In today&apos;s dollars, compared with not converting
@@ -128,14 +136,15 @@ export function ResultsView({ result }: ResultsViewProps) {
               onChange={setSliderValue}
               onDragStart={handleSliderDragStart}
               onDragEnd={handleSliderDragEnd}
+              savings={sliderSavings}
             />
           </div>
         </div>
 
-        {/* The amount itself reads out on the slider. */}
-        <div className="flex gap-10">
+        <div className="grid grid-cols-3 gap-3 sm:flex sm:gap-10">
+          <Stat label="Converted" value={formatCurrency(sliderValue)} />
           <Stat label="Tax cost" value={formatCurrency(totalTaxCost)} />
-          <Stat label="Years converting" value={String(conversionYears)} />
+          <Stat label="Years" value={String(conversionYears)} />
         </div>
 
         <BracketChart

@@ -25,7 +25,8 @@ export {
   type ResultCardSelection,
   type ResultDetails,
 } from "./ResultCard";
-export { ConversionSlider } from "./ConversionSlider";
+export { ConversionSlider, savingsGlow, type SliderSavingsPoint } from "./ConversionSlider";
+export { MostSavingsNote } from "./MostSavingsNote";
 export {
   federalTax,
   isConversionCurveData,

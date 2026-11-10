@@ -49,7 +49,9 @@ it("tries other totals with the slider and asks about one", () => {
   const selection = vi.fn();
   render(<ResultCard data={card} details={details} onAsk={ask} onSelectionChange={selection} />);
   const hero = screen.getByText("$36,990");
-  expect(screen.getAllByText("Most savings")).toHaveLength(2);
+  // Said once, beside the headline; the slider only marks the spot.
+  expect(screen.getAllByText("Most savings")).toHaveLength(1);
+  expect(screen.getByText("$344,500")).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /Ask about/ })).not.toBeInTheDocument();
 
   // Converting less than the optimum saves less, and the card says by how much.
@@ -66,7 +68,7 @@ it("tries other totals with the slider and asks about one", () => {
 
   fireEvent.click(screen.getByRole("button", { name: "Back to most savings" }));
   expect(screen.getByText("$36,990")).toBeInTheDocument();
-  expect(screen.getByText("In today's dollars, compared with not converting")).toBeInTheDocument();
+  expect(screen.getByText("in today's dollars, compared with not converting")).toBeInTheDocument();
 });
 
 it("leaves the slider out without a curve", () => {
