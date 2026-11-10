@@ -352,6 +352,7 @@ export function ScenarioBar({
     <button
       type="button"
       onClick={onOpen}
+      data-tour="scenario-bar"
       aria-label={`Review ${label.toLowerCase()}. ${text}`}
       className={cn(
         "mb-2.5 flex w-full items-center gap-3 rounded-[16px] border border-border-emphasis bg-card py-1.5 pl-4 pr-1.5 text-left shadow-elevated",

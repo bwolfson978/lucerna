@@ -36,6 +36,7 @@
     "apexcharts": "^5.10.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "driver.js": "1.10.2",
     "next": "^16.2.2",
     "posthog-js": "^1.447.3",
     "posthog-node": "^5.63.1",

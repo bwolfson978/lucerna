@@ -45,7 +45,10 @@ export const UserMessage = forwardRef<HTMLDivElement, UserMessageProps>(function
         />
       ) : (
         <>
-          <div className="max-w-[85%] whitespace-pre-wrap rounded-[20px] rounded-br-md bg-pine-deep px-4 py-2.5 text-[15.5px] leading-relaxed text-[#f5f2ea]">
+          <div
+            data-tour="user-bubble"
+            className="max-w-[85%] whitespace-pre-wrap rounded-[20px] rounded-br-md bg-pine-deep px-4 py-2.5 text-[15.5px] leading-relaxed text-[#f5f2ea]"
+          >
             {text}
           </div>
           <MessageActions

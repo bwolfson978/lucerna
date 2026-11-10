@@ -75,6 +75,7 @@ export function Composer({
       <div className={cn("mx-auto", innerClassName)}>
         {top}
         <form
+          data-tour="composer"
           className="flex items-end gap-2"
           onSubmit={(e) => {
             e.preventDefault();

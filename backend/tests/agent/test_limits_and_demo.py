@@ -2,8 +2,11 @@
 
 import datetime
 
+import pytest
+
 from app.agent import demo
 from app.agent.limits import LimitConfig, Turn, UsageLimiter, estimate_cost
+from app.agent.model import ModelUnavailable
 from tests.agent.fakes import FunctionModelClient, text, tool_use
 from tests.agent.test_loop import assert_well_formed
 
@@ -92,6 +95,30 @@ async def test_agent_generated_demo(monkeypatch):
     assert any(e["type"] == "result" for e in conversation["exchanges"][1]["events"])
 
 
+async def test_demo_with_a_blank_reply_is_not_kept(monkeypatch, tmp_path):
+    """A model turn that shows a card but writes nothing would replay as an empty reply."""
+
+    def respond(messages):
+        last = messages[-1]["content"]
+        if any(b.get("type") == "tool_result" for b in last):
+            return []  # ends the turn without a word
+        return [tool_use("t1", "prepare_scenario", {"scenario": SCENARIO})]
+
+    with pytest.raises(ModelUnavailable):
+        await demo.generate_with_agent(FunctionModelClient(respond))
+
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
+    monkeypatch.setattr(demo, "_CACHE_DIR", tmp_path)
+    monkeypatch.setattr(demo, "AnthropicModelClient", lambda: FunctionModelClient(respond))
+    demo.clear_cache()
+    conversation = await demo.get_demo_conversation()
+    assert conversation["source"] == "scripted"
+    assert not list(tmp_path.iterdir())
+    for exchange in conversation["exchanges"]:
+        assert any(e["type"] == "text_delta" and e["text"].strip() for e in exchange["events"])
+    demo.clear_cache()
+
+
 async def test_demo_is_cached_and_keyed(monkeypatch, tmp_path):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     monkeypatch.delenv("LUCERNA_ANTHROPIC_API_KEY", raising=False)
@@ -127,4 +154,19 @@ async def test_demo_reads_disk_cache(monkeypatch, tmp_path):
     stored = {"source": "agent", "cache_key": demo.cache_key(), "exchanges": []}
     demo._write_disk(demo.cache_key(), stored)
     assert await demo.get_demo_conversation() == stored
+    demo.clear_cache()
+
+
+async def test_demo_ignores_a_cached_conversation_with_a_blank_reply(monkeypatch, tmp_path):
+    """A file cached before blank replies were refused is generated again, not served."""
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("LUCERNA_ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+    monkeypatch.setattr(demo, "_CACHE_DIR", tmp_path)
+    demo.clear_cache()
+    blank = {"user": "Hi", "events": [{"type": "tool_start", "name": "show", "status": "x"}]}
+    stored = {"source": "agent", "cache_key": demo.cache_key(), "exchanges": [blank]}
+    demo._write_disk(demo.cache_key(), stored)
+    conversation = await demo.get_demo_conversation()
+    assert conversation["source"] == "scripted"
     demo.clear_cache()

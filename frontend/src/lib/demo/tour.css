@@ -1,0 +1,139 @@
+/* Paper & Pine styling for the /demo tour popover (Driver.js). Values mirror
+   ui/styles/tokens.css and ui/tailwind/preset.js. */
+
+.driver-popover.demo-tour {
+  min-width: 260px;
+  max-width: 340px;
+  padding: 18px 20px 16px;
+  border: 1px solid hsl(var(--border-emphasis));
+  border-radius: 18px;
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+  font-family: "Inter", system-ui, sans-serif;
+  box-shadow: 0 18px 44px -18px rgb(14 31 23 / 0.45);
+}
+
+.demo-tour .driver-popover-title {
+  padding-right: 28px;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.demo-tour .driver-popover-description {
+  margin-top: 6px;
+  color: hsl(var(--muted-foreground));
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+.demo-tour .driver-popover-progress-text {
+  color: hsl(var(--tertiary-foreground));
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.demo-tour .driver-popover-footer-btn {
+  min-height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background-color: #0b1d15;
+  color: #f5f2ea;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 40px;
+  text-shadow: none;
+}
+
+.demo-tour .driver-popover-footer-btn:focus {
+  background-color: #0b1d15;
+}
+
+.demo-tour .driver-popover-footer-btn:hover {
+  background-color: hsl(var(--accent-hover));
+}
+
+.demo-tour .driver-popover-footer-btn:focus-visible,
+.demo-tour .driver-popover-close-btn:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+.demo-tour .driver-popover-close-btn {
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  color: hsl(var(--tertiary-foreground));
+  font-size: 20px;
+}
+
+.demo-tour .driver-popover-close-btn:hover {
+  color: hsl(var(--foreground));
+}
+
+.demo-tour .driver-popover-arrow {
+  border-color: hsl(var(--card));
+}
+.demo-tour .driver-popover-arrow-side-left {
+  border-top-color: transparent;
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+}
+.demo-tour .driver-popover-arrow-side-right {
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+}
+.demo-tour .driver-popover-arrow-side-top {
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+}
+.demo-tour .driver-popover-arrow-side-bottom {
+  border-top-color: transparent;
+  border-right-color: transparent;
+  border-left-color: transparent;
+}
+
+/* The part being explained pulses with a pine ring. */
+.driver-active .driver-active-element {
+  border-radius: 18px;
+  animation: demo-tour-pulse 1.8s ease-out infinite;
+}
+
+@keyframes demo-tour-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(102 161 131 / 0.75);
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 12px rgb(102 161 131 / 0);
+  }
+}
+
+/* Phones: beside a card taller than the screen there is no room for a popover, so it
+   docks to the bottom of the screen instead. */
+@media (max-width: 639px) {
+  .driver-popover.demo-tour.demo-tour-docked {
+    top: auto !important;
+    right: 12px !important;
+    bottom: max(12px, env(safe-area-inset-bottom)) !important;
+    left: 12px !important;
+    max-width: none;
+  }
+  .demo-tour-docked .driver-popover-arrow {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .driver-active .driver-active-element {
+    animation: none;
+  }
+}
