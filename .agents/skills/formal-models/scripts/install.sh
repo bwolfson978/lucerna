@@ -5,12 +5,13 @@
 #   .agents/skills/formal-models/scripts/install.sh
 #   .agents/skills/formal-models/scripts/install.sh --check   # report only
 #
-# Downloads: tla2tools.jar v1.8.0 from GitHub (4.5 MB, SHA-256 checked) and elan
+# Downloads: tla2tools.jar v1.7.4 from GitHub (SHA-256 checked; v1.8.0 is a rolling
+# nightly whose jar changes, so it cannot be pinned) and elan
 # from its GitHub repo. elan fetches the Lean toolchain pinned in
 # formal/lean/lean-toolchain (about 3 GB unpacked) on the first `lake build`.
 set -euo pipefail
-TLA_VERSION=v1.8.0
-TLA_SHA256=d15655eeaff4b3f7b3d65c46b838bc0f35d131b2ef4b1e473689b62c98d4726f
+TLA_VERSION=v1.7.4
+TLA_SHA256=936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88
 JAR="${TLA_JAR:-$HOME/tools/tla2tools.jar}"
 check_only=false; [[ "${1:-}" == --check ]] && check_only=true
 missing=0

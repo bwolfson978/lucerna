@@ -43,7 +43,7 @@ hold. The Result column records what each property caught on earlier code.
 ## Running
 
 ```bash
-.agents/skills/formal-models/scripts/install.sh   # Java check, tla2tools.jar v1.8.0, elan
+.agents/skills/formal-models/scripts/install.sh   # Java check, tla2tools.jar v1.7.4, elan
 .agents/skills/formal-models/scripts/check.sh     # TLC on every spec, then lake build --wfail
 formal/tla/check.sh McpLimits                     # one spec
 ```
