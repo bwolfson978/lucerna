@@ -40,7 +40,7 @@ The visual reference is flowscope.com's "explain the mechanism with a live diagr
 
 ```tsx
 <h2 className="display-heading text-display">
-  Fill your brackets,<br /><em>not the IRS&rsquo;s.</em>
+  Start with <em>your window.</em>
 </h2>
 ```
 
@@ -172,8 +172,7 @@ Motion is the main difference from the old spec. It should explain how something
 | Gentle bob | Floating chips | `.float-chip` |
 | Bars filling | Bracket bars, mini charts | CSS width/scale transitions on in-view |
 | Line drawing | Mini line charts | `pathLength=1` + `stroke-dashoffset` transition |
-| Count-up and row stagger | Conversion register | rAF count-up, 110ms row delays |
-| Blinking status dot | "Scheduled" | `.blink-dot` |
+| Blinking status dot | Live status in the assistant thread | `.blink-dot` |
 
 **Timing:** UI hovers 180–300ms; reveals 800ms `cubic-bezier(0.2,0.7,0.2,1)`; data transitions 500–600ms; ambient loops 1.1–4.5s.
 
@@ -181,14 +180,6 @@ Motion is the main difference from the old spec. It should explain how something
 - Every animation must respect `prefers-reduced-motion`. Use `usePrefersReducedMotion()` and the CSS media query; show the final (or a representative static) state.
 - Animations start when the element is in view (`useInView`) and run once, except ambient loops in the hero.
 - No bounce, wobble, confetti or parallax.
-
-### Interactive explainers
-Landing explainers should let people move a slider or toggle and see the result immediately:
-- **IncomeWindowMap:** retirement age, Social Security age and RMD age (73/75) reshape the conversion window.
-- **BracketFiller:** a conversion amount and other income pour into the real 2026 brackets (from `useTaxConfig`), with tax, average rate and top bracket.
-- **LandingDemo:** the register and Margaret stats come from `/api/demo`, so the landing page never shows numbers the engine did not produce. Purely illustrative visuals must say "illustrative".
-
-Use `RangeControl` (`components/landing/RangeControl.tsx`) for sliders: pine filled track, white-ringed thumb, mono readout.
 
 ---
 
