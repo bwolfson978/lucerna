@@ -1,6 +1,6 @@
 name: Dependabot auto-merge
 
-# Merges Dependabot's PostHog SDK PRs (see .github/dependabot.yml) once the
+# Merges Dependabot's PostHog SDK and Playwright PRs (see .github/dependabot.yml) once the
 # Tests workflow passes on them, then deploys whatever they touched. Major
 # version bumps are left open for a human to review.
 #

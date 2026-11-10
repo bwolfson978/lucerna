@@ -141,7 +141,7 @@ jobs:
         if: steps.run.outputs.models == 'true'
         with:
           path: ~/tools/tla2tools.jar
-          key: tla2tools-v1.8.0
+          key: tla2tools-v1.7.4
 
       - name: Install TLC and elan
         if: steps.run.outputs.models == 'true'
