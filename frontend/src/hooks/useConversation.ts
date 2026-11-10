@@ -8,6 +8,7 @@ import {
   INITIAL_CONVERSATION,
   clearConversation,
   conversationReducer,
+  editPoint,
   loadConversation,
   saveConversation,
   wordChunks,
@@ -28,6 +29,11 @@ interface UseConversationOptions {
   getDraft: () => ScenarioDraft;
   /** The assistant recorded new scenario values. */
   onDraft: (draft: ScenarioDraft) => void;
+  /**
+   * An edited message puts the scenario back to how it was when that message was
+   * first sent, before the conversation reruns from there.
+   */
+  onRewind?: (draft: ScenarioDraft) => void;
   /** The assistant can't continue (limit, outage); the scenario still runs without it. */
   onFallback?: (code: AgentErrorCode) => void;
   /** The assistant ran the engine (a live turn or a replay). */
@@ -47,6 +53,7 @@ export function useConversation({
   onDraft,
   onFallback,
   onResult,
+  onRewind,
   surface,
 }: UseConversationOptions) {
   const [state, dispatch] = useReducer(conversationReducer, INITIAL_CONVERSATION);
@@ -54,15 +61,15 @@ export function useConversation({
   const abortRef = useRef<AbortController | null>(null);
   const replayToken = useRef(0);
   const restored = useRef(false);
-  const callbacks = useRef({ getDraft, onDraft, onFallback, onResult });
+  const callbacks = useRef({ getDraft, onDraft, onFallback, onResult, onRewind });
 
   useEffect(() => {
     stateRef.current = state;
   }, [state]);
 
   useEffect(() => {
-    callbacks.current = { getDraft, onDraft, onFallback, onResult };
-  }, [getDraft, onDraft, onFallback, onResult]);
+    callbacks.current = { getDraft, onDraft, onFallback, onResult, onRewind };
+  }, [getDraft, onDraft, onFallback, onResult, onRewind]);
 
   // Restore this tab's conversation after mount (sessionStorage is client-only).
   useEffect(() => {
@@ -118,17 +125,45 @@ export function useConversation({
       replayToken.current += 1; // a live message ends any replay in progress
       const controller = new AbortController();
       abortRef.current = controller;
-      dispatch({ type: "user", id: nextId(), text: message });
+      const draft = callbacks.current.getDraft();
+      dispatch({ type: "user", id: nextId(), text: message, draft });
       posthog.capture("agent_message_sent", {
         surface,
         message_index: stateRef.current.messages.filter((m) => m.role === "user").length + 1,
       });
       await streamAgent(
-        {
-          message,
-          messages: stateRef.current.apiMessages,
-          draft: callbacks.current.getDraft(),
-        },
+        { message, messages: stateRef.current.apiMessages, draft },
+        handleEvent,
+        controller.signal
+      );
+    },
+    [handleEvent, surface]
+  );
+
+  /**
+   * Replace one of the person's messages with new text and rerun the conversation
+   * from there: the message and everything after it are dropped, the scenario goes
+   * back to how it was when the message was sent, and the assistant answers again.
+   */
+  const edit = useCallback(
+    async (messageId: string, text: string) => {
+      const message = text.trim();
+      const current = stateRef.current;
+      const point = editPoint(current, messageId);
+      if (!message || !point || current.streaming) return;
+      replayToken.current += 1;
+      const controller = new AbortController();
+      abortRef.current = controller;
+      if (point.draft) callbacks.current.onRewind?.(point.draft);
+      const draft = callbacks.current.getDraft();
+      dispatch({ type: "edit", messageId, id: nextId(), text: message, draft });
+      const index = current.messages.findIndex((m) => m.id === messageId);
+      posthog.capture("agent_message_edited", {
+        surface,
+        message_index: current.messages.slice(0, index + 1).filter((m) => m.role === "user").length,
+      });
+      await streamAgent(
+        { message, messages: point.apiMessages, draft },
         handleEvent,
         controller.signal
       );
@@ -145,7 +180,7 @@ export function useConversation({
       for (const [index, exchange] of demo.exchanges.entries()) {
         if (!live()) return;
         if (animate && index > 0) await sleep(700);
-        dispatch({ type: "user", id: nextId(), text: exchange.user });
+        dispatch({ type: "user", id: nextId(), text: exchange.user, replay: true });
         if (animate) await sleep(450);
         for (const event of exchange.events) {
           if (!live()) return;
@@ -190,7 +225,7 @@ export function useConversation({
     []
   );
 
-  return { state, send, replay, reset, loadResult, addResult };
+  return { state, send, edit, replay, reset, loadResult, addResult };
 }
 
 export type ConversationApi = ReturnType<typeof useConversation>;

@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { INITIAL_CONVERSATION, type ConversationState } from "@/lib/agent/conversation";
 import type { UiMessage } from "@/lib/agent/types";
 import { ConversationContext, type ConversationContextValue } from "../ConversationContext";
@@ -141,5 +142,110 @@ describe("ConversationThread", () => {
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
     expect(scrollIntoView.mock.instances[0]).toHaveTextContent("Run it");
     expect(scrollIntoView).toHaveBeenCalledWith(expect.objectContaining({ behavior: "auto" }));
+  });
+
+  describe("copy and edit", () => {
+    const editable = (id: string, text: string, apiIndex: number): UiMessage => ({
+      ...user(id, text),
+      apiIndex,
+    });
+
+    it("copies a message's text", async () => {
+      const ue = userEvent.setup();
+      const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+      renderThread(stateWith([user("u1", "I was born in 1971"), assistant("a1", "Thanks")]), {});
+      await ue.click(screen.getByRole("button", { name: "Copy" }));
+      expect(writeText).toHaveBeenCalledWith("I was born in 1971");
+      expect(await screen.findByRole("button", { name: "Copied" })).toBeInTheDocument();
+    });
+
+    it("offers Edit only on messages that can be rerun", () => {
+      render(
+        <ConversationContext.Provider value={context}>
+          <ConversationThread
+            state={stateWith([
+              user("u1", "Hi, I'm Margaret"),
+              assistant("a1", "Hello"),
+              editable("u2", "What if I retire at 58?", 4),
+              assistant("a2", "Here it is"),
+            ])}
+            onEdit={vi.fn()}
+          />
+        </ConversationContext.Provider>
+      );
+      expect(screen.getAllByRole("button", { name: "Copy" })).toHaveLength(2);
+      expect(screen.getAllByRole("button", { name: "Edit" })).toHaveLength(1);
+    });
+
+    it("sends the edited text, or puts the message back on Cancel and Escape", async () => {
+      const ue = userEvent.setup();
+      const onEdit = vi.fn();
+      render(
+        <ConversationContext.Provider value={context}>
+          <ConversationThread
+            state={stateWith([editable("u1", "I'm single", 0), assistant("a1", "Noted")])}
+            onEdit={onEdit}
+          />
+        </ConversationContext.Provider>
+      );
+      await ue.click(screen.getByRole("button", { name: "Edit" }));
+      const box = screen.getByRole("textbox", { name: "Edit your message" });
+      expect(box).toHaveFocus();
+      expect(box).toHaveValue("I'm single");
+
+      await ue.click(screen.getByRole("button", { name: "Cancel" }));
+      expect(screen.queryByRole("textbox", { name: "Edit your message" })).toBeNull();
+      expect(screen.getByText("I'm single")).toBeInTheDocument();
+
+      await ue.click(screen.getByRole("button", { name: "Edit" }));
+      await ue.keyboard("{Escape}");
+      expect(screen.queryByRole("textbox", { name: "Edit your message" })).toBeNull();
+
+      await ue.click(screen.getByRole("button", { name: "Edit" }));
+      const again = screen.getByRole("textbox", { name: "Edit your message" });
+      await ue.clear(again);
+      expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
+      await ue.type(again, "We file jointly");
+      await ue.click(screen.getByRole("button", { name: "Send" }));
+      expect(onEdit).toHaveBeenCalledWith("u1", "We file jointly");
+      expect(screen.queryByRole("textbox", { name: "Edit your message" })).toBeNull();
+    });
+
+    it("waits for the reply before a message can be edited", () => {
+      render(
+        <ConversationContext.Provider value={context}>
+          <ConversationThread
+            state={{
+              ...stateWith([editable("u1", "Hi", 0), assistant("a1", "")]),
+              streaming: true,
+            }}
+            onEdit={vi.fn()}
+          />
+        </ConversationContext.Provider>
+      );
+      expect(screen.getByRole("button", { name: "Copy" })).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
+    });
+
+    it("brings an edited message to the top, like a new one", () => {
+      const before = stateWith([
+        editable("u1", "Hi", 0),
+        assistant("a1", "Hello"),
+        editable("u2", "Retire at 58", 2),
+        assistant("a2", "Done"),
+      ]);
+      const { rerender } = renderThread(before, { followKey: 1 });
+      scrollIntoView.mockClear();
+      rerender(
+        <ConversationContext.Provider value={context}>
+          <ConversationThread
+            state={stateWith([...before.messages.slice(0, 2), editable("u3", "Retire at 60", 2)])}
+            followKey={2}
+          />
+        </ConversationContext.Provider>
+      );
+      expect(scrollIntoView).toHaveBeenCalledTimes(1);
+      expect(scrollIntoView.mock.instances[0]).toHaveTextContent("Retire at 60");
+    });
   });
 });

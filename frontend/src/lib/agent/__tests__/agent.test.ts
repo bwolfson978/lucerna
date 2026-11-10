@@ -5,6 +5,7 @@ import { parseSseChunk, streamAgent } from "../client";
 import {
   INITIAL_CONVERSATION,
   conversationReducer,
+  editPoint,
   latestResultId,
   loadConversation,
   saveConversation,
@@ -146,6 +147,126 @@ describe("conversationReducer", () => {
       code: "unavailable",
       message: "Unavailable",
     });
+  });
+});
+
+describe("editing a message", () => {
+  const draftA = { ...EMPTY_DRAFT, filing_status: "single" as const };
+  const draftB = { ...EMPTY_DRAFT, filing_status: "married_filing_jointly" as const };
+
+  function twoTurns(): ConversationState {
+    let state = conversationReducer(INITIAL_CONVERSATION, {
+      type: "user",
+      id: "1",
+      text: "I'm single",
+      draft: draftA,
+    });
+    state = conversationReducer(state, {
+      type: "event",
+      event: { type: "done", messages: [{ role: "user" }, { role: "assistant" }] },
+    });
+    state = conversationReducer(state, {
+      type: "user",
+      id: "2",
+      text: "Run it",
+      draft: draftB,
+    });
+    return conversationReducer(state, {
+      type: "event",
+      event: {
+        type: "done",
+        messages: [
+          { role: "user" },
+          { role: "assistant" },
+          { role: "user" },
+          { role: "assistant" },
+        ],
+      },
+    });
+  }
+
+  it("records where each message starts in the API history", () => {
+    const state = twoTurns();
+    expect(state.messages.map((m) => m.apiIndex)).toEqual([0, undefined, 2, undefined]);
+    expect(state.messages[2].draft).toEqual(draftB);
+    expect(editPoint(state, "2-u")).toEqual({
+      apiMessages: state.apiMessages.slice(0, 2),
+      draft: draftB,
+    });
+    expect(editPoint(state, "1-a")).toBeNull();
+  });
+
+  it("replaces the message and everything after it, and rewinds the history", () => {
+    const state = conversationReducer(twoTurns(), {
+      type: "edit",
+      messageId: "1-u",
+      id: "3",
+      text: "We file jointly",
+      draft: draftA,
+    });
+    expect(state.messages.map((m) => m.id)).toEqual(["3-u", "3-a"]);
+    expect(state.messages[0].parts).toEqual([{ kind: "text", text: "We file jointly" }]);
+    expect(state.messages[0].apiIndex).toBe(0);
+    expect(state.apiMessages).toEqual([]);
+    expect(state.streaming).toBe(true);
+
+    const done = conversationReducer(state, {
+      type: "event",
+      event: { type: "done", messages: [{ role: "user" }, { role: "assistant" }] },
+    });
+    expect(done.apiMessages).toHaveLength(2);
+    expect(userMessageCount(done)).toBe(1);
+  });
+
+  it("keeps the turns before the edited message", () => {
+    const state = conversationReducer(twoTurns(), {
+      type: "edit",
+      messageId: "2-u",
+      id: "3",
+      text: "Run it at 62",
+    });
+    expect(state.messages.map((m) => m.id)).toEqual(["1-u", "1-a", "3-u", "3-a"]);
+    expect(state.apiMessages).toHaveLength(2);
+    expect(state.messages[2].apiIndex).toBe(2);
+  });
+
+  it("leaves replayed turns and turns in progress alone", () => {
+    const replayed = conversationReducer(INITIAL_CONVERSATION, {
+      type: "user",
+      id: "1",
+      text: "Hi, I'm Margaret",
+      replay: true,
+    });
+    expect(replayed.messages[0].apiIndex).toBeUndefined();
+    expect(editPoint(replayed, "1-u")).toBeNull();
+    const done = conversationReducer(replayed, {
+      type: "event",
+      event: { type: "done", messages: [] },
+    });
+    expect(conversationReducer(done, { type: "edit", messageId: "1-u", id: "2", text: "x" })).toBe(
+      done
+    );
+
+    const streaming = conversationReducer(INITIAL_CONVERSATION, {
+      type: "user",
+      id: "1",
+      text: "Hi",
+    });
+    expect(
+      conversationReducer(streaming, { type: "edit", messageId: "1-u", id: "2", text: "x" })
+    ).toBe(streaming);
+  });
+
+  it("keeps what lets a restored conversation be edited", () => {
+    const store: Record<string, string> = {};
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation((k, v) => {
+      store[k] = v;
+    });
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation((k) => store[k] ?? null);
+    saveConversation("k", twoTurns());
+    const restored = loadConversation("k");
+    vi.restoreAllMocks();
+    expect(restored && editPoint(restored, "2-u")?.apiMessages).toHaveLength(2);
   });
 });
 

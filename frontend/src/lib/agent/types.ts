@@ -61,6 +61,14 @@ export interface UiMessage {
   id: string;
   role: "user" | "assistant";
   parts: UiPart[];
+  /**
+   * A user message only: how much of the API history came before it, so editing the
+   * message can rerun the conversation from that point. Absent on replayed demo turns
+   * and on conversations saved before editing existed, which can't be edited.
+   */
+  apiIndex?: number;
+  /** A user message only: the scenario as it was when the message was sent. */
+  draft?: ScenarioDraft;
 }
 
 export interface StoredResult {

@@ -360,9 +360,18 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
     onDraft: replaceDraft,
     onFallback: handleFallback,
     onResult: handleResult,
+    onRewind: updateDraft,
     surface: variant,
   });
-  const { state, send: sendMessage, replay, reset, loadResult, addResult } = conversation;
+  const {
+    state,
+    send: sendMessage,
+    edit: editMessage,
+    replay,
+    reset,
+    loadResult,
+    addResult,
+  } = conversation;
 
   // "New scenario" (?new=1) starts from a blank form and a new saved copy, even in a tab
   // that was working on another one.
@@ -389,6 +398,16 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
       return sendMessage(text);
     },
     [sendMessage]
+  );
+  // Editing a message reruns the conversation from it, in the same scenario: later runs
+  // overwrite its saved copy (keys.saved stays), as any rerun does.
+  const edit = useCallback(
+    (messageId: string, text: string) => {
+      setFollowKey((k) => k + 1);
+      setHighlight([]);
+      return editMessage(messageId, text);
+    },
+    [editMessage]
   );
 
   // Demo: replay Margaret's conversation unless this tab already has one.
@@ -875,6 +894,7 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
           state={state}
           followKey={followKey}
           followOnRestore={!isDemo}
+          onEdit={(messageId, text) => void edit(messageId, text)}
           intro={
             isDemo ? (
               <DemoIntro error={demoError} onRetry={() => void startDemo(false)} />

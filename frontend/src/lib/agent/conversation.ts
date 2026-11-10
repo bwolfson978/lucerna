@@ -6,6 +6,7 @@
  * returned it (thinking blocks and all) and sent back with the next message.
  */
 
+import type { ScenarioDraft } from "@/lib/scenario/draft";
 import type { AgentEvent, StoredResult, UiMessage, UiPart } from "./types";
 
 export interface ConversationState {
@@ -29,7 +30,13 @@ export const INITIAL_CONVERSATION: ConversationState = {
 };
 
 export type ConversationAction =
-  | { type: "user"; id: string; text: string }
+  /** A replayed demo turn has no history of its own to go back to, so it can't be edited. */
+  | { type: "user"; id: string; text: string; draft?: ScenarioDraft; replay?: boolean }
+  /**
+   * The person edited one of their messages: it and everything after it are replaced
+   * by the new text, and the API history goes back to what came before it.
+   */
+  | { type: "edit"; messageId: string; id: string; text: string; draft?: ScenarioDraft }
   | { type: "event"; event: AgentEvent }
   | { type: "result_loaded"; id: string; result: StoredResult["result"] }
   | { type: "load"; state: ConversationState }
@@ -50,17 +57,26 @@ export function conversationReducer(
 ): ConversationState {
   switch (action.type) {
     case "user":
-      return {
-        ...state,
-        streaming: true,
-        status: null,
-        breakText: false,
-        messages: [
-          ...state.messages,
-          { id: `${action.id}-u`, role: "user", parts: [{ kind: "text", text: action.text }] },
-          { id: `${action.id}-a`, role: "assistant", parts: [] },
-        ],
-      };
+      return startTurn(state, state.messages, state.apiMessages, {
+        ...action,
+        apiIndex: action.replay ? undefined : state.apiMessages.length,
+      });
+    case "edit": {
+      const index = state.messages.findIndex((m) => m.id === action.messageId);
+      const apiIndex = state.messages[index]?.apiIndex;
+      if (index < 0 || apiIndex === undefined || state.streaming) return state;
+      return startTurn(
+        state,
+        state.messages.slice(0, index),
+        state.apiMessages.slice(0, apiIndex),
+        {
+          id: action.id,
+          text: action.text,
+          apiIndex,
+          draft: action.draft,
+        }
+      );
+    }
     case "event":
       return applyEvent(state, action.event);
     case "result_loaded": {
@@ -76,6 +92,39 @@ export function conversationReducer(
     case "reset":
       return INITIAL_CONVERSATION;
   }
+}
+
+function startTurn(
+  state: ConversationState,
+  messages: UiMessage[],
+  apiMessages: unknown[],
+  turn: { id: string; text: string; apiIndex?: number; draft?: ScenarioDraft }
+): ConversationState {
+  const user: UiMessage = {
+    id: `${turn.id}-u`,
+    role: "user",
+    parts: [{ kind: "text", text: turn.text }],
+    ...(turn.apiIndex !== undefined ? { apiIndex: turn.apiIndex } : {}),
+    ...(turn.draft ? { draft: turn.draft } : {}),
+  };
+  return {
+    ...state,
+    streaming: true,
+    status: null,
+    breakText: false,
+    apiMessages,
+    messages: [...messages, user, { id: `${turn.id}-a`, role: "assistant", parts: [] }],
+  };
+}
+
+/** The message's text and where the conversation stood before it, if it can be edited. */
+export function editPoint(
+  state: ConversationState,
+  messageId: string
+): { apiMessages: unknown[]; draft?: ScenarioDraft } | null {
+  const message = state.messages.find((m) => m.id === messageId);
+  if (!message || message.role !== "user" || message.apiIndex === undefined) return null;
+  return { apiMessages: state.apiMessages.slice(0, message.apiIndex), draft: message.draft };
 }
 
 function applyEvent(state: ConversationState, event: AgentEvent): ConversationState {
