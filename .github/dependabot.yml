@@ -1,7 +1,9 @@
-# Keeps the PostHog SDKs current (PostHog's SDK health page flags old versions).
-# Scoped to PostHog packages only. Each ecosystem gets one grouped PR a week,
-# and a release must be 3 days old before Dependabot proposes it, the safety
-# window PostHog recommends after the Shai-Hulud npm attack:
+# Keeps the PostHog SDKs and Playwright current. PostHog's SDK health page flags
+# old versions; a stale Playwright stops installing browsers when GitHub moves
+# ubuntu-latest to a newer Ubuntu (it broke CI on the 26.04 switch in 2026-11).
+# Each entry gets one grouped PR a week, and a release must be 3 days old before
+# Dependabot proposes it, the safety window PostHog recommends after the
+# Shai-Hulud npm attack:
 # https://posthog.com/docs/health-checks/keeping-sdks-current
 # Green PRs merge themselves via .github/workflows/dependabot-auto-merge.yml.
 version: 2
@@ -34,6 +36,23 @@ updates:
       - dependency-name: posthog
     groups:
       posthog:
+        patterns: ['*']
+    commit-message:
+      prefix: deps
+
+  # Playwright drives the ui-drift CI job and the pr-evidence screenshots. Each
+  # release adds browser builds for new Ubuntu versions, so keeping it current
+  # keeps CI working on ubuntu-latest.
+  - package-ecosystem: npm
+    directory: /e2e
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+    allow:
+      - dependency-name: '@playwright/test'
+    groups:
+      playwright:
         patterns: ['*']
     commit-message:
       prefix: deps
