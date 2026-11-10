@@ -155,3 +155,18 @@ async def test_demo_reads_disk_cache(monkeypatch, tmp_path):
     demo._write_disk(demo.cache_key(), stored)
     assert await demo.get_demo_conversation() == stored
     demo.clear_cache()
+
+
+async def test_demo_ignores_a_cached_conversation_with_a_blank_reply(monkeypatch, tmp_path):
+    """A file cached before blank replies were refused is generated again, not served."""
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("LUCERNA_ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_AUTH_TOKEN", raising=False)
+    monkeypatch.setattr(demo, "_CACHE_DIR", tmp_path)
+    demo.clear_cache()
+    blank = {"user": "Hi", "events": [{"type": "tool_start", "name": "show", "status": "x"}]}
+    stored = {"source": "agent", "cache_key": demo.cache_key(), "exchanges": [blank]}
+    demo._write_disk(demo.cache_key(), stored)
+    conversation = await demo.get_demo_conversation()
+    assert conversation["source"] == "scripted"
+    demo.clear_cache()

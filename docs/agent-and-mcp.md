@@ -143,7 +143,7 @@ stop each step belongs to, and `tour.ts` shows the step with [Driver.js](https:/
 (spotlight, popover, keyboard) styled by `tour.css`. Closing the tour lets the rest play
 through; with reduced motion the conversation appears at once and there is no tour. A
 generated demo with a turn that has no written reply is not cached; the scripted version
-is served until the next start.
+is served until the next start, and a cached file that holds one is ignored.
 
 ## Evals
 
