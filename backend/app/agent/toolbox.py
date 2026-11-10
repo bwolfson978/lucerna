@@ -59,7 +59,7 @@ RENDERED_NATIVELY = {"prepare_scenario"}
 SHOW_TOOL = {
     "name": "show",
     "description": (
-        "Display something to the user: the scenario summary for the user to confirm "
+        "Display something in the conversation: the scenario summary for the user to confirm "
         "(after prepare_scenario reports nothing missing), a balance comparison for a "
         "result, or tappable follow-up questions. Numbers in these displays "
         "come from the engine. Displays appear in the order you produce them, so write your "
