@@ -29,6 +29,7 @@ import { MethodologyLayout } from "@/components/methodology/MethodologyLayout";
 import { apiClient } from "@/lib/api/client";
 import { ScenariosApiError, createScenariosApi } from "@/lib/api/scenarios";
 import { fetchDemoConversation } from "@/lib/agent/client";
+import type { DemoTour } from "@/lib/demo/tour";
 import { loadConversation, latestResultId } from "@/lib/agent/conversation";
 import type { AgentErrorCode, AgentEvent, DemoConversation } from "@/lib/agent/types";
 import type { OptimizationResult, ScenarioInput } from "@/lib/types";
@@ -415,6 +416,8 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
   const [demo, setDemo] = useState<DemoConversation | null>(null);
   const [demoError, setDemoError] = useState(false);
   const replayStarted = useRef(false);
+  const tourRef = useRef<DemoTour | null>(null);
+  useEffect(() => () => tourRef.current?.end(), []);
 
   const startDemo = useCallback(
     async (animate: boolean) => {
@@ -423,7 +426,12 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
         setDemo(data);
         updateDraft(normalizeDraft(data.draft));
         posthog.capture("demo_conversation_started", { source: data.source });
-        await replay(data, { animate });
+        tourRef.current?.end();
+        // The tour explains each step as it plays; with reduced motion the conversation
+        // appears at once, with nothing to step through.
+        const tour = animate ? (await import("@/lib/demo/tour")).createDemoTour() : null;
+        tourRef.current = tour;
+        await replay(data, { animate, pause: tour?.pause });
       } catch {
         setDemoError(true);
       }
@@ -434,7 +442,8 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
   useEffect(() => {
     if (!isDemo || replayStarted.current) return;
     replayStarted.current = true;
-    if (loadConversation(keys.conversation)) return;
+    // A replay this tab left partway (no history yet) starts over; a finished one stays.
+    if (loadConversation(keys.conversation)?.apiMessages.length) return;
     void startDemo(!reducedMotion);
   }, [isDemo, keys.conversation, reducedMotion, startDemo]);
 
@@ -479,6 +488,8 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
   const viewRef = useRef(view);
   useEffect(() => {
     viewRef.current = view;
+    // Leaving the conversation (full results, say) takes the tour's subject off screen.
+    if (view.kind !== "conversation") tourRef.current?.end();
   }, [view]);
   const scrollBeforeView = useRef(0);
   // After "Ask about this" or a run, land on the newest message instead of the old position.

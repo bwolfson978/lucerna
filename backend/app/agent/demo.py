@@ -135,8 +135,16 @@ async def generate_with_agent(client: ModelClient, source: str = "agent") -> dic
                 history.extend(event["messages"])
             else:
                 events.append(event)
+        if not _has_written_reply(events):
+            # The replay would show this turn as a blank reply. Don't keep it: the caller
+            # falls back to the scripted version and the next start tries the model again.
+            raise ModelUnavailable("empty_reply")
         exchanges.append({"user": text, "events": events})
     return _package(exchanges, history, draft, source=source)
+
+
+def _has_written_reply(events: list[dict]) -> bool:
+    return any(e["type"] == "text_delta" and e["text"].strip() for e in events)
 
 
 async def generate_scripted() -> dict:
@@ -275,9 +283,13 @@ def clear_cache() -> None:
 def _read_disk(key: str) -> dict | None:
     path = _CACHE_DIR / f"demo-conversation-{key}.json"
     try:
-        return json.loads(path.read_text())
+        cached = json.loads(path.read_text())
     except (OSError, ValueError):
         return None
+    # Files written before blank replies were refused may hold one; generate again.
+    if not all(_has_written_reply(exchange["events"]) for exchange in cached["exchanges"]):
+        return None
+    return cached
 
 
 def _write_disk(key: str, demo: dict) -> None:

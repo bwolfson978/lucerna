@@ -56,6 +56,11 @@ class FunctionModelClient:
     async def stream(self, *, system, tools, messages) -> AsyncIterator[StreamEvent]:
         content = self.respond(messages)
         stop = "tool_use" if any(b["type"] == "tool_use" for b in content) else "end_turn"
+        for block in content:
+            if block["type"] == "text":
+                yield TextDelta(block["text"])
+            elif block["type"] == "tool_use":
+                yield ToolStart(block["name"])
         yield Final(ModelTurn(content=content, stop_reason=stop))
 
 

@@ -44,6 +44,31 @@ interface UseConversationOptions {
   surface: string;
 }
 
+/** A point in a replayed conversation where playback can wait. */
+export interface ReplayStop {
+  /** Which exchange (question and reply), from 0. */
+  exchange: number;
+  /** before: the question is about to be asked. asked: it is on screen. card: a result
+   * card just appeared. answered: the reply is complete. */
+  at: "before" | "asked" | "card" | "answered";
+  /** This is the last exchange. */
+  last: boolean;
+}
+
+export interface ReplayOptions {
+  animate: boolean;
+  pause?: (stop: ReplayStop) => Promise<void>;
+}
+
+/** Replay timing in milliseconds: slow enough to follow each step as it happens. */
+export const REPLAY_PACE = {
+  betweenTurns: 700,
+  afterQuestion: 450,
+  tool: 900,
+  part: 250,
+  word: 40,
+};
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 let idCounter = 0;
@@ -173,35 +198,50 @@ export function useConversation({
     [handleEvent, surface]
   );
 
-  /** Play a recorded conversation as if it were happening now. */
+  /**
+   * Play a recorded conversation as if it were happening now. With `pause`, playback
+   * waits at each stop until the promise settles (the /demo tour explains the step).
+   */
   const replay = useCallback(
-    async (demo: DemoConversation, { animate }: { animate: boolean }) => {
+    async (demo: DemoConversation, { animate, pause }: ReplayOptions) => {
       const token = ++replayToken.current;
       const live = () => replayToken.current === token;
+      const stop = async (exchange: number, at: ReplayStop["at"]) => {
+        if (animate && pause && live())
+          await pause({ exchange, at, last: exchange === demo.exchanges.length - 1 });
+      };
       dispatch({ type: "reset" });
       for (const [index, exchange] of demo.exchanges.entries()) {
         if (!live()) return;
-        if (animate && index > 0) await sleep(700);
+        if (animate && index > 0) await sleep(REPLAY_PACE.betweenTurns);
+        await stop(index, "before");
+        if (!live()) return;
         dispatch({ type: "user", id: nextId(), text: exchange.user, replay: true });
-        if (animate) await sleep(450);
+        if (animate) await sleep(REPLAY_PACE.afterQuestion);
+        await stop(index, "asked");
         for (const event of exchange.events) {
           if (!live()) return;
           if (event.type === "text_delta" && animate) {
             for (const chunk of wordChunks(event.text)) {
               if (!live()) return;
               handleEvent({ type: "text_delta", text: chunk });
-              await sleep(16);
+              await sleep(REPLAY_PACE.word);
             }
           } else {
-            if (animate && event.type === "part") await sleep(250);
             handleEvent(event);
+            // Long enough to read "Running the optimizer" before the card replaces it.
+            if (animate && event.type === "tool_start") await sleep(REPLAY_PACE.tool);
+            if (animate && event.type === "part") await sleep(REPLAY_PACE.part);
+            if (event.type === "part" && event.part.kind === "mcp_app") await stop(index, "card");
           }
         }
+        if (!live()) return;
         const last = index === demo.exchanges.length - 1;
         dispatch({
           type: "event",
           event: { type: "done", messages: last ? demo.messages : [] },
         });
+        await stop(index, "answered");
       }
     },
     [handleEvent]
