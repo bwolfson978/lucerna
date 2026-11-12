@@ -190,3 +190,16 @@ async def test_http_mode_sends_the_internal_token(monkeypatch):
         async with toolbox_module.open_toolbox():
             pass  # pragma: no cover
     assert seen == {"url": "http://localhost:8000/mcp", "header": "s3cret"}
+
+
+async def test_scenario_summary_notes_when_nothing_was_written_yet():
+    # A first turn can end on the summary alone; the note asks for the written reply.
+    context = ctx()
+    async with open_toolbox() as toolbox:
+        await toolbox.call("prepare_scenario", {"scenario": SCENARIO}, context)
+        content, is_error = await toolbox.call("show", {"kind": "scenario_summary"}, context)
+        assert not is_error and "not seen any text" in content["note"]
+
+        context.wrote_text = True
+        content, _ = await toolbox.call("show", {"kind": "scenario_summary"}, context)
+        assert content["shown"] == "scenario_summary" and "note" not in content
