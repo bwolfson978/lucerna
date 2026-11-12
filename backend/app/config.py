@@ -69,6 +69,9 @@ class Settings(BaseSettings):
     # --- Feedback and analytics (PostHog) ---------------------------------------
     feedback_per_caller_per_day: int = 10
     feedback_per_day: int = 500
+    # Thumbs on assistant replies; each change of a rating counts.
+    reply_ratings_per_caller_per_day: int = 200
+    reply_ratings_per_day: int = 5000
     posthog_project_token: str = ""  # empty: error tracking and events are off
     posthog_host: str = "https://us.i.posthog.com"
     posthog_personal_api_key: str = ""  # data deletion

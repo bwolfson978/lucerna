@@ -358,7 +358,8 @@ def _show(arguments: dict, ctx: ToolContext) -> tuple[dict, bool]:
                 "draft_hash": described["draft_hash"],
             },
         )
-        return {"shown": "scenario_summary", "draft_hash": described["draft_hash"]}, False
+        shown = {"shown": "scenario_summary", "draft_hash": described["draft_hash"]}
+        return shown if ctx.wrote_text else {**shown, "next": ASK_TO_CHECK}, False
 
     suggestions = [s.strip() for s in args.suggestions or [] if s.strip()]
     if not 1 <= len(suggestions) <= 4:
@@ -366,6 +367,11 @@ def _show(arguments: dict, ctx: ToolContext) -> tuple[dict, bool]:
     ctx.emit("part", part={"kind": "suggestions", "suggestions": suggestions})
     return _shown(ctx, {"shown": "suggestions"}), False
 
+
+# The model sometimes ends the turn on the summary alone, which leaves the user with no reply.
+ASK_TO_CHECK = (
+    "Now write a short message asking the user to check their scenario and tap Run the numbers."
+)
 
 # The model sometimes drafts its answer while thinking, shows a chart or suggestions, and
 # ends the turn believing the user read the draft. Thinking is never shown, so say so.

@@ -50,12 +50,28 @@ export type AgentEvent =
     }
   | { type: "part"; part: AgentPart }
   | { type: "error"; code: AgentErrorCode; message: string }
-  | { type: "done"; messages: unknown[] };
+  /** `trace_id` names the reply for a rating; absent when the turn produced none. */
+  | { type: "done"; messages: unknown[]; trace_id?: string };
 
 export type UiPart =
   | { kind: "text"; text: string }
   | AgentPart
   | { kind: "notice"; code: AgentErrorCode; message: string };
+
+/** Why a reply got a thumbs down (backend/app/agent/feedback.py `Reason`). */
+export type RatingReason =
+  | "numbers_look_wrong"
+  | "did_not_answer"
+  | "hard_to_follow"
+  | "ignored_something"
+  | "something_else";
+
+/** What the person thinks of one reply. */
+export interface ReplyRating {
+  value: "up" | "down";
+  reason?: RatingReason;
+  note?: string;
+}
 
 export interface UiMessage {
   id: string;
@@ -69,6 +85,14 @@ export interface UiMessage {
   apiIndex?: number;
   /** A user message only: the scenario as it was when the message was sent. */
   draft?: ScenarioDraft;
+  /**
+   * An assistant message only: the id its rating is stored under. Absent on demo
+   * replays, failed turns and conversations saved before ratings existed, which
+   * show no thumbs.
+   */
+  traceId?: string;
+  /** An assistant message only: the person's rating, if they gave one. */
+  rating?: ReplyRating;
 }
 
 export interface StoredResult {

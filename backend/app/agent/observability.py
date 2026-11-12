@@ -39,7 +39,7 @@ SPAN_NAME = "website_assistant"
 MAX_ID = 200
 
 
-def _header(request: Request, name: str) -> str | None:
+def header(request: Request, name: str) -> str | None:
     value = request.headers.get(name, "").strip()
     return value[:MAX_ID] or None
 
@@ -50,7 +50,9 @@ class TurnTrace:
 
     distinct_id: str | None = None
     session_id: str | None = None
-    trace_id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    # 32 hex characters: PostHog's ``$ai_trace_id`` and the Langfuse trace id are the
+    # same value, which the page gets in the ``done`` event to rate the reply with.
+    trace_id: str = field(default_factory=lambda: uuid.uuid4().hex)
     # Langfuse observations for this turn, when conversation tracing is on.
     _root: Any = field(default=None, init=False, repr=False)
     _attributes: Any = field(default=None, init=False, repr=False)
@@ -61,8 +63,8 @@ class TurnTrace:
     @classmethod
     def from_request(cls, request: Request) -> TurnTrace:
         return cls(
-            distinct_id=_header(request, DISTINCT_ID_HEADER),
-            session_id=_header(request, SESSION_ID_HEADER),
+            distinct_id=header(request, DISTINCT_ID_HEADER),
+            session_id=header(request, SESSION_ID_HEADER),
         )
 
     def generation(
@@ -145,7 +147,10 @@ class TurnTrace:
             )
             self._attributes.__enter__()
             self._root = langfuse.start_observation(
-                name=tracing.ROOT_NAME, as_type="agent", input=text
+                trace_context={"trace_id": self.trace_id},
+                name=tracing.ROOT_NAME,
+                as_type="agent",
+                input=text,
             )
         except Exception:  # noqa: BLE001
             logger.warning("Could not start a Langfuse trace", exc_info=True)

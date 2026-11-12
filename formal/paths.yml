@@ -13,6 +13,9 @@ AutoSave:
   - frontend/src/lib/agent/conversation.ts
 UndoDelete:
   - frontend/src/app/my-scenarios/page.tsx
+ReplyRating:
+  - frontend/src/lib/agent/replyRating.ts
+  - backend/app/agent/feedback.py
 FederalTax:
   - backend/app/engine/tax.py
   - backend/data/tax_brackets_*.json

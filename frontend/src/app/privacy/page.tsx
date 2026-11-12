@@ -68,9 +68,11 @@ export default function PrivacyPage() {
           keep a record of each conversation in Langfuse: your messages, the replies, the
           calculations the assistant ran, and their token counts and cost. Email addresses and phone
           numbers are removed before it is sent. The record is linked to that visit&apos;s analytics
-          ID, not your name or account, and is kept until you ask us to delete it. The usage
-          analytics we keep for each reply (the model, its token count and cost, how long it took
-          and any error) never include your messages or the replies.
+          ID, not your name or account, and is kept until you ask us to delete it. If you rate a
+          reply with the thumbs under it, we keep the rating, the reason you picked and any note you
+          add with that conversation, and delete them with it. The usage analytics we keep for each
+          reply (the model, its token count and cost, how long it took any error, and whether you
+          rated it and the reason you picked) never include your messages, the replies or your note.
         </DocTerm>
       </DocSection>
 

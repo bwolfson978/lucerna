@@ -21,6 +21,7 @@ SPECS=(
   "AgentSpend:TypeOK MessagesPerIp MessagesPerClient SpendWithinCap SpendWithinOneMessage"
   "AutoSave:TypeOK NoDuplicateSaves NoSilentLoss NoSilentLossWhenStorageFits NoSilentLossWhenSavesSucceed"
   "UndoDelete:TypeOK HiddenWhilePending DeletedStayGone ServerMatchesIntent"
+  "ReplyRating:TypeOK AckedIsTrue LastPickWins OneAtATime"
 )
 
 status=0

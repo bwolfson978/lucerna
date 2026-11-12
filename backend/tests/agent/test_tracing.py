@@ -192,6 +192,8 @@ async def test_turn_is_one_trace_with_model_calls_and_tools(langfuse):
     assert root["name"] == "website_assistant"
     assert root["input"] == "What are the brackets?"
     assert root["output"] == "Here are the brackets."
+    # The id the page rates the reply with is the Langfuse trace's own id.
+    assert root["trace_context"] == {"trace_id": trace.trace_id}
     assert root["ended"]
     # Model calls are the SDK's spans, children of the root; tools are ours.
     assert len(client.parents) == 2

@@ -19,7 +19,9 @@ import {
   type AgentErrorCode,
   type AgentEvent,
   type DemoConversation,
+  type ReplyRating,
 } from "@/lib/agent/types";
+import { replyRatings } from "@/lib/agent/replyRating";
 import type { ScenarioDraft } from "@/lib/scenario/draft";
 
 interface UseConversationOptions {
@@ -245,6 +247,14 @@ export function useConversation({
     [handleEvent]
   );
 
+  /** Rate a reply, change its rating, or clear it (null). */
+  const rate = useCallback((messageId: string, rating: ReplyRating | null) => {
+    const traceId = stateRef.current.messages.find((m) => m.id === messageId)?.traceId;
+    if (!traceId) return;
+    dispatch({ type: "rate", messageId, rating });
+    replyRatings.pick(traceId, rating);
+  }, []);
+
   const reset = useCallback(() => {
     abortRef.current?.abort();
     replayToken.current += 1;
@@ -265,7 +275,7 @@ export function useConversation({
     []
   );
 
-  return { state, send, edit, replay, reset, loadResult, addResult };
+  return { state, send, edit, rate, replay, reset, loadResult, addResult };
 }
 
 export type ConversationApi = ReturnType<typeof useConversation>;
