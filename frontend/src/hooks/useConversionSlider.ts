@@ -7,7 +7,8 @@ import type {
 } from "@/lib/types";
 import { analyzeBracketFill, calculateFederalTax } from "@/lib/tax/brackets";
 import { useTaxConfig } from "@/lib/tax/TaxConfigProvider";
-import { computeSnapThreshold } from "@/lib/utils/snap";
+import { sampleCurve } from "@lucerna/ui";
+import { curveData } from "@/lib/results/viewData";
 
 /**
  * Find the two curve points that bound a given total conversion and
@@ -115,63 +116,31 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
     [result.input.timeline]
   );
 
-  // Sort the conversion curve once — reused by both distributeConversion
-  // and estimatedSavings interpolation.
-  const sortedCurve = useMemo(
-    () =>
-      result.conversion_curve && result.conversion_curve.length >= 2
-        ? [...result.conversion_curve].sort((a, b) => a.total_cap - b.total_cap)
-        : undefined,
-    [result.conversion_curve]
+  // The same curve points the result card gets (web chat, Claude, ChatGPT), sampled the
+  // same way (sampleCurve), so the card and this page show the same numbers at every
+  // total. At the optimal total, the engine's own schedule.
+  const curve = useMemo(() => curveData(result), [result]);
+  const atOptimal = Math.abs(totalConversion - result.total_conversion) < 1;
+  const sample = useMemo(
+    () => (curve && !atOptimal ? sampleCurve(curve, totalConversion) : null),
+    [curve, atOptimal, totalConversion]
   );
 
-  const yearlyConversions = useMemo(
-    () =>
-      distributeConversion(
-        totalConversion,
-        result.yearly_conversions,
-        sortedCurve,
-        result.input.traditional_ira_balance,
-        result.total_conversion
-      ),
-    [
-      totalConversion,
-      result.yearly_conversions,
-      sortedCurve,
-      result.input.traditional_ira_balance,
-      result.total_conversion,
-    ]
-  );
+  const yearlyConversions = useMemo(() => {
+    if (atOptimal) return result.yearly_conversions.map((w) => Math.max(0, w));
+    if (sample) return sample.conversions;
+    // Older results without a curve: scale the optimal schedule.
+    return distributeConversion(totalConversion, result.yearly_conversions);
+  }, [atOptimal, sample, totalConversion, result.yearly_conversions]);
 
-  // Interpolate per-year RMD amounts from curve points.
-  // Must be computed before yearlyBracketFills and yearlyDetail because
-  // the conversion's marginal tax position is layered on top of income + RMD,
-  // not just income (mirroring optimizer._build_year_detail).
+  // Each year's required withdrawal, which the conversion sits on top of.
   const yearlyRmds = useMemo(() => {
-    const snapThreshold = computeSnapThreshold(0, result.input.traditional_ira_balance);
-    const buildOptRmds = () => {
-      const map = new Map<number, number>();
-      for (const d of result.rmd_projection?.yearly_detail ?? []) {
-        map.set(d.year, d.rmd_amount);
-      }
-      return result.input.timeline.map((yi) => map.get(yi.year) ?? 0);
-    };
-
-    if (Math.abs(totalConversion - result.total_conversion) <= snapThreshold) {
-      return buildOptRmds();
-    }
-
-    if (!sortedCurve || sortedCurve.length < 2) {
-      return buildOptRmds();
-    }
-
-    const { lower, upper, t } = findBoundingPoints(totalConversion, sortedCurve);
-    return result.input.timeline.map((_, i) => {
-      const lv = (lower.yearly_rmd_amounts ?? [])[i] ?? 0;
-      const uv = (upper.yearly_rmd_amounts ?? [])[i] ?? 0;
-      return lv + t * (uv - lv);
-    });
-  }, [totalConversion, result, sortedCurve]);
+    if (sample) return sample.rmds;
+    const byYear = new Map(
+      (result.rmd_projection?.yearly_detail ?? []).map((d) => [d.year, d.rmd_amount])
+    );
+    return result.input.timeline.map((yi) => byYear.get(yi.year) ?? 0);
+  }, [sample, result]);
 
   // Bracket fill uses income + RMD as the base so the conversion is layered
   // onto the correct starting income position in the bracket chart.
@@ -188,17 +157,29 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
     [incomes, yearlyRmds, yearlyConversions, filingStatus, taxConfig]
   );
 
-  // Tax cost uses income + RMD as the base for the same reason: the conversion
-  // sits on top of RMD in the bracket stack.
+  // Each year's tax from the engine (federal and state, that year's own brackets), so the
+  // years add up to the total. Null for older results without it.
+  const engineYearTaxes = useMemo(() => {
+    if (sample) return sample.taxes ?? null;
+    if (!atOptimal) return null;
+    const detail = result.yearly_detail;
+    return detail?.length === result.input.timeline.length &&
+      detail.every((d) => typeof d.tax_cost === "number")
+      ? detail.map((d) => d.tax_cost)
+      : null;
+  }, [sample, atOptimal, result]);
+
+  // Without the engine's figures, the federal tax with income + RMD as the base.
   const yearlyDetail: YearlyDetail[] = useMemo(
     () =>
       incomes.map((income, i) => {
         const rmd = yearlyRmds[i] ?? 0;
         const conversion = yearlyConversions[i] ?? 0;
         const base = income + rmd;
-        const taxWith = calculateFederalTax(base + conversion, filingStatus, taxConfig);
-        const taxWithout = calculateFederalTax(base, filingStatus, taxConfig);
-        const taxCost = taxWith - taxWithout;
+        const taxCost = engineYearTaxes
+          ? (engineYearTaxes[i] ?? 0)
+          : calculateFederalTax(base + conversion, filingStatus, taxConfig) -
+            calculateFederalTax(base, filingStatus, taxConfig);
         // Find marginal bracket rate from the bracket fill data
         const fills = yearlyBracketFills[i];
         const topFilled = fills
@@ -219,6 +200,7 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
       yearlyRmds,
       yearlyConversions,
       yearlyBracketFills,
+      engineYearTaxes,
       filingStatus,
       taxConfig,
       result.input.timeline,
@@ -226,75 +208,15 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
   );
 
   const displayTotalConversion = yearlyConversions.reduce((a, b) => a + b, 0);
-  // The total tax is the engine's figure (federal and state, each year's own brackets),
-  // the same number the result card and the assistant report. Summing the federal-only
-  // estimate in yearlyDetail would leave state tax out.
-  const totalTaxCost = useMemo(() => {
-    const snapThreshold = computeSnapThreshold(
-      0,
-      Math.max(result.input.traditional_ira_balance, result.total_conversion)
-    );
-    if (Math.abs(totalConversion - result.total_conversion) <= snapThreshold) {
-      return result.total_tax_on_conversions;
-    }
-    // Older results without a curve: only the federal estimate is available.
-    if (!sortedCurve || sortedCurve.length < 2) {
-      return yearlyDetail.reduce((s, d) => s + d.tax_cost, 0);
-    }
-    const { lower, upper, t } = findBoundingPoints(totalConversion, sortedCurve);
-    return lower.total_tax + t * (upper.total_tax - lower.total_tax);
-  }, [totalConversion, result, sortedCurve, yearlyDetail]);
-
-  const conversionYears = yearlyConversions.filter((c) => c > 0).length;
-
-  // Interpolate NPV-based estimated savings from pre-computed conversion curve.
-  // When near the optimizer's result, snap to the authoritative backend value
-  // so hero metric and scenario cards always agree.
-  const estimatedSavings = useMemo(() => {
-    // Snap to backend value when at (or very near) the optimizer's answer
-    const snapThreshold = computeSnapThreshold(
-      0,
-      Math.max(result.input.traditional_ira_balance, result.total_conversion)
-    );
-    if (Math.abs(totalConversion - result.total_conversion) <= snapThreshold) {
-      return result.estimated_lifetime_tax_savings;
-    }
-
-    if (!sortedCurve || sortedCurve.length === 0) {
-      return result.estimated_lifetime_tax_savings;
-    }
-
-    const npvAtZero = result.npv_at_zero;
-
-    // Find bounding points for linear interpolation
-    if (totalConversion <= sortedCurve[0].total_cap) {
-      return sortedCurve[0].npv - npvAtZero;
-    }
-    if (totalConversion >= sortedCurve[sortedCurve.length - 1].total_cap) {
-      return sortedCurve[sortedCurve.length - 1].npv - npvAtZero;
-    }
-
-    for (let i = 0; i < sortedCurve.length - 1; i++) {
-      if (
-        sortedCurve[i].total_cap <= totalConversion &&
-        sortedCurve[i + 1].total_cap >= totalConversion
-      ) {
-        const range = sortedCurve[i + 1].total_cap - sortedCurve[i].total_cap;
-        const t = range > 0 ? (totalConversion - sortedCurve[i].total_cap) / range : 0;
-        const interpolatedNpv =
-          sortedCurve[i].npv + t * (sortedCurve[i + 1].npv - sortedCurve[i].npv);
-        return interpolatedNpv - npvAtZero;
-      }
-    }
-
-    return result.estimated_lifetime_tax_savings;
-  }, [
-    sortedCurve,
-    result.npv_at_zero,
-    result.estimated_lifetime_tax_savings,
-    result.total_conversion,
-    totalConversion,
-  ]);
+  // The engine's total tax (federal and state), the number the card and the assistant
+  // report; the years above add up to it, give or take rounding.
+  const totalTaxCost = atOptimal
+    ? result.total_tax_on_conversions
+    : sample
+      ? sample.tax
+      : yearlyDetail.reduce((s, d) => s + d.tax_cost, 0);
+  const conversionYears = yearlyConversions.filter((c) => Math.round(c) > 0).length;
+  const estimatedSavings = sample ? sample.savings : result.estimated_lifetime_tax_savings;
 
   return {
     totalConversion,

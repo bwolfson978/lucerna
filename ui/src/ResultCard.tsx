@@ -101,8 +101,7 @@ export function ResultCard({
     ? sample.conversions.filter((c) => Math.round(c) > 0).length
     : data.years_with_conversions;
 
-  // Off the optimum, each year's bars and added tax come from the curve, with the tax
-  // figured on the brackets the way the results page does.
+  // Off the optimum, each year's bars and added tax come from the curve.
   const chart: BracketFillData | undefined =
     fill && sample
       ? {
@@ -111,9 +110,12 @@ export function ResultCard({
             const conversion = sample.conversions[i] ?? 0;
             const rmd = sample.rmds[i] ?? y.rmd;
             const base = y.income + rmd;
+            // The engine's tax for the year (federal and state); older results without
+            // it get the federal tax from the brackets.
             const tax =
+              sample.taxes?.[i] ??
               federalTax(base + conversion, fill.brackets, fill.standard_deduction) -
-              federalTax(base, fill.brackets, fill.standard_deduction);
+                federalTax(base, fill.brackets, fill.standard_deduction);
             return {
               ...y,
               rmd: Math.round(rmd),
@@ -175,7 +177,7 @@ export function ResultCard({
           label="Converted"
           value={curve ? formatCurrency(total) : formatCompactCurrency(optimal)}
         />
-        <Stat label="Tax cost" value={formatCompactCurrency(taxCost)} />
+        <Stat label="Tax cost" value={formatCurrency(taxCost)} />
         <Stat label="Years" value={String(years)} />
       </div>
       {curve && (
