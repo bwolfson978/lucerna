@@ -20,7 +20,6 @@ const meta: Meta<typeof ConversionSlider> = {
     min: 0,
     max: 900000,
     optimalValue: optimal,
-    maxLabel: "$900K, your whole balance",
     savings: resultDetails.curve?.points,
   },
   render: function Render(args) {
@@ -48,7 +47,6 @@ export const BestNearTheEnd: Story = {
     value: 1426300,
     max: 1450000,
     optimalValue: 1426300,
-    maxLabel: undefined,
     savings: [
       { total: 0, savings: 0 },
       { total: 700000, savings: 150000 },

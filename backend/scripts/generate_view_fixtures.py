@@ -51,7 +51,14 @@ def _slim(result: dict, *, keep_curve: bool = False) -> dict:
     curve = []
     if keep_curve:
         picked = curve_points(OptimizationResult.model_validate(result))
-        curve = [{k: p.model_dump()[k] for k in CURVE_FIELDS} for p in picked]
+        curve = [
+            {
+                **{k: p.model_dump()[k] for k in CURVE_FIELDS},
+                # Each year's tax (curve_view "taxes"); the rest of yearly_detail goes unread.
+                "yearly_detail": [{"tax_cost": d["tax_cost"]} for d in p.yearly_detail],
+            }
+            for p in picked
+        ]
     return {**result, "conversion_curve": curve}
 
 

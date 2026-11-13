@@ -34,6 +34,12 @@ export {
   type ConversionCurveData,
   type CurveSample,
 } from "./curve";
+export {
+  resultAtTotal,
+  stableChartMax,
+  useResultSlider,
+  type ResultAtTotal,
+} from "./useResultSlider";
 export { computeSnapThreshold, maybeSnap } from "./snap";
 export {
   BracketChart,
