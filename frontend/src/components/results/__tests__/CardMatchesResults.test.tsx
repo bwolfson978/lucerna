@@ -7,8 +7,9 @@ import { MethodologyProvider } from "@/components/methodology/MethodologyContext
 import { ResultsView } from "../ResultsView";
 
 // The chat result card (web, Claude, ChatGPT) and the full results page show the same
-// analysis. Each works its numbers out on its own, so this renders both from one engine
-// result (a California scenario, so state tax counts) and reads what a person would see.
+// analysis through the same code (useResultSlider in ui/, tested in ResultSlider.test.ts).
+// This checks the wiring: both rendered from one engine result (a California scenario,
+// so state tax counts) show a person the same numbers.
 
 const result = fixture.analyze_roth_conversions.result as unknown as OptimizationResult;
 
@@ -67,7 +68,8 @@ describe("chat result card and full results agree", () => {
     expect(Math.abs(a.tax.reduce((s, t) => s + t, 0) - taxTotal)).toBeLessThanOrEqual(a.tax.length);
   });
 
-  it.each([0.25, 0.6, 0.9])("with the slider moved to %s of the balance", (share) => {
+  it("with the slider moved", () => {
+    const share = 0.6;
     const total = Math.round((result.input.traditional_ira_balance * share) / 100) * 100;
     const a = card();
     const b = full();

@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import { BracketFillChart, isBracketFillData, type BracketFillData } from "./BracketFillChart";
 import { ConversionSlider } from "./ConversionSlider";
 import { ConversionStrip, type ConversionYear } from "./ConversionStrip";
 import { MostSavingsNote } from "./MostSavingsNote";
-import { federalTax, isConversionCurveData, sampleCurve, type ConversionCurveData } from "./curve";
+import type { ConversionCurveData } from "./curve";
 import { formatCompactCurrency, formatCurrency, formatSavings } from "./format";
 import { Stat } from "./Stat";
+import { useResultSlider } from "./useResultSlider";
 
 /**
  * What the result card shows. This is the `structuredContent` that
@@ -81,74 +81,20 @@ export function ResultCard({
   onAsk,
   onSelectionChange,
 }: ResultCardProps) {
-  const fill = isBracketFillData(details?.bracket_fill) ? details.bracket_fill : undefined;
-  const curve =
-    fill &&
-    isConversionCurveData(details?.curve) &&
-    details.curve.points[0].conversions.length === fill.years.length
-      ? details.curve
-      : undefined;
-  const optimal = data.total_conversion;
-  const bestSavings = data.estimated_lifetime_tax_savings_todays_dollars;
-  const [total, setTotal] = useState(optimal);
-  const atOptimal = !curve || total === optimal;
-  const sample = curve && !atOptimal ? sampleCurve(curve, total) : null;
-
-  const savings = sample ? Math.round(sample.savings) : bestSavings;
-  const shortfall = Math.max(0, bestSavings - savings);
-  const taxCost = sample ? sample.tax : data.total_tax_on_conversions;
-  const years = sample
-    ? sample.conversions.filter((c) => Math.round(c) > 0).length
-    : data.years_with_conversions;
-
-  // Off the optimum, each year's bars and added tax come from the curve.
-  const chart: BracketFillData | undefined =
-    fill && sample
-      ? {
-          ...fill,
-          years: fill.years.map((y, i) => {
-            const conversion = sample.conversions[i] ?? 0;
-            const rmd = sample.rmds[i] ?? y.rmd;
-            const base = y.income + rmd;
-            // The engine's tax for the year (federal and state); older results without
-            // it get the federal tax from the brackets.
-            const tax =
-              sample.taxes?.[i] ??
-              federalTax(base + conversion, fill.brackets, fill.standard_deduction) -
-                federalTax(base, fill.brackets, fill.standard_deduction);
-            return {
-              ...y,
-              rmd: Math.round(rmd),
-              conversion: Math.round(conversion),
-              tax: Math.round(tax),
-            };
-          }),
-        }
-      : fill;
-
-  // One vertical scale for every total, so bars move and the axis stays put.
-  const stableMax = useMemo(() => {
-    if (!fill || !curve) return undefined;
-    let most = 0;
-    fill.years.forEach((y, i) => {
-      most = Math.max(most, y.income + y.rmd + y.conversion);
-      for (const p of curve.points) most = Math.max(most, y.income + p.rmds[i] + p.conversions[i]);
-    });
-    return most;
-  }, [fill, curve]);
-
-  const max = curve ? Math.max(curve.points[curve.points.length - 1].total, optimal) : 0;
-
-  const move = (next: number) => {
-    setTotal(next);
-    if (!curve || !onSelectionChange) return;
-    onSelectionChange({
-      total: next,
-      savings: next === optimal ? bestSavings : Math.round(sampleCurve(curve, next).savings),
-      optimalTotal: optimal,
-      optimalSavings: bestSavings,
-    });
-  };
+  const {
+    total,
+    move,
+    optimal,
+    max,
+    curve,
+    stableMax,
+    atOptimal,
+    savings,
+    shortfall,
+    taxCost,
+    years,
+    chart,
+  } = useResultSlider(data, details, onSelectionChange);
 
   return (
     <article className="card-recommended gap-comfortable flex flex-col" data-ui="result-card">

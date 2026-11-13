@@ -61,9 +61,8 @@ const SLIVER = 100;
 
 /**
  * The curve at any total: a blend of the two points around it, with each year's
- * conversion scaled so they add up to the total exactly. The one way every surface
- * moves off the optimal schedule: the result card here, and the results page
- * (frontend hooks/useConversionSlider.ts) on the same points.
+ * conversion scaled so they add up to the total exactly. Every surface moves off the
+ * optimal schedule through this (see useResultSlider).
  */
 export function sampleCurve(curve: ConversionCurveData, total: number): CurveSample {
   const points = curve.points;
