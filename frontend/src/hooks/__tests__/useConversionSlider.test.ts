@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { distributeConversion } from "../useConversionSlider";
-import type { ConversionCurvePoint } from "@/lib/types";
+import { act, renderHook } from "@testing-library/react";
+import { distributeConversion, useConversionSlider } from "../useConversionSlider";
+import type { ConversionCurvePoint, OptimizationResult } from "@/lib/types";
+import { sampleOptimizationResult } from "@/test/fixtures/optimization-result";
 
 function makeCurvePoint(cap: number, conversions: number[], rmds?: number[]): ConversionCurvePoint {
   return {
@@ -159,5 +161,29 @@ describe("distributeConversion", () => {
       expect(result[0]).toBeCloseTo(30000);
       expect(result[1]).toBeCloseTo(20000);
     });
+  });
+});
+
+describe("useConversionSlider total tax", () => {
+  // The engine's total includes state tax, so it is well above a federal-only estimate.
+  const result: OptimizationResult = {
+    ...sampleOptimizationResult,
+    total_tax_on_conversions: 30000,
+    conversion_curve: [
+      { ...makeCurvePoint(0, [0, 0, 0]), total_tax: 0 },
+      { ...makeCurvePoint(50000, [30000, 20000, 0]), total_tax: 12000 },
+      { ...makeCurvePoint(150000, [80000, 70000, 0]), total_tax: 40000 },
+    ],
+  };
+
+  it("reports the engine's total at the most savings", () => {
+    const { result: hook } = renderHook(() => useConversionSlider({ result }));
+    expect(hook.current.totalTaxCost).toBe(30000);
+  });
+
+  it("interpolates the engine's totals along the curve when moved", () => {
+    const { result: hook } = renderHook(() => useConversionSlider({ result }));
+    act(() => hook.current.setTotalConversion(25000));
+    expect(hook.current.totalTaxCost).toBeCloseTo(6000);
   });
 });

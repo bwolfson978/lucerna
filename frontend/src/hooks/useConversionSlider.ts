@@ -226,7 +226,25 @@ export function useConversionSlider({ result }: UseConversionSliderParams) {
   );
 
   const displayTotalConversion = yearlyConversions.reduce((a, b) => a + b, 0);
-  const totalTaxCost = yearlyDetail.reduce((s, d) => s + d.tax_cost, 0);
+  // The total tax is the engine's figure (federal and state, each year's own brackets),
+  // the same number the result card and the assistant report. Summing the federal-only
+  // estimate in yearlyDetail would leave state tax out.
+  const totalTaxCost = useMemo(() => {
+    const snapThreshold = computeSnapThreshold(
+      0,
+      Math.max(result.input.traditional_ira_balance, result.total_conversion)
+    );
+    if (Math.abs(totalConversion - result.total_conversion) <= snapThreshold) {
+      return result.total_tax_on_conversions;
+    }
+    // Older results without a curve: only the federal estimate is available.
+    if (!sortedCurve || sortedCurve.length < 2) {
+      return yearlyDetail.reduce((s, d) => s + d.tax_cost, 0);
+    }
+    const { lower, upper, t } = findBoundingPoints(totalConversion, sortedCurve);
+    return lower.total_tax + t * (upper.total_tax - lower.total_tax);
+  }, [totalConversion, result, sortedCurve, yearlyDetail]);
+
   const conversionYears = yearlyConversions.filter((c) => c > 0).length;
 
   // Interpolate NPV-based estimated savings from pre-computed conversion curve.

@@ -185,7 +185,6 @@ export function ResultCard({
           optimalValue={optimal}
           onChange={move}
           savings={curve.points}
-          maxLabel={`${formatCompactCurrency(max)}, your whole balance`}
         />
       )}
       {chart ? (
