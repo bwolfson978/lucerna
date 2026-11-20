@@ -13,6 +13,8 @@ Checks on every assistant reply:
   - no em dashes
   - every dollar amount appears in a tool result, a scenario default or the user's words
     (a bare user number under 1,000 may mean thousands: "about 90" grounds $90,000)
+  - every tax bracket it names by rate ("the 22% bracket") is a real federal bracket, or a
+    bracket of a state in the scenario or in a get_tax_brackets result
   - analyze_roth_conversions only runs after a scenario summary was shown
 Plus the case's own expectations (tools called or not, cards shown, final draft
 values, reply content and shape). Results are written to evals/results/.
@@ -42,6 +44,8 @@ from app.agent.loop import run_turn
 from app.agent.model import ModelClient
 from app.agent.observability import TurnTrace
 from app.config import settings
+from app.engine.state_tax import _TAX_DATA
+from app.engine.tax import BRACKETS
 from app.tools.draft import ScenarioDraft
 from evals.judges import JudgeClient, load_judges
 
@@ -60,6 +64,28 @@ _DECLINING = re.compile(
     r"\b(?:can't|cannot|can not|won't|don't|isn't|not)\b[^.!?\n]{0,40}"
     r"\b(?:what|whether|if)\s+you should\b",
     re.I,
+)
+
+
+# A bracket named by its rate: "the 22% bracket", "the 12% and 22% brackets".
+_RATE = r"\d{1,2}(?:\.\d+)?\s?%"
+_NAMED_BRACKETS = (
+    rf"((?:{_RATE}(?:\s*,\s*|\s*,?\s+(?:and|or|to)\s+))*{_RATE})"
+    r"(?:\s+(?:federal|state|income|tax|marginal))*\s+brackets?\b"
+)
+_BRACKET_CLAIM = re.compile(_NAMED_BRACKETS, re.I)
+# The next bracket given a rate: "the next bracket up is about 17%", "the next bracket (22%)".
+_NEXT_BRACKET_CLAIM = re.compile(
+    r"\b(?:next|higher|following)\s+(?:tax\s+)?bracket(?:\s+up)?\s*(?:,|\(|is|at|of)\s*"
+    rf"(?:(?:about|roughly|around|approximately)\s+)?({_RATE})",
+    re.I,
+)
+# Saying a rate is not a bracket ("there's no 17% bracket") is not a claim that it is one.
+_NOT_A_BRACKET = re.compile(
+    rf"\b(?:no|not|isn't|aren't|never)\b[^.!?\n]{{0,30}}?{_NAMED_BRACKETS}", re.I
+)
+FEDERAL_BRACKET_RATES = frozenset(
+    round(b["rate"] * 100, 2) for brackets in BRACKETS.values() for b in brackets
 )
 
 
@@ -116,6 +142,44 @@ def grounded(amount: float, sources: list[float]) -> bool:
         if abs(amount - s) <= max(1.0, 0.015 * abs(s)):
             return True
     return False
+
+
+def named_bracket_rates(text: str) -> list[float]:
+    """Rates the text calls a bracket, in percent."""
+    text = _NOT_A_BRACKET.sub("", text)
+    claims = _BRACKET_CLAIM.findall(text) + _NEXT_BRACKET_CLAIM.findall(text)
+    return [float(rate) for claim in claims for rate in _NUMBER.findall(claim)]
+
+
+def state_bracket_rates(codes) -> set[float]:
+    """Bracket rates, in percent, of the given states (unknown codes add nothing)."""
+    states = _TAX_DATA.get("states", {})
+    return {
+        round(b["rate"] * 100, 2)
+        for code in codes
+        for brackets in states.get(str(code).upper(), {}).get("brackets", {}).values()
+        for b in brackets
+    }
+
+
+def brackets_in_result(result: str) -> set[float]:
+    """Bracket rates, in percent, that a get_tax_brackets result lists."""
+    try:
+        data = json.loads(result)
+    except ValueError:
+        return set()
+    tables = [data.get(k) for k in ("federal", "state")] if isinstance(data, dict) else []
+    return {
+        round(b["rate"] * 100, 2)
+        for table in tables
+        if isinstance(table, dict)
+        for b in table.get("brackets_on_taxable_income") or []
+    }
+
+
+def is_bracket(rate: float, brackets: set[float]) -> bool:
+    """True for a real bracket rate. A fractional rate may be quoted rounded (4.95% as 5%)."""
+    return rate == 0 or any(rate == b or rate == round(b) for b in brackets)
 
 
 @dataclass
@@ -210,12 +274,18 @@ def check(case: dict, turns: list[TurnRecord], draft: ScenarioDraft) -> list[str
     expect = case.get("expect", {})
     # The scenario's defaults (7% return, $620 ACA premium...) are fair to state too.
     sources: list[float] = source_numbers(ScenarioDraft().model_dump_json())
+    brackets = FEDERAL_BRACKET_RATES | state_bracket_rates(
+        {draft.state, draft.retirement_state, *(row.state for row in draft.timeline)} - {None}
+    )
+    if draft.custom_state_rate_pct is not None:
+        brackets |= {draft.custom_state_rate_pct}
     summary_shown = False
 
     for i, t in enumerate(turns, start=1):
         sources += user_numbers(t.user)
         for result in t.tool_results:
             sources += source_numbers(result)
+            brackets |= brackets_in_result(result)
         if t.errors:
             failures.append(f"turn {i}: error events {t.errors}")
         if not t.text.strip():
@@ -227,6 +297,9 @@ def check(case: dict, turns: list[TurnRecord], draft: ScenarioDraft) -> list[str
         for amount in money_amounts(t.text):
             if not grounded(amount, sources):
                 failures.append(f"turn {i}: ${amount:,.0f} not found in tool results or user input")
+        for rate in named_bracket_rates(t.text):
+            if not is_bracket(rate, brackets):
+                failures.append(f"turn {i}: {rate:g}% is not a tax bracket")
         if "analyze_roth_conversions" in t.tools and not summary_shown:
             failures.append(f"turn {i}: ran the optimizer before showing a scenario summary")
         if "scenario_summary" in t.parts:

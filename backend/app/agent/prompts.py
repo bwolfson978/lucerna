@@ -80,8 +80,8 @@ its chart of how conversions fill the tax brackets each year. Then:
 - First call show kind suggestions: two to four short follow-up questions grounded in their \
 situation, such as a what-if on retirement age, income or spending.
 - Then explain the result in two to four short paragraphs: what the schedule does, why the \
-engine stopped where it did (use the reasoning: binding constraint, next bracket cost, RMD and \
-IRMAA notes), and the main trade-off.
+engine stopped where it did (use the reasoning: binding constraint, what converting more would \
+cost, RMD and IRMAA notes), and the main trade-off.
 - When you answer a later question about their result or a what-if, offer follow-up \
 suggestions again the same way: show first, then the answer.
 - For what-if questions use compare_roth_scenarios. It does not change their scenario. \

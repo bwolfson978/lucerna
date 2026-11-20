@@ -196,6 +196,7 @@
           "income": 120000,
           "conversion": 0,
           "tax_on_conversion": 0,
+          "taxable_income": 87800,
           "marginal_bracket": "12%"
         },
         {
@@ -204,6 +205,7 @@
           "conversion": 5100,
           "conversion_in_that_years_dollars": 5228,
           "tax_on_conversion": 774,
+          "taxable_income": 32900,
           "marginal_bracket": "12%"
         },
         {
@@ -211,6 +213,7 @@
           "income": 121174,
           "conversion": 0,
           "tax_on_conversion": 0,
+          "taxable_income": 88974,
           "marginal_bracket": "12%"
         },
         {
@@ -219,6 +222,7 @@
           "conversion": 87500,
           "conversion_in_that_years_dollars": 94228,
           "tax_on_conversion": 12412,
+          "taxable_income": 98528,
           "marginal_bracket": "12%",
           "spending_from_traditional": 43228
         },
@@ -228,6 +232,7 @@
           "conversion": 87500,
           "conversion_in_that_years_dollars": 96584,
           "tax_on_conversion": 12412,
+          "taxable_income": 98528,
           "marginal_bracket": "12%",
           "spending_from_traditional": 43228
         },
@@ -237,6 +242,7 @@
           "conversion": 30900,
           "conversion_in_that_years_dollars": 34961,
           "tax_on_conversion": 4139,
+          "taxable_income": 38628,
           "marginal_bracket": "12%",
           "spending_from_traditional": 43228
         },
@@ -246,6 +252,7 @@
           "conversion": 20600,
           "conversion_in_that_years_dollars": 23890,
           "tax_on_conversion": 2646,
+          "taxable_income": 28328,
           "marginal_bracket": "12%",
           "spending_from_traditional": 43228
         },
@@ -255,6 +262,7 @@
           "conversion": 20600,
           "conversion_in_that_years_dollars": 24487,
           "tax_on_conversion": 2646,
+          "taxable_income": 28328,
           "marginal_bracket": "12%",
           "spending_from_traditional": 43228
         },
@@ -264,6 +272,7 @@
           "conversion": 15400,
           "conversion_in_that_years_dollars": 18763,
           "tax_on_conversion": 1925,
+          "taxable_income": 23128,
           "marginal_bracket": "10%",
           "spending_from_traditional": 43228
         },
@@ -273,6 +282,7 @@
           "conversion": 15400,
           "conversion_in_that_years_dollars": 19232,
           "tax_on_conversion": 1925,
+          "taxable_income": 23128,
           "marginal_bracket": "10%",
           "spending_from_traditional": 43228
         },
@@ -282,6 +292,7 @@
           "conversion": 15400,
           "conversion_in_that_years_dollars": 19713,
           "tax_on_conversion": 1925,
+          "taxable_income": 23128,
           "marginal_bracket": "10%",
           "spending_from_traditional": 43228
         },
@@ -291,6 +302,7 @@
           "conversion": 15400,
           "conversion_in_that_years_dollars": 20206,
           "tax_on_conversion": 1925,
+          "taxable_income": 23128,
           "marginal_bracket": "10%",
           "spending_from_traditional": 43228
         },
@@ -300,6 +312,7 @@
           "conversion": 15400,
           "conversion_in_that_years_dollars": 20711,
           "tax_on_conversion": 1925,
+          "taxable_income": 23128,
           "marginal_bracket": "10%",
           "spending_from_traditional": 43228
         },
@@ -309,6 +322,7 @@
           "conversion": 5100,
           "conversion_in_that_years_dollars": 7030,
           "tax_on_conversion": 638,
+          "taxable_income": 12828,
           "marginal_bracket": "10%",
           "spending_from_traditional": 43228
         },
@@ -317,6 +331,7 @@
           "income": 0,
           "conversion": 0,
           "tax_on_conversion": 0,
+          "taxable_income": 7728,
           "marginal_bracket": "10%",
           "spending_from_traditional": 43228
         },
@@ -325,6 +340,7 @@
           "income": 0,
           "conversion": 0,
           "tax_on_conversion": 0,
+          "taxable_income": 7728,
           "marginal_bracket": "10%",
           "rmd": 21010,
           "spending_from_traditional": 22218
@@ -334,6 +350,7 @@
           "income": 0,
           "conversion": 0,
           "tax_on_conversion": 0,
+          "taxable_income": 7728,
           "marginal_bracket": "10%",
           "rmd": 20861,
           "spending_from_traditional": 22367
@@ -343,6 +360,7 @@
           "income": 0,
           "conversion": 0,
           "tax_on_conversion": 0,
+          "taxable_income": 7728,
           "marginal_bracket": "10%",
           "rmd": 20567,
           "spending_from_traditional": 22661
@@ -352,6 +370,7 @@
           "income": 0,
           "conversion": 0,
           "tax_on_conversion": 0,
+          "taxable_income": 7728,
           "marginal_bracket": "10%",
           "rmd": 20297,
           "spending_from_traditional": 22931
@@ -361,6 +380,7 @@
           "income": 0,
           "conversion": 0,
           "tax_on_conversion": 0,
+          "taxable_income": 7728,
           "marginal_bracket": "10%",
           "rmd": 19953,
           "spending_from_traditional": 23275
@@ -370,6 +390,7 @@
           "income": 0,
           "conversion": 0,
           "tax_on_conversion": 0,
+          "taxable_income": 7728,
           "marginal_bracket": "10%",
           "rmd": 19523,
           "spending_from_traditional": 23705
@@ -380,6 +401,7 @@
           "conversion": 5100,
           "conversion_in_that_years_dollars": 8566,
           "tax_on_conversion": 638,
+          "taxable_income": 12828,
           "marginal_bracket": "10%",
           "rmd": 18895,
           "spending_from_traditional": 24333
@@ -389,6 +411,7 @@
           "income": 0,
           "conversion": 0,
           "tax_on_conversion": 0,
+          "taxable_income": 7728,
           "marginal_bracket": "10%",
           "rmd": 17957,
           "spending_from_traditional": 25271
@@ -398,6 +421,7 @@
           "income": 0,
           "conversion": 0,
           "tax_on_conversion": 0,
+          "taxable_income": 7728,
           "marginal_bracket": "10%",
           "rmd": 17043,
           "spending_from_traditional": 26185
@@ -407,6 +431,7 @@
           "income": 0,
           "conversion": 0,
           "tax_on_conversion": 0,
+          "taxable_income": 7728,
           "marginal_bracket": "10%",
           "rmd": 16058,
           "spending_from_traditional": 27170
@@ -416,6 +441,7 @@
           "income": 0,
           "conversion": 0,
           "tax_on_conversion": 0,
+          "taxable_income": 7728,
           "marginal_bracket": "10%",
           "rmd": 14781,
           "spending_from_traditional": 28447
@@ -425,6 +451,7 @@
           "income": 0,
           "conversion": 0,
           "tax_on_conversion": 0,
+          "taxable_income": 7728,
           "marginal_bracket": "10%",
           "rmd": 13273,
           "spending_from_traditional": 29955
@@ -435,6 +462,7 @@
           "conversion": 5100,
           "conversion_in_that_years_dollars": 9934,
           "tax_on_conversion": 638,
+          "taxable_income": 12828,
           "marginal_bracket": "10%",
           "rmd": 11492,
           "spending_from_traditional": 31736
@@ -444,6 +472,7 @@
           "income": 0,
           "conversion": 0,
           "tax_on_conversion": 0,
+          "taxable_income": 7728,
           "marginal_bracket": "10%",
           "rmd": 8927,
           "spending_from_traditional": 34301
@@ -453,6 +482,7 @@
           "income": 0,
           "conversion": 0,
           "tax_on_conversion": 0,
+          "taxable_income": 7728,
           "marginal_bracket": "10%",
           "rmd": 6399,
           "spending_from_traditional": 36829
@@ -462,6 +492,7 @@
           "income": 0,
           "conversion": 0,
           "tax_on_conversion": 0,
+          "taxable_income": 5540,
           "marginal_bracket": "10%",
           "rmd": 3364,
           "spending_from_traditional": 37676,
@@ -491,14 +522,25 @@
       ],
       "reasoning": {
         "binding_constraint": "Converts nearly all of the traditional balance by 2053",
-        "marginal_tax_rate_at_optimal": 0.1329,
-        "cost_of_next_bracket": {
-          "bracket_rate": 0.16,
-          "additional_tax": 160.0,
-          "net_effect": "Converting $1,000 more in 2027 would cost $160 in additional tax at the 16% rate"
+        "cost_of_converting_more": {
+          "year": 2027,
+          "extra_conversion": 1000,
+          "additional_tax": 160,
+          "federal_tax_by_bracket": [
+            {
+              "bracket": "12%",
+              "amount_taxed": 1000,
+              "tax": 120
+            }
+          ],
+          "state_tax": 40,
+          "schedule_stops_in_bracket": "12%",
+          "room_left_in_that_bracket": 67900,
+          "next_bracket": "22%",
+          "explanation": "Converting $1,000 more in 2027 would cost $160 in additional tax: $1,000 in the 12% bracket, plus $40 of state tax."
         },
-        "benefit_of_current_bracket": {
-          "bracket_rate": 0.1352,
+        "cost_and_benefit_of_conversions": {
+          "average_tax_rate": 0.1352,
           "tax_paid": 40518.75,
           "future_tax_avoided": 77508.63,
           "dollars": "today's dollars (the schedule adds up each year's tax as paid)"
@@ -5289,6 +5331,7 @@
           "federal_tax_cost": 0.0,
           "state_tax_cost": 0.0,
           "effective_rate": 0.0,
+          "taxable_income": 87800.0,
           "marginal_bracket": "12%",
           "state_marginal_rate": 0.06,
           "irmaa_cost": 0.0,
@@ -5306,6 +5349,7 @@
           "federal_tax_cost": 612.0,
           "state_tax_cost": 162.44,
           "effective_rate": 0.1519,
+          "taxable_income": 32900.0,
           "marginal_bracket": "12%",
           "state_marginal_rate": 0.04,
           "irmaa_cost": 0.0,
@@ -5323,6 +5367,7 @@
           "federal_tax_cost": 0.0,
           "state_tax_cost": 0.0,
           "effective_rate": 0.0,
+          "taxable_income": 88974.0,
           "marginal_bracket": "12%",
           "state_marginal_rate": 0.06,
           "irmaa_cost": 0.0,
@@ -5340,6 +5385,7 @@
           "federal_tax_cost": 10224.56,
           "state_tax_cost": 2187.5,
           "effective_rate": 0.1419,
+          "taxable_income": 98527.82,
           "marginal_bracket": "12%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5357,6 +5403,7 @@
           "federal_tax_cost": 10224.56,
           "state_tax_cost": 2187.5,
           "effective_rate": 0.1419,
+          "taxable_income": 98527.82,
           "marginal_bracket": "12%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5374,6 +5421,7 @@
           "federal_tax_cost": 3366.56,
           "state_tax_cost": 772.5,
           "effective_rate": 0.134,
+          "taxable_income": 38627.82,
           "marginal_bracket": "12%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5391,6 +5439,7 @@
           "federal_tax_cost": 2130.56,
           "state_tax_cost": 515.0,
           "effective_rate": 0.1284,
+          "taxable_income": 28327.82,
           "marginal_bracket": "12%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5408,6 +5457,7 @@
           "federal_tax_cost": 2130.56,
           "state_tax_cost": 515.0,
           "effective_rate": 0.1284,
+          "taxable_income": 28327.82,
           "marginal_bracket": "12%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5425,6 +5475,7 @@
           "federal_tax_cost": 1540.0,
           "state_tax_cost": 385.0,
           "effective_rate": 0.125,
+          "taxable_income": 23127.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5442,6 +5493,7 @@
           "federal_tax_cost": 1540.0,
           "state_tax_cost": 385.0,
           "effective_rate": 0.125,
+          "taxable_income": 23127.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5459,6 +5511,7 @@
           "federal_tax_cost": 1540.0,
           "state_tax_cost": 385.0,
           "effective_rate": 0.125,
+          "taxable_income": 23127.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5476,6 +5529,7 @@
           "federal_tax_cost": 1540.0,
           "state_tax_cost": 385.0,
           "effective_rate": 0.125,
+          "taxable_income": 23127.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5493,6 +5547,7 @@
           "federal_tax_cost": 1540.0,
           "state_tax_cost": 385.0,
           "effective_rate": 0.125,
+          "taxable_income": 23127.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5510,6 +5565,7 @@
           "federal_tax_cost": 510.0,
           "state_tax_cost": 127.5,
           "effective_rate": 0.125,
+          "taxable_income": 12827.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5527,6 +5583,7 @@
           "federal_tax_cost": 0.0,
           "state_tax_cost": 0.0,
           "effective_rate": 0.0,
+          "taxable_income": 7727.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5544,6 +5601,7 @@
           "federal_tax_cost": 0.0,
           "state_tax_cost": 0.0,
           "effective_rate": 0.0,
+          "taxable_income": 7727.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5561,6 +5619,7 @@
           "federal_tax_cost": 0.0,
           "state_tax_cost": 0.0,
           "effective_rate": 0.0,
+          "taxable_income": 7727.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5578,6 +5637,7 @@
           "federal_tax_cost": 0.0,
           "state_tax_cost": 0.0,
           "effective_rate": 0.0,
+          "taxable_income": 7727.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5595,6 +5655,7 @@
           "federal_tax_cost": 0.0,
           "state_tax_cost": 0.0,
           "effective_rate": 0.0,
+          "taxable_income": 7727.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5612,6 +5673,7 @@
           "federal_tax_cost": 0.0,
           "state_tax_cost": 0.0,
           "effective_rate": 0.0,
+          "taxable_income": 7727.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5629,6 +5691,7 @@
           "federal_tax_cost": 0.0,
           "state_tax_cost": 0.0,
           "effective_rate": 0.0,
+          "taxable_income": 7727.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5646,6 +5709,7 @@
           "federal_tax_cost": 510.0,
           "state_tax_cost": 127.5,
           "effective_rate": 0.125,
+          "taxable_income": 12827.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5663,6 +5727,7 @@
           "federal_tax_cost": 0.0,
           "state_tax_cost": 0.0,
           "effective_rate": 0.0,
+          "taxable_income": 7727.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5680,6 +5745,7 @@
           "federal_tax_cost": 0.0,
           "state_tax_cost": 0.0,
           "effective_rate": 0.0,
+          "taxable_income": 7727.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5697,6 +5763,7 @@
           "federal_tax_cost": 0.0,
           "state_tax_cost": 0.0,
           "effective_rate": 0.0,
+          "taxable_income": 7727.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5714,6 +5781,7 @@
           "federal_tax_cost": 0.0,
           "state_tax_cost": 0.0,
           "effective_rate": 0.0,
+          "taxable_income": 7727.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5731,6 +5799,7 @@
           "federal_tax_cost": 0.0,
           "state_tax_cost": 0.0,
           "effective_rate": 0.0,
+          "taxable_income": 7727.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5748,6 +5817,7 @@
           "federal_tax_cost": 510.0,
           "state_tax_cost": 127.5,
           "effective_rate": 0.125,
+          "taxable_income": 12827.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5765,6 +5835,7 @@
           "federal_tax_cost": 0.0,
           "state_tax_cost": 0.0,
           "effective_rate": 0.0,
+          "taxable_income": 7727.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5782,6 +5853,7 @@
           "federal_tax_cost": 0.0,
           "state_tax_cost": 0.0,
           "effective_rate": 0.0,
+          "taxable_income": 7727.82,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -5799,6 +5871,7 @@
           "federal_tax_cost": 0.0,
           "state_tax_cost": 0.0,
           "effective_rate": 0.0,
+          "taxable_income": 5539.6,
           "marginal_bracket": "10%",
           "state_marginal_rate": 0.025,
           "irmaa_cost": 0.0,
@@ -6535,15 +6608,26 @@
       ],
       "reasoning_trace": {
         "binding_constraint": "Converts nearly all of the traditional balance by 2053",
-        "marginal_tax_rate_at_optimal": 0.1329,
         "marginal_benefit_at_optimal": 36989.88,
-        "cost_of_next_bracket": {
-          "bracket_rate": 0.16,
-          "additional_tax": 160.0,
-          "net_effect": "Converting $1,000 more in 2027 would cost $160 in additional tax at the 16% rate"
+        "cost_of_converting_more": {
+          "year": 2027,
+          "extra_conversion": 1000,
+          "additional_tax": 160,
+          "federal_tax_by_bracket": [
+            {
+              "bracket": "12%",
+              "amount_taxed": 1000,
+              "tax": 120
+            }
+          ],
+          "state_tax": 40,
+          "schedule_stops_in_bracket": "12%",
+          "room_left_in_that_bracket": 67900,
+          "next_bracket": "22%",
+          "explanation": "Converting $1,000 more in 2027 would cost $160 in additional tax: $1,000 in the 12% bracket, plus $40 of state tax."
         },
-        "benefit_of_current_bracket": {
-          "bracket_rate": 0.1352,
+        "cost_and_benefit_of_conversions": {
+          "average_tax_rate": 0.1352,
           "tax_paid": 40518.75,
           "future_tax_avoided": 77508.63,
           "dollars": "today's dollars (the schedule adds up each year's tax as paid)"
@@ -7473,6 +7557,7 @@
               "income": 120000,
               "conversion": 0,
               "tax_on_conversion": 0,
+              "taxable_income": 87800,
               "marginal_bracket": "12%"
             },
             {
@@ -7481,6 +7566,7 @@
               "conversion": 5100,
               "conversion_in_that_years_dollars": 5228,
               "tax_on_conversion": 774,
+              "taxable_income": 32900,
               "marginal_bracket": "12%"
             },
             {
@@ -7488,6 +7574,7 @@
               "income": 121174,
               "conversion": 0,
               "tax_on_conversion": 0,
+              "taxable_income": 88974,
               "marginal_bracket": "12%"
             },
             {
@@ -7496,6 +7583,7 @@
               "conversion": 87500,
               "conversion_in_that_years_dollars": 94228,
               "tax_on_conversion": 12412,
+              "taxable_income": 98528,
               "marginal_bracket": "12%",
               "spending_from_traditional": 43228
             },
@@ -7505,6 +7593,7 @@
               "conversion": 87500,
               "conversion_in_that_years_dollars": 96584,
               "tax_on_conversion": 12412,
+              "taxable_income": 98528,
               "marginal_bracket": "12%",
               "spending_from_traditional": 43228
             },
@@ -7514,6 +7603,7 @@
               "conversion": 30900,
               "conversion_in_that_years_dollars": 34961,
               "tax_on_conversion": 4139,
+              "taxable_income": 38628,
               "marginal_bracket": "12%",
               "spending_from_traditional": 43228
             },
@@ -7523,6 +7613,7 @@
               "conversion": 20600,
               "conversion_in_that_years_dollars": 23890,
               "tax_on_conversion": 2646,
+              "taxable_income": 28328,
               "marginal_bracket": "12%",
               "spending_from_traditional": 43228
             },
@@ -7532,6 +7623,7 @@
               "conversion": 20600,
               "conversion_in_that_years_dollars": 24487,
               "tax_on_conversion": 2646,
+              "taxable_income": 28328,
               "marginal_bracket": "12%",
               "spending_from_traditional": 43228
             },
@@ -7541,6 +7633,7 @@
               "conversion": 15400,
               "conversion_in_that_years_dollars": 18763,
               "tax_on_conversion": 1925,
+              "taxable_income": 23128,
               "marginal_bracket": "10%",
               "spending_from_traditional": 43228
             },
@@ -7550,6 +7643,7 @@
               "conversion": 15400,
               "conversion_in_that_years_dollars": 19232,
               "tax_on_conversion": 1925,
+              "taxable_income": 23128,
               "marginal_bracket": "10%",
               "spending_from_traditional": 43228
             },
@@ -7559,6 +7653,7 @@
               "conversion": 15400,
               "conversion_in_that_years_dollars": 19713,
               "tax_on_conversion": 1925,
+              "taxable_income": 23128,
               "marginal_bracket": "10%",
               "spending_from_traditional": 43228
             },
@@ -7568,6 +7663,7 @@
               "conversion": 15400,
               "conversion_in_that_years_dollars": 20206,
               "tax_on_conversion": 1925,
+              "taxable_income": 23128,
               "marginal_bracket": "10%",
               "spending_from_traditional": 43228
             },
@@ -7577,6 +7673,7 @@
               "conversion": 15400,
               "conversion_in_that_years_dollars": 20711,
               "tax_on_conversion": 1925,
+              "taxable_income": 23128,
               "marginal_bracket": "10%",
               "spending_from_traditional": 43228
             },
@@ -7586,6 +7683,7 @@
               "conversion": 5100,
               "conversion_in_that_years_dollars": 7030,
               "tax_on_conversion": 638,
+              "taxable_income": 12828,
               "marginal_bracket": "10%",
               "spending_from_traditional": 43228
             },
@@ -7594,6 +7692,7 @@
               "income": 0,
               "conversion": 0,
               "tax_on_conversion": 0,
+              "taxable_income": 7728,
               "marginal_bracket": "10%",
               "spending_from_traditional": 43228
             },
@@ -7602,6 +7701,7 @@
               "income": 0,
               "conversion": 0,
               "tax_on_conversion": 0,
+              "taxable_income": 7728,
               "marginal_bracket": "10%",
               "rmd": 21010,
               "spending_from_traditional": 22218
@@ -7611,6 +7711,7 @@
               "income": 0,
               "conversion": 0,
               "tax_on_conversion": 0,
+              "taxable_income": 7728,
               "marginal_bracket": "10%",
               "rmd": 20861,
               "spending_from_traditional": 22367
@@ -7620,6 +7721,7 @@
               "income": 0,
               "conversion": 0,
               "tax_on_conversion": 0,
+              "taxable_income": 7728,
               "marginal_bracket": "10%",
               "rmd": 20567,
               "spending_from_traditional": 22661
@@ -7629,6 +7731,7 @@
               "income": 0,
               "conversion": 0,
               "tax_on_conversion": 0,
+              "taxable_income": 7728,
               "marginal_bracket": "10%",
               "rmd": 20297,
               "spending_from_traditional": 22931
@@ -7638,6 +7741,7 @@
               "income": 0,
               "conversion": 0,
               "tax_on_conversion": 0,
+              "taxable_income": 7728,
               "marginal_bracket": "10%",
               "rmd": 19953,
               "spending_from_traditional": 23275
@@ -7647,6 +7751,7 @@
               "income": 0,
               "conversion": 0,
               "tax_on_conversion": 0,
+              "taxable_income": 7728,
               "marginal_bracket": "10%",
               "rmd": 19523,
               "spending_from_traditional": 23705
@@ -7657,6 +7762,7 @@
               "conversion": 5100,
               "conversion_in_that_years_dollars": 8566,
               "tax_on_conversion": 638,
+              "taxable_income": 12828,
               "marginal_bracket": "10%",
               "rmd": 18895,
               "spending_from_traditional": 24333
@@ -7666,6 +7772,7 @@
               "income": 0,
               "conversion": 0,
               "tax_on_conversion": 0,
+              "taxable_income": 7728,
               "marginal_bracket": "10%",
               "rmd": 17957,
               "spending_from_traditional": 25271
@@ -7675,6 +7782,7 @@
               "income": 0,
               "conversion": 0,
               "tax_on_conversion": 0,
+              "taxable_income": 7728,
               "marginal_bracket": "10%",
               "rmd": 17043,
               "spending_from_traditional": 26185
@@ -7684,6 +7792,7 @@
               "income": 0,
               "conversion": 0,
               "tax_on_conversion": 0,
+              "taxable_income": 7728,
               "marginal_bracket": "10%",
               "rmd": 16058,
               "spending_from_traditional": 27170
@@ -7693,6 +7802,7 @@
               "income": 0,
               "conversion": 0,
               "tax_on_conversion": 0,
+              "taxable_income": 7728,
               "marginal_bracket": "10%",
               "rmd": 14781,
               "spending_from_traditional": 28447
@@ -7702,6 +7812,7 @@
               "income": 0,
               "conversion": 0,
               "tax_on_conversion": 0,
+              "taxable_income": 7728,
               "marginal_bracket": "10%",
               "rmd": 13273,
               "spending_from_traditional": 29955
@@ -7712,6 +7823,7 @@
               "conversion": 5100,
               "conversion_in_that_years_dollars": 9934,
               "tax_on_conversion": 638,
+              "taxable_income": 12828,
               "marginal_bracket": "10%",
               "rmd": 11492,
               "spending_from_traditional": 31736
@@ -7721,6 +7833,7 @@
               "income": 0,
               "conversion": 0,
               "tax_on_conversion": 0,
+              "taxable_income": 7728,
               "marginal_bracket": "10%",
               "rmd": 8927,
               "spending_from_traditional": 34301
@@ -7730,6 +7843,7 @@
               "income": 0,
               "conversion": 0,
               "tax_on_conversion": 0,
+              "taxable_income": 7728,
               "marginal_bracket": "10%",
               "rmd": 6399,
               "spending_from_traditional": 36829
@@ -7739,6 +7853,7 @@
               "income": 0,
               "conversion": 0,
               "tax_on_conversion": 0,
+              "taxable_income": 5540,
               "marginal_bracket": "10%",
               "rmd": 3364,
               "spending_from_traditional": 37676,
@@ -7768,14 +7883,25 @@
           ],
           "reasoning": {
             "binding_constraint": "Converts nearly all of the traditional balance by 2053",
-            "marginal_tax_rate_at_optimal": 0.1329,
-            "cost_of_next_bracket": {
-              "bracket_rate": 0.16,
-              "additional_tax": 160.0,
-              "net_effect": "Converting $1,000 more in 2027 would cost $160 in additional tax at the 16% rate"
+            "cost_of_converting_more": {
+              "year": 2027,
+              "extra_conversion": 1000,
+              "additional_tax": 160,
+              "federal_tax_by_bracket": [
+                {
+                  "bracket": "12%",
+                  "amount_taxed": 1000,
+                  "tax": 120
+                }
+              ],
+              "state_tax": 40,
+              "schedule_stops_in_bracket": "12%",
+              "room_left_in_that_bracket": 67900,
+              "next_bracket": "22%",
+              "explanation": "Converting $1,000 more in 2027 would cost $160 in additional tax: $1,000 in the 12% bracket, plus $40 of state tax."
             },
-            "benefit_of_current_bracket": {
-              "bracket_rate": 0.1352,
+            "cost_and_benefit_of_conversions": {
+              "average_tax_rate": 0.1352,
               "tax_paid": 40518.75,
               "future_tax_avoided": 77508.63,
               "dollars": "today's dollars (the schedule adds up each year's tax as paid)"

@@ -99,17 +99,22 @@ export const sampleOptimizationResult: OptimizationResult = {
   ],
   reasoning_trace: {
     binding_constraint: "bracket_boundary",
-    marginal_tax_rate_at_optimal: 0.22,
     marginal_benefit_at_optimal: 0.02,
-    cost_of_next_bracket: {
-      bracketRate: 0.24,
-      additionalTax: 2400,
-      netEffect: -800,
+    cost_of_converting_more: {
+      year: 2026,
+      extra_conversion: 1000,
+      additional_tax: 240,
+      federal_tax_by_bracket: [{ bracket: "24%", amount_taxed: 1000, tax: 240 }],
+      schedule_stops_in_bracket: "22%",
+      room_left_in_that_bracket: 0,
+      next_bracket: "24%",
+      explanation:
+        "Converting $1,000 more in 2026 would cost $240 in additional tax: $1,000 in the 24% bracket.",
     },
-    benefit_of_current_bracket: {
-      bracketRate: 0.22,
-      taxPaid: 3635,
-      futureTaxAvoided: 5200,
+    cost_and_benefit_of_conversions: {
+      average_tax_rate: 0.22,
+      tax_paid: 3635,
+      future_tax_avoided: 5200,
     },
     sensitivity_notes: [
       "Increasing conversion by $10K would push into 24% bracket",

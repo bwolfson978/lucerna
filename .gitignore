@@ -28,6 +28,9 @@ storybook-static/
 # Before/after captures (pr-evidence skill)
 .qa-runs/
 
+# Built design system files (design-system-sync skill)
+.agents/skills/design-system-sync/out/
+
 # OS
 .DS_Store
 Thumbs.db
