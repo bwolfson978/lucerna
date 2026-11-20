@@ -4,7 +4,7 @@ import datetime
 
 import pytest
 
-from app.agent.toolbox import ToolContext, open_toolbox
+from app.agent.toolbox import REPLY_SEEN, ToolContext, open_toolbox
 from app.tools.draft import ScenarioDraft
 
 THIS_YEAR = datetime.date.today().year
@@ -89,15 +89,34 @@ async def test_errors_and_show_validation():
         assert (await toolbox.call("show", {"kind": "unknown"}, context))[1]
 
 
-async def test_show_notes_when_nothing_was_written_yet():
+async def test_show_asks_for_the_reply_when_none_has_reached_the_user():
     context = ctx()
     suggestions = {"kind": "suggestions", "suggestions": ["What if I retire at 60?"]}
     async with open_toolbox() as toolbox:
         content, is_error = await toolbox.call("show", suggestions, context)
-        assert not is_error and "not seen any text" in content["note"]
+        assert not is_error and "Write your full reply" in content["next"]
 
+        # A reply that already reached them must not be written twice.
         context.wrote_text = True
-        assert await toolbox.call("show", suggestions, context) == ({"shown": "suggestions"}, False)
+        content, _ = await toolbox.call("show", suggestions, context)
+        assert content == {"shown": "suggestions", "next": REPLY_SEEN}
+
+
+async def test_text_before_a_lookup_is_not_the_reply():
+    # "Let me check", then a lookup, then suggestions: the user still has no answer.
+    context = ctx()
+    suggestions = {"kind": "suggestions", "suggestions": ["What if I retire at 60?"]}
+    async with open_toolbox() as toolbox:
+        context.wrote_text = True
+        await toolbox.call("explain_methodology", {"topic": "rmds"}, context)
+        content, _ = await toolbox.call("show", suggestions, context)
+        assert "Write your full reply" in content["next"]
+
+        # Showing something is not a lookup: text written just before it still counts.
+        context.wrote_text = True
+        await toolbox.call("show", suggestions, context)
+        content, _ = await toolbox.call("show", suggestions, context)
+        assert content["next"] == REPLY_SEEN
 
 
 async def test_ui_tool_results_become_mcp_app_parts():
@@ -202,4 +221,4 @@ async def test_scenario_summary_asks_for_a_written_reply_when_there_is_none_yet(
 
         context.wrote_text = True
         content, _ = await toolbox.call("show", {"kind": "scenario_summary"}, context)
-        assert content["shown"] == "scenario_summary" and "next" not in content
+        assert content["shown"] == "scenario_summary" and content["next"] == REPLY_SEEN

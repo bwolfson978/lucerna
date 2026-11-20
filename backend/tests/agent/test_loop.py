@@ -202,7 +202,7 @@ def test_prompt_rules():
     assert len(PROMPT_VERSION) == 12
 
 
-async def test_show_before_any_text_gets_a_note():
+async def test_show_before_the_reply_asks_for_it():
     tip = {"kind": "suggestions", "suggestions": ["What if I retire at 60?"]}
     client = ScriptedModelClient(
         [
@@ -214,12 +214,13 @@ async def test_show_before_any_text_gets_a_note():
     assert [e["part"]["kind"] for e in events if e["type"] == "part"] == ["suggestions"]
     messages = done_messages(events)
     result = json.loads(messages[2]["content"][0]["content"])
-    assert "not seen any text" in result["note"]
+    assert "Write your full reply" in result["next"]
     assert_well_formed(messages)
 
 
-async def test_show_after_text_has_no_note():
+async def test_show_after_the_reply_says_it_was_read():
     tip = {"kind": "suggestions", "suggestions": ["What if I retire at 60?"]}
     client = ScriptedModelClient([[text("Here is the answer."), tool_use("t1", "show", tip)], []])
     messages = done_messages(await collect(client))
-    assert json.loads(messages[2]["content"][0]["content"]) == {"shown": "suggestions"}
+    result = json.loads(messages[2]["content"][0]["content"])
+    assert result["shown"] == "suggestions" and "already read the reply" in result["next"]

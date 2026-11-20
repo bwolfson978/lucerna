@@ -62,9 +62,9 @@ SHOW_TOOL = {
         "Display something in the conversation: the scenario summary for the user to confirm "
         "(after prepare_scenario reports nothing missing), a balance comparison for a "
         "result, or tappable follow-up questions. Numbers in these displays "
-        "come from the engine. Displays appear in the order you produce them, so write your "
-        "answer to the user as text first, in the same response, then call show. A display "
-        "never replaces the written answer."
+        "come from the engine. Call show before you write: your written answer comes after "
+        "your last tool call and ends the turn, and the app places the display around it "
+        "(suggestions after the answer). A display never replaces the written answer."
     ),
     "input_schema": None,  # filled from ShowArgs below
 }
@@ -78,7 +78,9 @@ class ToolContext:
     start_year: int
     # Events for the browser, in order.
     events: list[dict] = field(default_factory=list)
-    # Whether any reply text has reached the user this turn (set by the loop).
+    # Whether reply text has reached the user since the last lookup. The loop sets it when
+    # text streams; a tool call other than show clears it, because a reply has to follow
+    # the facts it is built on ("Let me check" before a lookup is not the answer).
     wrote_text: bool = False
 
     def emit(self, event_type: str, **payload: Any) -> None:
@@ -136,6 +138,7 @@ class McpToolbox:
             return _show(arguments, ctx)
         if not self.visible_to(name, "model"):
             return {"error": f"Unknown tool '{name}'."}, True
+        ctx.wrote_text = False
         result = await self._session.call_tool(name, arguments, meta={UI_META_KEY: True})
         if not result.isError:
             _emit_ui_events(name, _structured(result), result, ctx)
@@ -359,32 +362,36 @@ def _show(arguments: dict, ctx: ToolContext) -> tuple[dict, bool]:
             },
         )
         shown = {"shown": "scenario_summary", "draft_hash": described["draft_hash"]}
-        return shown if ctx.wrote_text else {**shown, "next": ASK_TO_CHECK}, False
+        return _shown(ctx, shown, ASK_TO_CHECK), False
 
     suggestions = [s.strip() for s in args.suggestions or [] if s.strip()]
     if not 1 <= len(suggestions) <= 4:
         return {"error": "Provide 1 to 4 suggestions."}, True
     ctx.emit("part", part={"kind": "suggestions", "suggestions": suggestions})
-    return _shown(ctx, {"shown": "suggestions"}), False
+    return _shown(ctx, {"shown": "suggestions"}, WRITE_REPLY), False
 
 
-# The model sometimes ends the turn on the summary alone, which leaves the user with no reply.
+# Only the text that ends a turn is sure to reach the user: what the model writes before a
+# tool call in the same response can come back from the API as a progress note, which is
+# never shown, while the model still sees it as written. It can't tell which happened, so
+# every show result says what the user has seen: nothing yet (write the reply now) or the
+# reply already (stop, don't write it twice).
 ASK_TO_CHECK = (
     "Now write a short message asking the user to check their scenario and tap Run the numbers."
 )
-
-# The model sometimes drafts its answer while thinking, shows a chart or suggestions, and
-# ends the turn believing the user read the draft. Thinking is never shown, so say so.
-NO_TEXT_YET = (
-    "The user has not seen any text from you this turn. Anything you wrote while thinking is "
-    "never shown, even if it reads like a finished reply. Your next output must be a text "
-    "block with your full answer to their message (don't call show again for what is already "
-    "shown, and don't mention this note to them)."
+WRITE_REPLY = (
+    "Nothing you wrote before this call has reached the user. Write your full reply to their "
+    "message now, complete on its own (don't call show again for what is already shown, and "
+    "don't mention this note to them)."
+)
+REPLY_SEEN = (
+    "The user has already read the reply you wrote before this call. End the turn now: don't "
+    "repeat it or add to it."
 )
 
 
-def _shown(ctx: ToolContext, content: dict) -> dict:
-    return content if ctx.wrote_text else {**content, "note": NO_TEXT_YET}
+def _shown(ctx: ToolContext, content: dict, write_reply: str) -> dict:
+    return {**content, "next": REPLY_SEEN if ctx.wrote_text else write_reply}
 
 
 def clean_schema(schema: Any) -> Any:
