@@ -1,0 +1,23 @@
+<!-- @dsCard group="UI" height=132 subtitle="Placeholder and chosen value; opens a pine-tinted menu" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>body{margin:0;padding:24px}</style>
+</head>
+<body class="bg-bg font-sans text-body text-text-primary antialiased">
+<div id="root"></div>
+<script>
+(function(){
+var h=React.createElement, U=window.LucernaUI, noop=function(){};
+var opts=[{value:'single',label:'Single'},{value:'married_filing_jointly',label:'Married filing jointly'}];
+function App(){var s=React.useState('married_filing_jointly');return h('div',{className:'grid max-w-xl grid-cols-1 gap-default sm:grid-cols-2'},
+ h('div',{className:'flex flex-col gap-1.5'},h(U.Label,null,'Filing status'),h(U.Select,{options:opts,value:s[0],onChange:function(e){s[1](e.target.value);}})),
+ h('div',{className:'flex flex-col gap-1.5'},h(U.Label,null,'Filing status'),h(U.Select,{options:opts,placeholder:'Choose one'})));}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+})();
+</script>
+</body>
+</html>

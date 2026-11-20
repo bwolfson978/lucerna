@@ -1,0 +1,24 @@
+<!-- @dsCard group="Shared cards" height=371 subtitle="Plain, positive, negative and neutral deltas" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>body{margin:0;padding:24px}</style>
+</head>
+<body class="bg-bg font-sans text-body text-text-primary antialiased">
+<div id="root"></div>
+<script>
+(function(){
+var h=React.createElement, U=window.LucernaUI, noop=function(){};
+function App(){return h('div',{className:'grid grid-cols-1 gap-default sm:grid-cols-2'},
+ h(U.MetricCard,{label:'Total conversion',value:'$150,000'}),
+ h(U.MetricCard,{label:'Estimated lifetime tax savings',value:'$42,300',delta:'+$42,300 vs. no conversion',deltaType:'positive'}),
+ h(U.MetricCard,{label:'Tax on conversions',value:'$33,000',delta:'Paid over 3 years',deltaType:'negative'}),
+ h(U.MetricCard,{label:'Conversion years',value:'3',delta:'2026 to 2028',deltaType:'neutral'}));}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+})();
+</script>
+</body>
+</html>
