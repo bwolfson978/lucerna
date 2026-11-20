@@ -238,6 +238,9 @@ async def run_case(case: dict, client: ModelClient) -> CaseResult:
                 record.text += event["text"]
             elif kind == "tool_start":
                 record.tools.append(event["name"])
+                # Text after a tool call starts a new paragraph, as it does on screen.
+                if record.text.strip():
+                    record.text = record.text.rstrip() + "\n\n"
             elif kind == "part":
                 record.parts.append(event["part"]["kind"])
             elif kind == "draft":
@@ -253,6 +256,7 @@ async def run_case(case: dict, client: ModelClient) -> CaseResult:
                             if b.get("type") == "tool_result" and isinstance(b.get("content"), str)
                         ]
                 history.extend(event["messages"])
+        record.text = record.text.rstrip()
         turns.append(record)
 
     failures = check(case, turns, draft)
