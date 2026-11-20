@@ -380,9 +380,10 @@ ASK_TO_CHECK = (
     "Now write a short message asking the user to check their scenario and tap Run the numbers."
 )
 WRITE_REPLY = (
-    "Nothing you wrote before this call has reached the user. Write your full reply to their "
-    "message now, complete on its own (don't call show again for what is already shown, and "
-    "don't mention this note to them)."
+    "The user has not seen an answer to their message yet: anything longer than a sentence "
+    "that you wrote before a tool call did not reach them. Write your full reply now, complete "
+    "on its own (don't call show again for what is already shown, and don't mention this note "
+    "to them)."
 )
 REPLY_SEEN = (
     "The user has already read the reply you wrote before this call. End the turn now: don't "
