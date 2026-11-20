@@ -258,6 +258,12 @@
       "judge": ["answers_the_question", "explains_tradeoff"],
       "turns": ["Born January 1960 and June 1961, married, both on Medicare, $90,000 income, $2 million IRA, drawing at 73.", "Run it.", "Is it worth paying higher Medicare premiums to convert more?"],
       "expect": {"tools_called": ["analyze_roth_conversions"], "reply_mentions_any": ["IRMAA", "premium", "surcharge"]}
+    },
+    {
+      "id": "brackets-after-result",
+      "category": "numbers",
+      "turns": ["I was born in March 1971 and I'm single, with $95,000 of income this year. I have $650,000 in a traditional 401(k) and plan to start drawing on it at 62.", "Looks right. Run the numbers.", "Show me the 2026 single tax brackets"],
+      "expect": {"tools_called": ["analyze_roth_conversions", "get_tax_brackets"]}
     }
   ]
 }
