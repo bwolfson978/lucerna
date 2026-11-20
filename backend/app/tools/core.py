@@ -348,6 +348,8 @@ def summarize_result(result: OptimizationResult, result_id: str) -> dict:
             "conversion": round(d["conversion"]),
             **_in_that_years_dollars(result, t, d["conversion"]),
             "tax_on_conversion": round(d["tax_cost"]),
+            # Results saved before this field existed don't have it
+            **({"taxable_income": round(d["taxable_income"])} if "taxable_income" in d else {}),
             "marginal_bracket": d.get("marginal_bracket"),
             **({"rmd": round(d["rmd"])} if d.get("rmd") else {}),
             **(
@@ -387,9 +389,8 @@ def summarize_result(result: OptimizationResult, result_id: str) -> dict:
         ],
         "reasoning": {
             "binding_constraint": trace.binding_constraint,
-            "marginal_tax_rate_at_optimal": trace.marginal_tax_rate_at_optimal,
-            "cost_of_next_bracket": trace.cost_of_next_bracket,
-            "benefit_of_current_bracket": trace.benefit_of_current_bracket,
+            "cost_of_converting_more": trace.cost_of_converting_more,
+            "cost_and_benefit_of_conversions": trace.cost_and_benefit_of_conversions,
             "summary_points": trace.summary_points,
             "sensitivity_notes": trace.sensitivity_notes,
         },

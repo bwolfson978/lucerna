@@ -532,6 +532,8 @@ def _build_year_detail(
             "federal_tax_cost": round(fed_cost, 2),
             "state_tax_cost": round(state_cost, 2),
             "effective_rate": round(eff_rate, 4),
+            # What the federal brackets apply to, conversion and withdrawals included
+            "taxable_income": round(yt.taxable_income(base + added), 2),
             # Under the standard deduction the conversion is not taxed federally at all
             "marginal_bracket": "0%"
             if yt.under_standard_deduction(base + added, STANDARD_DEDUCTION[scenario.filing_status])
