@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import type { StoredResult } from "@/lib/agent/types";
 import { ResultsView } from "@/components/results/ResultsView";
+import { hasDisplay } from "@/lib/results/viewData";
 import { ChartSkeleton } from "@/components/common/Skeleton";
 
 interface FullResultsViewProps {
@@ -53,7 +54,7 @@ export function FullResultsView({
 
       {banner}
 
-      {stored.result ? (
+      {stored.result && hasDisplay(stored.result) ? (
         <ResultsView result={stored.result} />
       ) : (
         <div role="status" aria-label="Loading results">

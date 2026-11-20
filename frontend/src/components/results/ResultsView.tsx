@@ -10,7 +10,7 @@ import {
   Stat,
   useResultSlider,
 } from "@lucerna/ui";
-import { resultCardData, resultDetails } from "@/lib/results/viewData";
+import { resultDisplay } from "@/lib/results/viewData";
 import { formatCurrency, formatSavings } from "@/lib/utils/formatting";
 import { CHART_COLORS, buildResultsDisclaimer } from "@/lib/utils/constants";
 import { ScenarioCards } from "./ScenarioCards";
@@ -34,10 +34,10 @@ export function ResultsView({ result }: ResultsViewProps) {
   const handleSliderDragStart = useCallback(() => setIsSliderDragging(true), []);
   const handleSliderDragEnd = useCallback(() => setIsSliderDragging(false), []);
 
-  // The slider and every number at its total come from the same shared code and data as
-  // the result card in the conversation (useResultSlider), so the two always agree.
-  const data = useMemo(() => resultCardData("full-results", result), [result]);
-  const details = useMemo(() => resultDetails(result), [result]);
+  // The slider and every number at its total come from the same shared code
+  // (useResultSlider) and the same server-built data (result.display) as the result card
+  // in the conversation, so the two always agree.
+  const { data, details } = useMemo(() => resultDisplay("full-results", result)!, [result]);
   const {
     total: sliderValue,
     move: setSliderValue,

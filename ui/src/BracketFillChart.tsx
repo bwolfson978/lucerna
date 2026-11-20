@@ -4,7 +4,7 @@ import { BracketChart, type TaxBracket } from "./BracketChart";
 
 /**
  * The tax bracket chart's data at the optimal schedule (backend app/tools/views.py
- * bracket_fill_view; the web app builds the same in lib/results/viewData.ts).
+ * bracket_fill_view; the web app gets the same with each full result).
  */
 export interface BracketFillData {
   years: {

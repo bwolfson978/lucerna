@@ -113,7 +113,14 @@ async def test_ui_payloads_on_request():
         )
         [entry] = analyzed.meta[RESULTS_META_KEY]
         assert entry["result_id"] == analyzed.structuredContent["result_id"]
-        assert entry["result"]["conversion_curve"]  # the full result, not the summary
+        # The full result, not the summary, with the card's data and without the curve.
+        assert entry["result"]["scenarios"]
+        assert entry["result"]["conversion_curve"] == []
+        assert entry["result"]["display"]["view"] == analyzed.meta[VIEW_META_KEY]
+        assert (
+            entry["result"]["display"]["card"]["total_conversion"]
+            == analyzed.structuredContent["total_conversion"]
+        )
 
         compared = await session.call_tool(
             "compare_roth_scenarios",

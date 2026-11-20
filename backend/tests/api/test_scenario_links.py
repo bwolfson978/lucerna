@@ -78,6 +78,13 @@ async def test_tool_links_open_the_same_result():
             round(opened["result"]["estimated_lifetime_tax_savings"])
             == (data["estimated_lifetime_tax_savings_todays_dollars"])
         )
+        # The page draws from the same card data the tool sent, and the
+        # curve stays on the server.
+        display = opened["result"]["display"]
+        assert display["card"]["result_id"] == data["result_id"]
+        assert display["card"]["total_tax_on_conversions"] == data["total_tax_on_conversions"]
+        assert display["view"]["curve"]["points"]
+        assert opened["result"]["conversion_curve"] == []
 
         params = _params(what_if["what_if_full_results_url"])
         response = await client.post(

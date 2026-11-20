@@ -328,6 +328,16 @@ describe("session persistence", () => {
     expect(slim?.results.r_1.input).toEqual(sampleOptimizationResult.input);
   });
 
+  it("drops a result stored before the server sent display data, to be recomputed", () => {
+    const state = run();
+    const { display: _display, ...old } = sampleOptimizationResult;
+    const stale = { ...state, results: { r_1: { ...state.results.r_1, result: old } } };
+    saveConversation("k3", stale as ConversationState);
+    const loaded = loadConversation("k3");
+    expect(loaded?.results.r_1.result).toBeNull();
+    expect(loaded?.results.r_1.input).toEqual(sampleOptimizationResult.input);
+  });
+
   function run(): ConversationState {
     let state = conversationReducer(INITIAL_CONVERSATION, { type: "user", id: "1", text: "Hi" });
     state = conversationReducer(state, {

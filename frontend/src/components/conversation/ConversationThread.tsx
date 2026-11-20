@@ -8,7 +8,7 @@ import { Markdown } from "./Markdown";
 import { usePrefersReducedMotion } from "@/hooks/useInView";
 import { McpAppFrame } from "./parts/McpAppFrame";
 import { PartBoundary } from "./parts/PartBoundary";
-import { ResultHeadlineCard, ScenarioCompareCard, SuggestionChips } from "./parts/ResultCards";
+import { ResultHeadlineCard, SuggestionChips } from "./parts/ResultCards";
 import { ReplyFeedback } from "./ReplyFeedback";
 import { UserMessage } from "./UserMessage";
 
@@ -231,13 +231,8 @@ function PartView({ part, interactive }: { part: UiPart; interactive: boolean })
       // Saved by earlier versions; the result card above already covers these.
       return null;
     case "scenario_compare":
-      return (
-        <ScenarioCompareCard
-          resultId={part.result_id}
-          baseResultId={part.base_result_id}
-          label={part.label}
-        />
-      );
+      // Saved by earlier versions; comparisons now come as an MCP App View.
+      return null;
     case "mcp_app":
       return (
         <McpAppFrame
