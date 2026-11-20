@@ -2,9 +2,8 @@
 
 Views render shared components (ui/) that need chart series the model has no use for.
 The server sends these in the tool result's ``_meta`` under ``VIEW_META_KEY``: hosts
-pass ``_meta`` to the View but not to the model. The web app builds the same shapes
-from full results (frontend/src/lib/results/viewData.ts); the shared fixture
-shared/fixtures/view-data.json keeps the two in step.
+pass ``_meta`` to the View but not to the model. The web app's own cards and results
+page read the same data, sent with each full result (``browser_result``).
 """
 
 from __future__ import annotations
@@ -13,8 +12,11 @@ import math
 
 from app.engine.tax import BRACKETS, STANDARD_DEDUCTION
 from app.engine.types import OptimizationResult
+from app.tools import core
 
 VIEW_META_KEY = "lucerna/view"
+# Key on a full result handed to the web app, holding its ``result_display``.
+DISPLAY_KEY = "display"
 
 
 def _round(value: float) -> int:
@@ -121,3 +123,22 @@ def result_view(result: OptimizationResult) -> dict:
     if curve:
         view["curve"] = curve
     return view
+
+
+def result_display(result: OptimizationResult, result_id: str) -> dict:
+    """What the shared result card shows for a result: the analyze tool's
+    structuredContent (``card``) and View ``_meta`` (``view``), built here once. The web
+    app gets it with every full result (``browser_result``) and renders its own cards and
+    results page from it, so it never rebuilds this data in the browser."""
+    return {"card": core.summarize_result(result, result_id), "view": result_view(result)}
+
+
+def browser_result(result: OptimizationResult, result_id: str) -> dict:
+    """A full engine result as the web app receives it: the result plus its display data,
+    without the conversion curve. The curve is megabytes; the slider reads the few points
+    in the display data instead."""
+    return {
+        **result.model_dump(mode="json", exclude={"conversion_curve"}),
+        "conversion_curve": [],
+        DISPLAY_KEY: result_display(result, result_id),
+    }

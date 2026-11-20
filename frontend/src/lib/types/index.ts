@@ -1,3 +1,4 @@
+import type { ResultCardData, ResultDetails } from "@lucerna/ui";
 import type { ScenarioDraft } from "@/lib/scenario/draft";
 export type FilingStatus = "single" | "married_filing_jointly";
 
@@ -226,6 +227,7 @@ export interface OptimizationResult {
   traditional_at_retirement: number;
   roth_at_retirement: number;
   timeline_chart: TimelineChartPoint[];
+  /** Empty in the browser: the slider's points are in `display`. */
   conversion_curve: ConversionCurvePoint[];
   unconstrained_npv?: number | null;
   unconstrained_conversions?: number[] | null;
@@ -238,6 +240,9 @@ export interface OptimizationResult {
   irmaa_projection?: IrmaaProjection | null;
   irmaa_projection_no_conversion?: IrmaaProjection | null;
   input: ScenarioInput;
+  /** What the result card and results page show, built by the server (backend
+   * app/tools/views.py result_display). Absent only on results stored by an older tab. */
+  display?: { card: ResultCardData; view: ResultDetails };
 }
 
 // ── Saved scenario types ───────────────────────────────────────────────────

@@ -18,9 +18,8 @@ from pathlib import Path
 
 from mcp.shared.memory import create_connected_server_and_client_session
 
-from app.engine.types import OptimizationResult
 from app.mcp.server import RESULTS_META_KEY, UI_META_KEY, mcp
-from app.tools.views import VIEW_META_KEY, curve_points
+from app.tools.views import VIEW_META_KEY
 
 OUTPUT = Path(__file__).resolve().parents[2] / "shared" / "fixtures" / "view-data.json"
 
@@ -42,26 +41,6 @@ CHANGES = {"retirement_age": 62}
 LABEL = "Retire at 62"
 
 
-CURVE_FIELDS = ("total_cap", "npv", "total_tax", "yearly_conversions", "yearly_rmd_amounts")
-
-
-def _slim(result: dict, *, keep_curve: bool = False) -> dict:
-    # The conversion curve is most of the payload. The card's slider reads only the
-    # points the View gets (curve_points), and only these fields of them.
-    curve = []
-    if keep_curve:
-        picked = curve_points(OptimizationResult.model_validate(result))
-        curve = [
-            {
-                **{k: p.model_dump()[k] for k in CURVE_FIELDS},
-                # Each year's tax (curve_view "taxes"); the rest of yearly_detail goes unread.
-                "yearly_detail": [{"tax_cost": d["tax_cost"]} for d in p.yearly_detail],
-            }
-            for p in picked
-        ]
-    return {**result, "conversion_curve": curve}
-
-
 async def generate() -> dict:
     ui = {UI_META_KEY: True}
     async with create_connected_server_and_client_session(mcp) as session:
@@ -75,7 +54,6 @@ async def generate() -> dict:
             meta=ui,
         )
     [analysis] = analyzed.meta[RESULTS_META_KEY]
-    base, variant = compared.meta[RESULTS_META_KEY]
     return {
         "scenario": SCENARIO,
         "prepare_scenario": {"structured_content": recorded.structuredContent},
@@ -83,14 +61,13 @@ async def generate() -> dict:
             "structured_content": analyzed.structuredContent,
             "view_meta": analyzed.meta[VIEW_META_KEY],
             "result_id": analysis["result_id"],
-            "result": _slim(analysis["result"], keep_curve=True),
+            # The full result as the web app gets it, display data included.
+            "result": analysis["result"],
         },
         "compare_roth_scenarios": {
             "changes": CHANGES,
             "label": LABEL,
             "structured_content": compared.structuredContent,
-            "base_result": _slim(base["result"]),
-            "variant_result": _slim(variant["result"]),
         },
     }
 

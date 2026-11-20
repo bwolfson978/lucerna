@@ -12,6 +12,7 @@ from app.tools import core
 from app.tools.draft import ScenarioDraft, current_year
 from app.tools.links import MAX_PARAM_LENGTH, decode_scenario
 from app.tools.models import ScenarioUpdate
+from app.tools.views import browser_result
 
 router = APIRouter()
 
@@ -26,7 +27,7 @@ class OpenLinkResponse(BaseModel):
     label: str
     # The scenario as the web app's draft (fills the form and the conversation).
     draft: dict
-    # The full engine result for the results page.
+    # The full engine result for the results page, with its display data.
     result: dict
 
 
@@ -64,9 +65,10 @@ async def open_scenario_link(body: OpenLinkRequest):
         error = str(err)
     if error is not None:
         raise HTTPException(status_code=400, detail=error)
+    result_id = core.result_id_for(scenario_input)
     return OpenLinkResponse(
-        result_id=core.result_id_for(scenario_input),
+        result_id=result_id,
         label=body.label or "Your scenario",
         draft=draft.model_dump(mode="json"),
-        result=result.model_dump(mode="json"),
+        result=browser_result(result, result_id),
     )

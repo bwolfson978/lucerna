@@ -1,7 +1,7 @@
 import { fireEvent, render, within } from "@testing-library/react";
 import { ResultCard } from "@lucerna/ui";
 import type { OptimizationResult } from "@/lib/types";
-import { resultCardData, resultDetails } from "@/lib/results/viewData";
+import { resultDisplay } from "@/lib/results/viewData";
 import fixture from "../../../../../shared/fixtures/view-data.json";
 import { MethodologyProvider } from "@/components/methodology/MethodologyContext";
 import { ResultsView } from "../ResultsView";
@@ -33,14 +33,11 @@ function shown(root: HTMLElement) {
   };
 }
 
-const card = () =>
-  render(
-    <ResultCard
-      data={resultCardData("r1", result)}
-      details={resultDetails(result)}
-      onOpenFullResults={() => {}}
-    />
-  ).container;
+const card = () => {
+  const { data, details } = resultDisplay("r1", result)!;
+  return render(<ResultCard data={data} details={details} onOpenFullResults={() => {}} />)
+    .container;
+};
 const full = () =>
   render(
     <MethodologyProvider>

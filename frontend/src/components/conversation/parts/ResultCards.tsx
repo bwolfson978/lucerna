@@ -1,17 +1,16 @@
 "use client";
 
 /**
- * Native renders of the shared cards (ui/) for conversation parts that point at stored
- * results saved by earlier versions. Results
- * from tools with MCP App Views render through McpAppFrame instead; both use the
- * same components with the same data (lib/results/viewData.ts).
+ * Native render of the shared result card (ui/) for a conversation part that points at a
+ * stored result. Results from tools with MCP App Views render through McpAppFrame
+ * instead; both show the same component the same server-built data.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import posthog from "posthog-js";
-import { ResultCard, ScenarioCompareCard as SharedScenarioCompareCard } from "@lucerna/ui";
+import { ResultCard } from "@lucerna/ui";
 import type { StoredResult } from "@/lib/agent/types";
-import { compareData, resultCardData, resultDetails } from "@/lib/results/viewData";
+import { resultDisplay } from "@/lib/results/viewData";
 import { useConversationContext } from "../ConversationContext";
 
 /** Look up a result, recomputing it if it was dropped from session storage. */
@@ -44,50 +43,15 @@ export function ResultHeadlineCard({ resultId }: { resultId: string }) {
   const { openResults, send } = useConversationContext();
   const stored = useStoredResult(resultId);
   if (!stored) return null;
-  const result = stored.result;
-  if (!result) return <Pending />;
+  const display = stored.result && resultDisplay(resultId, stored.result);
+  if (!display) return <Pending />;
   return (
     <div data-testid="result-headline">
       <ResultCard
-        data={resultCardData(resultId, result)}
-        details={resultDetails(result)}
+        data={display.data}
+        details={display.details}
         onOpenFullResults={() => openFull(openResults, resultId, "headline")}
         onAsk={send}
-      />
-    </div>
-  );
-}
-
-export function ScenarioCompareCard({
-  resultId,
-  baseResultId,
-  label,
-}: {
-  resultId: string;
-  baseResultId: string;
-  label: string;
-}) {
-  const { openResults, applyWhatIf, streaming } = useConversationContext();
-  const [applied, setApplied] = useState(false);
-  const variant = useStoredResult(resultId);
-  const base = useStoredResult(baseResultId);
-  if (!variant || !base) return null;
-  if (!variant.result || !base.result) return <Pending />;
-  return (
-    <div data-testid="scenario-compare">
-      <SharedScenarioCompareCard
-        data={compareData(baseResultId, base.result, resultId, variant.result, label)}
-        onOpenFullResults={() => openFull(openResults, resultId, "what_if")}
-        onApply={
-          applyWhatIf && variant.draft
-            ? () => {
-                applyWhatIf(resultId);
-                setApplied(true);
-              }
-            : undefined
-        }
-        applied={applied}
-        applyDisabled={streaming}
       />
     </div>
   );

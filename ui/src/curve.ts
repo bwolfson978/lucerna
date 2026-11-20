@@ -2,7 +2,7 @@ import type { TaxBracket } from "./BracketChart";
 
 /**
  * The conversion curve as the result card's slider gets it (backend app/tools/views.py
- * curve_view; the web app builds the same in lib/results/viewData.ts): real schedules
+ * curve_view; the web app gets the same with each full result): real schedules
  * for a range of total amounts, lowest total first.
  */
 export interface ConversionCurveData {

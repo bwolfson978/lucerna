@@ -145,6 +145,37 @@ export const sampleOptimizationResult: OptimizationResult = {
     annual_growth_rate: 0.07,
     discount_rate: 0.05,
   },
+  // What the server sends for the result card and results page (no slider curve).
+  display: {
+    card: {
+      result_id: "r_sample",
+      estimated_lifetime_tax_savings_todays_dollars: 28500,
+      total_conversion: 95000,
+      total_tax_on_conversions: 14200,
+      years_with_conversions: 2,
+      schedule_by_year: [
+        { year: 2026, conversion: 45000 },
+        { year: 2027, conversion: 50000 },
+        { year: 2028, conversion: 0 },
+      ],
+    },
+    view: {
+      bracket_fill: {
+        years: [
+          { year: 2026, age: 38, income: 35000, rmd: 0, conversion: 45000, tax: 6500 },
+          { year: 2027, age: 39, income: 30000, rmd: 0, conversion: 50000, tax: 7700 },
+          { year: 2028, age: 40, income: 150000, rmd: 0, conversion: 0, tax: 0 },
+        ],
+        brackets: [
+          { rate: 0.1, min: 0, max: 11925 },
+          { rate: 0.12, min: 11925, max: 48475 },
+          { rate: 0.22, min: 48475, max: 103350 },
+          { rate: 0.24, min: 103350, max: null },
+        ],
+        standard_deduction: 16100,
+      },
+    },
+  },
 };
 
 export const sampleDemoResponse: DemoResponse = {

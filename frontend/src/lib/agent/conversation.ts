@@ -7,6 +7,7 @@
  */
 
 import type { ScenarioDraft } from "@/lib/scenario/draft";
+import { hasDisplay } from "@/lib/results/viewData";
 import type { AgentEvent, ReplyRating, StoredResult, UiMessage, UiPart } from "./types";
 
 export interface ConversationState {
@@ -244,7 +245,15 @@ export function loadConversation(key: string): ConversationState | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<ConversationState>;
     if (!Array.isArray(parsed.messages) || !Array.isArray(parsed.apiMessages)) return null;
-    return { ...INITIAL_CONVERSATION, ...parsed, streaming: false, status: null };
+    // A result stored before the server sent display data is recomputed, like one that
+    // didn't fit in storage.
+    const results = Object.fromEntries(
+      Object.entries(parsed.results ?? {}).map(([id, r]) => [
+        id,
+        hasDisplay(r.result) ? r : { ...r, result: null },
+      ])
+    );
+    return { ...INITIAL_CONVERSATION, ...parsed, results, streaming: false, status: null };
   } catch {
     return null;
   }

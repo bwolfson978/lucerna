@@ -808,6 +808,12 @@ export function ScenarioWorkspace({ variant }: { variant: Variant }) {
       };
 
   const openStored = view.kind === "results" ? state.results[view.id] : undefined;
+  // An open result that isn't in memory (dropped from storage, or stored by an older
+  // version) is recomputed.
+  const openId = view.kind === "results" ? view.id : null;
+  useEffect(() => {
+    if (openId) ensureResult(openId);
+  }, [openId, ensureResult]);
   const showDetails = view.kind === "details" && !isDemo;
   const sidebarResult =
     (openStored?.result ?? undefined) ||

@@ -15,7 +15,7 @@ from app.db.session import get_pool
 from app.engine.types import ScenarioInput
 
 # Fields from OptimizationResult we do NOT persist (too large / recomputed on demand).
-_STRIP_FIELDS = {"conversion_curve", "reasoning_trace"}
+_STRIP_FIELDS = {"conversion_curve", "reasoning_trace", "display"}
 
 LIST_LIMIT = 50
 

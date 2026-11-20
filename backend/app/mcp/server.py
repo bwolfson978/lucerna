@@ -48,7 +48,7 @@ from app.tools import core, feedback
 from app.tools.draft import ScenarioDraft, current_year
 from app.tools.links import full_results_url, site_url, tagged
 from app.tools.models import MethodologyTopic, ScenarioUpdate
-from app.tools.views import VIEW_META_KEY, result_view
+from app.tools.views import VIEW_META_KEY, browser_result, result_view
 
 INSTRUCTIONS = """Roth Conversions Optimizer runs a deterministic multi-year optimizer that finds the Roth \
 conversion schedule with the highest after-tax wealth for a scenario, using 2026 federal and \
@@ -266,7 +266,7 @@ def _tracked(fn):
 def _ui_results(entries: list[tuple[str, str, ScenarioInput, OptimizationResult]]) -> dict:
     return {
         RESULTS_META_KEY: [
-            {"result_id": rid, "label": label, "result": result.model_dump(mode="json")}
+            {"result_id": rid, "label": label, "result": browser_result(result, rid)}
             for rid, label, _scenario, result in entries
         ]
     }
