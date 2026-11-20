@@ -592,7 +592,7 @@ export function BracketChart({
                 })}
               </svg>
               {rows.map((row) => (
-                <div key={row.label} className="flex">
+                <div key={row.label} className="flex" data-ui={`row-${row.label.toLowerCase()}`}>
                   {years.map((yearData, i) => {
                     const maxChars = Math.max(4, Math.floor((colWidth - 8) / 6.5));
                     const value = row.values[i];
@@ -600,6 +600,7 @@ export function BracketChart({
                     return (
                       <div
                         key={yearData.year}
+                        data-value={value ?? undefined}
                         className={cn(
                           "flex h-7 items-center justify-center whitespace-nowrap",
                           compactValues ? "text-[11px] tracking-[-0.02em]" : "text-data-xs",

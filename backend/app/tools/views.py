@@ -24,8 +24,8 @@ def _round(value: float) -> int:
 
 def bracket_fill_view(result: OptimizationResult) -> dict:
     """The tax bracket chart (ui/src/BracketChart.tsx) as the results page draws it at the
-    optimal schedule: per year, gross income, required withdrawal, conversion and the
-    tax the conversion adds, plus the brackets (taxable income, ``max`` None for the top
+    optimal schedule: per year, gross income, required withdrawal, conversion and all the
+    tax the conversion adds (federal and state, as the engine counts it), plus the brackets (taxable income, ``max`` None for the top
     one) and standard deduction for the filing status."""
     rmd_by_year = (
         {d.year: d.rmd_amount for d in result.rmd_projection.yearly_detail}
@@ -36,6 +36,7 @@ def bracket_fill_view(result: OptimizationResult) -> dict:
     for i, plan_year in enumerate(result.input.timeline):
         fill = result.yearly_bracket_fill[i] if i < len(result.yearly_bracket_fill) else []
         conversion = result.yearly_conversions[i] if i < len(result.yearly_conversions) else 0
+        detail = result.yearly_detail[i] if i < len(result.yearly_detail) else {}
         years.append(
             {
                 "year": plan_year.year,
@@ -43,7 +44,7 @@ def bracket_fill_view(result: OptimizationResult) -> dict:
                 "income": _round(plan_year.gross_income),
                 "rmd": _round(rmd_by_year.get(plan_year.year, 0)),
                 "conversion": _round(conversion),
-                "tax": _round(sum(b.bracket_rate * b.filled_by_conversion for b in fill)),
+                "tax": _round(_year_tax(detail, fill)),
             }
         )
     filing_status = result.input.filing_status
@@ -60,6 +61,14 @@ def bracket_fill_view(result: OptimizationResult) -> dict:
         "brackets": brackets,
         "standard_deduction": _round(STANDARD_DEDUCTION[filing_status]),
     }
+
+
+def _year_tax(detail: dict, fill: list) -> float:
+    """The tax a year's conversion adds: the engine's figure (federal and state), or for a
+    result without one, the federal tax from the bracket fill."""
+    if "tax_cost" in detail:
+        return detail["tax_cost"]
+    return sum(b.bracket_rate * b.filled_by_conversion for b in fill)
 
 
 # Points the result card's slider gets from the conversion curve (about 200 points).
@@ -86,8 +95,8 @@ def curve_points(result: OptimizationResult) -> list:
 def curve_view(result: OptimizationResult) -> dict | None:
     """What the card's slider needs to move off the optimal schedule: per point, the
     total converted, estimated savings (today's dollars, as the headline), total tax,
-    and each year's conversion and required withdrawal. The card adds each year's tax
-    from the brackets, as the results page does. None without a curve."""
+    and each year's conversion, required withdrawal and tax (federal and state, adding up
+    to the total). None without a curve."""
     points = curve_points(result)
     if not points:
         return None
@@ -99,6 +108,7 @@ def curve_view(result: OptimizationResult) -> dict | None:
                 "tax": _round(p.total_tax),
                 "conversions": [_round(c) for c in p.yearly_conversions],
                 "rmds": [_round(r) for r in p.yearly_rmd_amounts],
+                "taxes": [_round(d.get("tax_cost", 0)) for d in p.yearly_detail],
             }
             for p in points
         ]

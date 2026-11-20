@@ -17,6 +17,9 @@ export interface ConversionCurveData {
     conversions: number[];
     /** Each year's required withdrawal, which shrinks as more is converted. */
     rmds: number[];
+    /** Each year's tax on its conversion (federal and state), adding up to `tax`.
+     * Absent from older results, which then figure each year's federal tax. */
+    taxes?: number[];
   }[];
 }
 
@@ -39,7 +42,8 @@ export function isConversionCurveData(value: unknown): value is ConversionCurveD
       isNumbers(p.conversions) &&
       isNumbers(p.rmds) &&
       p.conversions.length === years &&
-      p.rmds.length === years
+      p.rmds.length === years &&
+      (p.taxes === undefined || isNumbers(p.taxes))
   );
 }
 
@@ -48,12 +52,17 @@ export interface CurveSample {
   tax: number;
   conversions: number[];
   rmds: number[];
+  /** Each year's tax, when every point has one per year. */
+  taxes?: number[];
 }
+
+/** Smallest blended conversion kept for a year (GitHub issue #59). */
+const SLIVER = 100;
 
 /**
  * The curve at any total: a blend of the two points around it, with each year's
- * conversion scaled so they add up to the total exactly. Matches the results page's
- * slider (frontend hooks/useConversionSlider.ts).
+ * conversion scaled so they add up to the total exactly. Every surface moves off the
+ * optimal schedule through this (see useResultSlider).
  */
 export function sampleCurve(curve: ConversionCurveData, total: number): CurveSample {
   const points = curve.points;
@@ -64,7 +73,10 @@ export function sampleCurve(curve: ConversionCurveData, total: number): CurveSam
   const span = b.total - a.total;
   const t = span > 0 ? Math.min(1, Math.max(0, (total - a.total) / span)) : 0;
   const lerp = (x: number, y: number) => x + (y - x) * t;
-  let conversions = a.conversions.map((c, j) => lerp(c, b.conversions[j]));
+  // A year one point converts in and the other doesn't would get a sliver; drop those.
+  let conversions = a.conversions
+    .map((c, j) => lerp(c, b.conversions[j]))
+    .map((c) => (c < SLIVER ? 0 : c));
   const sum = conversions.reduce((s, c) => s + c, 0);
   if (sum > 0 && total > 0) conversions = conversions.map((c) => (c * total) / sum);
   return {
@@ -72,6 +84,10 @@ export function sampleCurve(curve: ConversionCurveData, total: number): CurveSam
     tax: lerp(a.tax, b.tax),
     conversions,
     rmds: a.rmds.map((r, j) => lerp(r, b.rmds[j])),
+    taxes:
+      a.taxes?.length === a.conversions.length && b.taxes?.length === b.conversions.length
+        ? a.taxes.map((x, j) => (conversions[j] > 0 ? lerp(x, b.taxes![j]) : 0))
+        : undefined,
   };
 }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { computeSnapThreshold, maybeSnap } from "@/lib/utils/snap";
+import { computeSnapThreshold, maybeSnap } from "@lucerna/ui";
 
 describe("computeSnapThreshold", () => {
   it("returns 1.5% of range for a typical IRA balance", () => {

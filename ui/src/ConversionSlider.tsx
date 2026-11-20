@@ -19,8 +19,6 @@ interface ConversionSliderProps {
   onChange: (value: number) => void;
   onDragStart?: () => void;
   onDragEnd?: () => void;
-  /** Label at the right end of the track. Defaults to the maximum, e.g. "$900K". */
-  maxLabel?: string;
   /** Savings at other totals. With them the track deepens to pine where savings are
    * highest; without, it is a plain track filled up to the thumb. */
   savings?: SliderSavingsPoint[];
@@ -94,7 +92,6 @@ export function ConversionSlider({
   onChange,
   onDragStart,
   onDragEnd,
-  maxLabel,
   savings,
 }: ConversionSliderProps) {
   const range = max - min;
@@ -151,7 +148,7 @@ export function ConversionSlider({
 
       <div className="text-text-tertiary flex justify-between font-mono text-[11px]">
         <span>{formatAxisCurrency(min)}</span>
-        <span>{maxLabel ?? formatAxisCurrency(max)}</span>
+        <span>{formatAxisCurrency(max)}</span>
       </div>
     </div>
   );

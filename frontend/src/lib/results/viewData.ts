@@ -48,13 +48,19 @@ export function bracketFillData(result: OptimizationResult): BracketFillData {
   return {
     years: result.input.timeline.map((plan, i) => {
       const fill = result.yearly_bracket_fill[i] ?? [];
+      const detail = result.yearly_detail?.[i];
       return {
         year: plan.year,
         age: result.input.age + i,
         income: round(plan.gross_income),
         rmd: round(rmdByYear.get(plan.year) ?? 0),
         conversion: round(result.yearly_conversions[i] ?? 0),
-        tax: round(fill.reduce((sum, b) => sum + b.bracket_rate * b.filled_by_conversion, 0)),
+        // All the tax the conversion adds (federal and state), as the engine counts it.
+        tax: round(
+          detail
+            ? detail.tax_cost
+            : fill.reduce((sum, b) => sum + b.bracket_rate * b.filled_by_conversion, 0)
+        ),
       };
     }),
     brackets: tax.brackets[status].map((b) => ({
@@ -108,6 +114,7 @@ export function curveData(result: OptimizationResult): ConversionCurveData | und
       tax: roundInt(p.total_tax),
       conversions: p.yearly_conversions.map(roundInt),
       rmds: (p.yearly_rmd_amounts ?? []).map(roundInt),
+      taxes: (p.yearly_detail ?? []).map((d) => roundInt(d.tax_cost ?? 0)),
     })),
   };
 }

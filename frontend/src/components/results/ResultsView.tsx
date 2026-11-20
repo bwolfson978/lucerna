@@ -3,18 +3,22 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { OptimizationResult, ScenarioInput } from "@/lib/types";
 import { ChartLegend } from "@/components/common/ChartLegend";
-import { BracketChart, ConversionSlider, MostSavingsNote, Stat } from "@lucerna/ui";
+import {
+  BracketChart,
+  ConversionSlider,
+  MostSavingsNote,
+  Stat,
+  useResultSlider,
+} from "@lucerna/ui";
+import { resultCardData, resultDetails } from "@/lib/results/viewData";
 import { formatCurrency, formatSavings } from "@/lib/utils/formatting";
 import { CHART_COLORS, buildResultsDisclaimer } from "@/lib/utils/constants";
 import { ScenarioCards } from "./ScenarioCards";
 import { BalanceProjections } from "./BalanceProjections";
 import { AcaSubsidyImpact } from "./AcaSubsidyImpact";
 import { Card } from "@/components/ui/card";
-import { useConversionSlider } from "@/hooks/useConversionSlider";
 import { useScrollOnTransition } from "@/hooks/useScrollOnTransition";
-import { computeSnapThreshold } from "@/lib/utils/snap";
 import { InfoTrigger } from "@/components/methodology/InfoTrigger";
-import { useTaxConfig } from "@/lib/tax/TaxConfigProvider";
 
 interface ResultsViewProps {
   result: OptimizationResult;
@@ -25,77 +29,47 @@ interface ResultsViewProps {
 export function ResultsView({ result }: ResultsViewProps) {
   // onReRun and loading are accepted for future calculator re-run support
   const chartScrollRef = useRef<HTMLDivElement>(null);
-  const taxConfig = useTaxConfig();
   const [tableColWidth, setTableColWidth] = useState(58);
   const [isSliderDragging, setIsSliderDragging] = useState(false);
   const handleSliderDragStart = useCallback(() => setIsSliderDragging(true), []);
   const handleSliderDragEnd = useCallback(() => setIsSliderDragging(false), []);
 
-  // Client-side slider: continuous bracket fill computation
+  // The slider and every number at its total come from the same shared code and data as
+  // the result card in the conversation (useResultSlider), so the two always agree.
+  const data = useMemo(() => resultCardData("full-results", result), [result]);
+  const details = useMemo(() => resultDetails(result), [result]);
   const {
-    totalConversion: sliderValue,
-    setTotalConversion: setSliderValue,
-    yearlyConversions,
-    yearlyDetail,
-    yearlyRmds,
-    totalTaxCost,
-    conversionYears,
-    estimatedSavings,
-  } = useConversionSlider({ result });
+    total: sliderValue,
+    move: setSliderValue,
+    optimal,
+    max: sliderMax,
+    curve,
+    stableMax: stableMaxGrossAmount,
+    atOptimal: isAtOptimal,
+    savings: estimatedSavings,
+    shortfall,
+    taxCost: totalTaxCost,
+    years: conversionYears,
+    chart,
+  } = useResultSlider(data, details);
+  const fill = chart ?? details.bracket_fill!;
+
+  const chartYears = useMemo(
+    () =>
+      fill.years.map((y) => ({
+        year: y.year,
+        age: y.age,
+        rmdAmount: y.rmd,
+        conversion: y.conversion,
+        income: y.income,
+      })),
+    [fill]
+  );
+  const yearlyConversions = useMemo(() => fill.years.map((y) => y.conversion), [fill]);
 
   // Auto-scroll bracket chart when a bar activates or deactivates.
   // Disabled during slider drag to prevent chart jumping while scrubbing.
   useScrollOnTransition(yearlyConversions, chartScrollRef, tableColWidth, !isSliderDragging);
-
-  // Pre-compute the max gross amount (income + rmd + conversion) across ALL
-  // curve points so BracketChart can use a stable Y-scale that does not jump
-  // as the slider moves and individual year grosses cross bracket boundaries.
-  // Each curve point carries its own yearly_rmd_amounts so the scale accounts
-  // for the fact that higher conversions produce lower future RMDs.
-  const stableMaxGrossAmount = useMemo(() => {
-    const curve = result.conversion_curve ?? [];
-    const optRmdMap = new Map<number, number>();
-    for (const d of result.rmd_projection?.yearly_detail ?? []) {
-      optRmdMap.set(d.year, d.rmd_amount);
-    }
-    let maxGross = 0;
-    for (let i = 0; i < result.input.timeline.length; i++) {
-      const yi = result.input.timeline[i];
-      const optRmd = optRmdMap.get(yi.year) ?? 0;
-      maxGross = Math.max(maxGross, yi.gross_income + optRmd + (result.yearly_conversions[i] ?? 0));
-      for (const point of curve) {
-        const curveRmd = (point.yearly_rmd_amounts ?? [])[i] ?? 0;
-        maxGross = Math.max(
-          maxGross,
-          yi.gross_income + curveRmd + (point.yearly_conversions[i] ?? 0)
-        );
-      }
-    }
-    return maxGross;
-  }, [result]);
-
-  // Build chart data from client-side bracket fills
-  const chartYears = useMemo(() => {
-    return result.input.timeline.map((yi, i) => ({
-      year: yi.year,
-      age: result.input.age + i,
-      rmdAmount: yearlyRmds[i] ?? 0,
-      conversion: yearlyConversions[i],
-      income: yi.gross_income,
-    }));
-  }, [result.input, yearlyRmds, yearlyConversions]);
-
-  // Savings at each total on the curve, which the slider's track shades by.
-  const sliderSavings = useMemo(() => {
-    return (result.conversion_curve ?? []).map((p) => ({
-      total: p.total_cap,
-      savings: p.npv - result.npv_at_zero,
-    }));
-  }, [result.conversion_curve, result.npv_at_zero]);
-
-  const snapThreshold = computeSnapThreshold(0, result.input.traditional_ira_balance);
-  const isAtOptimal = Math.abs(sliderValue - result.total_conversion) <= snapThreshold;
-  const savingsDifference = result.estimated_lifetime_tax_savings - estimatedSavings;
 
   return (
     <div className="flex flex-col gap-section">
@@ -118,8 +92,8 @@ export function ResultsView({ result }: ResultsViewProps) {
               <div className="min-h-[50px] sm:min-h-0">
                 <MostSavingsNote
                   atOptimal={isAtOptimal}
-                  shortfall={Math.abs(savingsDifference)}
-                  onBack={() => setSliderValue(result.total_conversion)}
+                  shortfall={shortfall}
+                  onBack={() => setSliderValue(optimal)}
                 />
               </div>
             </div>
@@ -127,18 +101,19 @@ export function ResultsView({ result }: ResultsViewProps) {
               In today&apos;s dollars, compared with not converting
             </span>
           </div>
-          <div className="w-full sm:w-[260px] sm:shrink-0">
-            <ConversionSlider
-              value={sliderValue}
-              min={0}
-              max={Math.max(result.input.traditional_ira_balance, result.total_conversion)}
-              optimalValue={result.total_conversion}
-              onChange={setSliderValue}
-              onDragStart={handleSliderDragStart}
-              onDragEnd={handleSliderDragEnd}
-              savings={sliderSavings}
-            />
-          </div>
+          {curve && (
+            <div className="w-full sm:w-[260px] sm:shrink-0">
+              <ConversionSlider
+                value={sliderValue}
+                max={sliderMax}
+                optimalValue={optimal}
+                onChange={setSliderValue}
+                onDragStart={handleSliderDragStart}
+                onDragEnd={handleSliderDragEnd}
+                savings={curve.points}
+              />
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-3 gap-3 sm:flex sm:gap-10">
@@ -149,9 +124,9 @@ export function ResultsView({ result }: ResultsViewProps) {
 
         <BracketChart
           years={chartYears}
-          brackets={taxConfig.brackets[result.input.filing_status]}
-          standardDeduction={taxConfig.standard_deduction[result.input.filing_status]}
-          addedTax={chartYears.map((_, i) => yearlyDetail[i]?.tax_cost)}
+          brackets={fill.brackets}
+          standardDeduction={fill.standard_deduction}
+          addedTax={fill.years.map((y) => y.tax)}
           scrollRef={chartScrollRef}
           onBarWidthChange={setTableColWidth}
           hideLegend
