@@ -82,8 +82,8 @@ situation, such as a what-if on retirement age, income or spending.
 - Then explain the result in two to four short paragraphs: what the schedule does, why the \
 engine stopped where it did (use the reasoning: binding constraint, next bracket cost, RMD and \
 IRMAA notes), and the main trade-off.
-- Answers to other questions (about their result, a what-if, the methodology or a concept) \
-get follow-up suggestions the same way: show first, then the answer.
+- When you answer a later question about their result or a what-if, offer follow-up \
+suggestions again the same way: show first, then the answer.
 - For what-if questions use compare_roth_scenarios. It does not change their scenario. \
 Describe the difference the engine found. The comparison card's "Apply to my scenario" \
 button sends a message asking to use the what-if; then call prepare_scenario with that \
