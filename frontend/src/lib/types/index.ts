@@ -127,17 +127,25 @@ export interface IrmaaProjection {
 
 export interface ReasoningTrace {
   binding_constraint: string;
-  marginal_tax_rate_at_optimal: number;
   marginal_benefit_at_optimal: number;
-  cost_of_next_bracket: {
-    bracketRate: number;
-    additionalTax: number;
-    netEffect: number;
+  /** What $1,000 more would cost in the first conversion year, bracket by bracket. */
+  cost_of_converting_more: {
+    year: number;
+    extra_conversion: number;
+    additional_tax: number;
+    federal_tax_by_bracket: { bracket: string; amount_taxed: number; tax: number }[];
+    state_tax?: number;
+    schedule_stops_in_bracket?: string;
+    room_left_in_that_bracket?: number;
+    next_bracket?: string;
+    taxable_income_added?: number;
+    explanation: string;
   };
-  benefit_of_current_bracket: {
-    bracketRate: number;
-    taxPaid: number;
-    futureTaxAvoided: number;
+  cost_and_benefit_of_conversions: {
+    average_tax_rate: number;
+    tax_paid: number;
+    future_tax_avoided: number;
+    dollars?: string;
   };
   sensitivity_notes: string[];
   summary_points: {
@@ -186,6 +194,8 @@ export interface YearlyDetail {
   federal_tax_cost?: number;
   state_tax_cost?: number;
   effective_rate?: number;
+  /** Federal taxable income that year, after deductions, with the conversion. */
+  taxable_income?: number;
   marginal_bracket: string | number;
   state_marginal_rate?: number;
   subsidy_lost?: number;

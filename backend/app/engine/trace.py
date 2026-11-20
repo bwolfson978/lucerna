@@ -19,8 +19,10 @@ from app.engine.irmaa import (
 from app.engine.retirement import conversion_bases
 from app.engine.rmd import calculate_rmd, rmd_start_age
 from app.engine.state_tax import resolve_state_for_year, retirement_rule, state_name
+from app.engine.tax import BRACKETS
 from app.engine.tax_cost import (
     combined_marginal_rate,
+    state_tax_on_conversion,
     total_conversion_cost,
 )
 from app.engine.types import (
@@ -35,6 +37,9 @@ from app.engine.year_tax import year_tax
 
 # Below this a state's marginal rate on conversions counts as no state tax
 MIN_STATE_RATE = 0.0005
+
+# The extra conversion priced in ``_cost_of_converting_more``
+EXTRA_CONVERSION = 1000
 
 
 def generate_reasoning_trace(
@@ -57,8 +62,6 @@ def generate_reasoning_trace(
     ``conversion_cost_today`` is what the conversions cost when they happen, in
     today's dollars, so tax paid and tax avoided add up to the savings.
     """
-    n_years = len(optimal_conversions)
-
     # Find binding constraint
     # Income before each conversion, counting the traditional withdrawal for spending
     bases = conversion_bases(scenario, optimal_conversions)
@@ -66,24 +69,6 @@ def generate_reasoning_trace(
     binding_constraint = _find_binding_constraint(
         scenario, optimal_conversions, bracket_fill, bases
     )
-
-    # Marginal rates at optimal (combined federal + state)
-    marginal_rates = []
-    for t in range(n_years):
-        income = bases[t]
-        conversion = optimal_conversions[t]
-        yr_state = resolve_state_for_year(scenario.timeline[t].state, scenario.state)
-        rate = combined_marginal_rate(
-            income,
-            conversion,
-            scenario.filing_status,
-            state=yr_state,
-            custom_state_rate=scenario.custom_state_rate,
-            year=year_tax(scenario, t),
-        )
-        marginal_rates.append(rate)
-
-    avg_marginal = sum(marginal_rates) / len(marginal_rates) if marginal_rates else 0.0
 
     # NPV benefit
     if lifetime_savings is not None:
@@ -94,8 +79,8 @@ def generate_reasoning_trace(
         marginal_benefit = npv_at_optimal - npv_at_zero
 
     # Cost/benefit of brackets
-    cost_of_next = _cost_of_next_bracket(scenario, optimal_conversions, bases)
-    benefit_of_current = _benefit_of_current_bracket(
+    cost_of_more = _cost_of_converting_more(scenario, optimal_conversions, bases)
+    cost_and_benefit = _cost_and_benefit_of_conversions(
         scenario, optimal_conversions, marginal_benefit, conversion_cost_today, bases
     )
 
@@ -114,10 +99,9 @@ def generate_reasoning_trace(
 
     return ReasoningTrace(
         binding_constraint=binding_constraint,
-        marginal_tax_rate_at_optimal=round(avg_marginal, 4),
         marginal_benefit_at_optimal=round(marginal_benefit, 2),
-        cost_of_next_bracket=cost_of_next,
-        benefit_of_current_bracket=benefit_of_current,
+        cost_of_converting_more=cost_of_more,
+        cost_and_benefit_of_conversions=cost_and_benefit,
         sensitivity_notes=sensitivity_notes,
         summary_points=summary_points,
         aca_impact=aca_impact,
@@ -214,38 +198,111 @@ def _just_under_irmaa_threshold(scenario: ScenarioInput, t: int, magi: float) ->
     )
 
 
-def _cost_of_next_bracket(
+def _bracket_label(rate: float) -> str:
+    return f"{rate:.0%}"
+
+
+def _federal_slices(
+    before: float, after: float, filing_status: FilingStatus
+) -> list[tuple[float, float]]:
+    """Split the taxable income between ``before`` and ``after`` by federal bracket:
+    (bracket rate, dollars taxed in it), lowest bracket first."""
+    slices = []
+    for bracket in BRACKETS[filing_status]:
+        amount = min(after, bracket["max"]) - max(before, bracket["min"])
+        if amount > 0:
+            slices.append((bracket["rate"], amount))
+    return slices
+
+
+def _cost_of_converting_more(
     scenario: ScenarioInput,
     conversions: list[float],
     bases: list[float] | None = None,
 ) -> dict:
-    """What would converting $1,000 more in the first conversion year cost (federal + state)?"""
-    extra = 1000
+    """What converting $1,000 more in the first conversion year would cost, bracket by bracket.
+
+    The extra $1,000 often straddles a bracket edge, because schedules tend to stop
+    near one. Its cost divided by $1,000 is then a blend of two brackets (17% between
+    12% and 22%) that reads like a bracket and is not one. So the cost is split by the
+    brackets that tax it, and no rate here is an average.
+    """
+    extra = EXTRA_CONVERSION
     t = next((i for i, c in enumerate(conversions) if c > 0), 0)
     entry = scenario.timeline[t]
     income = bases[t] if bases else entry.gross_income
     conversion = conversions[t] if t < len(conversions) else 0.0
     yr_state = resolve_state_for_year(entry.state, scenario.state)
+    yt = year_tax(scenario, t)
+    brackets = BRACKETS[scenario.filing_status]
 
-    extra_cost = total_conversion_cost(
-        income + conversion,
-        extra,
-        scenario.filing_status,
-        state=yr_state,
-        custom_state_rate=scenario.custom_state_rate,
-        year=year_tax(scenario, t),
+    # Federal: the taxable income the extra adds, and the brackets it lands in
+    before = yt.taxable_income(income + conversion)
+    after = yt.taxable_income(income + conversion + extra)
+    by_bracket = [
+        {
+            "bracket": _bracket_label(rate),
+            "amount_taxed": round(amount),
+            "tax": round(amount * rate),
+        }
+        for rate, amount in _federal_slices(before, after, scenario.filing_status)
+    ]
+    state_tax = round(
+        state_tax_on_conversion(
+            income + conversion,
+            extra,
+            yr_state,
+            scenario.filing_status,
+            scenario.custom_state_rate,
+            yt,
+        )
     )
-    # The extra $1,000 can straddle a bracket edge, so the rate is its blended cost
-    rate = extra_cost / extra
+    # The pieces are rounded to the dollar, so the total is their sum and they add up
+    additional_tax = sum(piece["tax"] for piece in by_bracket) + state_tax
 
-    return {
-        "bracket_rate": rate,
-        "additional_tax": round(extra_cost, 2),
-        "net_effect": f"Converting ${extra:,} more in {entry.year} would cost ${extra_cost:,.0f} in additional tax at the {rate:.0%} rate",
+    out: dict = {
+        "year": entry.year,
+        "extra_conversion": extra,
+        "additional_tax": additional_tax,
+        "federal_tax_by_bracket": by_bracket,
     }
+    if state_tax:
+        out["state_tax"] = state_tax
+
+    # Where the schedule's last converted dollar sits that year
+    stop = next((b for b in brackets if b["min"] < before <= b["max"]), None)
+    if stop is not None:
+        out["schedule_stops_in_bracket"] = _bracket_label(stop["rate"])
+        higher = [b for b in brackets if b["min"] >= stop["max"]]
+        if higher:
+            out["room_left_in_that_bracket"] = round(stop["max"] - before)
+            out["next_bracket"] = _bracket_label(higher[0]["rate"])
+
+    pieces = [f"${p['amount_taxed']:,} in the {p['bracket']} bracket" for p in by_bracket]
+    text = f"Converting ${extra:,} more in {entry.year} would cost ${additional_tax:,} in additional tax"
+    if pieces:
+        text += ": " + " and ".join(pieces)
+    if state_tax:
+        text += f", plus ${state_tax:,} of state tax"
+    text += "."
+    added = round(after - before)
+    if added < extra:
+        text += (
+            f" ${extra - added:,} of it falls under the standard deduction and is not taxed"
+            " federally."
+        )
+    elif added > extra:
+        out["taxable_income_added"] = added
+        text += (
+            f" It adds ${added:,} to taxable income, more than the ${extra:,} converted,"
+            " because the higher income makes more Social Security taxable or shrinks a"
+            " deduction."
+        )
+    out["explanation"] = text
+    return out
 
 
-def _benefit_of_current_bracket(
+def _cost_and_benefit_of_conversions(
     scenario: ScenarioInput,
     conversions: list[float],
     lifetime_savings: float,
@@ -254,7 +311,7 @@ def _benefit_of_current_bracket(
 ) -> dict:
     """What the conversions cost now and avoid later, in today's dollars.
 
-    ``bracket_rate`` is the average federal + state rate on the conversions.
+    ``average_tax_rate`` is the average federal + state rate on the conversions.
     ``tax_paid`` is the tax, lost ACA subsidy and IRMAA the conversions cause,
     discounted to today, and ``future_tax_avoided`` is that plus the savings, so
     avoided minus paid is the headline savings.
@@ -277,7 +334,7 @@ def _benefit_of_current_bracket(
     paid_now = total_tax_paid if conversion_cost_today is None else conversion_cost_today
 
     return {
-        "bracket_rate": round(avg_rate, 4),
+        "average_tax_rate": round(avg_rate, 4),
         "tax_paid": round(paid_now, 2),
         "future_tax_avoided": round(paid_now + lifetime_savings, 2),
         "dollars": "today's dollars (the schedule adds up each year's tax as paid)"

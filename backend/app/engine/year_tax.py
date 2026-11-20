@@ -22,7 +22,12 @@ from app.engine.state_tax import (
     retirement_exclusion,
     vectorized_state_tax,
 )
-from app.engine.tax import calculate_federal_tax, get_marginal_rate, vectorized_federal_tax
+from app.engine.tax import (
+    STANDARD_DEDUCTION,
+    calculate_federal_tax,
+    get_marginal_rate,
+    vectorized_federal_tax,
+)
 from app.engine.types import FilingStatus, ScenarioInput
 
 # Provisional income thresholds where 50% and then 85% of benefits become taxable
@@ -164,6 +169,10 @@ class YearTax:
 
     def total(self, income):
         return self.federal(income) + self.state_tax(income)
+
+    def taxable_income(self, income: float) -> float:
+        """Federal taxable income: what the brackets apply to, after every deduction."""
+        return max(0.0, self._federal_base(income) - STANDARD_DEDUCTION[self.filing_status])
 
     def federal_bracket(self, income: float) -> float:
         """Federal bracket rate the last dollar of ``income`` falls in."""

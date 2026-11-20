@@ -4,7 +4,15 @@ import json
 
 from app.agent.offline import OfflineModelClient
 from app.tools.draft import ScenarioDraft
-from evals.run_agent_evals import CASES_FILE, TurnRecord, check, grounded, money_amounts, run_case
+from evals.run_agent_evals import (
+    CASES_FILE,
+    TurnRecord,
+    check,
+    grounded,
+    money_amounts,
+    named_bracket_rates,
+    run_case,
+)
 
 
 def test_money_parsing_and_grounding():
@@ -62,3 +70,47 @@ def test_bare_user_numbers_can_mean_thousands():
     assert check({"expect": {}}, [turn], ScenarioDraft()) == []
     turn = TurnRecord(user="about 90", text="Maybe $91,000,000?")
     assert any("not found" in f for f in check({"expect": {}}, [turn], ScenarioDraft()))
+
+
+def test_named_brackets_must_be_real():
+    def failures(text, draft=None, tool_results=()):
+        turn = TurnRecord(user="hi", text=text, tool_results=list(tool_results))
+        return [
+            f for f in check({"expect": {}}, [turn], draft or ScenarioDraft()) if "bracket" in f
+        ]
+
+    assert failures("Converting more would push income into the 17% bracket.") == [
+        "turn 1: 17% is not a tax bracket"
+    ]
+    assert not failures("It fills the 12% bracket and stops before the 22% bracket.")
+    assert not failures(
+        "The 10%, 12% and 22% brackets apply. The first slice is in the 0% bracket."
+    )
+    # Correcting a wrong premise names the rate without claiming it
+    assert not failures("You're right that there's no 17% federal bracket.")
+    assert not failures("17% isn't a tax bracket. It is a blend of the 12% and 22% brackets.")
+    # A blended cost is fine as long as it isn't called a bracket
+    assert not failures("The next $1,000 costs about 17% in tax, partly at 12% and partly at 22%.")
+    assert named_bracket_rates("the 12% and 22% federal tax brackets") == [12, 22]
+    # The next bracket given a made-up rate
+    assert failures("The next bracket up is about 17% (the engine's effective rate).") == [
+        "turn 1: 17% is not a tax bracket"
+    ]
+    assert failures("It would reach the next bracket (about 17% effective).")
+    assert not failures("The next bracket is 22%, which costs more than it saves.")
+
+
+def test_state_brackets_count_when_the_state_is_in_play():
+    def failures(text, draft=None, tool_results=()):
+        turn = TurnRecord(user="hi", text=text, tool_results=list(tool_results))
+        return [
+            f for f in check({"expect": {}}, [turn], draft or ScenarioDraft()) if "bracket" in f
+        ]
+
+    text = "California's 9.3% bracket applies on top of the federal 22% bracket."
+    assert failures(text) == ["turn 1: 9.3% is not a tax bracket"]
+    assert not failures(text, draft=ScenarioDraft(state="CA"))
+    looked_up = json.dumps(
+        {"state": {"brackets_on_taxable_income": [{"rate": 0.093, "income_from": 0}]}}
+    )
+    assert not failures(text, tool_results=[looked_up])

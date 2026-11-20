@@ -6,7 +6,7 @@ from app.engine.irmaa import IRMAA_TIERS
 from app.engine.optimizer import optimize
 from app.engine.tax import BRACKETS, STANDARD_DEDUCTION, analyze_bracket_fill
 from app.engine.trace import (
-    _cost_of_next_bracket,
+    _cost_of_converting_more,
     _find_binding_constraint,
     generate_reasoning_trace,
 )
@@ -192,7 +192,7 @@ class TestBindingConstraint:
         assert _find_binding_constraint(scenario, [conversion], fills) == "Top of 12% bracket"
 
 
-class TestCostOfNextBracket:
+class TestCostOfConvertingMore:
     def test_prices_one_extra_thousand_in_one_year(self):
         # It used to add $1,000 to every timeline year and report the sum.
         scenario = ScenarioInput(
@@ -204,12 +204,21 @@ class TestCostOfNextBracket:
             planning_horizon_age=90,
         )
         conversions = [50_000.0] + [0.0] * 29
-        cost = _cost_of_next_bracket(scenario, conversions)
-        assert cost["additional_tax"] == pytest.approx(240, abs=1)
-        assert cost["net_effect"].startswith("Converting $1,000 more in 2026 would cost $240")
+        cost = _cost_of_converting_more(scenario, conversions)
+        assert cost["year"] == 2026
+        assert cost["additional_tax"] == 240
+        assert cost["federal_tax_by_bracket"] == [
+            {"bracket": "24%", "amount_taxed": 1000, "tax": 240}
+        ]
+        assert cost["explanation"] == (
+            "Converting $1,000 more in 2026 would cost $240 in additional tax: "
+            "$1,000 in the 24% bracket."
+        )
 
-    def test_rate_is_blended_when_the_extra_straddles_a_bracket_edge(self):
-        # MFJ 24% bracket ends at $403,550 taxable; put $650 of the extra $1,000 below it
+    def test_an_extra_that_straddles_a_bracket_edge_is_split_by_bracket(self):
+        # MFJ 24% bracket ends at $403,550 taxable; put $650 of the extra $1,000 below it.
+        # It used to report the blend ($188 on $1,000) as "the 19% rate", which reads
+        # like a tax bracket and is not one.
         edge = BRACKETS[FilingStatus.MFJ][3]["max"] + STANDARD_DEDUCTION[FilingStatus.MFJ]
         scenario = ScenarioInput(
             age=58,
@@ -217,9 +226,137 @@ class TestCostOfNextBracket:
             timeline=[PlanYear(year=2026, gross_income=140_000)],
             traditional_ira_balance=1_000_000,
         )
-        cost = _cost_of_next_bracket(scenario, [edge - 140_000 - 650])
-        assert cost["additional_tax"] == pytest.approx(650 * 0.24 + 350 * 0.32, abs=1)
-        assert cost["bracket_rate"] == pytest.approx(cost["additional_tax"] / 1000)
+        cost = _cost_of_converting_more(scenario, [edge - 140_000 - 650])
+        assert cost["federal_tax_by_bracket"] == [
+            {"bracket": "24%", "amount_taxed": 650, "tax": 156},
+            {"bracket": "32%", "amount_taxed": 350, "tax": 112},
+        ]
+        assert cost["additional_tax"] == 156 + 112
+        assert cost["schedule_stops_in_bracket"] == "24%"
+        assert cost["room_left_in_that_bracket"] == 650
+        assert cost["next_bracket"] == "32%"
+        assert "$650 in the 24% bracket and $350 in the 32% bracket" in cost["explanation"]
+
+    def test_a_schedule_that_fills_a_bracket_prices_the_next_one(self):
+        edge = BRACKETS[FilingStatus.SINGLE][1]["max"] + STANDARD_DEDUCTION[FilingStatus.SINGLE]
+        scenario = ScenarioInput(
+            age=62,
+            filing_status=FilingStatus.SINGLE,
+            timeline=[PlanYear(year=2026, gross_income=20_000)],
+            traditional_ira_balance=500_000,
+        )
+        cost = _cost_of_converting_more(scenario, [edge - 20_000])
+        assert cost["schedule_stops_in_bracket"] == "12%"
+        assert cost["room_left_in_that_bracket"] == 0
+        assert cost["next_bracket"] == "22%"
+        assert cost["federal_tax_by_bracket"] == [
+            {"bracket": "22%", "amount_taxed": 1000, "tax": 220}
+        ]
+
+    def test_an_extra_under_the_standard_deduction_is_not_taxed(self):
+        scenario = ScenarioInput(
+            age=62,
+            filing_status=FilingStatus.SINGLE,
+            timeline=[PlanYear(year=2026, gross_income=0)],
+            traditional_ira_balance=500_000,
+        )
+        deduction = STANDARD_DEDUCTION[FilingStatus.SINGLE]
+        cost = _cost_of_converting_more(scenario, [deduction - 400])
+        assert cost["federal_tax_by_bracket"] == [
+            {"bracket": "10%", "amount_taxed": 600, "tax": 60}
+        ]
+        assert cost["additional_tax"] == 60
+        assert "schedule_stops_in_bracket" not in cost
+        assert "$400 of it falls under the standard deduction" in cost["explanation"]
+
+    def test_state_tax_is_its_own_line(self):
+        scenario = ScenarioInput(
+            age=58,
+            filing_status=FilingStatus.SINGLE,
+            timeline=[PlanYear(year=2026, gross_income=100_000)],
+            traditional_ira_balance=500_000,
+            state="CA",
+        )
+        cost = _cost_of_converting_more(scenario, [20_000.0])
+        federal = sum(piece["tax"] for piece in cost["federal_tax_by_bracket"])
+        assert cost["state_tax"] > 0
+        assert cost["additional_tax"] == federal + cost["state_tax"]
+        assert f"plus ${cost['state_tax']:,} of state tax" in cost["explanation"]
+
+    def test_social_security_can_add_more_taxable_income_than_was_converted(self):
+        scenario = ScenarioInput(
+            age=68,
+            filing_status=FilingStatus.SINGLE,
+            timeline=[PlanYear(year=2026, gross_income=30_000, social_security=30_000)],
+            traditional_ira_balance=500_000,
+        )
+        cost = _cost_of_converting_more(scenario, [30_000.0])
+        assert cost["taxable_income_added"] > 1000
+        taxed = sum(piece["amount_taxed"] for piece in cost["federal_tax_by_bracket"])
+        assert taxed == pytest.approx(cost["taxable_income_added"], abs=1)
+        assert "more than the $1,000 converted" in cost["explanation"]
+
+
+class TestNothingCalledABracketIsABlend:
+    """The assistant repeats what the reasoning says. A blended or average rate under a
+    bracket's name becomes a tax bracket that does not exist ("the 17% bracket")."""
+
+    FEDERAL = {f"{b['rate']:.0%}" for brackets in BRACKETS.values() for b in brackets}
+
+    @pytest.mark.parametrize(
+        ("filing_status", "income", "balance", "retire_at"),
+        [
+            # Stops $477 short of the 12% bracket's top: the extra $1,000 straddles 12% and 22%
+            (FilingStatus.SINGLE, 95_000, 650_000, 62),
+            (FilingStatus.MFJ, 150_000, 1_200_000, 60),
+            (FilingStatus.SINGLE, 0, 300_000, 55),
+            (FilingStatus.MFJ, 220_000, 2_500_000, 65),
+        ],
+    )
+    def test_reasoning_rates(self, filing_status, income, balance, retire_at):
+        age = 55
+        years = 90 - age + 1
+        scenario = ScenarioInput(
+            age=age,
+            filing_status=filing_status,
+            timeline=[
+                PlanYear(year=2026 + t, gross_income=income if age + t < retire_at else 0)
+                for t in range(years)
+            ],
+            traditional_ira_balance=balance,
+            drawdown_start_age=max(retire_at, age),
+        )
+        trace = optimize(scenario).reasoning_trace
+        more = trace.cost_of_converting_more
+
+        named = [piece["bracket"] for piece in more["federal_tax_by_bracket"]]
+        named += [more[key] for key in ("schedule_stops_in_bracket", "next_bracket") if key in more]
+        assert named and set(named) <= self.FEDERAL
+        # Each piece is taxed at exactly the bracket it names
+        for piece in more["federal_tax_by_bracket"]:
+            rate = float(piece["bracket"].rstrip("%")) / 100
+            assert piece["tax"] == pytest.approx(piece["amount_taxed"] * rate, abs=1)
+
+        def keys(value):
+            if isinstance(value, dict):
+                for key, inner in value.items():
+                    yield key, inner
+                    yield from keys(inner)
+            elif isinstance(value, list):
+                for inner in value:
+                    yield from keys(inner)
+
+        # Everything else with "bracket" or "marginal" in its name is a label, not a number
+        dumped = trace.model_dump(
+            include={"cost_of_converting_more", "cost_and_benefit_of_conversions"}
+        )
+        for key, value in keys(dumped):
+            if "bracket" in key or "marginal" in key:
+                assert not isinstance(value, float), f"{key} holds a rate: {value}"
+        # No percentage in the wording but the brackets it names
+        import re
+
+        assert set(re.findall(r"\d+(?:\.\d+)?%", more["explanation"])) <= self.FEDERAL
 
 
 class TestEngineNumbersAddUp:
@@ -232,7 +369,7 @@ class TestEngineNumbersAddUp:
             drawdown_start_age=60,
         )
         result = optimize(scenario)
-        benefit = result.reasoning_trace.benefit_of_current_bracket
+        benefit = result.reasoning_trace.cost_and_benefit_of_conversions
         assert benefit["tax_paid"] == pytest.approx(result.conversion_cost_today, abs=1)
         assert benefit["future_tax_avoided"] - benefit["tax_paid"] == pytest.approx(
             result.estimated_lifetime_tax_savings, abs=1

@@ -279,11 +279,13 @@ class ReasoningTrace(BaseModel):
     This feeds the AI explanation layer."""
 
     binding_constraint: str
-    marginal_tax_rate_at_optimal: float
     marginal_benefit_at_optimal: float
 
-    cost_of_next_bracket: dict  # bracketRate, additionalTax, netEffect
-    benefit_of_current_bracket: dict  # bracketRate, taxPaid, futureTaxAvoided
+    # What $1,000 more would cost in the first conversion year, bracket by bracket.
+    # Every rate in it is a real federal bracket, never a blend.
+    cost_of_converting_more: dict
+    # average_tax_rate, tax_paid, future_tax_avoided for the whole schedule
+    cost_and_benefit_of_conversions: dict
 
     sensitivity_notes: list[str]
 
