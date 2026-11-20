@@ -1,0 +1,25 @@
+<!-- @dsCard group="Shared cards" height=1090 subtitle="As a card, and as the side panel with New and Add; click a value to change it" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>body{margin:0;padding:24px}</style>
+</head>
+<body class="bg-bg font-sans text-body text-text-primary antialiased">
+<div id="root"></div>
+<script>
+(function(){
+var h=React.createElement, U=window.LucernaUI, noop=function(){};
+/*@fixture scenario*/
+function edit(set){return function(p){set(function(o){var n=Object.assign({},o);if('state' in p&&!('retirement_state' in p))n.retirement_state=p.state;return Object.assign(n,p);});};}
+function App(){var s=React.useState(F.scenario.scenario), t=React.useState(Object.assign({},F.scenario.scenario,{birth_year:null,birth_month:null,state:null}));
+return h('div',{className:'flex flex-col items-start gap-section lg:flex-row'},
+ h('div',{className:'w-full max-w-[640px]'},h(U.ScenarioSummary,{data:Object.assign({},F.scenario,{scenario:s[0]}),onRun:noop,onOpenForm:noop,onEdit:edit(s[1])})),
+ h('div',{className:'border-border w-full max-w-[400px] border'},h(U.ScenarioSummary,{variant:'panel',data:Object.assign({},F.scenario,{scenario:t[0]}),highlight:['traditional_balance','retirement_age'],onOpenForm:noop,onEdit:edit(t[1])})));}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+})();
+</script>
+</body>
+</html>

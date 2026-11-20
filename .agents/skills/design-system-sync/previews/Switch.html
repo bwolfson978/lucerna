@@ -1,0 +1,21 @@
+<!-- @dsCard group="UI" height=160 subtitle="On, off and disabled" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>body{margin:0;padding:24px}</style>
+</head>
+<body class="bg-bg font-sans text-body text-text-primary antialiased">
+<div id="root"></div>
+<script>
+(function(){
+var h=React.createElement, U=window.LucernaUI, noop=function(){};
+function Row(p){var s=React.useState(p.on);return h('label',{className:'flex items-center gap-3 text-body-sm text-text-secondary'},h(U.Switch,{checked:s[0],onCheckedChange:s[1],disabled:p.dis}),p.l);}
+function App(){return h('div',{className:'flex flex-col gap-default'},h(Row,{on:true,l:'Include ACA subsidies'}),h(Row,{on:false,l:'Show real dollars'}),h(Row,{on:false,dis:true,l:'Disabled'}));}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+})();
+</script>
+</body>
+</html>

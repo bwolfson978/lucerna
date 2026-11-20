@@ -39,8 +39,11 @@ The current aesthetic is **"Paper & Pine"** — a light, editorial design with w
 Paper & Pine: https://claude.ai/artifact/DmM5iwLcxeTE8rA6siDr1M
 Before UI work, read its project/README.md and the README of each component you touch.
 Source of truth for values stays in code: ui/tailwind/preset.js, ui/styles/tokens.css,
-ui/src/colors.ts, docs/design-aesthetic.md. If you change those, say so, so the design
-system can be re-synced.
+ui/src/colors.ts, docs/design-aesthetic.md. The page is a read-only copy built from the
+code. A PR that changes `ui/`, `frontend/src/components/ui/`, `shared/fixtures/view-data.json`
+or the skill's own folder updates the previews and notes in `.agents/skills/design-system-sync/`
+where needed, and ends, once it has merged, with the `design-system-sync` skill run from
+master. Never edit the page by hand.
 
 ## Frontend guidelines
 
@@ -163,7 +166,7 @@ lucerna/
 │   ├── capture/           # Before/after capture flows (pr-evidence skill)
 │   ├── fixtures/          # test.ts: the `test` every spec imports (fails on uncaught page errors)
 │   └── tests/
-├── .agents/skills/         # Repo skills (Agent Skills format): setup-lucerna, run-lucerna, pr-evidence, formal-models, langfuse
+├── .agents/skills/         # Repo skills (Agent Skills format): setup-lucerna, run-lucerna, pr-evidence, design-system-sync, formal-models, langfuse
 ├── .claude/skills          # Symlink to .agents/skills, for Claude Code
 ├── docs/
 │   ├── agent-and-mcp.md       # Website assistant, MCP server, MCP Apps, limits, analytics

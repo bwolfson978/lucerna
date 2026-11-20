@@ -1,0 +1,28 @@
+<!-- @dsCard group="Shared cards" height=478 subtitle="At the most savings, moved away, and without a savings curve" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>body{margin:0;padding:24px}</style>
+</head>
+<body class="bg-bg font-sans text-body text-text-primary antialiased">
+<div id="root"></div>
+<script>
+(function(){
+var h=React.createElement, U=window.LucernaUI, noop=function(){};
+/*@fixture slider*/
+var best=F.slider.best, points=F.slider.points, max=points[points.length-1].total;
+function Row(p){var s=React.useState(p.value);return h('div',{className:'flex flex-col gap-2'},
+ h('div',{className:'flex items-baseline justify-between'},h('span',{className:'eyebrow'},p.label),h('span',{className:'font-data text-body-sm text-text-primary'},U.formatCurrency(s[0]))),
+ h(U.ConversionSlider,{value:s[0],max:max,optimalValue:best,onChange:s[1],savings:p.plain?undefined:points}));}
+function App(){return h('div',{className:'card flex max-w-[560px] flex-col gap-section'},
+ h(Row,{label:'At the most savings',value:best}),
+ h(Row,{label:'Moved away',value:180000}),
+ h(Row,{label:'Without a savings curve',value:600000,plain:true}));}
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+})();
+</script>
+</body>
+</html>
