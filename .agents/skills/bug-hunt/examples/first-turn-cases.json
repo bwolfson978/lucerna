@@ -1,0 +1,15 @@
+[
+  {
+    "id": "plain-question",
+    "turns": [
+      "I was born in March 1968, single, living in Texas. I make $140,000, have $900,000 in a traditional 401(k) and $50,000 in a Roth, and plan to retire at 62. Should I be doing Roth conversions?"
+    ]
+  },
+  {
+    "id": "asks-for-the-run",
+    "turns": [
+      "Born October 1970, single, $85,000 salary, $700,000 IRA, retiring at 60, Colorado. Run the numbers for me.",
+      "Looks right. Run the numbers."
+    ]
+  }
+]

@@ -1,0 +1,7 @@
+{
+  "income_sources": [
+    {"kind": "pension", "owner": "you", "amount": 30000, "start_age": 64},
+    {"kind": "social_security", "owner": "you", "amount": 48000, "start_age": 67},
+    {"kind": "social_security", "owner": "spouse", "amount": 30000, "start_age": 67}
+  ]
+}
