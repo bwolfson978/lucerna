@@ -19,7 +19,7 @@ export function taxSourceNote(years: BracketFillData["years"]): string | null {
     .reduce((sum, y) => sum + y.tax, 0);
 
   if (fromIncome > 0 && fromAccounts > 0) {
-    return `${formatCurrency(fromIncome)} of the tax comes out of your income while you work. Your account withdrawals pay the rest, on top of your spending.`;
+    return `${formatCurrency(fromIncome)} of the tax comes out of your income before you start drawing on your accounts. Your account withdrawals pay the rest, on top of your spending.`;
   }
   if (fromIncome > 0) {
     return "The tax comes out of your income in the years you convert, so everything you convert stays invested.";

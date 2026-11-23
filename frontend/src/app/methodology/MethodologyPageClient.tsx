@@ -75,7 +75,7 @@ export function MethodologyPageClient() {
         assumption: "Conversion tax",
         value: "Paid from real money",
         rationale:
-          "From your income while you work, and from your account withdrawals once they fund your spending",
+          "From your income before you draw on your accounts, and from your withdrawals once they fund your spending",
       },
       {
         assumption: "Tax brackets",
@@ -248,19 +248,20 @@ export function MethodologyPageClient() {
                 <SubHeading>The four phases</SubHeading>
                 <P>
                   <strong>Phase 1: Conversion years.</strong> During your income timeline, the
-                  engine works out the tax on each conversion and what pays it: your income while
-                  you work, your account withdrawals once they fund your spending. It shifts
-                  balances from Traditional to Roth and grows both accounts at the assumed rate.
+                  engine works out the tax on each conversion and what pays it: your income before
+                  you draw on your accounts, your withdrawals once they fund your spending. It
+                  shifts balances from Traditional to Roth and grows both accounts at the assumed
+                  rate.
                 </P>
                 <P>
                   <strong>Phase 2: Growth to retirement.</strong> After the conversion window
                   closes, both accounts continue compounding untouched until retirement age.
                 </P>
                 <P>
-                  <strong>Phase 3: Retirement distributions.</strong> Withdrawals cover your
-                  spending and each year&apos;s tax. Traditional withdrawals are taxed. Roth
-                  withdrawals are not. If Traditional funds run short, the remainder comes from Roth
-                  tax-free. Required Minimum Distributions are enforced.
+                  <strong>Phase 3: Retirement distributions.</strong> Each year&apos;s withdrawals
+                  cover your spending and that year&apos;s tax. Traditional withdrawals are taxed.
+                  Roth withdrawals are not. If Traditional funds run short, the remainder comes from
+                  Roth tax-free. Required Minimum Distributions are enforced.
                 </P>
                 <P>
                   <strong>Phase 4: Money left at the end.</strong> If money is still in your

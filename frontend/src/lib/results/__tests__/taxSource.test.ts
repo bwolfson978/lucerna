@@ -36,7 +36,7 @@ describe("taxSourceNote", () => {
         year(60_000, 7_200, "accounts"),
       ])
     ).toBe(
-      "$7,200 of the tax comes out of your income while you work. Your account withdrawals pay the rest, on top of your spending."
+      "$7,200 of the tax comes out of your income before you start drawing on your accounts. Your account withdrawals pay the rest, on top of your spending."
     );
   });
 
