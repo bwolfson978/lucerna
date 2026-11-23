@@ -74,7 +74,7 @@ async def test_anthropic_client_maps_stream_events():
     final = SimpleNamespace(
         content=[
             _Block(type="text", text="Hi"),
-            _Block(type="tool_use", id="t", name="show", input={}),
+            _Block(type="tool_use", id="t", name="get_tax_brackets", input={}),
         ],
         stop_reason="tool_use",
         usage=_Block(input_tokens=10, output_tokens=2),
@@ -83,16 +83,17 @@ async def test_anthropic_client_maps_stream_events():
     events = [
         SimpleNamespace(type="text", text="Hi"),
         SimpleNamespace(
-            type="content_block_start", content_block=SimpleNamespace(type="tool_use", name="show")
+            type="content_block_start",
+            content_block=SimpleNamespace(type="tool_use", name="get_tax_brackets"),
         ),
         SimpleNamespace(type="message_stop"),
     ]
     manager = _Manager(_FakeStream(events, final))
     out = [e async for e in _client_with(manager).stream(system="s", tools=[], messages=[])]
     assert isinstance(out[0], TextDelta) and out[0].text == "Hi"
-    assert isinstance(out[1], ToolStart) and out[1].name == "show"
+    assert isinstance(out[1], ToolStart) and out[1].name == "get_tax_brackets"
     assert isinstance(out[2], Final)
-    assert out[2].turn.content[1]["name"] == "show"
+    assert out[2].turn.content[1]["name"] == "get_tax_brackets"
     assert out[2].turn.usage == {"input_tokens": 10, "output_tokens": 2}
     # Request shape: refusal fallback, caching and effort are always set.
     assert manager.kwargs["fallbacks"] == "default"
@@ -108,6 +109,84 @@ async def test_anthropic_client_maps_outages_to_unavailable():
             system="s", tools=[], messages=[]
         ):
             pass
+
+
+class _Create:
+    """Stands in for ``client.with_options(...).messages.create``."""
+
+    def __init__(self, message=None, error=None):
+        self.message = message
+        self.error = error
+        self.options = None
+        self.kwargs = None
+
+    def with_options(self, **options):
+        self.options = options
+        return SimpleNamespace(messages=SimpleNamespace(create=self._create))
+
+    async def _create(self, **kwargs):
+        self.kwargs = kwargs
+        if self.error:
+            raise self.error
+        return self.message
+
+
+def _task_client(create: _Create) -> AnthropicModelClient:
+    client = AnthropicModelClient.__new__(AnthropicModelClient)
+    client._anthropic = anthropic
+    client._client = create
+    return client
+
+
+def _message(*blocks):
+    return SimpleNamespace(
+        content=list(blocks),
+        usage=_Block(input_tokens=900, output_tokens=40),
+        model="claude-haiku-5-5",
+    )
+
+
+SCHEMA = {"type": "object", "properties": {}, "required": [], "additionalProperties": False}
+
+
+async def test_task_asks_the_small_model_for_json():
+    create = _Create(
+        _message(
+            SimpleNamespace(type="thinking", thinking=""),
+            SimpleNamespace(type="text", text='{"questions": ["What if I retire at 58?"]}'),
+        )
+    )
+    reply = await _task_client(create).task(system="s", prompt="p", schema=SCHEMA)
+    assert reply.data == {"questions": ["What if I retire at 58?"]}
+    assert reply.usage == {"input_tokens": 900, "output_tokens": 40}
+    assert reply.model == "claude-haiku-5-5"
+    # A side job: the small model, a short deadline and no retries.
+    assert create.options == {"timeout": model_module.TASK_TIMEOUT_S, "max_retries": 0}
+    assert create.kwargs["model"] == model_module.TASK_MODEL == "claude-haiku-5-5"
+    assert create.kwargs["system"] == "s"
+    assert create.kwargs["messages"] == [{"role": "user", "content": "p"}]
+    assert create.kwargs["output_config"] == {
+        "effort": "low",
+        "format": {"type": "json_schema", "schema": SCHEMA},
+    }
+
+
+async def test_task_returns_nothing_usable_as_empty_data():
+    for text in ("", "not json", '["a list"]', '{"questions": ["cut off'):
+        create = _Create(_message(SimpleNamespace(type="text", text=text)))
+        reply = await _task_client(create).task(system="s", prompt="p", schema=SCHEMA)
+        assert reply.data == {}
+
+
+async def test_task_maps_outages_to_unavailable_and_raises_our_own_mistakes():
+    timeout = anthropic.APITimeoutError.__new__(anthropic.APITimeoutError)
+    with pytest.raises(ModelUnavailable):
+        await _task_client(_Create(error=timeout)).task(system="s", prompt="p", schema=SCHEMA)
+
+    bad_request = anthropic.BadRequestError.__new__(anthropic.BadRequestError)
+    bad_request.status_code = 400
+    with pytest.raises(anthropic.BadRequestError):
+        await _task_client(_Create(error=bad_request)).task(system="s", prompt="p", schema=SCHEMA)
 
 
 def test_get_model_client_requires_credentials(monkeypatch):
@@ -164,11 +243,13 @@ async def test_offline_client_drives_a_full_conversation():
             elif event["type"] == "done":
                 history.extend(event["messages"])
     assert seen == [
-        "scenario_summary",
-        "mcp_app",
+        "scenario_summary",  # the scenario is complete
+        "mcp_app",  # the result card
         "suggestions",
-        "mcp_app",
-        "scenario_summary",
+        "mcp_app",  # the comparison card
+        "suggestions",
+        "scenario_summary",  # the what-if applied: check it, so no follow-up questions
+        "suggestions",  # after the methodology answer
     ]
     assert draft.retirement_age == 58
 

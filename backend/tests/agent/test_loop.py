@@ -76,11 +76,13 @@ async def test_full_intake_and_run_flow():
     client = ScriptedModelClient(
         [
             [tool_use("t1", "prepare_scenario", {"scenario": READY})],
-            [text("Here's your scenario."), tool_use("t2", "show", {"kind": "scenario_summary"})],
-            [text("Check it and tap Run the numbers.")],
-        ]
+            [text("Check your scenario and tap Run the numbers.")],
+        ],
+        follow_ups=["What if I retire at 58?"],
     )
     events = await collect(client, text_in="I'm 52...")
+    # No result yet, and the scenario is waiting to be checked: no follow-up questions.
+    assert client.task_calls == []
     types = [e["type"] for e in events]
     assert "draft" in types
     parts = [e["part"]["kind"] for e in events if e["type"] == "part"]
@@ -185,7 +187,7 @@ async def test_scenario_state_injected_only_when_draft_changed():
 def test_history_helpers():
     history = [
         {"role": "user", "content": [text("a")]},
-        {"role": "assistant", "content": [tool_use("t1", "show", {"result_id": "r_0123456789"})]},
+        {"role": "assistant", "content": [tool_use("t1", "get_tax_brackets", {"year": 2026})]},
         {
             "role": "user",
             "content": [{"type": "tool_result", "tool_use_id": "t1", "content": "{}"}],
@@ -202,25 +204,119 @@ def test_prompt_rules():
     assert len(PROMPT_VERSION) == 12
 
 
-async def test_show_before_the_reply_asks_for_it():
-    tip = {"kind": "suggestions", "suggestions": ["What if I retire at 60?"]}
+# --- Follow-up questions (app.agent.suggestions) ---------------------------------------
+
+
+def run_the_numbers(follow_ups=None) -> ScriptedModelClient:
+    return ScriptedModelClient(
+        [
+            [
+                tool_use(
+                    "t1", "analyze_roth_conversions", {"scenario": READY, "user_confirmed": True}
+                )
+            ],
+            [text("The analysis shows a schedule over eight years.")],
+        ],
+        follow_ups=follow_ups,
+    )
+
+
+async def result_history() -> tuple[list[dict], ScenarioDraft]:
+    """A conversation that already has a result."""
+    events = await collect(run_the_numbers(), text_in="Run the numbers")
+    draft = ScenarioDraft.model_validate(next(e for e in events if e["type"] == "draft")["draft"])
+    return done_messages(events), draft
+
+
+async def test_follow_up_questions_come_after_the_answer_about_a_result():
+    client = run_the_numbers(follow_ups=["What if I retire at 58?", " Why not convert more? "])
+    usage = []
+    events = await collect(
+        client, text_in="Run the numbers", on_usage=lambda model, u: usage.append(model)
+    )
+    # On screen: the card, the answer, then the chips. Nothing follows the chips but done.
+    assert [e["type"] for e in events][-3:] == ["text_delta", "part", "done"]
+    assert events[-2]["part"] == {
+        "kind": "suggestions",
+        "suggestions": ["What if I retire at 58?", "Why not convert more?"],
+    }
+    # The task model read the scenario, what the person sent and the reply it follows.
+    prompt = client.task_calls[0]["prompt"]
+    assert '"retirement_age":60' in prompt
+    assert "- Run the numbers" in prompt
+    assert "The analysis shows a schedule over eight years." in prompt
+    # Its cost counts toward the spend cap, and the chips never enter the stored history.
+    assert usage == ["claude-sonnet-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"]
+    assert "What if I retire at 58?" not in json.dumps(done_messages(events))
+
+
+async def test_follow_up_questions_on_a_later_answer_about_the_result():
+    history, draft = await result_history()
     client = ScriptedModelClient(
         [
-            [tool_use("t1", "show", tip)],
-            [text("Here is the answer.")],
-        ]
+            [tool_use("t2", "explain_methodology", {"topic": "rmds"})],
+            [text("Required distributions start at 75 for you.")],
+        ],
+        follow_ups=["How do RMDs change the schedule?"],
     )
-    events = await collect(client)
-    assert [e["part"]["kind"] for e in events if e["type"] == "part"] == ["suggestions"]
-    messages = done_messages(events)
-    result = json.loads(messages[2]["content"][0]["content"])
-    assert "Write your full reply" in result["next"]
-    assert_well_formed(messages)
+    events = await collect(client, text_in="What about RMDs?", history=history, draft=draft)
+    assert events[-2]["part"]["suggestions"] == ["How do RMDs change the schedule?"]
+    assert "- Run the numbers\n- What about RMDs?" in client.task_calls[0]["prompt"]
 
 
-async def test_show_after_the_reply_says_it_was_read():
-    tip = {"kind": "suggestions", "suggestions": ["What if I retire at 60?"]}
-    client = ScriptedModelClient([[text("Here is the answer."), tool_use("t1", "show", tip)], []])
-    messages = done_messages(await collect(client))
-    result = json.loads(messages[2]["content"][0]["content"])
-    assert result["shown"] == "suggestions" and "already read the reply" in result["next"]
+async def test_no_follow_up_questions_when_the_turn_changed_the_scenario():
+    history, draft = await result_history()
+    client = ScriptedModelClient(
+        [
+            [tool_use("t2", "prepare_scenario", {"scenario": {**READY, "retirement_age": 58}})],
+            [text("Updated. Check your scenario and tap Run the numbers.")],
+        ],
+        follow_ups=["What if I retire at 56?"],
+    )
+    events = await collect(client, text_in="Make it 58", history=history, draft=draft)
+    assert client.task_calls == []
+    assert [e["part"]["kind"] for e in events if e["type"] == "part"] == ["scenario_summary"]
+
+
+async def test_no_follow_up_questions_when_the_analysis_failed():
+    client = ScriptedModelClient(
+        [
+            [tool_use("t1", "analyze_roth_conversions", {"scenario": {}, "user_confirmed": True})],
+            [text("I need a few more details first.")],
+        ],
+        follow_ups=["What if I retire at 58?"],
+    )
+    events = await collect(client, text_in="Run the numbers")
+    assert client.task_calls == []
+    assert [e["type"] for e in events][-2:] == ["text_delta", "done"]
+
+
+async def test_a_reply_stands_without_follow_up_questions_when_the_task_model_fails():
+    for failure in (UNAVAILABLE, RuntimeError("bad schema"), []):
+        client = run_the_numbers(follow_ups=failure)
+        events = await collect(client, text_in="Run the numbers")
+        assert len(client.task_calls) == 1
+        assert not [e for e in events if e["type"] == "error"]
+        assert "suggestions" not in [e["part"]["kind"] for e in events if e["type"] == "part"]
+        assert done_messages(events)[-1]["content"][0]["text"].startswith("The analysis shows")
+
+
+async def test_unusable_follow_up_questions_are_dropped():
+    client = run_the_numbers(
+        follow_ups=[
+            "",
+            "What if I retire at 58?",
+            "What if I retire at 58?",
+            "x" * 81,
+            "A \u2014 B?",
+            7,
+        ]
+        + [f"Question {n}?" for n in range(6)]
+    )
+    events = await collect(client, text_in="Run the numbers")
+    assert events[-2]["part"]["suggestions"] == [
+        "What if I retire at 58?",
+        "Question 0?",
+        "Question 1?",
+        "Question 2?",
+    ]

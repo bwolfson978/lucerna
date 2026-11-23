@@ -19,15 +19,18 @@ import threading
 from collections.abc import AsyncIterator
 from pathlib import Path
 
+from app.agent import suggestions
 from app.agent.loop import run_turn
 from app.agent.model import (
     MODEL,
+    TASK_MODEL,
     AnthropicModelClient,
     Final,
     ModelClient,
     ModelTurn,
     ModelUnavailable,
     StreamEvent,
+    TaskReply,
     TextDelta,
     ToolStart,
     has_credentials,
@@ -88,6 +91,7 @@ def cache_key() -> str:
             "tools": _tools_version(),
             "engine": core.engine_version(),
             "model": MODEL,
+            "follow_ups": [TASK_MODEL, suggestions.VERSION],
             "messages": DEMO_MESSAGES,
             "year": current_year(),
         },
@@ -168,6 +172,15 @@ class ScriptedDemoClient:
         stop = "tool_use" if any(b["type"] == "tool_use" for b in content) else "end_turn"
         yield Final(ModelTurn(content=content, stop_reason=stop, model="scripted"))
 
+    async def task(self, *, system: str, prompt: str, schema: dict) -> TaskReply:
+        """The follow-up questions under the result."""
+        questions = [
+            "What if we spend $70,000 a year instead?",
+            "How do RMDs change with these conversions?",
+            "Why not convert everything this year?",
+        ]
+        return TaskReply(data={"questions": questions}, model="scripted")
+
     def _respond(self, messages: list[dict]) -> list[dict]:
         last = messages[-1]["content"]
         results = {b["tool_use_id"]: b for b in last if b.get("type") == "tool_result"}
@@ -190,29 +203,12 @@ class ScriptedDemoClient:
                 _text(
                     "Thanks, Margaret. Your situation has a long, low-income window before "
                     "required distributions begin, which is exactly where conversions can help. "
-                    "Here's what I recorded. Check it over, and if it looks right I'll run the "
-                    "numbers."
-                ),
-                _tool_use("toolu_demo_2", "show", {"kind": "scenario_summary"}),
+                    "I've recorded your scenario. Check it over, and if it looks right I'll run "
+                    "the numbers."
+                )
             ]
-        if "toolu_demo_2" in results:
-            return [_text("Ready when you are.")]
         if "toolu_demo_3" in results:
-            return [
-                _text(_explanation(data)),
-                _tool_use(
-                    "toolu_demo_5",
-                    "show",
-                    {
-                        "kind": "suggestions",
-                        "suggestions": [
-                            "What if we spend $70,000 a year instead?",
-                            "How do RMDs change with these conversions?",
-                            "Why not convert everything this year?",
-                        ],
-                    },
-                ),
-            ]
+            return [_text(_explanation(data))]
         return [_text("Ask me anything about these results.")]
 
 

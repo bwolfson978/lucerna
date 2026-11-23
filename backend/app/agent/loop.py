@@ -2,9 +2,16 @@
 
 The backend is stateless. The browser keeps the API-format history (assistant
 turns are stored exactly as the model returned them, thinking blocks included)
-and the scenario draft, and sends both with each message. The loop appends the
-new user turn, alternates model turns and tool calls until the model finishes,
-and streams events for the UI as it goes:
+and the scenario draft, and sends both with each message.
+
+Each model call returns a proposal: text, tool requests, or both. The loop
+streams the text, runs the requested tools and calls the model again with their
+results, until a proposal comes back with no tool requests. That last text is
+the answer. The loop then asks a small model for follow-up questions to offer
+under it (``app.agent.suggestions``). What the browser draws comes from tool
+results and from the loop, never from the model choosing a display.
+
+Events for the UI, as they happen:
 
     text_delta  {text}
     tool_start  {name, status}
@@ -29,6 +36,7 @@ from collections.abc import AsyncIterator, Callable
 from contextlib import AbstractAsyncContextManager, nullcontext
 
 from app import error_tracking
+from app.agent import suggestions
 from app.agent.model import MODEL, Final, ModelClient, ModelUnavailable, TextDelta, ToolStart
 from app.agent.observability import TurnTrace
 from app.agent.prompts import SYSTEM_PROMPT
@@ -192,6 +200,7 @@ async def _run_turn(
     new_messages: list[dict] = [user_turn]
     tools = toolbox.definitions
     tool_calls = 0
+    answered = False
 
     for _ in range(MAX_MODEL_CALLS_PER_TURN):
         turn = None
@@ -203,8 +212,6 @@ async def _run_turn(
                 if first_token is None and isinstance(event, TextDelta | ToolStart):
                     first_token = time.monotonic() - start
                 if isinstance(event, TextDelta):
-                    if event.text.strip():
-                        ctx.wrote_text = True
                     yield {"type": "text_delta", "text": event.text}
                 elif isinstance(event, ToolStart):
                     yield {
@@ -251,6 +258,7 @@ async def _run_turn(
         if turn.stop_reason == "pause_turn":
             continue
         if not tool_uses:
+            answered = True
             break
         if turn.stop_reason == "max_tokens":
             # A tool call cut off mid-input: answer it with an error instead of running it,
@@ -306,7 +314,38 @@ async def _run_turn(
             new_messages.append({"role": "assistant", "content": [{"type": "text", "text": note}]})
             yield {"type": "text_delta", "text": note}
 
+    if answered and suggestions.fit(history, new_messages):
+        questions = await _follow_up_questions(client, history, new_messages, ctx, on_usage, trace)
+        if questions:
+            yield {"type": "part", "part": {"kind": "suggestions", "suggestions": questions}}
+
     yield {"type": "done", "messages": new_messages}
+
+
+async def _follow_up_questions(
+    client: ModelClient,
+    history: list[dict],
+    turn: list[dict],
+    ctx: ToolContext,
+    on_usage,
+    trace: TurnTrace | None,
+) -> list[str]:
+    """Questions to offer under the answer that ends ``turn``, written by the task model.
+    Empty when it has none or could not be reached."""
+    start = time.monotonic()
+    offer = await suggestions.write(
+        client,
+        scenario=core.describe_draft(ctx.draft, ctx.start_year)["scenario"],
+        history=history,
+        turn=turn,
+    )
+    if offer is None:
+        return []
+    if on_usage is not None:
+        on_usage(offer.model, offer.usage)
+    if trace is not None:
+        trace.generation(model=offer.model, usage=offer.usage, latency=time.monotonic() - start)
+    return offer.questions
 
 
 def _error(code: str) -> dict:

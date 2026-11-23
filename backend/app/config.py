@@ -59,6 +59,7 @@ class Settings(BaseSettings):
     anthropic_auth_token: str = ""
     agent_model: str = "claude-sonnet-5-5"
     agent_effort: str = "medium"
+    agent_task_model: str = "claude-haiku-5-5"  # small model for follow-up questions
     agent_offline: bool = False  # scripted replies, no model calls
     agent_mcp_url: str = ""  # empty: tools run in process
     agent_cache_dir: Path = Path(__file__).resolve().parents[1] / ".cache"

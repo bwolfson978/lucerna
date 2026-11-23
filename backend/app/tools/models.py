@@ -221,24 +221,3 @@ class MethodologyTopic(StrEnum):
     IRMAA = "irmaa"
     STATE_TAXES = "state-taxes"
     USING_THIS_TOOL = "using-this-tool"
-
-
-class DisplayKind(StrEnum):
-    SCENARIO_SUMMARY = "scenario_summary"
-    SUGGESTIONS = "suggestions"
-
-
-class ShowArgs(BaseModel):
-    """Input for the web-only `show` tool (display only, not part of the MCP server)."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    kind: DisplayKind = Field(
-        description=(
-            "scenario_summary: the captured inputs for the user to check before running. "
-            "suggestions: 2 to 4 short follow-up questions the user can tap."
-        )
-    )
-    suggestions: list[str] | None = Field(
-        default=None, max_length=4, description="Follow-up questions, each under 60 characters"
-    )

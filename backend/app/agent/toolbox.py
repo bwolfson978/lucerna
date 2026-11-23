@@ -11,10 +11,12 @@ The web app is also an MCP Apps host. When a tool declares a View
 the browser fetches the View with ``resources/read`` (via /api/mcp-apps/resource),
 mounts it in a sandbox on a separate origin and passes it the tool input and result.
 
-Web-only pieces that stay out of the MCP server:
-- the ``show`` tool, which asks the browser to render a native card or chart, and
+The model only ever calls the MCP server's tools. Everything the browser draws follows
+from a tool result, decided here and never by the model:
+- a tool with a View becomes an ``mcp_app`` part,
+- a complete scenario from ``prepare_scenario`` becomes a ``scenario_summary`` part, and
 - full engine results for the first-party results page, requested with ``_meta`` on
-  each call and turned into browser events here (never sent to Views or models).
+  each call, become ``result`` events (never sent to Views or models).
 """
 
 from __future__ import annotations
@@ -37,7 +39,7 @@ from app.mcp.auth import ACCOUNT_TOOLS
 from app.mcp.server import APP_MIME_TYPE, RESULTS_META_KEY, UI_META_KEY
 from app.tools import core
 from app.tools.draft import ScenarioDraft
-from app.tools.models import DisplayKind, ScenarioUpdate, ShowArgs
+from app.tools.models import ScenarioUpdate
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +49,6 @@ STATUS = {
     "compare_roth_scenarios": "Comparing scenarios",
     "get_tax_brackets": "Looking up tax brackets",
     "explain_methodology": "Checking the methodology",
-    "show": "Preparing a chart",
 }
 
 # Tools whose View this host doesn't mount because it has a richer first-party
@@ -55,19 +56,6 @@ STATUS = {
 # marking what each change filled in. It uses the same shared component
 # (ui/src/ScenarioSummary.tsx), so it looks the same.
 RENDERED_NATIVELY = {"prepare_scenario"}
-
-SHOW_TOOL = {
-    "name": "show",
-    "description": (
-        "Display something in the conversation: the scenario summary for the user to confirm "
-        "(after prepare_scenario reports nothing missing), a balance comparison for a "
-        "result, or tappable follow-up questions. Numbers in these displays "
-        "come from the engine. Call show before you write: your written answer comes after "
-        "your last tool call and ends the turn, and the app places the display around it "
-        "(suggestions after the answer). A display never replaces the written answer."
-    ),
-    "input_schema": None,  # filled from ShowArgs below
-}
 
 
 @dataclass
@@ -78,10 +66,6 @@ class ToolContext:
     start_year: int
     # Events for the browser, in order.
     events: list[dict] = field(default_factory=list)
-    # Whether reply text has reached the user since the last lookup. The loop sets it when
-    # text streams; a tool call other than show clears it, because a reply has to follow
-    # the facts it is built on ("Let me check" before a lookup is not the answer).
-    wrote_text: bool = False
 
     def emit(self, event_type: str, **payload: Any) -> None:
         self.events.append({"type": event_type, **payload})
@@ -124,9 +108,6 @@ class McpToolbox:
                         "input_schema": clean_schema(tool.inputSchema),
                     }
                 )
-        self.definitions.append(
-            {**SHOW_TOOL, "input_schema": clean_schema(ShowArgs.model_json_schema())}
-        )
 
     def visible_to(self, name: str, audience: str) -> bool:
         return audience in self._visibility.get(name, [])
@@ -134,11 +115,8 @@ class McpToolbox:
     async def call(self, name: str, raw_input: object, ctx: ToolContext) -> tuple[dict, bool]:
         """Run the model's tool call. Returns (content for the model, is_error)."""
         arguments = raw_input if isinstance(raw_input, dict) else {}
-        if name == "show":
-            return _show(arguments, ctx)
         if not self.visible_to(name, "model"):
             return {"error": f"Unknown tool '{name}'."}, True
-        ctx.wrote_text = False
         result = await self._session.call_tool(name, arguments, meta={UI_META_KEY: True})
         if not result.isError:
             _emit_ui_events(name, _structured(result), result, ctx)
@@ -303,7 +281,17 @@ def _set_draft(scenario: dict | None, ctx: ToolContext) -> ScenarioDraft | None:
 
 def _emit_ui_events(name: str, data: dict, result: CallToolResult, ctx: ToolContext) -> None:
     if name == "prepare_scenario":
-        _set_draft(data.get("scenario"), ctx)
+        draft = _set_draft(data.get("scenario"), ctx)
+        if draft is not None and data.get("ready_to_run"):
+            # Nothing is missing: the scenario is ready for the user to check and run.
+            ctx.emit(
+                "part",
+                part={
+                    "kind": "scenario_summary",
+                    "draft": draft.model_dump(mode="json"),
+                    "draft_hash": data.get("draft_hash"),
+                },
+            )
         return
 
     entries = _ui_results(result)
@@ -331,68 +319,6 @@ def _emit_ui_events(name: str, data: dict, result: CallToolResult, ctx: ToolCont
             )
             ctx.emit("result", **entry, **extra)
         # The comparison card itself is the tool's MCP App View (see McpToolbox.call).
-
-
-# --------------------------------------------------------------------------
-# Web-only display tool
-# --------------------------------------------------------------------------
-
-
-def _show(arguments: dict, ctx: ToolContext) -> tuple[dict, bool]:
-    try:
-        args = ShowArgs.model_validate(arguments)
-    except ValidationError as err:
-        details = [f"{'.'.join(map(str, e['loc'])) or 'input'}: {e['msg']}" for e in err.errors()]
-        return {"error": "Invalid input", "details": details[:10]}, True
-
-    if args.kind == DisplayKind.SCENARIO_SUMMARY:
-        described = core.describe_draft(ctx.draft, ctx.start_year)
-        if not described["ready_to_run"]:
-            missing = described["missing_required"] + described["problems"]
-            return {
-                "error": "The scenario is not complete. Record the missing values first: "
-                + ", ".join(missing)
-            }, True
-        ctx.emit(
-            "part",
-            part={
-                "kind": "scenario_summary",
-                "draft": ctx.draft.model_dump(mode="json"),
-                "draft_hash": described["draft_hash"],
-            },
-        )
-        shown = {"shown": "scenario_summary", "draft_hash": described["draft_hash"]}
-        return _shown(ctx, shown, ASK_TO_CHECK), False
-
-    suggestions = [s.strip() for s in args.suggestions or [] if s.strip()]
-    if not 1 <= len(suggestions) <= 4:
-        return {"error": "Provide 1 to 4 suggestions."}, True
-    ctx.emit("part", part={"kind": "suggestions", "suggestions": suggestions})
-    return _shown(ctx, {"shown": "suggestions"}, WRITE_REPLY), False
-
-
-# Only the text that ends a turn is sure to reach the user: what the model writes before a
-# tool call in the same response can come back from the API as a progress note, which is
-# never shown, while the model still sees it as written. It can't tell which happened, so
-# every show result says what the user has seen: nothing yet (write the reply now) or the
-# reply already (stop, don't write it twice).
-ASK_TO_CHECK = (
-    "Now write a short message asking the user to check their scenario and tap Run the numbers."
-)
-WRITE_REPLY = (
-    "The user has not seen an answer to their message yet: anything longer than a sentence "
-    "that you wrote before a tool call did not reach them. Write your full reply now, complete "
-    "on its own (don't call show again for what is already shown, and don't mention this note "
-    "to them)."
-)
-REPLY_SEEN = (
-    "The user has already read the reply you wrote before this call. End the turn now: don't "
-    "repeat it or add to it."
-)
-
-
-def _shown(ctx: ToolContext, content: dict, write_reply: str) -> dict:
-    return {**content, "next": REPLY_SEEN if ctx.wrote_text else write_reply}
 
 
 def clean_schema(schema: Any) -> Any:

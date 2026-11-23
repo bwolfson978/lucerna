@@ -12,7 +12,7 @@ import re
 from collections.abc import AsyncIterator
 from itertools import count
 
-from app.agent.model import Final, ModelTurn, StreamEvent, TextDelta, ToolStart
+from app.agent.model import Final, ModelTurn, StreamEvent, TaskReply, TextDelta, ToolStart
 
 _ids = count(1)
 
@@ -89,6 +89,11 @@ class OfflineModelClient:
         stop = "tool_use" if any(b["type"] == "tool_use" for b in content) else "end_turn"
         yield Final(ModelTurn(content=content, stop_reason=stop, usage={}, model="offline"))
 
+    async def task(self, *, system: str, prompt: str, schema: dict) -> TaskReply:
+        """The follow-up questions under a reply: the same two every time."""
+        questions = ["What if I retire at 60?", "How do RMDs affect this?"]
+        return TaskReply(data={"questions": questions}, model="offline")
+
     def _respond(self, messages: list[dict]) -> list[dict]:
         last = messages[-1]
         blocks = last["content"] if isinstance(last["content"], list) else []
@@ -146,23 +151,14 @@ class OfflineModelClient:
                 return [_text(f"Something didn't work: {data.get('error', result['content'])}")]
             if name == "prepare_scenario":
                 if data.get("ready_to_run"):
-                    return [_tool("show", {"kind": "scenario_summary"})]
+                    return [
+                        _text("Here's your scenario. Check the values and tap Run the numbers.")
+                    ]
                 missing = ", ".join(m.replace("_", " ") for m in data.get("missing_required", []))
                 return [_text(f"Thanks, I've noted that. I still need: {missing}.")]
-            if name == "show" and data.get("shown") == "scenario_summary":
-                return [_text("Here's your scenario. Check the values and tap Run the numbers.")]
             if name == "analyze_roth_conversions":
                 points = data["reasoning"]["summary_points"]
-                return [
-                    _text(f"{points['what_to_convert']}. {points['why_this_amount']}."),
-                    _tool(
-                        "show",
-                        {
-                            "kind": "suggestions",
-                            "suggestions": ["What if I retire at 60?", "How do RMDs affect this?"],
-                        },
-                    ),
-                ]
+                return [_text(f"{points['what_to_convert']}. {points['why_this_amount']}.")]
             if name == "compare_roth_scenarios":
                 diff = data["estimated_lifetime_tax_savings"]["difference"]
                 direction = "raises" if diff >= 0 else "lowers"

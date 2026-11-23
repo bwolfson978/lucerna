@@ -25,7 +25,7 @@ frontend (Next.js)                         backend (FastAPI)
 
 - **One tool surface.** The MCP server is the only place tools are defined. The web assistant is an MCP client of it, so every web conversation exercises exactly what a Claude connector or ChatGPT app gets: the same tool list, descriptions, schemas, errors and results.
 - **Stateless tools.** Each call carries the whole scenario and returns the normalized `scenario` to pass next time. Per-year differences from the projection travel as `income_changes`. The browser's draft converts to and from this format (`core.scenario_from_draft` / `core.draft_from_scenario`).
-- **Web-only extras stay outside MCP:** the `show` tool (cards, charts, follow-up chips) runs in the web loop, and full engine results for the UI are requested per call with `_meta: {"lucerna/ui": true}` and returned in the result's `_meta` under `lucerna/results`, never in what a model sees.
+- **Web-only extras stay outside MCP, and outside the model:** the web loop decides what the browser draws from tool results (a View, the scenario summary) and writes the follow-up chips with a small model after the answer (see "A turn, step by step"). Full engine results for the UI are requested per call with `_meta: {"lucerna/ui": true}` and returned in the result's `_meta` under `lucerna/results`, never in what a model sees. The model has no tool that draws anything.
 - The engine does all the math. Cards and charts render engine results directly, never numbers the model wrote.
 
 ## MCP Apps: who owns the UI
@@ -76,7 +76,7 @@ Cards that appear both in MCP App Views and natively in the web app are defined 
 | `analyze_roth_conversions` | `result-card.html` | `ResultCard` with `BracketFillChart`: the results page's `BracketChart` at the optimal schedule | Mounted |
 | `compare_roth_scenarios` | `scenario-compare.html` | `ScenarioCompareCard` | Mounted |
 
-Chart series the model doesn't need (yearly income, required withdrawals, conversions and added tax, plus the brackets and standard deduction) travel in the tool result's `_meta["lucerna/view"]` (`backend/app/tools/views.py`), which hosts pass to Views but not to the model. Buttons that act for the user ("Run the numbers", "Apply to my scenario") send a chat message with `ui/message` (`ui/src/messages.ts`); the prompts and MCP server instructions tell the model how to handle them, so every host behaves the same. The `show` tool still renders the bracket and balance charts natively when the model wants one on its own, with the same components. `get_tax_brackets` and `explain_methodology` return reference text and have no View; suggestion chips are web-only.
+Chart series the model doesn't need (yearly income, required withdrawals, conversions and added tax, plus the brackets and standard deduction) travel in the tool result's `_meta["lucerna/view"]` (`backend/app/tools/views.py`), which hosts pass to Views but not to the model. Buttons that act for the user ("Run the numbers", "Apply to my scenario") send a chat message with `ui/message` (`ui/src/messages.ts`); the prompts and MCP server instructions tell the model how to handle them, so every host behaves the same. `get_tax_brackets` and `explain_methodology` return reference text and have no View; suggestion chips are web-only.
 
 ## Configuration (backend)
 
@@ -86,6 +86,7 @@ Chart series the model doesn't need (yearly income, required withdrawals, conver
 | `LUCERNA_ANTHROPIC_API_KEY` | none | Fallback for `ANTHROPIC_API_KEY`, for environments that reserve that name (Claude Code cloud sessions). |
 | `AGENT_MODEL` | `claude-sonnet-5-5` | Model for the agent loop and demo generation. |
 | `AGENT_EFFORT` | `medium` | `output_config.effort` for each model call. |
+| `AGENT_TASK_MODEL` | `claude-haiku-5-5` | Small, fast model that writes the follow-up questions under a reply (one short call per answered result question, 8 second limit, no retries). |
 | `AGENT_MESSAGES_PER_CONVERSATION` | `20` | User messages per conversation. |
 | `AGENT_MESSAGES_PER_IP_PER_DAY` | `60` | Agent messages per client IP per day. |
 | `AGENT_DAILY_SPEND_USD` | `50` | Estimated model spend per day before the assistant pauses. Each message in progress holds a worst-case turn cost (about $4.50 on Sonnet) against it until it finishes, so turns running together cannot go over. |
@@ -134,7 +135,18 @@ E2E (uses the offline stand-in automatically): `cd e2e && npx playwright test`. 
 
 The browser stores `messages` exactly as returned and sends them back. Never edit earlier turns: thinking blocks and prompt caching depend on an unchanged prefix.
 
-**The written reply ends the turn.** Only `text` blocks stream to the user. On Claude Sonnet 5.5, text longer than a sentence or two that the model writes before a tool call in the same response comes back as a progress-update `thinking` block, which is empty by default and never shown, while the model still sees it as written. A short remark stays `text`. So the prompt asks for one short sentence before a lookup ("Let me compare that with retiring at 58."), which streams at once and is followed by the tool's status label (`tool_start`), and for the answer after the last tool call (`show` included). The conversation view places suggestion chips after the reply whatever order they arrive in. The model can't tell which of the two happened to text it wrote before a call, so every `show` result carries a `next` hint that says what the user has seen (`app/agent/toolbox.py`): no reply since the last lookup, so write it now (`WRITE_REPLY`, `ASK_TO_CHECK`), or the reply already, so end the turn without repeating it (`REPLY_SEEN`). Don't tell the model to write an answer, or anything with numbers in it, and then call a tool. To show longer text in the middle of a turn, the API offers `thinking.display: "updates"` (a summary of each note, not its words) or a tool whose input the app renders as written.
+**A turn, step by step.** The model never does anything itself. Each model call returns a proposal: text, tool requests, or both. The loop (`app/agent/loop.py`) decides what happens to each piece:
+
+1. The browser posts the message, the stored history and the scenario draft to `POST /api/agent`.
+2. The loop calls the model. Proposed text streams to the browser as `text_delta`; a tool request shows its status label (`tool_start`).
+3. The loop runs each requested tool through the MCP server. `app/agent/toolbox.py` turns the result into what the browser draws: a tool with a View becomes an `mcp_app` part, a complete scenario from `prepare_scenario` becomes a `scenario_summary` part, and full results become `result` events. The model's copy of the result goes back in the next call.
+4. Steps 2 and 3 repeat while a proposal contains tool requests (at most 8 model calls and 12 tool calls per message). The proposal with none is the answer.
+5. When the answer is about a result, the loop asks a small model (`AGENT_TASK_MODEL`, `ModelClient.task`) for two or three follow-up questions and sends them as a `suggestions` part (`app/agent/suggestions.py`). It gets the scenario, the person's recent messages and the answer. No result yet, or a turn that changed the scenario, gets none. A timeout or failure means no chips, never a failed turn. The chips are not stored in the history and the main model never sees them.
+6. `done` carries the messages to store.
+
+So one place decides each thing: the model proposes lookups and reply text, the loop runs the lookups, and the browser maps parts to components (`PartView` in `ConversationThread.tsx`, or the View inside a card). Don't add a tool whose job is to draw something, or tool-result text that tells the model what the user has seen.
+
+**The answer comes after the last tool call.** Only `text` blocks stream to the user. On Claude Sonnet 5.5, text longer than a sentence or two that the model writes before a tool call in the same response comes back as a progress-update `thinking` block, which is empty by default and never shown, while the model still sees it as written. A short remark stays `text`. So the prompt describes the turn in the order the user reads it: one short sentence before a lookup ("Let me compare that with retiring at 58."), which streams at once and is followed by the tool's status label, then the answer after the last tool call. Don't tell the model to write an answer, or anything with numbers in it, and then call a tool. Showing longer text in the middle of a turn (the API's `thinking.display: "updates"` summaries beside the status dot) is tracked in issue #230.
 
 ## The /demo tour
 

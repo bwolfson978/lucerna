@@ -6,7 +6,8 @@ Three guards, all in process memory (the backend runs as a single instance):
 - estimated model spend per day across everyone.
 
 Spend is only known after each model call, so admitting a message reserves a
-whole turn's worst-case cost up front. A message is admitted only if recorded
+whole turn's worst-case cost up front (every round of the tool loop plus the
+small call that writes follow-up questions). A message is admitted only if recorded
 spend plus every reservation still held fits under the cap, so turns in flight
 together cannot overshoot it (formal/tla/AgentSpend.tla, SpendWithinCap).
 
@@ -22,8 +23,11 @@ from dataclasses import dataclass
 
 from app.config import settings
 
-# Per million tokens. Keep in sync with the model in app.agent.config.
+# Per million tokens. Keep in sync with the models in app.config (agent_model,
+# agent_task_model). Haiku's rate is for prompts up to 100K tokens, which bounds the
+# only call made with it (_MAX_INPUT_TOKENS_PER_TASK_CALL).
 _PRICES_PER_MTOK = {
+    "claude-haiku-5-5": {"input": 0.10, "output": 0.50, "cache_read": 0.01, "cache_write": 0.125},
     "claude-sonnet-5-5": {"input": 2.00, "output": 10.00, "cache_read": 0.10, "cache_write": 2.50},
     "claude-opus-5-5": {"input": 4.00, "output": 20.00, "cache_read": 0.20, "cache_write": 5.00},
 }
@@ -31,6 +35,9 @@ _FALLBACK_PRICE = {"input": 5.00, "output": 25.00, "cache_read": 0.50, "cache_wr
 
 # Upper bound on input tokens in one model call, for the per-turn reservation.
 _MAX_INPUT_TOKENS_PER_CALL = 200_000
+# The same for the follow-up questions call, whose prompt holds the scenario, a few of
+# the user's messages and one reply.
+_MAX_INPUT_TOKENS_PER_TASK_CALL = 100_000
 # A turn's reservation lapses after this long even if release() never ran (a
 # client that disconnects before its stream starts), so a lost turn cannot pin
 # the cap for the rest of the day. Longer than any turn can run.
@@ -78,12 +85,16 @@ def estimate_cost(model: str, usage: object) -> float:
 
 def worst_case_turn_cost(model: str) -> float:
     from app.agent.loop import MAX_MODEL_CALLS_PER_TURN
-    from app.agent.model import MAX_TOKENS
+    from app.agent.model import MAX_TOKENS, TASK_MAX_TOKENS, TASK_MODEL
 
     per_call = estimate_cost(
         model, {"input_tokens": _MAX_INPUT_TOKENS_PER_CALL, "output_tokens": MAX_TOKENS}
     )
-    return MAX_MODEL_CALLS_PER_TURN * per_call
+    follow_ups = estimate_cost(
+        TASK_MODEL,
+        {"input_tokens": _MAX_INPUT_TOKENS_PER_TASK_CALL, "output_tokens": TASK_MAX_TOKENS},
+    )
+    return MAX_MODEL_CALLS_PER_TURN * per_call + follow_ups
 
 
 class Turn:
