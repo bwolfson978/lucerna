@@ -1,4 +1,4 @@
-<!-- @dsCard group="Shared cards" height=551 subtitle="Income, RMDs and conversions stacked against the brackets" -->
+<!-- @dsCard group="Shared cards" height=551 subtitle="Everything taxed in a year, stacked against the brackets" -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -14,7 +14,7 @@
 var h=React.createElement, U=window.LucernaUI, noop=function(){};
 /*@fixture bracketFill*/
 const d=F.bracketFill;
-function App(){return h('div',{className:'card'},h(U.BracketChart,{years:d.years.map(function(y){return {year:y.year,age:y.age,income:y.income,rmdAmount:y.rmd,conversion:y.conversion};}),brackets:d.brackets,standardDeduction:d.standard_deduction,addedTax:d.years.map(function(y){return y.tax;}),fixedHeight:true}));}
+function App(){return h('div',{className:'card'},h(U.BracketChart,{years:U.bracketChartYears(d),brackets:d.brackets,standardDeduction:d.standard_deduction,addedTax:d.years.map(function(y){return y.tax;}),fixedHeight:true}));}
 ReactDOM.createRoot(document.getElementById('root')).render(h(App));
 })();
 </script>

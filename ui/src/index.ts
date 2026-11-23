@@ -43,11 +43,19 @@ export {
 export { computeSnapThreshold, maybeSnap } from "./snap";
 export {
   BracketChart,
+  barTop,
+  bracketLegend,
   type BracketChartLayout,
   type BracketChartYear,
+  type BracketLegendItem,
   type TaxBracket,
 } from "./BracketChart";
-export { BracketFillChart, isBracketFillData, type BracketFillData } from "./BracketFillChart";
+export {
+  BracketFillChart,
+  bracketChartYears,
+  isBracketFillData,
+  type BracketFillData,
+} from "./BracketFillChart";
 export {
   PaidVsAvoided,
   ScenarioCompareCard,

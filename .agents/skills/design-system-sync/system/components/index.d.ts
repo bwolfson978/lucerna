@@ -44,11 +44,26 @@ export interface TaxBracket {
 export interface BracketChartYear {
   year: number;
   age?: number;
-  /** Gross income other than the conversion and any required withdrawal. */
+  /** Income from outside the accounts (wages, pensions), without Social Security. */
   income?: number;
   rmdAmount?: number;
+  /** Traditional withdrawal that funds spending, beyond the required one. */
+  withdrawal?: number;
+  /** The taxed part of Social Security; drawn right under the conversion. */
+  socialSecurity?: number;
   conversion?: number;
+  /** Deductions at 65 and over on top of the standard one; they come off the bottom of the bar. */
+  extraDeduction?: number;
 }
+/** Where a year's bar ends: everything stacked in it, less the 65+ deductions. */
+export declare function barTop(year: BracketChartYear): number;
+export interface BracketLegendItem {
+  color: string;
+  label: string;
+  outline?: boolean;
+}
+/** The legend for these years: the conversion, and each other part some year has. */
+export declare function bracketLegend(years: BracketChartYear[]): BracketLegendItem[];
 export interface BracketChartLayout {
   leftOffset: number;
   rightOffset: number;
@@ -77,7 +92,17 @@ export declare function BracketChart(props: BracketChartProps): React.JSX.Elemen
 
 export interface BracketFillData {
   /** `tax` is the engine's tax on that year's conversion (federal and state). */
-  years: { year: number; age: number; income: number; rmd: number; conversion: number; tax: number }[];
+  years: {
+    year: number;
+    age: number;
+    income: number;
+    rmd: number;
+    withdrawal?: number;
+    taxable_social_security?: number;
+    conversion: number;
+    extra_deduction?: number;
+    tax: number;
+  }[];
   brackets: TaxBracket[];
   standard_deduction: number;
 }
@@ -90,6 +115,8 @@ export interface BracketFillChartProps {
 }
 export declare function BracketFillChart(props: BracketFillChartProps): React.JSX.Element;
 export declare function isBracketFillData(value: unknown): value is BracketFillData;
+/** `BracketChart`'s `years` for this data. */
+export declare function bracketChartYears(data: BracketFillData): BracketChartYear[];
 
 export interface ResultCardData {
   result_id: string;
@@ -176,6 +203,11 @@ export interface ConversionCurveData {
     conversions: number[];
     /** Each year's required withdrawal, which shrinks as more is converted. */
     rmds: number[];
+    /** The other parts of each year's bar that change with the amount converted.
+     * Absent from older results. */
+    withdrawals?: number[];
+    taxable_social_security?: number[];
+    extra_deductions?: number[];
     /** Each year's tax on its conversion (federal and state). Absent from older results. */
     taxes?: number[];
   }[];

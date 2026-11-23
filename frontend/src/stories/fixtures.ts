@@ -12,6 +12,7 @@ import type {
 } from "@lucerna/ui";
 import fixture from "../../../shared/fixtures/view-data.json";
 import previous from "../../../shared/fixtures/view-data-previous.json";
+import socialSecurity from "../../../shared/fixtures/view-data-social-security.json";
 
 const analyze = fixture.analyze_roth_conversions;
 
@@ -23,6 +24,13 @@ export const previousResultDetails = previous.analyze_roth_conversions
   .view_meta as unknown as ResultDetails;
 
 export const bracketFill = resultDetails.bracket_fill!;
+
+/** Someone 66 living on Social Security and withdrawals: more of the benefit is taxed as
+ * more is converted, and the 65+ deductions apply. */
+export const socialSecurityResultCard = socialSecurity.analyze_roth_conversions
+  .structured_content as unknown as ResultCardData;
+export const socialSecurityResultDetails = socialSecurity.analyze_roth_conversions
+  .view_meta as unknown as ResultDetails;
 
 export const compare = fixture.compare_roth_scenarios
   .structured_content as unknown as ScenarioCompareData;

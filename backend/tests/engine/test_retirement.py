@@ -9,6 +9,7 @@ from app.engine.retirement import (
     account_spending,
     conversion_bases,
     draw_beyond_rmd,
+    fundable_conversions,
     post_timeline_start,
     resolve_drawdowns,
     terminal_tax_rate,
@@ -196,3 +197,44 @@ class TestTimelineDrawdowns:
         assert result.input.timeline[10].drawdown is None  # the caller's input is returned
         assert len(result.timeline_chart) == 31
         assert result.estimated_lifetime_tax_savings > 0
+
+
+class TestFundableConversions:
+    """A schedule that is shown lists what the account can fund (the engine already
+    taxes and values any schedule that way)."""
+
+    def _spender(self) -> ScenarioInput:
+        # $100,000 in the account, no growth, $30,000 a year of spending from it
+        timeline = [PlanYear(year=2026 + i, gross_income=0) for i in range(4)]
+        return resolve_drawdowns(
+            _scenario(
+                timeline=timeline,
+                traditional_ira_balance=100_000,
+                drawdown_start_age=60,
+                default_drawdown=30_000,
+                planning_horizon_age=63,
+                annual_growth_rate=0.0,
+                inflation_rate=0.0,
+            )
+        )
+
+    def test_a_schedule_the_account_can_fund_is_unchanged(self):
+        s = self._spender()
+        assert fundable_conversions(s, [10_000, 10_000, 0, 0]) == [10_000, 10_000, 0, 0]
+
+    def test_spending_leaves_less_for_later_conversions(self):
+        """After $20,000 converted and $30,000 spent in each of two years the account is
+        empty, so the third year's $20,000 cannot happen."""
+        s = self._spender()
+        assert fundable_conversions(s, [20_000, 20_000, 20_000, 0]) == [20_000, 20_000, 0, 0]
+
+    def test_a_year_converts_at_most_what_is_left(self):
+        s = self._spender()
+        assert fundable_conversions(s, [0, 0, 90_000, 0]) == [0, 0, 40_000, 0]
+
+    def test_the_engine_values_both_schedules_the_same(self):
+        s = self._spender()
+        asked = [20_000, 20_000, 20_000, 0]
+        assert calculate_npv(s, fundable_conversions(s, asked)) == pytest.approx(
+            calculate_npv(s, asked)
+        )

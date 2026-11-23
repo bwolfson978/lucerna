@@ -677,6 +677,64 @@ export const flows = {
     },
   },
 
+  'bracket-chart': {
+    title: 'Bracket chart: bars against what the engine taxes',
+    paths: ['ui/src/BracketChart', 'ui/src/BracketFillChart', 'ui/src/useResultSlider', 'backend/app/tools/views.py'],
+    async run(page, shot) {
+      const results = async (name, caption, scenario) => {
+        const encoded = Buffer.from(JSON.stringify(scenario)).toString('base64url')
+        await page.goto(`/calculator?view=results&scenario=${encoded}`)
+        const card = page.getByTestId('results-hero')
+        await card.waitFor({ timeout: 90000 })
+        await page.waitForLoadState('networkidle')
+        await card.scrollIntoViewIfNeeded()
+        // On a phone the chart scrolls: bring the first year with a conversion into view.
+        await card.locator('.bracket-chart-scroll').evaluateAll((scrollers) => {
+          for (const scroller of scrollers) {
+            const cells = [...scroller.querySelectorAll('[data-ui=row-convert] > div')]
+            const first = cells.find((cell) => Number(cell.dataset.value) > 0)
+            if (!first) continue
+            const from = scroller.getBoundingClientRect().left
+            const { left, width } = first.getBoundingClientRect()
+            scroller.scrollLeft += left - from - width
+          }
+        })
+        await page.waitForTimeout(500)
+        await shot(name, caption, { element: card })
+        return card
+      }
+      // Living on the traditional account from 62: in 2033 the engine converts up to
+      // $477 short of the top of the 12% bracket, on top of the withdrawal for spending.
+      await results('retire-at-62', 'Single, $650,000 traditional, retiring at 62', {
+        birth_year: 1971,
+        birth_month: 3,
+        filing_status: 'single',
+        current_income: 95000,
+        traditional_balance: 650000,
+        retirement_age: 62,
+      })
+      // Already 66, on Social Security and withdrawals: the taxable part of the benefit
+      // sits under the conversion, and shrinks with it when the slider moves down.
+      const card = await results('social-security', 'Single at 66 with $30,000 of Social Security', {
+        birth_year: 1960,
+        birth_month: 4,
+        filing_status: 'single',
+        current_income: 0,
+        traditional_balance: 400000,
+        roth_balance: 20000,
+        retirement_age: 66,
+        retirement_spending: 46000,
+        income_sources: [{ kind: 'social_security', owner: 'you', amount: 30000, start_age: 66 }],
+      })
+      const slider = card.getByRole('slider', { name: 'Total amount to convert' })
+      const max = Number(await slider.getAttribute('max'))
+      await slider.fill(String(Math.round((max * 0.12) / 100) * 100))
+      await slider.blur()
+      await page.waitForTimeout(800)
+      await shot('social-security-less', 'The same, converting much less', { element: card })
+    },
+  },
+
   conversation: {
     title: 'Conversation to a result',
     paths: [

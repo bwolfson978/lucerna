@@ -216,12 +216,14 @@ def conversion_magi(income_with_rmd, available_for_conv, need, conversion):
     return base, added
 
 
-def conversion_bases(scenario: ScenarioInput, conversions: list[float]) -> list[float]:
-    """Each timeline year's income before its conversion: income, RMD and the
-    traditional withdrawal for spending (see ``conversion_magi``).
+def _walk_conversions(
+    scenario: ScenarioInput, conversions: list[float]
+) -> tuple[list[float], list[float]]:
+    """Each timeline year's income before its conversion, and the amount converted.
 
     Walks the balance the way the optimizer does: RMD, conversion and spending
-    draw, then growth.
+    draw, then growth. A year converts no more than the account holds after its
+    RMD, whatever the schedule asks for.
     """
     from app.engine.early_withdrawal import penalty_free_draws
     from app.engine.rmd import calculate_rmd, rmd_start_age
@@ -230,6 +232,7 @@ def conversion_bases(scenario: ScenarioInput, conversions: list[float]) -> list[
     free_draws = penalty_free_draws(scenario, conversions)
     balance = scenario.traditional_ira_balance
     bases = []
+    converted = []
     for t, entry in enumerate(scenario.timeline):
         owner_age = scenario.age + t
         rmd = calculate_rmd(balance, owner_age) if owner_age >= owner_rmd_start else 0.0
@@ -239,10 +242,29 @@ def conversion_bases(scenario: ScenarioInput, conversions: list[float]) -> list[
         need = draw_beyond_rmd(entry.drawdown, rmd) - free_draws[t]
         base, _ = conversion_magi(entry.gross_income + rmd, available, need, conversion)
         bases.append(float(base))
+        converted.append(float(conversion))
         balance = (available - conversion - min(need, available - conversion)) * (
             1 + scenario.real_growth_rate
         )
-    return bases
+    return bases, converted
+
+
+def conversion_bases(scenario: ScenarioInput, conversions: list[float]) -> list[float]:
+    """Each timeline year's income before its conversion: income, RMD and the
+    traditional withdrawal for spending (see ``conversion_magi``)."""
+    return _walk_conversions(scenario, conversions)[0]
+
+
+def fundable_conversions(scenario: ScenarioInput, conversions: list[float]) -> list[float]:
+    """The schedule as the account can fund it: each year's conversion, capped at what
+    is left after earlier conversions, required withdrawals and spending.
+
+    Every engine path already caps a year's conversion this way when it works out tax
+    and balances, so a schedule asking for more is taxed and valued as this one. A
+    schedule that is shown to someone has to be this one too, or it lists conversions
+    that never happen.
+    """
+    return _walk_conversions(scenario, conversions)[1]
 
 
 def resolve_drawdowns(scenario: ScenarioInput) -> ScenarioInput:

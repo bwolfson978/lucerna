@@ -93,3 +93,58 @@ describe("resultAtTotal", () => {
 it("stableChartMax covers every point's tallest year", () => {
   expect(stableChartMax(fill, curve)).toBe(140000);
 });
+
+describe("the rest of the bar", () => {
+  // Someone on Social Security and withdrawals: converting more makes more of the benefit
+  // taxable and shrinks the senior deduction, so those move with the slider too.
+  const retired: BracketFillData = {
+    ...fill,
+    years: fill.years.map((y) => ({
+      ...y,
+      income: 0,
+      withdrawal: 20000,
+      taxable_social_security: 25000,
+      extra_deduction: 7000,
+    })),
+  };
+  const moving = {
+    points: curve.points.map((p, i) => ({
+      ...p,
+      withdrawals: [20000, 20000, 20000 - i * 1000],
+      taxable_social_security: [5000 + i * 10000, 5000, 5000],
+      extra_deductions: [8000 - i * 500, 8000, 8000],
+    })),
+  };
+
+  it("blends with the curve off the optimum", () => {
+    // Halfway between the points at 0 and 50,000.
+    const [first, , third] = resultAtTotal(data, retired, moving, 25000).chart!.years;
+    expect(first).toMatchObject({
+      withdrawal: 20000,
+      taxable_social_security: 10000,
+      extra_deduction: 7750,
+    });
+    expect(third.withdrawal).toBe(19500);
+  });
+
+  it("keeps the optimal schedule's for a curve without them", () => {
+    const [first] = resultAtTotal(data, retired, curve, 25000).chart!.years;
+    expect(first).toMatchObject({
+      withdrawal: 20000,
+      taxable_social_security: 25000,
+      extra_deduction: 7000,
+    });
+  });
+
+  it("stays out of results that never had it", () => {
+    const [first] = resultAtTotal(data, fill, curve, 25000).chart!.years;
+    expect(first).not.toHaveProperty("withdrawal");
+    expect(first).not.toHaveProperty("taxable_social_security");
+    expect(first).not.toHaveProperty("extra_deduction");
+  });
+
+  it("counts toward the fixed scale", () => {
+    // Tallest: the last point's first year, 0 + 0 + 20,000 + 35,000 + 100,000 - 6,500.
+    expect(stableChartMax(retired, moving)).toBe(148500);
+  });
+});

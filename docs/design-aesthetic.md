@@ -104,6 +104,8 @@ Ember means "this costs you." Do not use it for decoration or for neutral select
 Other income / pre-tax:  #bdb6a4 stone
 Roth conversion:         #2d6a4f pine-mid (gradient to #66a183 sage in bars)
 Required withdrawal:     #f26522 ember
+Withdrawals for spending: #e4b450 amber (warm like the required withdrawal, lighter and yellower so the two read apart)
+Taxable Social Security: #8fae9c mist (sits right under the conversion)
 Remaining bracket space: rgba(20,20,20,0.025) with #e4e0d6 stroke
 
 Bracket 10%  #4f8f6f   12% #7fae8f   22% #c9a443
