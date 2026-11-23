@@ -44,7 +44,6 @@ export interface ScenarioInput {
   default_drawdown?: number | null; // was annual_retirement_spending
   planning_horizon_age?: number; // was years_in_retirement (now absolute age)
   annual_growth_rate?: number;
-  discount_rate?: number;
   /** Yearly inflation; every amount is in today's dollars. Omitted means none. */
   inflation_rate?: number;
   conversion_preferences?: ConversionPreferences | null;
@@ -228,7 +227,7 @@ export interface OptimizationResult {
   estimated_lifetime_tax_savings: number;
   npv_at_optimal: number;
   npv_at_zero: number;
-  /** Discounted tax, lost ACA subsidy and IRMAA the conversions cost. */
+  /** Tax, lost ACA subsidy and IRMAA the conversions cost, in today's value. */
   conversion_cost_today?: number;
   yearly_detail: YearlyDetail[];
   yearly_bracket_fill: BracketFillResult[][];

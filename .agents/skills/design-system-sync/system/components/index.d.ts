@@ -77,7 +77,7 @@ export declare function BracketChart(props: BracketChartProps): React.JSX.Elemen
 
 export interface BracketFillData {
   /** `tax` is the engine's tax on that year's conversion (federal and state). */
-  years: { year: number; age: number; income: number; rmd: number; conversion: number; tax: number }[];
+  years: { year: number; age: number; income: number; rmd: number; conversion: number; tax: number; tax_from?: "income" | "accounts" }[];
   brackets: TaxBracket[];
   standard_deduction: number;
 }
@@ -287,7 +287,6 @@ export interface ScenarioValues {
   retirement_spending?: number | null;
   planning_horizon_age?: number | null;
   investment_return_pct?: number | null;
-  discount_rate_pct?: number | null;
   inflation_pct?: number | null;
   include_aca?: boolean;
   household_size?: number | null;

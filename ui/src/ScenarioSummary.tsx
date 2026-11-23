@@ -31,7 +31,6 @@ export interface ScenarioValues {
   retirement_spending?: number | null;
   planning_horizon_age?: number | null;
   investment_return_pct?: number | null;
-  discount_rate_pct?: number | null;
   /** Yearly inflation, percent. Every amount is in today's dollars. */
   inflation_pct?: number | null;
   include_aca?: boolean;

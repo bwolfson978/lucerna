@@ -651,7 +651,7 @@ def _build_early_withdrawal_summary(
             "money first: the existing Roth balance, then conversions at least five years "
             "old. Early withdrawal penalties total "
             f"${with_conv:,.0f} with the conversion schedule and ${without_conv:,.0f} "
-            "without conversions, in today's dollars, undiscounted."
+            "without conversions, in today's dollars, added up as paid."
         ),
     }
 

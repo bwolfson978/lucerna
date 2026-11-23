@@ -66,9 +66,16 @@ export function MethodologyPageClient() {
           "Amounts are in today's dollars. Spending, Social Security and tax brackets keep up with prices; pensions stay fixed",
       },
       {
-        assumption: "Discount rate",
-        value: "5%",
-        rationale: "Moderate rate that avoids overstating future benefits, before inflation",
+        assumption: "Today's value",
+        value: "Investment return",
+        rationale:
+          "Later amounts are brought back to today at the rate your money would have earned",
+      },
+      {
+        assumption: "Conversion tax",
+        value: "Paid from real money",
+        rationale:
+          "From your income while you work, and from your account withdrawals once they fund your spending",
       },
       {
         assumption: "Tax brackets",
@@ -241,17 +248,19 @@ export function MethodologyPageClient() {
                 <SubHeading>The four phases</SubHeading>
                 <P>
                   <strong>Phase 1: Conversion years.</strong> During your income timeline, the
-                  engine models tax payments on conversions, shifts balances from Traditional to
-                  Roth, and grows both accounts at the assumed rate.
+                  engine works out the tax on each conversion and what pays it: your income while
+                  you work, your account withdrawals once they fund your spending. It shifts
+                  balances from Traditional to Roth and grows both accounts at the assumed rate.
                 </P>
                 <P>
                   <strong>Phase 2: Growth to retirement.</strong> After the conversion window
                   closes, both accounts continue compounding untouched until retirement age.
                 </P>
                 <P>
-                  <strong>Phase 3: Retirement distributions.</strong> Traditional withdrawals are
-                  taxed. Roth withdrawals are not. If Traditional funds run short, the remainder
-                  comes from Roth tax-free. Required Minimum Distributions are enforced.
+                  <strong>Phase 3: Retirement distributions.</strong> Withdrawals cover your
+                  spending and each year&apos;s tax. Traditional withdrawals are taxed. Roth
+                  withdrawals are not. If Traditional funds run short, the remainder comes from Roth
+                  tax-free. Required Minimum Distributions are enforced.
                 </P>
                 <P>
                   <strong>Phase 4: Money left at the end.</strong> If money is still in your
@@ -263,8 +272,8 @@ export function MethodologyPageClient() {
                 <SubHeading>Why &ldquo;today&apos;s dollars&rdquo;?</SubHeading>
                 <P>
                   A dollar 25 years from now buys less than a dollar today. Every amount you enter
-                  and every result is in today&apos;s dollars, and the 5% discount rate converts
-                  future savings into present value, preventing the analysis from overstating
+                  and every result is in today&apos;s dollars. Later amounts are also brought back
+                  to today at your investment return, which keeps the analysis from overstating
                   benefits that are decades away. The &ldquo;estimated lifetime tax savings&rdquo;
                   number in your results reflects real purchasing power, not an inflated future
                   amount.
@@ -385,8 +394,8 @@ export function MethodologyPageClient() {
                 <P>
                   Every projection requires assumptions about the future. The engine uses reasonable
                   defaults based on historical data and standard financial planning conventions. You
-                  can adjust growth and discount rates in your scenario inputs. Here is what the
-                  analysis assumes and what it does not yet model.
+                  can adjust the investment return and inflation in your scenario inputs. Here is
+                  what the analysis assumes and what it does not yet model.
                 </P>
 
                 {/* Assumptions table */}

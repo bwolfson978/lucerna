@@ -14,7 +14,7 @@ describe("FormField", () => {
   });
 
   it("renders tooltip icon when tooltip prop is provided", () => {
-    renderWithProviders(<FormField label="Discount rate" tooltip="Explanation text" />);
+    renderWithProviders(<FormField label="Investment return" tooltip="Explanation text" />);
     expect(screen.getByLabelText("More info")).toBeInTheDocument();
   });
 

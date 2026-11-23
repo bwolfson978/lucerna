@@ -148,7 +148,6 @@ export const sampleOptimizationResult: OptimizationResult = {
     drawdown_start_age: 65,
     planning_horizon_age: 90,
     annual_growth_rate: 0.07,
-    discount_rate: 0.05,
   },
   // What the server sends for the result card and results page (no slider curve).
   display: {

@@ -26,8 +26,9 @@ def _round(value: float) -> int:
 
 def bracket_fill_view(result: OptimizationResult) -> dict:
     """The tax bracket chart (ui/src/BracketChart.tsx) as the results page draws it at the
-    optimal schedule: per year, gross income, required withdrawal, conversion and all the
-    tax the conversion adds (federal and state, as the engine counts it), plus the brackets (taxable income, ``max`` None for the top
+    optimal schedule: per year, gross income, required withdrawal, conversion, all the
+    tax the conversion adds (federal and state, as the engine counts it) and what pays
+    that tax (``tax_from``), plus the brackets (taxable income, ``max`` None for the top
     one) and standard deduction for the filing status."""
     rmd_by_year = (
         {d.year: d.rmd_amount for d in result.rmd_projection.yearly_detail}
@@ -47,6 +48,7 @@ def bracket_fill_view(result: OptimizationResult) -> dict:
                 "rmd": _round(rmd_by_year.get(plan_year.year, 0)),
                 "conversion": _round(conversion),
                 "tax": _round(_year_tax(detail, fill)),
+                **_tax_from(detail),
             }
         )
     filing_status = result.input.filing_status
@@ -63,6 +65,15 @@ def bracket_fill_view(result: OptimizationResult) -> dict:
         "brackets": brackets,
         "standard_deduction": _round(STANDARD_DEDUCTION[filing_status]),
     }
+
+
+def _tax_from(detail: dict) -> dict:
+    """What pays a year's conversion tax: income while the household is working, the
+    accounts once they fund its spending. Left out for results saved before the engine
+    recorded a year's spending."""
+    if "spending" not in detail:
+        return {}
+    return {"tax_from": "income" if detail["spending"] is None else "accounts"}
 
 
 def _year_tax(detail: dict, fill: list) -> float:

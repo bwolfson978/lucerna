@@ -638,7 +638,8 @@
             "income": 120000,
             "rmd": 0,
             "conversion": 0,
-            "tax": 0
+            "tax": 0,
+            "tax_from": "income"
           },
           {
             "year": 2027,
@@ -646,7 +647,8 @@
             "income": 60000,
             "rmd": 0,
             "conversion": 2100,
-            "tax": 294
+            "tax": 294,
+            "tax_from": "income"
           },
           {
             "year": 2028,
@@ -654,7 +656,8 @@
             "income": 121174,
             "rmd": 0,
             "conversion": 0,
-            "tax": 0
+            "tax": 0,
+            "tax_from": "income"
           },
           {
             "year": 2029,
@@ -662,7 +665,8 @@
             "income": 0,
             "rmd": 0,
             "conversion": 12600,
-            "tax": 1588
+            "tax": 1588,
+            "tax_from": "accounts"
           },
           {
             "year": 2030,
@@ -670,7 +674,8 @@
             "income": 0,
             "rmd": 0,
             "conversion": 12600,
-            "tax": 1588
+            "tax": 1588,
+            "tax_from": "accounts"
           },
           {
             "year": 2031,
@@ -678,7 +683,8 @@
             "income": 0,
             "rmd": 0,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2032,
@@ -686,7 +692,8 @@
             "income": 0,
             "rmd": 0,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2033,
@@ -694,7 +701,8 @@
             "income": 0,
             "rmd": 0,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2034,
@@ -702,7 +710,8 @@
             "income": 0,
             "rmd": 0,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2035,
@@ -710,7 +719,8 @@
             "income": 0,
             "rmd": 0,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2036,
@@ -718,7 +728,8 @@
             "income": 0,
             "rmd": 0,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2037,
@@ -726,7 +737,8 @@
             "income": 0,
             "rmd": 0,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2038,
@@ -734,7 +746,8 @@
             "income": 0,
             "rmd": 0,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2039,
@@ -742,7 +755,8 @@
             "income": 0,
             "rmd": 0,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2040,
@@ -750,7 +764,8 @@
             "income": 0,
             "rmd": 0,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2041,
@@ -758,7 +773,8 @@
             "income": 0,
             "rmd": 30293,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2042,
@@ -766,7 +782,8 @@
             "income": 0,
             "rmd": 30144,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2043,
@@ -774,7 +791,8 @@
             "income": 0,
             "rmd": 29794,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2044,
@@ -782,7 +800,8 @@
             "income": 0,
             "rmd": 29487,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2045,
@@ -790,7 +809,8 @@
             "income": 0,
             "rmd": 29085,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2046,
@@ -798,7 +818,8 @@
             "income": 0,
             "rmd": 28570,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2047,
@@ -806,7 +827,8 @@
             "income": 0,
             "rmd": 27781,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2048,
@@ -814,7 +836,8 @@
             "income": 0,
             "rmd": 26978,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2049,
@@ -822,7 +845,8 @@
             "income": 0,
             "rmd": 25847,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2050,
@@ -830,7 +854,8 @@
             "income": 0,
             "rmd": 24647,
             "conversion": 15000,
-            "tax": 1876
+            "tax": 1876,
+            "tax_from": "accounts"
           },
           {
             "year": 2051,
@@ -838,7 +863,8 @@
             "income": 0,
             "rmd": 23077,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2052,
@@ -846,7 +872,8 @@
             "income": 0,
             "rmd": 21179,
             "conversion": 15000,
-            "tax": 1876
+            "tax": 1876,
+            "tax_from": "accounts"
           },
           {
             "year": 2053,
@@ -854,7 +881,8 @@
             "income": 0,
             "rmd": 18961,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2054,
@@ -862,7 +890,8 @@
             "income": 0,
             "rmd": 16169,
             "conversion": 15000,
-            "tax": 1876
+            "tax": 1876,
+            "tax_from": "accounts"
           },
           {
             "year": 2055,
@@ -870,7 +899,8 @@
             "income": 0,
             "rmd": 13040,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           },
           {
             "year": 2056,
@@ -878,7 +908,8 @@
             "income": 0,
             "rmd": 9187,
             "conversion": 15400,
-            "tax": 1936
+            "tax": 1936,
+            "tax_from": "accounts"
           }
         ],
         "brackets": [
@@ -8208,7 +8239,8 @@
                 "income": 120000,
                 "rmd": 0,
                 "conversion": 0,
-                "tax": 0
+                "tax": 0,
+                "tax_from": "income"
               },
               {
                 "year": 2027,
@@ -8216,7 +8248,8 @@
                 "income": 60000,
                 "rmd": 0,
                 "conversion": 2100,
-                "tax": 294
+                "tax": 294,
+                "tax_from": "income"
               },
               {
                 "year": 2028,
@@ -8224,7 +8257,8 @@
                 "income": 121174,
                 "rmd": 0,
                 "conversion": 0,
-                "tax": 0
+                "tax": 0,
+                "tax_from": "income"
               },
               {
                 "year": 2029,
@@ -8232,7 +8266,8 @@
                 "income": 0,
                 "rmd": 0,
                 "conversion": 12600,
-                "tax": 1588
+                "tax": 1588,
+                "tax_from": "accounts"
               },
               {
                 "year": 2030,
@@ -8240,7 +8275,8 @@
                 "income": 0,
                 "rmd": 0,
                 "conversion": 12600,
-                "tax": 1588
+                "tax": 1588,
+                "tax_from": "accounts"
               },
               {
                 "year": 2031,
@@ -8248,7 +8284,8 @@
                 "income": 0,
                 "rmd": 0,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2032,
@@ -8256,7 +8293,8 @@
                 "income": 0,
                 "rmd": 0,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2033,
@@ -8264,7 +8302,8 @@
                 "income": 0,
                 "rmd": 0,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2034,
@@ -8272,7 +8311,8 @@
                 "income": 0,
                 "rmd": 0,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2035,
@@ -8280,7 +8320,8 @@
                 "income": 0,
                 "rmd": 0,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2036,
@@ -8288,7 +8329,8 @@
                 "income": 0,
                 "rmd": 0,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2037,
@@ -8296,7 +8338,8 @@
                 "income": 0,
                 "rmd": 0,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2038,
@@ -8304,7 +8347,8 @@
                 "income": 0,
                 "rmd": 0,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2039,
@@ -8312,7 +8356,8 @@
                 "income": 0,
                 "rmd": 0,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2040,
@@ -8320,7 +8365,8 @@
                 "income": 0,
                 "rmd": 0,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2041,
@@ -8328,7 +8374,8 @@
                 "income": 0,
                 "rmd": 30293,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2042,
@@ -8336,7 +8383,8 @@
                 "income": 0,
                 "rmd": 30144,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2043,
@@ -8344,7 +8392,8 @@
                 "income": 0,
                 "rmd": 29794,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2044,
@@ -8352,7 +8401,8 @@
                 "income": 0,
                 "rmd": 29487,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2045,
@@ -8360,7 +8410,8 @@
                 "income": 0,
                 "rmd": 29085,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2046,
@@ -8368,7 +8419,8 @@
                 "income": 0,
                 "rmd": 28570,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2047,
@@ -8376,7 +8428,8 @@
                 "income": 0,
                 "rmd": 27781,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2048,
@@ -8384,7 +8437,8 @@
                 "income": 0,
                 "rmd": 26978,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2049,
@@ -8392,7 +8446,8 @@
                 "income": 0,
                 "rmd": 25847,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2050,
@@ -8400,7 +8455,8 @@
                 "income": 0,
                 "rmd": 24647,
                 "conversion": 15000,
-                "tax": 1876
+                "tax": 1876,
+                "tax_from": "accounts"
               },
               {
                 "year": 2051,
@@ -8408,7 +8464,8 @@
                 "income": 0,
                 "rmd": 23077,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2052,
@@ -8416,7 +8473,8 @@
                 "income": 0,
                 "rmd": 21179,
                 "conversion": 15000,
-                "tax": 1876
+                "tax": 1876,
+                "tax_from": "accounts"
               },
               {
                 "year": 2053,
@@ -8424,7 +8482,8 @@
                 "income": 0,
                 "rmd": 18961,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2054,
@@ -8432,7 +8491,8 @@
                 "income": 0,
                 "rmd": 16169,
                 "conversion": 15000,
-                "tax": 1876
+                "tax": 1876,
+                "tax_from": "accounts"
               },
               {
                 "year": 2055,
@@ -8440,7 +8500,8 @@
                 "income": 0,
                 "rmd": 13040,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               },
               {
                 "year": 2056,
@@ -8448,7 +8509,8 @@
                 "income": 0,
                 "rmd": 9187,
                 "conversion": 15400,
-                "tax": 1936
+                "tax": 1936,
+                "tax_from": "accounts"
               }
             ],
             "brackets": [
