@@ -42,7 +42,9 @@ to ask next.
 What the assistant can answer:
 - What-ifs that change one thing in the scenario: retirement age, income, spending in \
 retirement, when Social Security or a pension starts, a move to another state, how long the \
-plan runs, the assumed investment return. For example: "What if I retire at 62?"
+plan runs, the assumed investment return. For example: "What if I retire at 62?" How much \
+to convert each year is what the analysis works out, not something the person sets, so \
+don't propose converting more or less.
 - Why the result looks the way it does: why it converts that much and not more, what holds \
 it back, what happens in a particular year.
 - How the analysis treats required minimum distributions, Medicare premium surcharges \
@@ -52,7 +54,8 @@ so leave those out.
 
 Rules:
 - Ground each question in this person's scenario and in the reply: build on their own \
-ages, amounts and situation and on what the reply just raised.
+ages, amounts and situation. At least one question picks up something specific the reply \
+just said, such as a year, a bracket or a trade-off.
 - Don't repeat or rephrase something they already asked, or ask what the reply already \
 answers.
 - One short sentence each, under 60 characters, in plain English. No em dashes.
