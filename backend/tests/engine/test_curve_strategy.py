@@ -10,7 +10,8 @@ from app.engine.curve_strategy import (
 )
 from app.engine.dp import dp_optimize, extract_conversion_curve_3d
 from app.engine.heuristic import _global_bracket_fill_for_cap, bracket_fill_curve
-from app.engine.optimizer import _build_year_detail, calculate_npv
+from app.engine.optimizer import _build_year_detail, calculate_npv, optimize
+from app.engine.retirement import fundable_conversions, resolve_drawdowns, resolve_states
 from app.engine.types import FilingStatus, PlanYear, ScenarioInput
 
 # ── Fixtures ──────────────────────────────────────────────────────────
@@ -302,4 +303,51 @@ class TestBracketFillStrategy:
         # Bracket-fill should be at least 2x faster
         assert bf_time < dp_time, (
             f"Bracket-fill ({bf_time:.3f}s) not faster than DP ({dp_time:.3f}s)"
+        )
+
+
+# ── Points list what the account can fund ────────────────────────────
+
+
+class TestPointsAreFundable:
+    """Someone living on the account: totals near the whole balance cannot all be
+    converted, because spending takes part of it first."""
+
+    def _retiree(self) -> ScenarioInput:
+        return resolve_states(
+            resolve_drawdowns(
+                _simple_scenario(
+                    age=64,
+                    timeline=[PlanYear(year=2026 + i, gross_income=0) for i in range(12)],
+                    traditional_ira_balance=400_000,
+                    drawdown_start_age=64,
+                    default_drawdown=50_000,
+                    planning_horizon_age=75,
+                )
+            )
+        )
+
+    def test_a_point_lists_only_fundable_conversions_and_their_total(self):
+        scenario = self._retiree()
+        curve = generate_conversion_curve(scenario, n_curve_points=40)
+        for point in curve:
+            fundable = fundable_conversions(scenario, point.yearly_conversions)
+            assert point.yearly_conversions == pytest.approx(fundable)
+            # The total is what the schedule converts, within the usual rounding
+            assert sum(point.yearly_conversions) == pytest.approx(
+                point.total_cap, abs=100 * len(point.yearly_conversions)
+            )
+
+    def test_totals_are_distinct_and_rising(self):
+        curve = generate_conversion_curve(self._retiree(), n_curve_points=40)
+        totals = [round(p.total_cap) for p in curve]
+        assert totals == sorted(set(totals))
+        # Spending takes part of the $400,000, so the largest total is below it
+        assert 0 < totals[-1] < 400_000
+
+    def test_the_optimal_schedule_is_fundable(self):
+        scenario = self._retiree()
+        result = optimize(scenario)
+        assert result.yearly_conversions == pytest.approx(
+            fundable_conversions(scenario, result.yearly_conversions)
         )

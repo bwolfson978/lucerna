@@ -34,6 +34,7 @@ from app.engine.retirement import (
     account_spending,
     conversion_magi,
     draw_beyond_rmd,
+    fundable_conversions,
     post_timeline_start,
     resolve_drawdowns,
     resolve_states,
@@ -1164,6 +1165,10 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
                 laddered, max_balance, scenario.real_growth_rate
             )
             total_conversion = sum(final_conversions)
+
+    # The answer lists what the account can fund (it is taxed and valued that way)
+    final_conversions = fundable_conversions(scenario, final_conversions)
+    total_conversion = sum(final_conversions)
 
     conversion_curve = _with_optimal_schedule(
         scenario,
