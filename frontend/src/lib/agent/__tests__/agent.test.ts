@@ -172,6 +172,27 @@ describe("conversationReducer", () => {
     expect(latestResultId(state)).toBe("r_1");
   });
 
+  it("moves the status line on through a turn and clears it when the reply starts", () => {
+    let state = conversationReducer(INITIAL_CONVERSATION, { type: "user", id: "1", text: "Hi" });
+    const apply = (event: AgentEvent) => {
+      state = conversationReducer(state, { type: "event", event });
+    };
+    apply({ type: "text_delta", text: "Let me compare that." });
+    apply({ type: "tool_start", name: "compare_roth_scenarios", status: "Comparing scenarios" });
+    expect(state.status).toBe("Comparing scenarios");
+    apply({ type: "status", text: "Comparing with \u201cRetire at 58\u201d" });
+    expect(state.status).toBe("Comparing with \u201cRetire at 58\u201d");
+    apply({ type: "status", text: "Writing a reply" });
+    expect(state.status).toBe("Writing a reply");
+    apply({ type: "text_delta", text: "Retiring at 58 changes little." });
+    expect(state.status).toBeNull();
+    // The reply after the lookup is its own paragraph, not a continuation of the lead-in.
+    expect(state.messages[1].parts).toEqual([
+      { kind: "text", text: "Let me compare that." },
+      { kind: "text", text: "Retiring at 58 changes little." },
+    ]);
+  });
+
   it("shows errors as notices and tracks status", () => {
     let state = conversationReducer(INITIAL_CONVERSATION, { type: "user", id: "1", text: "Hi" });
     state = conversationReducer(state, {

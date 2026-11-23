@@ -35,6 +35,7 @@ from mcp.types import CallToolResult
 from pydantic import ValidationError
 
 from app.config import settings
+from app.engine.state_tax import state_name
 from app.mcp.auth import ACCOUNT_TOOLS
 from app.mcp.server import APP_MIME_TYPE, RESULTS_META_KEY, UI_META_KEY
 from app.tools import core
@@ -43,12 +44,88 @@ from app.tools.models import ScenarioUpdate
 
 logger = logging.getLogger(__name__)
 
-STATUS = {
+# --------------------------------------------------------------------------
+# The status line
+# --------------------------------------------------------------------------
+# While a turn runs, the browser shows one line beside its progress dot. The line
+# follows the turn through three stages, and the loop sends each as it starts:
+#
+#   the model starts a tool call     status_starting   "Comparing scenarios"
+#   the call's arguments are in      status_running    'Comparing with "Retire at 58"'
+#   the tools have answered          STATUS_REPLYING   "Writing a reply"
+#
+# The lines are built here from the tool call. The model never writes them, so they
+# can't state a result. The one piece of model wording is the short name it gives a
+# what-if, which also titles the comparison card.
+
+_STARTING = {
     "prepare_scenario": "Updating your scenario",
     "analyze_roth_conversions": "Running the optimizer",
     "compare_roth_scenarios": "Comparing scenarios",
     "get_tax_brackets": "Looking up tax brackets",
     "explain_methodology": "Checking the methodology",
+}
+_FILERS = {"single": "single filers", "married_filing_jointly": "joint filers"}
+
+STATUS_REPLYING = "Writing a reply"
+
+
+def status_starting(name: str) -> str:
+    """The line while the model is still writing a tool call's arguments."""
+    return _STARTING.get(name, "Working")
+
+
+def status_running(name: str, raw_input: object, start_year: int) -> str:
+    """The line while a tool runs: what this call is looking up, when its arguments say."""
+    arguments = raw_input if isinstance(raw_input, dict) else {}
+    describe = _RUNNING.get(name)
+    return (describe and describe(arguments, start_year)) or status_starting(name)
+
+
+def _running_analysis(arguments: dict, start_year: int) -> str | None:
+    try:
+        draft = core.draft_from_scenario(
+            ScenarioUpdate.model_validate(arguments.get("scenario")), start_year
+        )
+    except (ValidationError, core.ToolError):
+        return None
+    if not draft.timeline:
+        return None
+    return f"Running the optimizer for {draft.timeline[0].year} to {draft.timeline[-1].year}"
+
+
+def _running_comparison(arguments: dict, _start_year: int) -> str | None:
+    label = _text(arguments, "label")
+    if not label or label == "What-if":  # the tool's default name says nothing
+        return None
+    return f"Comparing with \u201c{label[:60]}\u201d"
+
+
+def _running_brackets(arguments: dict, _start_year: int) -> str | None:
+    filers = _FILERS.get(_text(arguments, "filing_status"))
+    if filers is None:
+        return None
+    code = _text(arguments, "state").upper()
+    state = state_name(code)  # the code itself when the state is unknown
+    return f"Looking up tax brackets for {filers}" + (f" in {state}" if state != code else "")
+
+
+def _running_methodology(arguments: dict, _start_year: int) -> str | None:
+    titles = {topic["id"]: topic["title"] for topic in core.methodology_topics()}
+    title = titles.get(_text(arguments, "topic"))
+    return f"Checking the methodology: {title}" if title else None
+
+
+def _text(arguments: dict, key: str) -> str:
+    value = arguments.get(key)
+    return value.strip() if isinstance(value, str) else ""
+
+
+_RUNNING = {
+    "analyze_roth_conversions": _running_analysis,
+    "compare_roth_scenarios": _running_comparison,
+    "get_tax_brackets": _running_brackets,
+    "explain_methodology": _running_methodology,
 }
 
 # Tools whose View this host doesn't mount because it has a richer first-party

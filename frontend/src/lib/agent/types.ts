@@ -40,6 +40,8 @@ export type AgentErrorCode =
 export type AgentEvent =
   | { type: "text_delta"; text: string }
   | { type: "tool_start"; name: string; status: string }
+  /** The line beside the progress dot moved on (a tool is running, the reply is next). */
+  | { type: "status"; text: string }
   | { type: "draft"; draft: ScenarioDraft; missing: string[] }
   | {
       type: "result";

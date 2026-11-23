@@ -9,12 +9,15 @@ streams the text, runs the requested tools and calls the model again with their
 results, until a proposal comes back with no tool requests. That last text is
 the answer. The loop then asks a small model for follow-up questions to offer
 under it (``app.agent.suggestions``). What the browser draws comes from tool
-results and from the loop, never from the model choosing a display.
+results and from the loop, never from the model choosing a display. That includes
+the status line beside the progress dot, which the loop moves on as the turn does
+(``app.agent.toolbox``, "The status line").
 
 Events for the UI, as they happen:
 
     text_delta  {text}
     tool_start  {name, status}
+    status      {text}
     draft       {draft, missing}
     result      {result_id, label, result, draft?}
     part        {part}
@@ -40,7 +43,14 @@ from app.agent import suggestions
 from app.agent.model import MODEL, Final, ModelClient, ModelUnavailable, TextDelta, ToolStart
 from app.agent.observability import TurnTrace
 from app.agent.prompts import SYSTEM_PROMPT
-from app.agent.toolbox import STATUS, McpToolbox, ToolContext, open_toolbox
+from app.agent.toolbox import (
+    STATUS_REPLYING,
+    McpToolbox,
+    ToolContext,
+    open_toolbox,
+    status_running,
+    status_starting,
+)
 from app.tools import core
 from app.tools.draft import ScenarioDraft, current_year
 
@@ -217,7 +227,7 @@ async def _run_turn(
                     yield {
                         "type": "tool_start",
                         "name": event.name,
-                        "status": STATUS.get(event.name, "Working"),
+                        "status": status_starting(event.name),
                     }
                 elif isinstance(event, Final):
                     turn = event.turn
@@ -285,6 +295,10 @@ async def _run_turn(
             if tool_calls > MAX_TOOL_CALLS_PER_TURN:
                 content, is_error = {"error": "Tool call limit reached for this message."}, True
             else:
+                yield {
+                    "type": "status",
+                    "text": status_running(block["name"], block.get("input"), start_year),
+                }
                 before = len(ctx.events)
                 span = (
                     trace.tool(block["name"], block.get("input"))
@@ -306,6 +320,7 @@ async def _run_turn(
                 }
             )
         new_messages.append({"role": "user", "content": results})
+        yield {"type": "status", "text": STATUS_REPLYING}
     else:
         # Ran out of model calls while the model still wanted tools. Close the turn
         # with a short assistant message so the history stays well-formed.
