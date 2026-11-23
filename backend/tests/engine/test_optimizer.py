@@ -1,7 +1,14 @@
 """Tests for the multi-year Roth conversion optimizer."""
 
+import pytest
+
 from app.engine.heuristic import greedy_bracket_fill
-from app.engine.optimizer import _build_rmd_projection, calculate_npv, optimize
+from app.engine.optimizer import (
+    _build_rmd_projection,
+    _build_year_detail,
+    calculate_npv,
+    optimize,
+)
 from app.engine.rmd import get_distribution_period
 from app.engine.types import (
     ConversionPreferences,
@@ -37,8 +44,8 @@ class TestOptimize:
         result = optimize(scenario)
         assert isinstance(result, OptimizationResult)
 
-    def test_conversion_cost_today_is_discounted_tax(self, sample_single_input):
-        result = optimize(sample_single_input())
+    def test_conversion_cost_today_is_discounted_tax(self, sample_low_income_year):
+        result = optimize(sample_low_income_year())
         assert result.total_conversion > 0
         assert 0 < result.conversion_cost_today <= result.total_tax_on_conversions
 
@@ -71,7 +78,6 @@ class TestOptimize:
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
         )
         result = optimize(scenario)
         assert result.total_conversion > 0
@@ -90,7 +96,6 @@ class TestOptimize:
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
         )
         result = optimize(scenario)
         # Low-income years (0, 1) should have more conversion than high-income year (2)
@@ -108,7 +113,6 @@ class TestOptimize:
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
         )
         result = optimize(scenario)
         assert result.estimated_lifetime_tax_savings > 0
@@ -138,7 +142,6 @@ class TestOptimize:
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
         )
         greedy = greedy_bracket_fill(scenario)
         npv_greedy = calculate_npv(scenario, greedy)
@@ -158,10 +161,10 @@ class TestConversionCurve:
         assert point.yearly_conversions == result.yearly_conversions
         assert point.npv == max(p.npv for p in result.conversion_curve)
 
-    def test_curve_rises_into_the_optimum_without_a_dip(self, sample_single_input):
+    def test_curve_rises_into_the_optimum_without_a_dip(self, sample_low_income_year):
         """Points just short of the optimal total are close to it in savings, not a step
         below it (they can take the optimal schedule scaled to their total)."""
-        result = optimize(sample_single_input())
+        result = optimize(sample_low_income_year())
         total = result.total_conversion
         below = [p for p in result.conversion_curve if total * 0.9 <= p.total_cap < total - 1]
         assert below
@@ -192,7 +195,6 @@ class TestConversionPreferences:
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
             conversion_preferences=prefs,
         )
 
@@ -210,7 +212,6 @@ class TestConversionPreferences:
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
         )
         constrained = self._alex_scenario()
         r1 = optimize(unconstrained)
@@ -287,7 +288,6 @@ class TestScenarioComparisonFields:
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
         )
         result = optimize(scenario)
         for sc in result.scenarios:
@@ -304,7 +304,6 @@ class TestScenarioComparisonFields:
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
         )
         result = optimize(scenario)
         # "No conversion" should have 0 savings
@@ -325,7 +324,6 @@ class TestScenarioComparisonFields:
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
         )
         result = optimize(scenario)
         no_conv = next(s for s in result.scenarios if s.label == "No conversion")
@@ -343,7 +341,6 @@ class TestScenarioComparisonFields:
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
         )
         result = optimize(scenario)
         full = next(s for s in result.scenarios if "Full" in s.label)
@@ -382,7 +379,6 @@ class TestStateTaxIntegration:
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
             state=state,
             retirement_state=retirement_state,
             custom_state_rate=custom_state_rate,
@@ -398,7 +394,6 @@ class TestStateTaxIntegration:
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
         )
         scenario_explicit_none = ScenarioInput(
             age=45,
@@ -408,7 +403,6 @@ class TestStateTaxIntegration:
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
             state=None,
         )
         npv1 = calculate_npv(scenario_no_state, [50000.0])
@@ -478,7 +472,7 @@ class TestStateTaxIntegration:
                 *(PlanYear(year=2026 + i, gross_income=140000) for i in range(4)),
                 *(PlanYear(year=2030 + i, gross_income=0) for i in range(3)),
             ],
-            traditional_ira_balance=600000,
+            traditional_ira_balance=1_500_000,
             drawdown_start_age=62,
             planning_horizon_age=90,
             default_drawdown=60000,
@@ -511,16 +505,13 @@ class TestStateTaxIntegration:
     def test_yearly_detail_includes_state_tax_cost(self):
         """yearly_detail should report state_tax_cost when state is set."""
         with_ca = self._base_scenario(state="CA")
-        result = optimize(with_ca)
+        detail, *_ = _build_year_detail(with_ca, [40_000.0, 0.0, 0.0])
 
-        # At least one year with non-zero conversion should have state_tax_cost > 0
-        has_state_tax = any(
-            d.get("state_tax_cost", 0) > 0 for d in result.yearly_detail if d["conversion"] > 0
+        assert detail[0]["state_tax_cost"] > 0
+        assert detail[0]["tax_cost"] == pytest.approx(
+            detail[0]["federal_tax_cost"] + detail[0]["state_tax_cost"], abs=0.01
         )
-        assert has_state_tax, (
-            f"Expected state_tax_cost > 0 in yearly_detail for CA scenario. "
-            f"Details: {result.yearly_detail}"
-        )
+        assert detail[1]["state_tax_cost"] == 0
 
     def test_custom_state_rate_applies(self):
         """Custom flat state rate should increase tax cost proportionally."""
@@ -549,7 +540,6 @@ class TestAlreadyRetired:
             drawdown_start_age=retirement_age,
             planning_horizon_age=retirement_age + 25,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
         )
 
     def test_optimize_returns_valid_result(self):
@@ -568,13 +558,24 @@ class TestAlreadyRetired:
         assert result.total_conversion >= 0
 
     def test_npv_positive_for_low_income_retiree(self):
-        """Already-retired user with low income should benefit from conversion."""
-        scenario = self._retired_scenario()
+        """An already-retired household in the 12% bracket, with a balance whose later
+        RMDs reach the 22% bracket, gains by filling the 12% bracket now."""
+        scenario = self._retired_scenario().model_copy(
+            update={"traditional_ira_balance": 1_500_000}
+        )
         n_years = len(scenario.timeline)
         npv_zero = calculate_npv(scenario, [0.0] * n_years)
-        npv_some = calculate_npv(scenario, [50000.0] * n_years)
-        # Converting at low income should produce higher NPV than not converting
+        npv_some = calculate_npv(scenario, [15000.0] * n_years)
         assert npv_some > npv_zero
+
+    def test_no_conversions_when_the_rate_is_the_same_later(self):
+        """A household that pays the same rate now as later gains nothing by
+        converting, and the engine recommends none rather than an arbitrary amount."""
+        scenario = self._retired_scenario()
+        result = optimize(scenario)
+        assert result.yearly_conversions == [0.0] * len(scenario.timeline)
+        assert result.total_tax_on_conversions == 0
+        assert result.estimated_lifetime_tax_savings == 0
 
     def test_conversions_within_balance(self):
         """Total conversions should not exceed traditional IRA balance."""
@@ -596,7 +597,6 @@ class TestRmdUsesPreGrowthBalance:
             drawdown_start_age=retirement_age,
             planning_horizon_age=retirement_age + 10,
             annual_growth_rate=growth_rate,
-            discount_rate=0.04,
         )
 
     def test_rmd_projection_balance_matches_rmd_divisor(self):

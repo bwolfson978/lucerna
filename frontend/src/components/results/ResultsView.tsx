@@ -13,6 +13,7 @@ import {
   useResultSlider,
 } from "@lucerna/ui";
 import { resultDisplay } from "@/lib/results/viewData";
+import { taxSourceNote } from "@/lib/results/taxSource";
 import { formatCurrency, formatSavings } from "@/lib/utils/formatting";
 import { buildResultsDisclaimer } from "@/lib/utils/constants";
 import { ScenarioCards } from "./ScenarioCards";
@@ -58,6 +59,7 @@ export function ResultsView({ result }: ResultsViewProps) {
 
   const chartYears = useMemo(() => bracketChartYears(fill), [fill]);
   const yearlyConversions = useMemo(() => fill.years.map((y) => y.conversion), [fill]);
+  const taxSource = useMemo(() => taxSourceNote(fill.years), [fill]);
 
   // Auto-scroll bracket chart when a bar activates or deactivates.
   // Disabled during slider drag to prevent chart jumping while scrubbing.
@@ -108,10 +110,17 @@ export function ResultsView({ result }: ResultsViewProps) {
           )}
         </div>
 
-        <div className="grid grid-cols-3 gap-3 sm:flex sm:gap-10">
-          <Stat label="Converted" value={formatCurrency(sliderValue)} />
-          <Stat label="Tax cost" value={formatCurrency(totalTaxCost)} />
-          <Stat label="Years" value={String(conversionYears)} />
+        <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-3 gap-3 sm:flex sm:gap-10">
+            <Stat label="Converted" value={formatCurrency(sliderValue)} />
+            <Stat label="Tax cost" value={formatCurrency(totalTaxCost)} />
+            <Stat label="Years" value={String(conversionYears)} />
+          </div>
+          {taxSource && (
+            <p className="text-caption text-text-tertiary" data-testid="tax-source-note">
+              {taxSource}
+            </p>
+          )}
         </div>
 
         <BracketChart

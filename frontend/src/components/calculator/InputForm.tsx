@@ -111,7 +111,6 @@ export function InputForm({
     retirement_spending: retirementSpending,
     planning_horizon_age: planningHorizonAge,
     investment_return_pct: growthRate,
-    discount_rate_pct: discountRate,
     inflation_pct: inflationPct,
     custom_state_rate_pct: customStateRate,
     include_aca: includeAca,
@@ -341,7 +340,7 @@ export function InputForm({
           placeholder="Optional (4% rule)"
           min={0}
           error={errors.retirementSpending}
-          helper="Total household spending. Your accounts cover whatever income doesn't."
+          helper="Total household spending, not counting income tax. Your accounts cover whatever income doesn't, plus the tax."
           onChange={(val) => patch({ retirement_spending: val || null })}
         />
         <FormSelect
@@ -507,14 +506,6 @@ export function InputForm({
               unit="%"
               tooltip="Expected annual portfolio return before inflation and fees. Stock-heavy: 7-8%. Balanced: 5-6%. Bond-heavy: 3-4%."
               onChange={(v) => patch({ investment_return_pct: v })}
-            />
-            <NumericField
-              label="Discount rate"
-              value={discountRate ?? ""}
-              decimalScale={1}
-              unit="%"
-              tooltip="The extra return you'd need to accept a dollar next year instead of today. Think of it as your opportunity cost. Roughly match it to your expected investment return. The default of 5% works well for most people."
-              onChange={(v) => patch({ discount_rate_pct: v })}
             />
           </div>
         </CollapsibleContent>

@@ -25,6 +25,9 @@ export interface BracketFillData {
     extra_deduction?: number;
     /** Federal tax the conversion adds that year. */
     tax: number;
+    /** What pays that tax: income while working, the accounts once they fund spending.
+     * Absent from older results. */
+    tax_from?: "income" | "accounts";
   }[];
   /** Federal brackets in taxable income, lowest first; `max` is null for the top one. */
   brackets: TaxBracket[];

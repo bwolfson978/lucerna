@@ -43,11 +43,10 @@ export interface ScenarioDraft {
   roth_balance: number | null;
   /** Age withdrawals from retirement accounts begin. */
   retirement_age: number | null;
-  /** Total household spending once drawdowns start; accounts cover what income doesn't. */
+  /** Household spending after tax once drawdowns start; accounts cover what income doesn't, and the tax. */
   retirement_spending: number | null;
   planning_horizon_age: number | null;
   investment_return_pct: number | null;
-  discount_rate_pct: number | null;
   /** Yearly inflation, percent. Every amount is in today's dollars. */
   inflation_pct: number | null;
   include_aca: boolean;
@@ -81,7 +80,6 @@ export const EMPTY_DRAFT: ScenarioDraft = {
   retirement_spending: null,
   planning_horizon_age: 90,
   investment_return_pct: 7,
-  discount_rate_pct: 5,
   inflation_pct: DEFAULT_INFLATION_PCT,
   include_aca: false,
   household_size: 1,
@@ -276,7 +274,6 @@ export function buildScenarioInput(draft: ScenarioDraft): ScenarioInput {
     planning_horizon_age: draft.planning_horizon_age ?? 90,
     default_drawdown: draft.retirement_spending || null,
     annual_growth_rate: (draft.investment_return_pct ?? 7) / 100,
-    discount_rate: (draft.discount_rate_pct ?? 5) / 100,
     inflation_rate: (draft.inflation_pct ?? DEFAULT_INFLATION_PCT) / 100,
     healthcare,
     state: draft.state,

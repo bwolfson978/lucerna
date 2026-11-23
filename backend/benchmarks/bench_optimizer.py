@@ -46,7 +46,6 @@ def short_scenario() -> ScenarioInput:
         retirement_age=65,
         years_in_retirement=25,
         annual_growth_rate=0.07,
-        discount_rate=0.05,
     )
 
 

@@ -1,4 +1,5 @@
 from app.engine.aca import find_subsidy_cliff_income
+from app.engine.cashflow import plan_for, walk
 from app.engine.constants import (
     BRACKET_FULL_THRESHOLD,
     FULLY_CONVERTED_SHARE,
@@ -17,7 +18,7 @@ from app.engine.irmaa import (
     lookback_threshold_scale,
 )
 from app.engine.retirement import conversion_bases
-from app.engine.rmd import calculate_rmd, rmd_start_age
+from app.engine.rmd import rmd_start_age
 from app.engine.state_tax import resolve_state_for_year, retirement_rule, state_name
 from app.engine.tax import BRACKETS
 from app.engine.tax_cost import (
@@ -163,26 +164,15 @@ def _find_binding_constraint(
 def _traditional_left_after_conversions(scenario: ScenarioInput, conversions: list[float]) -> float:
     """Traditional balance left right after the last conversion.
 
-    Walks the timeline the way the optimizer does (RMD, conversion, drawdown,
-    then growth). Summing conversions is not enough: the balance grows between
-    conversions, so they can add up to more than today's balance and still
-    leave money behind.
+    Read from the same walk of the plan the optimizer values. Summing conversions
+    is not enough: the balance grows between conversions, so they can add up to
+    more than today's balance and still leave money behind.
     """
     last = max((t for t, c in enumerate(conversions) if c > 0), default=-1)
-    balance = scenario.traditional_ira_balance
-    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
-    for t in range(last + 1):
-        owner_age = scenario.age + t
-        rmd = calculate_rmd(balance, owner_age) if owner_age >= owner_rmd_start else 0.0
-        balance -= min(rmd, balance)
-        balance -= min(max(0.0, conversions[t]), balance)
-        if t == last:
-            break
-        drawdown = scenario.timeline[t].drawdown
-        if drawdown:
-            balance -= min(float(drawdown), balance)
-        balance *= 1 + scenario.real_growth_rate
-    return balance
+    if last < 0:
+        return scenario.traditional_ira_balance
+    year = walk(scenario, conversions).flows[last]
+    return year.trad_start - year.rmd - year.conversion
 
 
 def _just_under_irmaa_threshold(scenario: ScenarioInput, t: int, magi: float) -> bool:
@@ -343,6 +333,31 @@ def _cost_and_benefit_of_conversions(
     }
 
 
+def _year_span(years: list[int]) -> str:
+    return str(years[0]) if len(years) == 1 else f"{years[0]} to {years[-1]}"
+
+
+def _who_pays_the_tax(scenario: ScenarioInput, conversions: list[float]) -> list[str]:
+    """Where the money for the conversion tax comes from, by kind of year."""
+    rules = plan_for(scenario).years
+    converting = [t for t, c in enumerate(conversions) if c > 0]
+    from_income = [rules[t].year for t in converting if rules[t].budget is None]
+    from_accounts = [rules[t].year for t in converting if rules[t].budget is not None]
+    notes = []
+    if from_income:
+        notes.append(
+            f"Tax on the conversions in {_year_span(from_income)} is paid from that year's "
+            "income, so the whole amount converted stays invested"
+        )
+    if from_accounts:
+        notes.append(
+            f"In {_year_span(from_accounts)} the accounts fund spending, so they also pay the "
+            "tax on the conversions: withdrawals are larger in those years and spending "
+            "stays the same"
+        )
+    return notes
+
+
 def _build_sensitivity_notes(
     scenario: ScenarioInput,
     conversions: list[float],
@@ -376,8 +391,11 @@ def _build_sensitivity_notes(
     years_in_plan = scenario.planning_horizon_age - scenario.age
     if years_in_plan >= LONG_RETIREMENT_YEARS:
         notes.append(
-            "Long retirement horizon amplifies the tax-free growth benefit of Roth conversions"
+            "A long plan gives the traditional balance more years to grow, which raises later "
+            "required withdrawals and the tax on them"
         )
+
+    notes.extend(_who_pays_the_tax(scenario, conversions))
 
     if scenario.healthcare:
         notes.append(
@@ -386,7 +404,6 @@ def _build_sensitivity_notes(
         )
 
     # RMD impact note
-    from app.engine.rmd import rmd_start_age
 
     owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
     years_to_rmd = owner_rmd_start - scenario.age

@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from app.engine.optimizer import optimize
+from app.engine.optimizer import _build_year_detail, calculate_npv
 from app.engine.tax import calculate_federal_tax
 from app.engine.types import FilingStatus, PlanYear, ScenarioInput
 from app.engine.year_tax import YearTax, taxable_social_security, year_tax
@@ -179,14 +179,37 @@ class TestSeniorDeduction:
         incomes = np.array([30_000.0, 160_000.0, 210_000.0, 300_000.0])
         assert yt.federal(incomes) == pytest.approx([yt.federal(float(x)) for x in incomes])
 
+    @pytest.mark.parametrize("state", [None, "NY", "CA", "IL", "OR"])
+    def test_one_income_matches_the_same_income_in_an_array(self, state):
+        """The year step asks for one income at a time and the search for thousands.
+        Both must get the same tax, state income and AGI."""
+        yt = YearTax(
+            MFJ,
+            social_security=40_000,
+            extra_deduction=3_300,
+            senior_bonus_people=2,
+            state=state,
+            fixed_scale=0.9,
+            other_income=52_000,
+            age=66,
+        )
+        incomes = np.array([0.0, 30_000.0, 52_000.0, 75_000.0, 160_000.0, 410_000.0])
+        for method in (yt.total, yt.federal, yt.state_tax, yt.state_income, yt.agi):
+            one_at_a_time = [method(float(x)) for x in incomes]
+            assert method(incomes) == pytest.approx(one_at_a_time, abs=1e-6)
+
 
 class TestOptimizerUsesTaxableBenefits:
     def test_benefits_lower_the_rate_on_conversions(self):
-        full = optimize(_scenario(state="OR"))
-        partial = optimize(_scenario(social_security=28_000, state="OR"))
-        rate = lambda r: r.yearly_detail[0]["tax_cost"] / r.yearly_detail[0]["conversion"]  # noqa: E731
-        assert rate(partial) < rate(full)
-        assert partial.estimated_lifetime_tax_savings > full.estimated_lifetime_tax_savings
+        """The same conversion costs less when part of the income is Social Security,
+        of which at most 85% is taxed."""
+        full = _scenario(state="OR")
+        partial = _scenario(social_security=28_000, state="OR")
+        schedule = [60_000.0]
+        cost = lambda s: _build_year_detail(s, schedule)[0][0]["tax_cost"]  # noqa: E731
+        assert cost(partial) < cost(full)
+        gain = lambda s: calculate_npv(s, schedule) - calculate_npv(s, [0.0])  # noqa: E731
+        assert gain(partial) > gain(full)
 
 
 def test_timeline_records_social_security_separately():

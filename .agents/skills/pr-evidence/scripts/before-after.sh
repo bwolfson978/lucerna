@@ -82,7 +82,7 @@ if [[ -n "$HEAD_REF" ]]; then
 else
   HEAD_DIR="$ROOT"
   { git diff --name-only "$BASE"; git ls-files --others --exclude-standard; } | sort -u >"$RUN_DIR/changed.txt"
-  HEAD_LABEL="AFTER  $(git rev-parse --short HEAD)$(git diff --quiet "$BASE" -- . 2>/dev/null || echo ' + local changes')"
+  HEAD_LABEL="AFTER  $(git rev-parse --short HEAD)$([[ -z "$(git status --porcelain 2>/dev/null)" ]] || echo ' + local changes')"
 fi
 BASE_DIR="$RUN_DIR/worktree-base"
 checkout "$BASE" "$BASE_DIR"

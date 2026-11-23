@@ -142,8 +142,8 @@ class TestIrmaaIntegration:
     def test_exposure_starts_at_63(self):
         """User age 63: conversions now affect Medicare at 65."""
         # age + t + LOOKBACK >= 65: for age=63, t=0: 63+0+2=65 >= 65 → exposed
-        from app.engine.optimizer import _irmaa_exposed_years
         from app.engine.types import PlanYear, ScenarioInput
+        from app.engine.year_tax import year_taxes
 
         scenario = ScenarioInput(
             age=63,
@@ -151,13 +151,13 @@ class TestIrmaaIntegration:
             timeline=[PlanYear(year=2026, gross_income=20000)],
             traditional_ira_balance=1_400_000,
         )
-        exposed = _irmaa_exposed_years(scenario)
+        exposed = {t for t, tax in enumerate(year_taxes(scenario)) if tax.medicare_people}
         assert 0 in exposed
 
     def test_no_exposure_at_50(self):
         """User age 50: conversions won't affect Medicare for 13+ years — not exposed."""
-        from app.engine.optimizer import _irmaa_exposed_years
         from app.engine.types import PlanYear, ScenarioInput
+        from app.engine.year_tax import year_taxes
 
         scenario = ScenarioInput(
             age=50,
@@ -168,13 +168,13 @@ class TestIrmaaIntegration:
             ],
             traditional_ira_balance=200_000,
         )
-        exposed = _irmaa_exposed_years(scenario)
+        exposed = {t for t, tax in enumerate(year_taxes(scenario)) if tax.medicare_people}
         assert len(exposed) == 0
 
     def test_partial_exposure_for_age_60(self):
         """User age 60: years 3+ (age 63+) are IRMAA-exposed."""
-        from app.engine.optimizer import _irmaa_exposed_years
         from app.engine.types import PlanYear, ScenarioInput
+        from app.engine.year_tax import year_taxes
 
         # age=60: 60+t+2 >= 65 → t >= 3
         scenario = ScenarioInput(
@@ -183,7 +183,7 @@ class TestIrmaaIntegration:
             timeline=[PlanYear(year=2026 + i, gross_income=50_000) for i in range(6)],
             traditional_ira_balance=200_000,
         )
-        exposed = _irmaa_exposed_years(scenario)
+        exposed = {t for t, tax in enumerate(year_taxes(scenario)) if tax.medicare_people}
         assert 0 not in exposed
         assert 1 not in exposed
         assert 2 not in exposed

@@ -3,13 +3,15 @@
 import numpy as np
 import pytest
 
+from app.engine.cashflow import plan_for
 from app.engine.dp import (
-    _compute_retirement_values,
+    _dp_backward_2d,
+    _post_timeline_values,
+    _year_cash,
     dp_optimize,
-    extract_conversion_curve,
-    extract_conversion_curve_3d,
 )
 from app.engine.optimizer import calculate_npv
+from app.engine.rmd import calculate_rmd
 from app.engine.tax import calculate_federal_tax, vectorized_federal_tax
 from app.engine.types import FilingStatus, PlanYear, ScenarioInput
 
@@ -19,6 +21,7 @@ from app.engine.types import FilingStatus, PlanYear, ScenarioInput
 def _simple_scenario(
     balance: float = 100_000,
     incomes: list[float] | None = None,
+    roth: float = 0,
     **kwargs,
 ) -> ScenarioInput:
     if incomes is None:
@@ -28,11 +31,10 @@ def _simple_scenario(
         filing_status=FilingStatus.SINGLE,
         timeline=[PlanYear(year=2026 + i, gross_income=inc) for i, inc in enumerate(incomes)],
         traditional_ira_balance=balance,
-        roth_ira_balance=0,
+        roth_ira_balance=roth,
         drawdown_start_age=65,
         planning_horizon_age=90,
         annual_growth_rate=0.07,
-        discount_rate=0.05,
         **kwargs,
     )
 
@@ -154,35 +156,6 @@ class TestDPBeatsScipyOrMatches:
         )
 
 
-class TestConversionCurve:
-    def test_curve_peak_at_optimal(self):
-        """No curve point should have higher NPV than the optimal."""
-        scenario = _simple_scenario()
-        dp_result = dp_optimize(scenario)
-        curve = extract_conversion_curve(dp_result, scenario, n_points=20)
-
-        for point in curve:
-            assert point.npv <= dp_result.npv + 1, (
-                f"Curve point at ${point.total_cap:,.0f} has NPV={point.npv:,.0f} "
-                f"> optimal NPV={dp_result.npv:,.0f}"
-            )
-
-    def test_curve_has_expected_points(self):
-        """Curve should have the requested number of points."""
-        scenario = _simple_scenario()
-        dp_result = dp_optimize(scenario)
-        curve = extract_conversion_curve(dp_result, scenario, n_points=25)
-        assert len(curve) == 25
-
-    def test_curve_endpoints(self):
-        """First point should be ~0 conversion, last ~full balance."""
-        scenario = _simple_scenario(balance=100_000)
-        dp_result = dp_optimize(scenario)
-        curve = extract_conversion_curve(dp_result, scenario, n_points=20)
-        assert curve[0].total_cap == 0
-        assert curve[-1].total_cap == 100_000
-
-
 class TestRetirementValues:
     def test_more_roth_is_better(self):
         """All-Roth should have higher NPV than all-Traditional."""
@@ -192,9 +165,78 @@ class TestRetirementValues:
         trad = np.array([total_at_ret, 0.0])
         roth = np.array([0.0, total_at_ret])
 
-        n_timeline_years = len(scenario.timeline)
-        vals = _compute_retirement_values(trad, roth, scenario, n_timeline_years)
+        vals = _post_timeline_values(plan_for(scenario), trad, roth)
         assert vals[1] > vals[0], "All-Roth should beat all-Traditional"
+
+    def test_matches_the_walk_after_the_timeline(self):
+        """The search's value of the years after the timeline is the walk's."""
+        scenario = _simple_scenario(balance=400_000, incomes=[40_000], roth=60_000)
+        plan = plan_for(scenario)
+        walked = plan.walk([25_000.0])
+        after_timeline = walked.flows[0]
+        searched = _post_timeline_values(
+            plan, np.array([after_timeline.trad_end]), np.array([after_timeline.roth_end])
+        )[0]
+        first_year = plan.value_of(walked.flows[:1]) - (
+            after_timeline.trad_end * (1 - plan.terminal_rate) + after_timeline.roth_end
+        ) * plan.discount(1)
+        assert searched == pytest.approx(walked.value - first_year, rel=1e-4)
+
+
+class TestSearchUsesTheSameYear:
+    """The search works out a year for many conversions at once. It has to be the
+    year the walk works out for each one (TaxPayment.lean: only one withdrawal meets
+    a budget, so there is nothing for the two to disagree about)."""
+
+    def _retired(self) -> ScenarioInput:
+        return ScenarioInput(
+            age=57,
+            filing_status=FilingStatus.SINGLE,
+            birth_month=3,
+            timeline=[
+                PlanYear(year=2026 + i, gross_income=15_000 + 20_000 * (i > 9)) for i in range(20)
+            ],
+            traditional_ira_balance=900_000,
+            roth_ira_balance=30_000,
+            drawdown_start_age=57,
+            default_drawdown=70_000,
+            planning_horizon_age=76,
+            inflation_rate=0.025,
+            state="OR",
+        )
+
+    @pytest.mark.parametrize("t", [0, 1, 2, 5, 12, 18])
+    def test_withdrawals_match_the_walk(self, t):
+        plan = plan_for(self._retired())
+        rule = plan.years[t]
+        trad, roth = 640_000.0, 150_000.0
+        conversions = np.array([0.0, 10_000.0, 45_000.0, 120_000.0, 400_000.0])
+        rmd = min(calculate_rmd(trad, rule.age), trad) if rule.rmd_age else 0.0
+        draw, from_roth, keep, outside, taxed = _year_cash(
+            plan, rule, rmd, conversions, trad - rmd - conversions, free=0.0
+        )
+        for k, conversion in enumerate(conversions):
+            flow, _ = plan.step(rule, trad, roth, 0.0, float(conversion))
+            assert draw[k] == pytest.approx(flow.trad_draw, abs=5.0)
+            assert taxed[k] == pytest.approx(flow.taxed_income, abs=5.0)
+            wanted = flow.roth_draw + flow.shortfall / keep
+            assert from_roth[k] == pytest.approx(wanted, abs=5.0)
+            assert outside[k] == pytest.approx(max(flow.outside, 0.0), abs=5.0)
+
+    def test_search_value_matches_the_walk(self):
+        """The value the search expects from its schedule is what the walk gives it."""
+        scenario = self._retired().model_copy(update={"birth_month": None, "age": 62})
+        plan = plan_for(scenario)
+        trad_grid = np.linspace(0, scenario.traditional_ira_balance, 200)
+        roth_grid = np.linspace(0, 6_000_000, 150)
+        values, _, ext_trad, _ = _dp_backward_2d(scenario, trad_grid, roth_grid)
+        at_start = np.interp(
+            scenario.roth_ira_balance,
+            roth_grid,
+            values[0, int(np.searchsorted(ext_trad, scenario.traditional_ira_balance)), :],
+        )
+        result = dp_optimize(scenario)
+        assert plan.walk(result.yearly_conversions).value == pytest.approx(at_start, rel=0.005)
 
 
 # ── Large balance tests ─────────────────────────────────────────────
@@ -220,7 +262,6 @@ class TestLargeBalance:
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
         )
 
     def test_correctness_2m(self):
@@ -261,7 +302,9 @@ class TestLargeBalance:
 class TestDPWithACA:
     """Tests that DP correctly accounts for ACA subsidy loss."""
 
-    def _aca_scenario(self, with_healthcare: bool = True) -> ScenarioInput:
+    def _aca_scenario(
+        self, with_healthcare: bool = True, balance: float = 600_000
+    ) -> ScenarioInput:
         from app.engine.types import HealthcareInput
 
         kwargs = {}
@@ -279,12 +322,11 @@ class TestDPWithACA:
                 PlanYear(year=2027, gross_income=30_000),
                 PlanYear(year=2028, gross_income=150_000),
             ],
-            traditional_ira_balance=200_000,
+            traditional_ira_balance=balance,
             roth_ira_balance=0,
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
             **kwargs,
         )
 
@@ -310,8 +352,9 @@ class TestDPWithACA:
         )
 
     def test_aca_still_finds_conversions(self):
-        """Even with ACA costs, DP should still find some beneficial conversions."""
-        scenario = self._aca_scenario(with_healthcare=True)
+        """A balance large enough that its later tax outweighs the premium credit
+        still converts in the coverage years."""
+        scenario = self._aca_scenario(with_healthcare=True, balance=1_500_000)
         result = dp_optimize(scenario)
         assert result.total_conversion > 0
 
@@ -345,7 +388,6 @@ class TestConstrainedWithDP:
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
             conversion_preferences=ConversionPreferences(
                 max_annual_tax_cost=3_000,
             ),
@@ -381,7 +423,6 @@ class TestConstrainedWithDP:
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
         )
         unconstrained_result = optimize(unconstrained)
 
@@ -403,219 +444,3 @@ class TestConstrainedWithDP:
         scenario = self._constrained_scenario()
         result = optimize(scenario)
         assert result.total_conversion > 0
-
-
-# ── 3D DP (budget-constrained curve) tests ─────────────────────────
-
-
-class TestConversionCurve3D:
-    def test_curve_has_expected_points(self):
-        """3D curve should have the requested number of points."""
-        scenario = _simple_scenario()
-        curve = extract_conversion_curve_3d(scenario, n_curve_points=25, balance_grid_size=150)
-        assert len(curve) == 25
-
-    def test_curve_endpoints(self):
-        """First point should be $0, last should be full balance."""
-        scenario = _simple_scenario(balance=100_000)
-        curve = extract_conversion_curve_3d(scenario, n_curve_points=20, balance_grid_size=150)
-        assert curve[0].total_cap == 0
-        assert curve[-1].total_cap == 100_000
-
-    def test_zero_cap_zero_conversions(self):
-        """At cap=0, all conversions should be zero."""
-        scenario = _simple_scenario()
-        curve = extract_conversion_curve_3d(scenario, n_curve_points=20, balance_grid_size=150)
-        zero_point = curve[0]
-        assert zero_point.total_cap == 0
-        assert all(c == 0 for c in zero_point.yearly_conversions)
-
-    def test_curve_peak_at_or_below_optimal(self):
-        """No curve point should have higher NPV than the unconstrained DP optimal."""
-        scenario = _simple_scenario()
-        dp_result = dp_optimize(scenario)
-        curve = extract_conversion_curve_3d(scenario, n_curve_points=20, balance_grid_size=150)
-
-        for point in curve:
-            assert point.npv <= dp_result.npv + 50, (
-                f"3D curve point at ${point.total_cap:,.0f} has NPV={point.npv:,.0f} "
-                f"> optimal NPV={dp_result.npv:,.0f}"
-            )
-
-    def test_3d_beats_proportional_scaling(self):
-        """3D DP should produce equal or higher NPV than proportional scaling.
-
-        Uses balance_grid_size=300 for adequate resolution. Allows small
-        tolerance for grid discretization effects.
-        """
-        scenario = _simple_scenario(balance=100_000, incomes=[30_000, 35_000, 150_000])
-        dp_result = dp_optimize(scenario)
-        curve_3d = extract_conversion_curve_3d(scenario, n_curve_points=20, balance_grid_size=300)
-        curve_prop = extract_conversion_curve(dp_result, scenario, n_points=20)
-
-        # Compare at matching cap points
-        for p3d in curve_3d:
-            # Find closest proportional point
-            matching = min(curve_prop, key=lambda p: abs(p.total_cap - p3d.total_cap))
-            if abs(matching.total_cap - p3d.total_cap) < 200:
-                # 3D should be >= proportional (within tolerance for grid coarseness)
-                assert p3d.npv >= matching.npv - 300, (
-                    f"At cap=${p3d.total_cap:,.0f}: 3D NPV={p3d.npv:,.0f} "
-                    f"< proportional NPV={matching.npv:,.0f}"
-                )
-
-    def test_year_ratios_change_with_cap(self):
-        """Year-to-year allocation ratios should differ at different caps
-        (not just proportional scaling)."""
-        scenario = _simple_scenario(balance=100_000, incomes=[30_000, 35_000, 150_000])
-        curve = extract_conversion_curve_3d(scenario, n_curve_points=20, balance_grid_size=150)
-
-        # Find a low-cap and mid-cap point with nonzero conversions
-        low_point = None
-        mid_point = None
-        for p in curve:
-            total = sum(p.yearly_conversions)
-            if total > 1000 and low_point is None:
-                low_point = p
-            elif total > 30_000 and mid_point is None:
-                mid_point = p
-
-        if low_point and mid_point:
-            # Compute ratios (year0 / total) at each cap
-            low_total = sum(low_point.yearly_conversions)
-            mid_total = sum(mid_point.yearly_conversions)
-            if low_total > 0 and mid_total > 0:
-                low_ratio = low_point.yearly_conversions[0] / low_total
-                mid_ratio = mid_point.yearly_conversions[0] / mid_total
-                # They don't have to be wildly different, but shouldn't be identical
-                # (proportional scaling would give the exact same ratio)
-                # This test is informational — if it fails, the 3D DP is degrading
-                # to proportional behavior, which suggests a bug
-                assert low_ratio != pytest.approx(mid_ratio, abs=0.01) or True, (
-                    f"Year-to-year ratios are identical at different caps "
-                    f"(low={low_ratio:.3f}, mid={mid_ratio:.3f}) — "
-                    f"3D DP may be behaving like proportional scaling"
-                )
-
-    def test_npv_curve_is_monotonic_then_decreasing(self):
-        """NPV should increase as cap grows toward optimal, then decrease."""
-        scenario = _simple_scenario()
-        curve = extract_conversion_curve_3d(scenario, n_curve_points=30, balance_grid_size=150)
-
-        npvs = [p.npv for p in curve]
-        peak_idx = max(range(len(npvs)), key=lambda i: npvs[i])
-
-        # Before peak: generally non-decreasing (allow small dips from grid noise)
-        for i in range(1, peak_idx):
-            assert npvs[i] >= npvs[0] - 50, (
-                f"NPV at point {i} ({npvs[i]:,.0f}) dropped below start ({npvs[0]:,.0f})"
-            )
-
-    def test_performance_under_5s(self):
-        """3D DP for a 3-year scenario should complete quickly."""
-        import time
-
-        scenario = _simple_scenario()
-        start = time.monotonic()
-        extract_conversion_curve_3d(scenario, n_curve_points=50, balance_grid_size=300)
-        elapsed = time.monotonic() - start
-        assert elapsed < 5.0, f"3D DP took {elapsed:.1f}s, expected < 5s"
-
-    def test_npv_decreases_past_optimal(self):
-        """Past optimal, forcing more conversions should reduce NPV."""
-        scenario = _simple_scenario()
-        curve = extract_conversion_curve_3d(scenario, n_curve_points=30, balance_grid_size=150)
-        npvs = [p.npv for p in curve]
-        peak_idx = max(range(len(npvs)), key=lambda i: npvs[i])
-
-        # After peak, NPV at max cap should be noticeably lower
-        if peak_idx < len(npvs) - 2:
-            assert npvs[-1] < npvs[peak_idx] - 10, (
-                f"NPV at max cap ({npvs[-1]:,.0f}) should be lower than "
-                f"at optimal ({npvs[peak_idx]:,.0f})"
-            )
-
-    def test_respects_budget_cap(self):
-        """Each curve point's yearly conversions should sum to ≤ its cap."""
-        scenario = _simple_scenario()
-        curve = extract_conversion_curve_3d(scenario, n_curve_points=20, balance_grid_size=150)
-
-        for point in curve:
-            actual_total = sum(point.yearly_conversions)
-            assert actual_total <= point.total_cap + 200, (
-                f"At cap=${point.total_cap:,.0f}: actual total ${actual_total:,.0f} exceeds cap"
-            )
-
-    def test_decoupled_curve_points_from_budget_grid(self):
-        """Output curve points should be independent of internal budget grid size.
-
-        Verifies the key performance insight: we can extract many more output
-        points than internal budget states at negligible extra cost.
-        """
-        scenario = _simple_scenario()
-        # 100 output points from only 20 internal budget states
-        curve = extract_conversion_curve_3d(
-            scenario,
-            n_curve_points=100,
-            balance_grid_size=150,
-            budget_grid_size=20,
-        )
-        assert len(curve) == 100
-
-    def test_dense_curve_reduces_spurious_amounts(self):
-        """Dense curve with 200 points should have far fewer small artifacts
-        than a sparse 20-point curve.
-
-        Regression test for GitHub issue #59: the frontend snaps to the
-        nearest curve point instead of interpolating, so any remaining
-        small amounts in individual curve points don't appear as separate
-        bars — they're absorbed into the scaling ratios.  But a denser
-        curve still reduces the artifacts at the source.
-        """
-        scenario = ScenarioInput(
-            age=55,
-            filing_status=FilingStatus.SINGLE,
-            timeline=[
-                PlanYear(year=2026, gross_income=40000),
-                PlanYear(year=2027, gross_income=50000),
-                PlanYear(year=2028, gross_income=120000),
-                PlanYear(year=2029, gross_income=130000),
-                PlanYear(year=2030, gross_income=60000),
-            ],
-            traditional_ira_balance=300000,
-            roth_ira_balance=10000,
-            drawdown_start_age=65,
-            planning_horizon_age=90,
-            default_drawdown=60000,
-            annual_growth_rate=0.07,
-            discount_rate=0.05,
-        )
-
-        # Count small spurious amounts in sparse vs dense curves
-        def count_small(curve):
-            return sum(1 for pt in curve for c in pt.yearly_conversions if 0 < c < 500)
-
-        sparse = extract_conversion_curve_3d(
-            scenario,
-            n_curve_points=20,
-            balance_grid_size=300,
-            budget_grid_size=50,
-        )
-        dense = extract_conversion_curve_3d(
-            scenario,
-            n_curve_points=200,
-            balance_grid_size=300,
-            budget_grid_size=50,
-        )
-
-        sparse_count = count_small(sparse)
-        dense_count = count_small(dense)
-
-        # Dense curve shouldn't have proportionally more artifacts than sparse.
-        # With 10x more points, artifact rate per point should be similar or lower.
-        dense_rate = dense_count / len(dense)
-        sparse_rate = sparse_count / max(len(sparse), 1)
-        assert dense_rate <= sparse_rate + 0.05, (
-            f"Dense curve has higher artifact rate ({dense_rate:.2f}) "
-            f"than sparse ({sparse_rate:.2f})"
-        )

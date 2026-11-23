@@ -18,6 +18,7 @@ const card = fixture.analyze_roth_conversions.structured_content as unknown as R
 const details = fixture.analyze_roth_conversions.view_meta as unknown as ResultDetails;
 const compare = fixture.compare_roth_scenarios.structured_content as unknown as ScenarioCompareData;
 const recorded = fixture.prepare_scenario.structured_content as unknown as ScenarioSummaryData;
+const dollars = (amount: number) => "$" + amount.toLocaleString("en-US");
 
 it("renders the result card from tool output", () => {
   const open = vi.fn();
@@ -48,17 +49,18 @@ it("tries other totals with the slider and asks about one", () => {
   const ask = vi.fn();
   const selection = vi.fn();
   render(<ResultCard data={card} details={details} onAsk={ask} onSelectionChange={selection} />);
-  const hero = screen.getByText("$36,990");
+  const savings = dollars(card.estimated_lifetime_tax_savings_todays_dollars);
+  const hero = screen.getByText(savings);
   // Said once, beside the headline; the slider only marks the spot.
   expect(screen.getAllByText("Most savings")).toHaveLength(1);
-  expect(screen.getByText("$344,500")).toBeInTheDocument();
+  expect(screen.getByText(dollars(card.total_conversion))).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: /Ask about/ })).not.toBeInTheDocument();
 
   // Converting less than the optimum saves less, and the card says by how much.
   fireEvent.change(screen.getByRole("slider", { name: "Total amount to convert" }), {
     target: { value: "180000" },
   });
-  expect(hero).not.toHaveTextContent("$36,990");
+  expect(hero).not.toHaveTextContent(savings);
   expect(screen.getByText(/less than the most savings$/)).toBeInTheDocument();
   expect(selection).toHaveBeenLastCalledWith(
     expect.objectContaining({ total: 180000, optimalTotal: card.total_conversion })
@@ -67,7 +69,7 @@ it("tries other totals with the slider and asks about one", () => {
   expect(ask).toHaveBeenCalledWith(expect.stringMatching(/^Why does converting \$180K save/));
 
   fireEvent.click(screen.getByRole("button", { name: "Back to most savings" }));
-  expect(screen.getByText("$36,990")).toBeInTheDocument();
+  expect(screen.getByText(savings)).toBeInTheDocument();
   expect(screen.getByText("in today's dollars, compared with not converting")).toBeInTheDocument();
 });
 

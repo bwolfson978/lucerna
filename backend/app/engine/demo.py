@@ -36,7 +36,6 @@ DEMO_SCENARIO = ScenarioInput(
     default_drawdown=95_000,
     planning_horizon_age=93,
     annual_growth_rate=0.07,
-    discount_rate=0.05,
     inflation_rate=0.025,
 )
 

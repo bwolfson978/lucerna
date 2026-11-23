@@ -135,6 +135,34 @@ def calculate_subsidy_loss(
     return max(0.0, subsidy_without - subsidy_with)
 
 
+def vectorized_aca_subsidy(
+    magis: np.ndarray,
+    household_size: int,
+    monthly_slcsp_premium: float,
+) -> np.ndarray:
+    """``calculate_aca_subsidy`` for an array of incomes."""
+    fpl = federal_poverty_level(household_size)
+    annual_slcsp = monthly_slcsp_premium * 12
+    magis = np.asarray(magis, dtype=float)
+    pct_fpls = (magis / fpl) * 100
+    subsidies = np.zeros_like(magis)
+
+    for fpl_min, fpl_max, pct_start, pct_end in reversed(APPLICABLE_PCT_TABLE):
+        # Reversed, so an income on a tier boundary takes the lower tier, as the
+        # scalar version does
+        mask = (pct_fpls >= fpl_min) & (pct_fpls <= fpl_max)
+        if not np.any(mask):
+            continue
+        tier_span = fpl_max - fpl_min
+        position = (pct_fpls[mask] - fpl_min) / tier_span
+        applicable_pct = pct_start + position * (pct_end - pct_start)
+        expected_contribution = magis[mask] * applicable_pct
+        subsidies[mask] = np.maximum(0.0, annual_slcsp - expected_contribution)
+
+    # No credit under 100% of the poverty level (Medicaid range) or over 400%
+    return np.where((pct_fpls >= 100) & (pct_fpls <= 400), subsidies, 0.0)
+
+
 def vectorized_subsidy_loss(
     base_income: float,
     conversion_amounts: np.ndarray,
@@ -146,48 +174,13 @@ def vectorized_subsidy_loss(
     Computes subsidy loss for a single base_income across many conversion
     amounts simultaneously.
     """
-    fpl = federal_poverty_level(household_size)
-    annual_slcsp = monthly_slcsp_premium * 12
-
-    # Subsidy without conversion (scalar)
-    pct_fpl_without = (base_income / fpl) * 100
-    sub_without = _vectorized_subsidy_at_pct_fpl(pct_fpl_without, base_income, annual_slcsp)
-
-    # Subsidy with conversion (vectorized)
-    magis = base_income + conversion_amounts
-    pct_fpls = (magis / fpl) * 100
-    subs_with = np.zeros_like(conversion_amounts, dtype=float)
-
-    for fpl_min, fpl_max, pct_start, pct_end in APPLICABLE_PCT_TABLE:
-        mask = (pct_fpls >= fpl_min) & (pct_fpls <= fpl_max)
-        if not np.any(mask):
-            continue
-        tier_span = fpl_max - fpl_min
-        position = (pct_fpls[mask] - fpl_min) / tier_span
-        applicable_pct = pct_start + position * (pct_end - pct_start)
-        expected_contribution = magis[mask] * applicable_pct
-        subs_with[mask] = np.maximum(0.0, annual_slcsp - expected_contribution)
-
-    # Also need to handle the 100-400% FPL range (outside = 0 subsidy, already 0)
-    # Mask for valid range
-    valid = (pct_fpls >= 100) & (pct_fpls <= 400)
-    subs_with = np.where(valid, subs_with, 0.0)
-
+    sub_without = calculate_aca_subsidy(base_income, household_size, monthly_slcsp_premium)
+    subs_with = vectorized_aca_subsidy(
+        base_income + np.asarray(conversion_amounts, dtype=float),
+        household_size,
+        monthly_slcsp_premium,
+    )
     return np.maximum(0.0, sub_without - subs_with)
-
-
-def _vectorized_subsidy_at_pct_fpl(
-    pct_fpl: float,
-    magi: float,
-    annual_slcsp: float,
-) -> float:
-    """Helper: compute scalar subsidy for a single income."""
-    if pct_fpl < 100 or pct_fpl > 400:
-        return 0.0
-    applicable_pct = _applicable_percentage(pct_fpl)
-    if applicable_pct is None:
-        return 0.0
-    return max(0.0, annual_slcsp - magi * applicable_pct)
 
 
 def find_subsidy_cliff_income(

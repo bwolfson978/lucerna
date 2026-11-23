@@ -126,7 +126,7 @@
       "id": "methodology-assumptions",
       "category": "methodology",
       "turns": ["What assumptions does the analysis make?"],
-      "expect": {"tools_called": ["explain_methodology"], "reply_mentions_any": ["7%", "5%", "growth", "discount"], "reply_shape": "bullets"}
+      "expect": {"tools_called": ["explain_methodology"], "reply_mentions_any": ["7%", "2.5%", "return", "inflation"], "reply_shape": "bullets"}
     },
     {
       "id": "methodology-rmd",

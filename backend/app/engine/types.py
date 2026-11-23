@@ -19,8 +19,9 @@ class PlanYear(BaseModel):
         default=None,
         ge=0,
         description=(
-            "Draw this amount from accounts this year. "
-            "None = externally funded (no engine drawdown)."
+            "What comes out of the accounts this year before tax, with no conversion. "
+            "The year's budget is what that and the income leave after tax. "
+            "None = the scenario's spending rule from drawdown_start_age on."
         ),
     )
     notes: str = Field(default="", description="Optional user notes for this year")
@@ -122,8 +123,8 @@ class ScenarioInput(BaseModel):
     timeline: list[PlanYear] = Field(
         min_length=1,
         description=(
-            "Year-by-year plan. gross_income sets the marginal tax base for conversion cost. "
-            "drawdown (if set) funds spending from accounts this year. "
+            "Year-by-year plan. gross_income is the year's income before any conversion. "
+            "drawdown (if set) is what comes out of the accounts that year before tax. "
             "The optimizer finds the best conversion schedule across all years."
         ),
     )
@@ -139,12 +140,15 @@ class ScenarioInput(BaseModel):
         default=65,
         ge=1,
         le=120,
-        description="Age when account distributions begin (post-timeline fallback)",
+        description="Age from which the accounts fund spending and pay the year's tax",
     )
     default_drawdown: float | None = Field(
         default=None,
         ge=0,
-        description="Annual drawdown from accounts in post-timeline fallback. Defaults to 4% rule.",
+        description=(
+            "Yearly household spending after tax, from drawdown_start_age on. Income covers "
+            "part of it and the accounts the rest, plus the year's tax. Defaults to the 4% rule."
+        ),
     )
     planning_horizon_age: int = Field(
         default=90,
@@ -153,17 +157,17 @@ class ScenarioInput(BaseModel):
         description="Age at end of plan. Traditional money left is valued at that year's marginal rate.",
     )
 
-    # Growth/discount rates (with defaults), as usually quoted: before inflation
+    # Investment return, as usually quoted: before inflation. Money outside the
+    # accounts is carried at it too, so it is also what brings amounts back to today.
     annual_growth_rate: float = Field(default=0.07, description="Yearly investment return")
-    discount_rate: float = Field(default=0.05, description="Yearly discount rate")
     inflation_rate: float = Field(
         default=0.0,
         ge=0,
         le=0.15,
         description=(
             "Yearly inflation. Amounts are in today's dollars; the engine turns the return "
-            "and discount rate into after-inflation rates and shrinks thresholds the law "
-            "doesn't index. 0 means no inflation."
+            "into an after-inflation rate and shrinks thresholds the law doesn't index. "
+            "0 means no inflation."
         ),
     )
 
@@ -193,11 +197,6 @@ class ScenarioInput(BaseModel):
     def real_growth_rate(self) -> float:
         """Investment return after inflation, which balances grow at in today's dollars."""
         return real_rate(self.annual_growth_rate, self.inflation_rate)
-
-    @property
-    def real_discount_rate(self) -> float:
-        """Discount rate after inflation, for amounts in today's dollars."""
-        return real_rate(self.discount_rate, self.inflation_rate)
 
     def people_at_least(self, age: int, t: int) -> int:
         """How many people in the household are at least ``age`` in plan year ``t``."""
@@ -359,8 +358,8 @@ class OptimizationResult(BaseModel):
     estimated_lifetime_tax_savings: float  # vs. no conversion
     npv_at_optimal: float
     npv_at_zero: float
-    # Discounted tax, lost ACA subsidy and IRMAA paid because of the conversions.
-    # Savings plus this is what the conversions avoid later, in today's dollars.
+    # Tax, lost ACA subsidy and IRMAA paid because of the conversions, brought back
+    # to today. Savings plus this is what the conversions avoid later, in today's dollars.
     conversion_cost_today: float = 0.0
 
     # Per-year detail

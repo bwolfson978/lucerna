@@ -458,6 +458,7 @@ export const flows = {
       await page.getByRole('option', { name: /Married/ }).click()
       await fillBorn(page, 63)
       await fill('Current income', 20000)
+      await fill('Earned income', 20000)
       await fill('Traditional IRA/401(k) balance', 1400000)
       await fill('Retirement age', 73)
       await fill('Roth IRA/401(k) balance', 52000)
@@ -467,6 +468,7 @@ export const flows = {
       const addSs = page.getByRole('button', { name: '+ Social Security' })
       if (await addSs.count()) {
         await fill('Current income ends at age', 66)
+        await fill('Earned income ends at age', 66)
         await addSs.click()
         await fill('Yearly amount', 46000)
         await page.getByRole('button', { name: 'Done' }).click()
@@ -476,6 +478,14 @@ export const flows = {
         await page.getByRole('button', { name: 'Done' }).click()
       }
       await shot('filled', "Form with Margaret's numbers", { fullPage: true })
+      const settings = page.getByRole('button', { name: 'Additional settings' })
+      if (await settings.count()) {
+        await settings.click()
+        await settings.scrollIntoViewIfNeeded()
+        await page.evaluate(() => window.scrollBy(0, 300))
+        await page.waitForTimeout(600)
+        await shot('settings', 'Additional settings, opened')
+      }
       await page
         .getByRole('button', { name: /run my scenario|run the numbers/i })
         .filter({ visible: true })
@@ -677,6 +687,38 @@ export const flows = {
     },
   },
 
+  'result-couple': {
+    title: 'Full results, retired couple drawing on their accounts',
+    paths: ['frontend/src/components/results/', 'backend/app/engine/'],
+    async run(page, shot) {
+      // Married, 66, retired in Florida, $2.6M traditional, $130,000 of spending,
+      // $72,000 of Social Security between them from 67
+      const scenario = {
+        age: 66,
+        filing_status: 'married_filing_jointly',
+        current_income: 0,
+        traditional_balance: 2600000,
+        roth_balance: 80000,
+        retirement_age: 66,
+        retirement_spending: 130000,
+        state: 'FL',
+        household_size: 2,
+        income_sources: [
+          { kind: 'social_security', amount: 42000, start_age: 67 },
+          { kind: 'social_security', owner: 'spouse', amount: 30000, start_age: 67 },
+        ],
+      }
+      const encoded = Buffer.from(JSON.stringify(scenario)).toString('base64url')
+      await page.goto(`/calculator?view=results&scenario=${encoded}`)
+      const card = page.getByTestId('results-hero')
+      await card.waitFor({ timeout: 90000 })
+      await page.waitForLoadState('networkidle')
+      await card.scrollIntoViewIfNeeded()
+      await shot('result', 'Result card for a retired couple with $2.6M', { element: card })
+      await shot('page', 'Full results for the retired couple', { fullPage: true })
+    },
+  },
+
   'bracket-chart': {
     title: 'Bracket chart: bars against what the engine taxes',
     paths: ['ui/src/BracketChart', 'ui/src/BracketFillChart', 'ui/src/useResultSlider', 'backend/app/tools/views.py'],
@@ -867,11 +909,15 @@ export const flows = {
     paths: ['frontend/src/app/demo/', 'frontend/src/components/results/', 'frontend/src/lib/results/'],
     async run(page, shot) {
       await page.goto('/demo')
+      // The guided tour holds the replay at each step: skip it so the whole conversation plays.
+      const skip = page.locator('.driver-popover').getByRole('button', { name: 'Skip the tour' })
+      await skip.click({ timeout: 30000 }).catch(() => {})
       await page.getByTestId('assistant-message').first().waitFor({ timeout: 60000 })
-      await page.waitForLoadState('networkidle')
-      await shot('page', 'Demo page with Margaret\'s results', { fullPage: true })
       // Margaret's long timeline is where the values under the bracket chart get crowded.
       const card = page.getByTestId('mcp-app').first()
+      await card.waitFor({ timeout: 60000 })
+      await page.waitForLoadState('networkidle')
+      await shot('page', 'Demo page with Margaret\'s results', { fullPage: true })
       await card.scrollIntoViewIfNeeded()
       const result = view(page, 0).locator('[data-ui=result-card]')
       await result.locator('[data-ui=bracket-fill]').waitFor({ timeout: 30000 })

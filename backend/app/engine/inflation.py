@@ -1,9 +1,8 @@
 """Inflation: the engine works in today's dollars.
 
 Every amount in a ``ScenarioInput`` (income, spending, balances) is in today's
-dollars and every result comes back in them. The investment return and the
-discount rate are entered as usually quoted, before inflation, and turned into
-real rates here.
+dollars and every result comes back in them. The investment return is entered as
+usually quoted, before inflation, and turned into a real rate here.
 
 Most tax thresholds rise with inflation by law (federal brackets, the standard
 deduction, IRMAA tiers, the poverty line), so in today's dollars they keep

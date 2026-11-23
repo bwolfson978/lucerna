@@ -167,7 +167,7 @@ export function NpvTimeline() {
         </g>
       ))}
 
-      {/* Discount rate annotation */}
+      {/* Today's value annotation */}
       <text
         x={right / 2 + left / 2}
         y={195}
@@ -176,7 +176,7 @@ export function NpvTimeline() {
         fontFamily={labelFont}
         fontSize="9"
       >
-        All future values discounted at 5% to express savings in today&apos;s dollars
+        Later amounts are brought back to today at your investment return
       </text>
     </svg>
   );

@@ -326,10 +326,10 @@ def retirement_exclusion(
     of a rule that isn't ``indexed`` shrink by it as prices rise.
     """
     rule = retirement_rule(state)
-    ira = np.maximum(0.0, np.asarray(ira_income, dtype=float))
     scalar = not np.ndim(ira_income)
     if rule is None:
-        return 0.0 if scalar else np.zeros_like(ira)
+        return 0.0 if scalar else np.zeros_like(np.asarray(ira_income, dtype=float))
+    ira = np.maximum(0.0, np.asarray(ira_income, dtype=float))
     fs_key = _FILING_STATUS_KEY[filing_status]
     scale = 1.0 if rule.get("indexed") else fixed_scale
     cap = 0.0

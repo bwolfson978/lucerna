@@ -129,7 +129,6 @@ _DEFAULT_ONLY_KEYS = {
     "income_growth_rate_pct",
     "planning_horizon_age",
     "investment_return_pct",
-    "discount_rate_pct",
     "inflation_pct",
     "include_aca",
     "household_size",

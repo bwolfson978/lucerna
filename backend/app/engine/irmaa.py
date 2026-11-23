@@ -95,6 +95,19 @@ def calculate_irmaa(
     return IRMAA_TIERS[idx]["annual_per_person"] * _persons(filing_status, persons)
 
 
+def vectorized_irmaa(
+    magis: np.ndarray,
+    filing_status: FilingStatus,
+    threshold_scale: float = 1.0,
+    persons: int | None = None,
+) -> np.ndarray:
+    """``calculate_irmaa`` for an array of incomes."""
+    thresholds = _MFJ_THRESHOLDS if filing_status == FilingStatus.MFJ else _SINGLE_THRESHOLDS
+    tiers = np.searchsorted(thresholds, np.asarray(magis, dtype=float) / threshold_scale, "left")
+    tiers = np.clip(tiers, 0, len(IRMAA_TIERS) - 1)
+    return _PER_PERSON_COSTS[tiers] * _persons(filing_status, persons)
+
+
 def _persons(filing_status: FilingStatus, persons: int | None) -> int:
     return _PERSONS[filing_status] if persons is None else persons
 

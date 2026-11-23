@@ -74,6 +74,9 @@ class ScenarioUpdate(BaseModel):
                 "(birth_month, birth_year), and their spouse's when filing jointly. Tell them: "
                 "some parts of the analysis depend on the month and year you were born."
             )
+        if isinstance(data, dict) and "discount_rate_pct" in data:
+            # No longer an input. Scenarios saved or echoed back with one still load.
+            data = {k: v for k, v in data.items() if k != "discount_rate_pct"}
         return data
 
     birth_year: int | None = Field(default=None, ge=1900, le=2100, description="Year born")
@@ -136,8 +139,9 @@ class ScenarioUpdate(BaseModel):
         ge=0,
         description=(
             "Total yearly household spending once they start drawing on the accounts, in "
-            "today's dollars. Income that year (Social Security, pensions) covers part of it and the "
-            "accounts cover the rest. Omit to use the 4% rule on the accounts."
+            "today's dollars, not counting income tax. Income that year (Social Security, "
+            "pensions) covers part of it and the accounts cover the rest, plus the year's "
+            "tax. Omit to use the 4% rule on the accounts."
         ),
     )
     income_sources: list[IncomeSourceInput] | None = Field(
@@ -167,12 +171,6 @@ class ScenarioUpdate(BaseModel):
         ge=-10,
         le=30,
         description="Expected yearly investment return, percent, as usually quoted. Default 7.",
-    )
-    discount_rate_pct: float | None = Field(
-        default=None,
-        ge=0,
-        le=30,
-        description="Yearly rate future amounts are discounted at, percent. Default 5.",
     )
     inflation_pct: float | None = Field(
         default=None,

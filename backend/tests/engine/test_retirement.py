@@ -1,21 +1,15 @@
-"""Tests for the post-timeline retirement phase (spending, Social Security, timing)."""
+"""Tests for the years the accounts fund spending: budgets, timing, the plan's end."""
 
-import numpy as np
 import pytest
 
-from app.engine.dp import _compute_retirement_values
+from app.engine.cashflow import plan_for
 from app.engine.optimizer import _build_rmd_projection, calculate_npv
 from app.engine.retirement import (
-    account_spending,
     conversion_bases,
-    draw_beyond_rmd,
     fundable_conversions,
     post_timeline_start,
-    resolve_drawdowns,
+    post_timeline_tax,
     terminal_tax_rate,
-    terminal_value,
-    vectorized_terminal_value,
-    vectorized_withdrawal_tax,
     withdrawal_tax,
 )
 from app.engine.tax import calculate_federal_tax
@@ -34,7 +28,6 @@ def _scenario(**overrides) -> ScenarioInput:
         default_drawdown=80_000,
         planning_horizon_age=61,
         annual_growth_rate=0.05,
-        discount_rate=0.03,
     )
     return ScenarioInput(**{**base, **overrides})
 
@@ -57,44 +50,47 @@ def _margaret(**overrides) -> ScenarioInput:
     return ScenarioInput(**{**base, **overrides})
 
 
-class TestTerminalValue:
+class TestTerminalRate:
     def test_rate_is_marginal_rate_on_final_year_income(self):
-        """Final year in the timeline: next $1,000 on top of income, RMD and spending draw."""
+        """Final year in the timeline: the next $1,000 on top of income, RMD and the
+        traditional withdrawal that funds spending and tax."""
         timeline = [PlanYear(year=2026 + i, gross_income=40_000) for i in range(3)]
         s = _scenario(timeline=timeline, drawdown_start_age=60, planning_horizon_age=62)
-        s = resolve_drawdowns(s)
         income = conversion_bases(s, [0.0] * 3)[-1]
         yt = year_tax(s, 2)
         expected = (yt.total(income + 1_000) - yt.total(income)) / 1_000
         assert terminal_tax_rate(s) == pytest.approx(expected)
-        assert income == pytest.approx(80_000)  # $40k income plus the $40k spending draw
+        # $80k after tax takes more than $40k from the account on top of $40k income
+        assert income - yt.total(income) == pytest.approx(80_000, abs=0.01)
 
     def test_rate_in_post_timeline_final_year(self):
-        """Final year after the timeline: marginal withdrawal tax on that year's distribution."""
-        s = _scenario()  # one drawdown year at 61 funding $80k
-        expected = (withdrawal_tax(s, 81_000) - withdrawal_tax(s, 80_000)) / 1_000
+        """Final year after the timeline: marginal tax on that year's withdrawal."""
+        s = _scenario()  # one drawdown year at 61 funding $80k after tax
+        final = plan_for(s).no_conversion.flows[-1]
+        expected = (
+            withdrawal_tax(s, final.taxed_income + 1_000, 1)
+            - withdrawal_tax(s, final.taxed_income, 1)
+        ) / 1_000
         assert terminal_tax_rate(s) == pytest.approx(expected)
 
-    def test_values_trad_at_flat_rate_and_roth_tax_free(self):
-        s = _scenario(state="NY")
+    def test_leftover_trad_at_flat_rate_and_roth_tax_free(self):
+        s = _scenario(state="NY", roth_ira_balance=100_000)
+        plan = plan_for(s)
         rate = terminal_tax_rate(s)
-        disc = (1 + s.discount_rate) ** -3
-        assert terminal_value(s, 500_000, 100_000, 3) == pytest.approx(
-            (500_000 * (1 - rate) + 100_000) * disc
+        walk = plan.no_conversion
+        without_leftover = sum(
+            (f.rule.from_accounts + f.outside) * plan.discount(f.rule.index) for f in walk.flows
         )
+        left = walk.trad_end * (1 - rate) + walk.roth_end
+        assert walk.value == pytest.approx(without_leftover + left * plan.discount(2))
 
-    def test_no_bracket_jump_for_a_large_balance(self):
-        """Value is linear in the leftover balance: no single-year lump sum."""
-        s = _scenario()
-        small = terminal_value(s, 100_000, 0.0, 0)
-        assert terminal_value(s, 2_000_000, 0.0, 0) == pytest.approx(20 * small)
-
-    def test_vectorized_matches_scalar(self):
-        s = _scenario(state="NY")
-        trad = np.array([0.0, 50_000, 400_000, 2_000_000])
-        roth = np.array([10_000, 0.0, 250_000, 0.0])
-        expected = [terminal_value(s, t, r, 7) for t, r in zip(trad, roth, strict=True)]
-        np.testing.assert_allclose(vectorized_terminal_value(s, trad, roth, 7), expected)
+    def test_rate_does_not_depend_on_the_schedule(self):
+        """Every schedule values what it leaves at the same rate."""
+        s = _margaret()
+        plan = plan_for(s)
+        before = plan.terminal_rate
+        plan.walk([150_000.0] * 10)
+        assert plan.terminal_rate == before
 
 
 class TestPhaseTiming:
@@ -105,89 +101,100 @@ class TestPhaseTiming:
         timeline = [PlanYear(year=2026 + i, gross_income=0) for i in range(8)]
         assert post_timeline_start(_scenario(timeline=timeline, drawdown_start_age=63)) == 8
 
-    def test_first_drawdown_year_is_funded(self):
-        """One drawdown year at 61: spend, grow, then value the rest at 62."""
-        s = _scenario()
-        g, d = s.annual_growth_rate, s.discount_rate
-        trad = s.traditional_ira_balance * (1 + g)  # after the timeline year
-        spend = 80_000
-        tax = calculate_federal_tax(spend, s.filing_status)
-        remaining = (trad - spend) * (1 + g)
-        expected = (spend - tax) / (1 + d) + terminal_value(s, remaining, 0.0, 2)
+    def test_years_before_the_drawdown_age_only_grow(self):
+        s = _scenario(drawdown_start_age=64, planning_horizon_age=66)
+        flows = plan_for(s).no_conversion.flows
+        assert [f.rule.growth_only for f in flows] == [False, True, True, True] + [False] * 3
+        g = s.real_growth_rate
+        assert flows[3].trad_end == pytest.approx(s.traditional_ira_balance * (1 + g) ** 4)
 
+    def test_first_drawdown_year_is_funded(self):
+        """One drawdown year at 61: draw enough to net $80k, grow, value the rest at 62."""
+        s = _scenario()
+        g = s.real_growth_rate
+        plan = plan_for(s)
+        year = plan.no_conversion.flows[1]
+        trad = s.traditional_ira_balance * (1 + g)  # after the timeline year
+        draw = year.trad_draw
+        tax = calculate_federal_tax(draw, s.filing_status)
+        assert draw - tax == pytest.approx(80_000, abs=0.01)
+
+        remaining = (trad - draw) * (1 + g)
+        expected = 80_000 / (1 + g) + remaining * (1 - terminal_tax_rate(s)) / (1 + g) ** 2
         assert calculate_npv(s, [0.0]) == pytest.approx(expected)
 
-    def test_dp_terminal_values_match_calculate_npv(self):
-        """The DP's retirement phase follows the same rules as calculate_npv."""
-        s = _scenario(drawdown_start_age=63, planning_horizon_age=90, state="CA")
-        g = s.annual_growth_rate
-        trad = np.array([s.traditional_ira_balance * (1 + g) ** 3])
-        roth = np.array([0.0])
 
-        dp_value = _compute_retirement_values(trad, roth, s, len(s.timeline))[0]
-
-        assert dp_value == pytest.approx(calculate_npv(s, [0.0]))
-
-
-class TestWithdrawals:
-    def test_explicit_spending(self):
-        assert account_spending(_scenario(), 1e6) == 80_000
-
-    def test_four_percent_rule(self):
-        assert account_spending(_scenario(default_drawdown=None), 1_000_000) == 40_000
-
-    def test_vectorized_tax_matches_scalar(self):
-        s = _scenario(state="NY")
-        amounts = np.array([0.0, 20_000.0, 150_000.0])
-        expected = [withdrawal_tax(s, a) for a in amounts]
-        assert vectorized_withdrawal_tax(s, amounts) == pytest.approx(expected)
-
-    def test_rmd_projection_includes_first_drawdown_year(self):
-        """Margaret starts drawing at 73; her RMDs begin at 75 (born 1963)."""
-        projection = _build_rmd_projection(_margaret(), [0.0] * 10)
-        assert projection.yearly_detail[0].age == 75
-        assert projection.yearly_detail[-1].age == 93
-
-
-class TestTimelineDrawdowns:
-    """Timeline years at or after the drawdown age fund spending from the accounts."""
+class TestBudgets:
+    """What each drawing year has to leave the household after tax."""
 
     def _full(self, **overrides) -> ScenarioInput:
         incomes = [20_000] * 4 + [46_000] + [60_000] * 26  # ages 63 to 93
         timeline = [PlanYear(year=2026 + i, gross_income=v) for i, v in enumerate(incomes)]
         return _margaret(timeline=timeline, **overrides)
 
-    def test_spending_less_income_from_drawdown_age(self):
-        resolved = resolve_drawdowns(self._full())
-        draws = [row.drawdown for row in resolved.timeline]
-        assert draws[:10] == [None] * 10  # ages 63 to 72
-        assert draws[10:] == [35_000] * 21  # $95k spending less $60k Social Security
+    def test_spending_figure_is_the_budget_from_the_drawdown_age(self):
+        budgets = [rule.budget for rule in plan_for(self._full()).years]
+        assert budgets[:10] == [None] * 10  # ages 63 to 72
+        assert budgets[10:] == [95_000] * 21
+
+    def test_each_drawing_year_nets_its_budget(self):
+        s = self._full()
+        for flow in plan_for(s).no_conversion.flows[10:]:
+            kept = flow.rule.income + flow.rmd + flow.trad_draw + flow.roth_draw - flow.tax
+            assert kept - flow.outside == pytest.approx(95_000, abs=0.01)
 
     def test_income_above_spending_draws_nothing(self):
-        resolved = resolve_drawdowns(self._full(default_drawdown=50_000))
-        assert {row.drawdown for row in resolved.timeline[10:]} == {0}
+        """$60k of income leaves more than $50k after tax, so only RMDs come out."""
+        flows = plan_for(self._full(default_drawdown=50_000)).no_conversion.flows[10:]
+        assert {f.trad_draw + f.roth_draw for f in flows} == {0.0}
+        assert all(f.outside > 0 for f in flows)
 
     def test_four_percent_rule_on_projected_balance(self):
+        """Without a spending figure the budget is what income plus 4% of the balance
+        projected to the drawdown age leaves after tax."""
         s = self._full(default_drawdown=None)
         projected = (s.traditional_ira_balance + s.roth_ira_balance) * (
-            1 + s.annual_growth_rate
+            1 + s.real_growth_rate
         ) ** 10
-        resolved = resolve_drawdowns(s)
-        assert resolved.timeline[10].drawdown == pytest.approx(projected * 0.04, abs=0.01)
+        rule = plan_for(s).years[10]
+        gross = 60_000 + projected * 0.04
+        assert rule.budget == pytest.approx(gross - rule.tax.total(gross), abs=0.01)
 
-    def test_explicit_drawdowns_are_kept(self):
+    def test_explicit_drawdown_is_before_tax(self):
+        """A year's own withdrawal figure is what comes out of the account. Its budget
+        is what that and the year's income leave after tax."""
         s = self._full()
-        s.timeline[12] = s.timeline[12].model_copy(update={"drawdown": 1_234})
-        assert resolve_drawdowns(s).timeline[12].drawdown == 1_234
+        s.timeline[12] = s.timeline[12].model_copy(update={"drawdown": 12_340})
+        plan = plan_for(s)
+        rule = plan.years[12]
+        assert rule.budget == pytest.approx(72_340 - rule.tax.total(72_340), abs=0.01)
+        flow = plan.no_conversion.flows[12]
+        assert flow.rmd + flow.trad_draw >= 12_340 - 0.01
 
-    def test_short_timeline_is_unchanged(self):
-        s = _margaret()
-        assert resolve_drawdowns(s) is s
+    def test_four_percent_rule_after_the_timeline(self):
+        """Years after the timeline: 4% of the balance when they start, after tax."""
+        s = _margaret(default_drawdown=None)
+        plan = plan_for(s)
+        at_start = plan.no_conversion.flows[9]
+        gross = (at_start.trad_end + at_start.roth_end) * 0.04
+        rule = plan.years[10]
+        assert rule.income == 0
+        assert rule.budget == pytest.approx(gross - post_timeline_tax(s, 10).total(gross))
 
     def test_rmd_counts_toward_spending(self):
-        assert draw_beyond_rmd(35_000, 50_000) == 0
-        assert draw_beyond_rmd(35_000, 10_000) == 25_000
-        assert draw_beyond_rmd(None, 10_000) == 0
+        """An RMD above the budget is not topped up, and what is left over after tax
+        stays with the household."""
+        s = self._full(default_drawdown=62_000, traditional_ira_balance=4_000_000)
+        late = plan_for(s).no_conversion.flows[25]
+        assert late.rmd > 62_000
+        assert late.trad_draw == 0 and late.roth_draw == 0
+        assert late.outside == pytest.approx(60_000 + late.rmd - late.tax - 62_000, abs=0.01)
+
+    def test_rmd_projection_includes_first_drawdown_year(self):
+        """Margaret starts drawing at 73; her RMDs begin at 75 (born 1963)."""
+        projection = _build_rmd_projection(_margaret(), [0.0] * 10)
+        assert projection.yearly_detail[0].age == 75
+        assert projection.yearly_detail[-1].age == 93
 
     def test_full_timeline_optimizes_and_reports_all_years(self):
         from app.engine.optimizer import optimize
@@ -204,18 +211,16 @@ class TestFundableConversions:
     taxes and values any schedule that way)."""
 
     def _spender(self) -> ScenarioInput:
-        # $100,000 in the account, no growth, $30,000 a year of spending from it
+        # $100,000 in the account, no growth, $30,000 a year of spending after tax from it
         timeline = [PlanYear(year=2026 + i, gross_income=0) for i in range(4)]
-        return resolve_drawdowns(
-            _scenario(
-                timeline=timeline,
-                traditional_ira_balance=100_000,
-                drawdown_start_age=60,
-                default_drawdown=30_000,
-                planning_horizon_age=63,
-                annual_growth_rate=0.0,
-                inflation_rate=0.0,
-            )
+        return _scenario(
+            timeline=timeline,
+            traditional_ira_balance=100_000,
+            drawdown_start_age=60,
+            default_drawdown=30_000,
+            planning_horizon_age=63,
+            annual_growth_rate=0.0,
+            inflation_rate=0.0,
         )
 
     def test_a_schedule_the_account_can_fund_is_unchanged(self):

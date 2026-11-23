@@ -3,10 +3,10 @@
 import numpy as np
 import pytest
 
+from app.engine.cashflow import plan_for
 from app.engine.inflation import fixed_dollar_scale, nominal_scale, real_rate
 from app.engine.irmaa import calculate_irmaa, lookback_threshold_scale
 from app.engine.optimizer import optimize
-from app.engine.retirement import terminal_value
 from app.engine.state_tax import (
     calculate_state_tax,
     retirement_exclusion,
@@ -41,13 +41,11 @@ class TestRates:
         s = scenario()
         assert s.inflation_rate == 0
         assert s.real_growth_rate == s.annual_growth_rate
-        assert s.real_discount_rate == s.discount_rate
         assert s.fixed_dollar_scale(20) == 1
 
     def test_inflation_turns_quoted_rates_into_real_ones(self):
         s = scenario(inflation_rate=0.025)
         assert s.real_growth_rate == pytest.approx(1.07 / 1.025 - 1)
-        assert s.real_discount_rate == pytest.approx(1.05 / 1.025 - 1)
 
 
 class TestFixedThresholds:
@@ -98,10 +96,11 @@ class TestIrmaaLookback:
         assert lookback_threshold_scale(0) == 1
 
 
-class TestTerminalValue:
-    def test_left_over_balances_are_discounted_at_the_real_rate(self):
-        s = scenario(inflation_rate=0.025)
-        assert terminal_value(s, 0, 100, 1) == pytest.approx(100 / (1.05 / 1.025))
+class TestTodaysValue:
+    def test_later_amounts_come_back_to_today_at_the_real_return(self):
+        """A dollar a year from now is worth what would grow into it."""
+        plan = plan_for(scenario(inflation_rate=0.025))
+        assert plan.discount(1) == pytest.approx(1 / (1.07 / 1.025))
 
 
 class TestEndToEnd:

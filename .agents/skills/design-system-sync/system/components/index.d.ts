@@ -102,6 +102,7 @@ export interface BracketFillData {
     conversion: number;
     extra_deduction?: number;
     tax: number;
+    tax_from?: "income" | "accounts";
   }[];
   brackets: TaxBracket[];
   standard_deduction: number;
@@ -319,7 +320,6 @@ export interface ScenarioValues {
   retirement_spending?: number | null;
   planning_horizon_age?: number | null;
   investment_return_pct?: number | null;
-  discount_rate_pct?: number | null;
   inflation_pct?: number | null;
   include_aca?: boolean;
   household_size?: number | null;

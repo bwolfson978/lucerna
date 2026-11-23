@@ -212,7 +212,6 @@ class TestOptimizerWithACA:
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
             healthcare=healthcare,
         )
 
@@ -323,11 +322,18 @@ class TestOptimizerWithACA:
         scenario_no_aca = self._early_retiree_scenario(healthcare=None)
 
         conversions = [30000.0, 30000.0, 0.0]
-        npv_with = calculate_npv(scenario_with_aca, conversions)
-        npv_without = calculate_npv(scenario_no_aca, conversions)
+        none = [0.0, 0.0, 0.0]
+        change_with = calculate_npv(scenario_with_aca, conversions) - calculate_npv(
+            scenario_with_aca, none
+        )
+        change_without = calculate_npv(scenario_no_aca, conversions) - calculate_npv(
+            scenario_no_aca, none
+        )
 
-        # NPV with ACA should be lower (subsidy loss is a cost)
-        assert npv_with < npv_without
+        # The same conversions are worth less with coverage: the lost subsidy is a cost
+        assert change_with < change_without
+        # And the subsidy the household does receive counts as money it keeps
+        assert calculate_npv(scenario_with_aca, none) > calculate_npv(scenario_no_aca, none)
 
     def test_mfj_household(self):
         """MFJ with household size 2 should work correctly."""
@@ -343,7 +349,6 @@ class TestOptimizerWithACA:
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
             healthcare=HealthcareInput(
                 household_size=2,
                 monthly_slcsp_premium=1100,  # ~$1100/month for a couple

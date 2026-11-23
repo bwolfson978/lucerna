@@ -191,7 +191,6 @@ def scenario_from_input(inputs: ScenarioInput, start_year: int) -> dict:
         retirement_spending=inputs.default_drawdown,
         planning_horizon_age=inputs.planning_horizon_age,
         investment_return_pct=round(inputs.annual_growth_rate * 100, 2),
-        discount_rate_pct=round(inputs.discount_rate * 100, 2),
         inflation_pct=round(inflation_pct, 2),
         include_aca=healthcare is not None,
         household_size=healthcare.household_size if healthcare else 1,
@@ -362,6 +361,11 @@ def summarize_result(result: OptimizationResult, result_id: str) -> dict:
                 if d.get("spending_from_roth")
                 else {}
             ),
+            **(
+                {"conversion_tax_paid_from_income": round(d["tax_paid_from_income"])}
+                if d.get("tax_paid_from_income")
+                else {}
+            ),
         }
         for t, d in enumerate(result.yearly_detail)
     ]
@@ -397,10 +401,14 @@ def summarize_result(result: OptimizationResult, result_id: str) -> dict:
         "assumptions": {
             "amounts_in": "today's dollars",
             "investment_return": result.input.annual_growth_rate,
-            "discount_rate": result.input.discount_rate,
             "inflation": result.input.inflation_rate,
             "planning_horizon_age": result.input.planning_horizon_age,
             "retirement_spending": result.input.default_drawdown or "4% rule",
+            "spending_is": "after tax: withdrawals cover it and each year's whole tax bill",
+            "conversion_tax_paid_from": (
+                "account withdrawals once the accounts fund spending, income before that"
+            ),
+            "later_amounts_valued_today_at": "the investment return after inflation",
             "state": result.input.state or "federal only",
             "retirement_state": result.input.retirement_state
             or result.input.state
