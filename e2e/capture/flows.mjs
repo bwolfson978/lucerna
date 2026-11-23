@@ -105,13 +105,18 @@ async function converse(page, { onSent = async () => {}, onSummary = async () =>
  */
 async function holdableTurns(page) {
   let holding = null
+  let held = null
   let onHeld = () => {}
   let letGo = () => {}
   await page.exposeFunction('__captureGate', (event) =>
     new Promise((pass) => {
       if (!holding?.test(event)) return pass()
       holding = null
-      letGo = pass
+      held = event
+      letGo = () => {
+        held = null
+        pass()
+      }
       onHeld()
     })
   )
@@ -142,13 +147,15 @@ async function holdableTurns(page) {
   })
   return {
     holdBefore(pattern) {
+      // Already stopped before such an event (a turn with nothing between the two moments).
+      if (held !== null && pattern.test(held)) return Promise.resolve()
       letGo()
-      return new Promise((held, missed) => {
+      return new Promise((stopped, missed) => {
         holding = pattern
         const giveUp = setTimeout(() => missed(new Error(`No event matching ${pattern} within 60 s`)), 60000)
         onHeld = () => {
           clearTimeout(giveUp)
-          held()
+          stopped()
         }
       })
     },
