@@ -691,16 +691,22 @@ export const flows = {
     title: 'Full results, retired couple drawing on their accounts',
     paths: ['frontend/src/components/results/', 'backend/app/engine/'],
     async run(page, shot) {
-      // Married, 66, retired at 65 in Florida, $2.6M traditional, $130,000 of spending
+      // Married, 66, retired in Florida, $2.6M traditional, $130,000 of spending,
+      // $72,000 of Social Security between them from 67
       const scenario = {
         age: 66,
         filing_status: 'married_filing_jointly',
         current_income: 0,
         traditional_balance: 2600000,
         roth_balance: 80000,
-        retirement_age: 65,
+        retirement_age: 66,
         retirement_spending: 130000,
         state: 'FL',
+        household_size: 2,
+        income_sources: [
+          { kind: 'social_security', amount: 42000, start_age: 67 },
+          { kind: 'social_security', owner: 'spouse', amount: 30000, start_age: 67 },
+        ],
       }
       const encoded = Buffer.from(JSON.stringify(scenario)).toString('base64url')
       await page.goto(`/calculator?view=results&scenario=${encoded}`)
