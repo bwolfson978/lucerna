@@ -20,6 +20,8 @@ export const PALETTE = {
 export const CHART_COLORS = {
   income: "#bdb6a4",
   rmd: "#f26522",
+  withdrawal: "#8c8573",
+  socialSecurity: "#8fae9c",
   conversion: "#2d6a4f",
   taxable: "#66a183",
   remaining: "rgba(20, 20, 20, 0.025)",

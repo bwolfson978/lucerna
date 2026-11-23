@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { isBracketFillData, type BracketFillData } from "./BracketFillChart";
+import { barTop } from "./BracketChart";
+import { bracketChartYears, isBracketFillData, type BracketFillData } from "./BracketFillChart";
 import { federalTax, isConversionCurveData, sampleCurve, type ConversionCurveData } from "./curve";
 import type { ResultCardData, ResultCardSelection, ResultDetails } from "./ResultCard";
 
@@ -56,17 +57,31 @@ export function resultAtTotal(
       years: fill.years.map((y, i) => {
         const conversion = sample.conversions[i] ?? 0;
         const rmd = sample.rmds[i] ?? y.rmd;
-        const base = y.income + rmd;
+        // The rest of the bar moves with the amount converted too. Older results don't
+        // say how, and keep the optimal schedule's.
+        const withdrawal = sample.withdrawals?.[i] ?? y.withdrawal;
+        const taxableSocialSecurity =
+          sample.taxable_social_security?.[i] ?? y.taxable_social_security;
+        const extraDeduction = sample.extra_deductions?.[i] ?? y.extra_deduction;
+        const base = y.income + rmd + (withdrawal ?? 0);
         // The engine's tax for the year (federal and state); older results without it
         // get the federal tax from the brackets.
         const tax =
           sample.taxes?.[i] ??
           federalTax(base + conversion, fill.brackets, fill.standard_deduction) -
             federalTax(base, fill.brackets, fill.standard_deduction);
+        const whole = (v: number | undefined) => (v === undefined ? undefined : Math.round(v));
         return {
           ...y,
           rmd: Math.round(rmd),
+          ...(withdrawal !== undefined && { withdrawal: whole(withdrawal) }),
+          ...(taxableSocialSecurity !== undefined && {
+            taxable_social_security: whole(taxableSocialSecurity),
+          }),
           conversion: Math.round(conversion),
+          ...(extraDeduction !== undefined && {
+            extra_deduction: whole(extraDeduction),
+          }),
           tax: Math.round(tax),
         };
       }),
@@ -77,9 +92,21 @@ export function resultAtTotal(
 /** One vertical scale for every total, so bars move and the chart's axis stays put. */
 export function stableChartMax(fill: BracketFillData, curve: ConversionCurveData): number {
   let most = 0;
-  fill.years.forEach((y, i) => {
-    most = Math.max(most, y.income + y.rmd + y.conversion);
-    for (const p of curve.points) most = Math.max(most, y.income + p.rmds[i] + p.conversions[i]);
+  bracketChartYears(fill).forEach((y, i) => {
+    most = Math.max(most, barTop(y));
+    for (const p of curve.points) {
+      most = Math.max(
+        most,
+        barTop({
+          ...y,
+          rmdAmount: p.rmds[i],
+          conversion: p.conversions[i],
+          withdrawal: p.withdrawals?.[i] ?? y.withdrawal,
+          socialSecurity: p.taxable_social_security?.[i] ?? y.socialSecurity,
+          extraDeduction: p.extra_deductions?.[i] ?? y.extraDeduction,
+        })
+      );
+    }
   });
   return most;
 }
