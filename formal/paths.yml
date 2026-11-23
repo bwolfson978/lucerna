@@ -24,6 +24,10 @@ SocialSecurity:
 RmdStartAge:
   - backend/app/engine/rmd.py
   - backend/data/rmd_tables.json
+TaxPayment:
+  - backend/app/engine/optimizer.py
+  - backend/app/engine/dp.py
+  - backend/app/engine/retirement.py
 models:
   - formal/**
   - .agents/skills/formal-models/**
