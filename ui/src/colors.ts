@@ -20,7 +20,7 @@ export const PALETTE = {
 export const CHART_COLORS = {
   income: "#bdb6a4",
   rmd: "#f26522",
-  withdrawal: "#8c8573",
+  withdrawal: "#e4b450",
   socialSecurity: "#8fae9c",
   conversion: "#2d6a4f",
   taxable: "#66a183",
