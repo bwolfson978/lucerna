@@ -50,6 +50,16 @@ class TestYearTax:
         yt = YearTax(SINGLE, social_security=28_000)
         assert yt.agi(68_000) - yt.agi(60_000) == pytest.approx(14_800)
 
+    def test_adjustments_are_what_separates_income_from_taxable_income(self):
+        """$30,000 of benefits, $30,000 of other income, one person 65 in 2026: the
+        untaxed benefits and the 65+ deductions account for the whole difference."""
+        yt = YearTax(SINGLE, social_security=30_000, extra_deduction=2_050, senior_bonus_people=1)
+        untaxed, deductions = yt.federal_adjustments(60_000)
+        # Provisional 45,000: 85% of 11,000 over 34,000 plus 4,500 is taxable
+        assert untaxed == pytest.approx(30_000 - 13_850)
+        assert deductions == pytest.approx(2_050 + 6_000)
+        assert yt.taxable_income(60_000) == pytest.approx(60_000 - untaxed - deductions - 16_100)
+
     def test_no_benefits_is_plain_federal_tax(self):
         yt = YearTax(SINGLE)
         assert yt.federal(80_000) == pytest.approx(calculate_federal_tax(80_000, SINGLE))

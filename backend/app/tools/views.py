@@ -11,7 +11,8 @@ from __future__ import annotations
 import math
 
 from app.engine.tax import BRACKETS, STANDARD_DEDUCTION
-from app.engine.types import OptimizationResult
+from app.engine.types import OptimizationResult, ScenarioInput
+from app.engine.year_tax import year_tax
 from app.tools import core
 
 VIEW_META_KEY = "lucerna/view"
@@ -24,12 +25,39 @@ def _round(value: float) -> int:
     return math.floor(value + 0.5)
 
 
+def _bar(
+    scenario: ScenarioInput, t: int, detail: dict, rmd: float, conversion: float
+) -> dict[str, float]:
+    """One year's bar in the bracket chart: what the engine taxes that year, by where it
+    comes from, so the bar ends at the engine's taxable income plus the standard deduction.
+
+    The engine measures a conversion on top of everything else taxed that year: income
+    from outside the accounts, the required withdrawal and the traditional withdrawal
+    that funds spending. Only the taxable part of Social Security counts, and it grows
+    with the year's other income, conversion included. From 65 the deductions are larger
+    than the standard one the chart draws as its 0% band; the chart takes that extra off
+    the bottom of the bar.
+    """
+    year = year_tax(scenario, t)
+    income = scenario.timeline[t].gross_income
+    withdrawal = detail.get("spending_from_traditional", 0.0)
+    untaxed_benefits, extra_deduction = year.federal_adjustments(
+        income + rmd + withdrawal + conversion
+    )
+    return {
+        "income": income - year.social_security,
+        "withdrawal": withdrawal,
+        "taxable_social_security": year.social_security - untaxed_benefits,
+        "extra_deduction": extra_deduction,
+    }
+
+
 def bracket_fill_view(result: OptimizationResult) -> dict:
     """The tax bracket chart (ui/src/BracketChart.tsx) as the results page draws it at the
-    optimal schedule: per year, gross income, required withdrawal, conversion, all the
-    tax the conversion adds (federal and state, as the engine counts it) and what pays
-    that tax (``tax_from``), plus the brackets (taxable income, ``max`` None for the top
-    one) and standard deduction for the filing status."""
+    optimal schedule: per year, what is taxed by where it comes from (see ``_bar``), the
+    conversion, all the tax it adds (federal and state, as the engine counts it) and what
+    pays that tax (``tax_from``), plus the brackets (taxable income, ``max`` None for the
+    top one) and standard deduction for the filing status."""
     rmd_by_year = (
         {d.year: d.rmd_amount for d in result.rmd_projection.yearly_detail}
         if result.rmd_projection
@@ -40,13 +68,18 @@ def bracket_fill_view(result: OptimizationResult) -> dict:
         fill = result.yearly_bracket_fill[i] if i < len(result.yearly_bracket_fill) else []
         conversion = result.yearly_conversions[i] if i < len(result.yearly_conversions) else 0
         detail = result.yearly_detail[i] if i < len(result.yearly_detail) else {}
+        rmd = rmd_by_year.get(plan_year.year, 0)
+        bar = _bar(result.input, i, detail, rmd, conversion)
         years.append(
             {
                 "year": plan_year.year,
                 "age": result.input.age + i,
-                "income": _round(plan_year.gross_income),
-                "rmd": _round(rmd_by_year.get(plan_year.year, 0)),
+                "income": _round(bar["income"]),
+                "rmd": _round(rmd),
+                "withdrawal": _round(bar["withdrawal"]),
+                "taxable_social_security": _round(bar["taxable_social_security"]),
                 "conversion": _round(conversion),
+                "extra_deduction": _round(bar["extra_deduction"]),
                 "tax": _round(_year_tax(detail, fill)),
                 **_tax_from(detail),
             }
@@ -109,23 +142,33 @@ def curve_view(result: OptimizationResult) -> dict | None:
     """What the card's slider needs to move off the optimal schedule: per point, the
     total converted, estimated savings (today's dollars, as the headline), total tax,
     and each year's conversion, required withdrawal and tax (federal and state, adding up
-    to the total). None without a curve."""
+    to the total), with the parts of the year's bar that change with the amount converted
+    (see ``_bar``). None without a curve."""
     points = curve_points(result)
     if not points:
         return None
-    return {
-        "points": [
+    view = []
+    for p in points:
+        bars = [
+            _bar(result.input, t, detail, rmd, conversion)
+            for t, (detail, rmd, conversion) in enumerate(
+                zip(p.yearly_detail, p.yearly_rmd_amounts, p.yearly_conversions, strict=False)
+            )
+        ]
+        view.append(
             {
                 "total": _round(p.total_cap),
                 "savings": _round(p.npv - result.npv_at_zero),
                 "tax": _round(p.total_tax),
                 "conversions": [_round(c) for c in p.yearly_conversions],
                 "rmds": [_round(r) for r in p.yearly_rmd_amounts],
+                "withdrawals": [_round(b["withdrawal"]) for b in bars],
+                "taxable_social_security": [_round(b["taxable_social_security"]) for b in bars],
+                "extra_deductions": [_round(b["extra_deduction"]) for b in bars],
                 "taxes": [_round(d.get("tax_cost", 0)) for d in p.yearly_detail],
             }
-            for p in points
-        ]
-    }
+        )
+    return {"points": view}
 
 
 def result_view(result: OptimizationResult) -> dict:

@@ -1,7 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import { ResultCard } from "@lucerna/ui";
 import { fn } from "storybook/test";
-import { previousResultCard, previousResultDetails, resultCard, resultDetails } from "../fixtures";
+import {
+  previousResultCard,
+  previousResultDetails,
+  resultCard,
+  resultDetails,
+  socialSecurityResultCard,
+  socialSecurityResultDetails,
+} from "../fixtures";
 
 const meta: Meta<typeof ResultCard> = {
   title: "Shared cards/ResultCard",
@@ -29,6 +36,17 @@ export const WithFullResultsLink: Story = {
  * see the savings, the chart and the "Ask about" button change. */
 export const WithSlider: Story = {
   args: { details: resultDetails, onOpenFullResults: fn(), onAsk: fn() },
+};
+
+/** Someone on Social Security. Move the slider down: the taxable part of the benefit
+ * shrinks along with the conversion, because converting less leaves less of it taxed. */
+export const WithSocialSecurity: Story = {
+  args: {
+    data: socialSecurityResultCard,
+    details: socialSecurityResultDetails,
+    onOpenFullResults: fn(),
+    onAsk: fn(),
+  },
 };
 
 /** A result from before the slider: the chart without a curve. */

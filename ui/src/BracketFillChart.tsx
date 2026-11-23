@@ -1,6 +1,6 @@
 "use client";
 
-import { BracketChart, type TaxBracket } from "./BracketChart";
+import { BracketChart, type BracketChartYear, type TaxBracket } from "./BracketChart";
 
 /**
  * The tax bracket chart's data at the optimal schedule (backend app/tools/views.py
@@ -10,11 +10,19 @@ export interface BracketFillData {
   years: {
     year: number;
     age: number;
-    /** Gross income other than the conversion and any required withdrawal. */
+    /** Income from outside the accounts (wages, pensions), without Social Security.
+     * Results from before `taxable_social_security` count the whole benefit here. */
     income: number;
     /** Required minimum distribution that year. */
     rmd: number;
+    /** Traditional withdrawal that funds spending, beyond the required one. This and
+     * the two below are absent from older results, which then draw without them. */
+    withdrawal?: number;
+    /** The part of Social Security that is taxed at this year's income. */
+    taxable_social_security?: number;
     conversion: number;
+    /** Deductions at 65 and over on top of the standard one. */
+    extra_deduction?: number;
     /** Federal tax the conversion adds that year. */
     tax: number;
     /** What pays that tax: income while working, the accounts once they fund spending.
@@ -27,6 +35,7 @@ export interface BracketFillData {
 }
 
 const isNumber = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+const isOptionalNumber = (v: unknown) => v === undefined || isNumber(v);
 
 /**
  * Whether a payload is chart data in this shape. Checks every field the chart reads, so
@@ -51,10 +60,27 @@ export function isBracketFillData(value: unknown): value is BracketFillData {
         isNumber(y.year) &&
         isNumber(y.income) &&
         isNumber(y.rmd) &&
+        isOptionalNumber(y.withdrawal) &&
+        isOptionalNumber(y.taxable_social_security) &&
         isNumber(y.conversion) &&
+        isOptionalNumber(y.extra_deduction) &&
         isNumber(y.tax)
     )
   );
+}
+
+/** The chart's bars for this data. */
+export function bracketChartYears(data: BracketFillData): BracketChartYear[] {
+  return data.years.map((y) => ({
+    year: y.year,
+    age: y.age,
+    income: y.income,
+    rmdAmount: y.rmd,
+    withdrawal: y.withdrawal,
+    socialSecurity: y.taxable_social_security,
+    conversion: y.conversion,
+    extraDeduction: y.extra_deduction,
+  }));
 }
 
 /** The results page's bracket chart, with its legend and added-tax row, from tool data. */
@@ -78,13 +104,7 @@ export function BracketFillChart({
         <h3 className="text-h3 text-text-primary">How conversions fill your tax brackets</h3>
       )}
       <BracketChart
-        years={data.years.map((y) => ({
-          year: y.year,
-          age: y.age,
-          income: y.income,
-          rmdAmount: y.rmd,
-          conversion: y.conversion,
-        }))}
+        years={bracketChartYears(data)}
         brackets={data.brackets}
         standardDeduction={data.standard_deduction}
         addedTax={data.years.map((y) => y.tax)}

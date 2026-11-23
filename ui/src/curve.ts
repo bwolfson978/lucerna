@@ -17,6 +17,12 @@ export interface ConversionCurveData {
     conversions: number[];
     /** Each year's required withdrawal, which shrinks as more is converted. */
     rmds: number[];
+    /** The other parts of each year's bar that change with the amount converted (see
+     * BracketFillData): the withdrawal for spending, the taxable part of Social
+     * Security and the 65+ deductions. Absent from older results. */
+    withdrawals?: number[];
+    taxable_social_security?: number[];
+    extra_deductions?: number[];
     /** Each year's tax on its conversion (federal and state), adding up to `tax`.
      * Absent from older results, which then figure each year's federal tax. */
     taxes?: number[];
@@ -25,6 +31,8 @@ export interface ConversionCurveData {
 
 const isNumber = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const isNumbers = (v: unknown): v is number[] => Array.isArray(v) && v.every(isNumber);
+/** The per-year series a point may carry besides conversions and required withdrawals. */
+const OPTIONAL_SERIES = ["withdrawals", "taxable_social_security", "extra_deductions"] as const;
 
 /** Whether a payload is a curve in this shape, with at least two points of equal length. */
 export function isConversionCurveData(value: unknown): value is ConversionCurveData {
@@ -43,6 +51,9 @@ export function isConversionCurveData(value: unknown): value is ConversionCurveD
       isNumbers(p.rmds) &&
       p.conversions.length === years &&
       p.rmds.length === years &&
+      OPTIONAL_SERIES.every(
+        (k) => p[k] === undefined || (isNumbers(p[k]) && p[k].length === years)
+      ) &&
       (p.taxes === undefined || isNumbers(p.taxes))
   );
 }
@@ -52,6 +63,9 @@ export interface CurveSample {
   tax: number;
   conversions: number[];
   rmds: number[];
+  withdrawals?: number[];
+  taxable_social_security?: number[];
+  extra_deductions?: number[];
   /** Each year's tax, when every point has one per year. */
   taxes?: number[];
 }
@@ -84,6 +98,12 @@ export function sampleCurve(curve: ConversionCurveData, total: number): CurveSam
     tax: lerp(a.tax, b.tax),
     conversions,
     rmds: a.rmds.map((r, j) => lerp(r, b.rmds[j])),
+    ...Object.fromEntries(
+      OPTIONAL_SERIES.filter((k) => a[k] && b[k]).map((k) => [
+        k,
+        a[k]!.map((x, j) => lerp(x, b[k]![j])),
+      ])
+    ),
     taxes:
       a.taxes?.length === a.conversions.length && b.taxes?.length === b.conversions.length
         ? a.taxes.map((x, j) => (conversions[j] > 0 ? lerp(x, b.taxes![j]) : 0))

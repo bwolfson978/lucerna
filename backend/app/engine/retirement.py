@@ -81,3 +81,17 @@ def conversion_bases(scenario: ScenarioInput, conversions: list[float]) -> list[
     from app.engine.cashflow import walk  # lazy: cashflow builds on this module
 
     return [flow.base_income for flow in walk(scenario, conversions).timeline()]
+
+
+def fundable_conversions(scenario: ScenarioInput, conversions: list[float]) -> list[float]:
+    """The schedule as the account can fund it: each year's conversion, capped at what
+    is left after earlier conversions, required withdrawals and spending.
+
+    The year step caps a year's conversion this way when it works out tax and
+    balances, so a schedule asking for more is taxed and valued as this one. A
+    schedule that is shown to someone has to be this one too, or it lists conversions
+    that never happen.
+    """
+    from app.engine.cashflow import walk  # lazy: cashflow builds on this module
+
+    return [flow.conversion for flow in walk(scenario, conversions).timeline()]

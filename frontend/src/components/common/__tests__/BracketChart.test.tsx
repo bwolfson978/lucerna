@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { render } from "@testing-library/react";
-import { BracketChart } from "@lucerna/ui";
+import { BracketChart, barTop, bracketLegend } from "@lucerna/ui";
 import { CHART_COLORS } from "@/lib/utils/constants";
 import { getFallbackTaxConfig } from "@/lib/tax/TaxConfigProvider";
 
@@ -109,6 +109,91 @@ describe("BracketChart", () => {
 
       expect(incomeRects.length).toBe(0);
       expect(conversionRects.length).toBe(0);
+    });
+  });
+
+  describe("what a bar stacks", () => {
+    // A retiree: a pension, a required withdrawal, a withdrawal for spending, the taxed
+    // part of Social Security and a conversion, with $8,000 of 65+ deductions.
+    const retiree = {
+      year: 2030,
+      age: 75,
+      income: 12000,
+      rmdAmount: 9000,
+      withdrawal: 15000,
+      socialSecurity: 20000,
+      conversion: 30000,
+      extraDeduction: 8000,
+    };
+    const segments = (container: HTMLElement) =>
+      Array.from(container.querySelectorAll("rect[data-segment]")).map((r) => ({
+        key: r.getAttribute("data-segment"),
+        y: parseFloat(r.getAttribute("y") ?? "0"),
+        height: parseFloat(r.getAttribute("height") ?? "0"),
+      }));
+
+    it("ends where the brackets apply: everything stacked, less the 65+ deductions", () => {
+      expect(barTop(retiree)).toBe(78000);
+      expect(barTop({ year: 2030, conversion: 5000, extraDeduction: 8000 })).toBe(0);
+    });
+
+    it("puts Social Security right under the conversion", () => {
+      const { container } = render(<BracketChart years={[retiree]} {...single} />);
+      const drawn = segments(container);
+      expect(drawn.map((s) => s.key)).toEqual([
+        "income",
+        "rmdAmount",
+        "withdrawal",
+        "socialSecurity",
+        "conversion",
+      ]);
+      // Each part starts where the one below it ends.
+      drawn.slice(1).forEach((s, i) => expect(s.y + s.height).toBeCloseTo(drawn[i].y));
+    });
+
+    it("takes the 65+ deductions off the bottom of the bar", () => {
+      const { container: plain } = render(
+        <BracketChart years={[{ ...retiree, extraDeduction: 0 }]} {...single} />
+      );
+      const { container: trimmed } = render(<BracketChart years={[retiree]} {...single} />);
+      const [income, rmd] = segments(trimmed);
+      const [fullIncome, fullRmd] = segments(plain);
+      // 8,000 of the 12,000 at the bottom is not drawn; the parts above keep their size.
+      expect(income.height).toBeCloseTo(fullIncome.height / 3, 0);
+      expect(rmd.height).toBeCloseTo(fullRmd.height);
+      // A deduction larger than the bottom part eats into the next one.
+      const { container: deep } = render(
+        <BracketChart years={[{ ...retiree, extraDeduction: 15000 }]} {...single} />
+      );
+      expect(segments(deep).map((s) => s.key)).toEqual([
+        "rmdAmount",
+        "withdrawal",
+        "socialSecurity",
+        "conversion",
+      ]);
+    });
+
+    it("lists in the legend only the parts some year has", () => {
+      const labels = (years: Parameters<typeof bracketLegend>[0]) =>
+        bracketLegend(years).map((item) => item.label);
+      expect(labels([{ year: 2030, income: 50000 }])).toEqual([
+        "Other income",
+        "Roth conversion",
+        "Room left in bracket",
+      ]);
+      expect(labels([{ year: 2030, withdrawal: 35000, conversion: 30000 }, retiree])).toEqual([
+        "Other income",
+        "Required withdrawal",
+        "Withdrawals for spending",
+        "Taxable Social Security",
+        "Roth conversion",
+        "Room left in bracket",
+      ]);
+      const { getByText, queryByText } = render(
+        <BracketChart years={[{ year: 2030, withdrawal: 35000, conversion: 30000 }]} {...single} />
+      );
+      expect(getByText("Withdrawals for spending")).toBeInTheDocument();
+      expect(queryByText("Other income")).not.toBeInTheDocument();
     });
   });
 });

@@ -40,6 +40,24 @@ SCENARIO = {
 CHANGES = {"retirement_age": 62}
 LABEL = "Retire at 62"
 
+# A second result for the bracket chart's other parts: someone already 65 and living on
+# Social Security and the traditional account. The taxable part of the benefit grows as
+# more is converted, and the 65+ deductions apply from the first year.
+SOCIAL_SECURITY_OUTPUT = OUTPUT.with_name("view-data-social-security.json")
+SOCIAL_SECURITY_SCENARIO = {
+    "birth_year": 1960,
+    "birth_month": 4,
+    "filing_status": "single",
+    "current_income": 0,
+    "traditional_balance": 400000,
+    "roth_balance": 20000,
+    "retirement_age": 66,
+    "retirement_spending": 46000,
+    "income_sources": [
+        {"kind": "social_security", "owner": "you", "amount": 30000, "start_age": 66}
+    ],
+}
+
 
 async def generate() -> dict:
     ui = {UI_META_KEY: True}
@@ -72,10 +90,30 @@ async def generate() -> dict:
     }
 
 
+async def generate_social_security() -> dict:
+    async with create_connected_server_and_client_session(mcp) as session:
+        analyzed = await session.call_tool(
+            "analyze_roth_conversions",
+            {"scenario": SOCIAL_SECURITY_SCENARIO, "user_confirmed": True},
+            meta={UI_META_KEY: True},
+        )
+    return {
+        "scenario": SOCIAL_SECURITY_SCENARIO,
+        "analyze_roth_conversions": {
+            "structured_content": analyzed.structuredContent,
+            "view_meta": analyzed.meta[VIEW_META_KEY],
+        },
+    }
+
+
 def main() -> None:
     data = asyncio.run(generate())
     OUTPUT.write_text(json.dumps(data, indent=2) + "\n")
     print(f"Wrote {OUTPUT} ({OUTPUT.stat().st_size // 1024} KB)")
+    # One line per list of numbers keeps this one small
+    data = asyncio.run(generate_social_security())
+    SOCIAL_SECURITY_OUTPUT.write_text(json.dumps(data, separators=(",", ":")) + "\n")
+    print(f"Wrote {SOCIAL_SECURITY_OUTPUT} ({SOCIAL_SECURITY_OUTPUT.stat().st_size // 1024} KB)")
 
 
 if __name__ == "__main__":

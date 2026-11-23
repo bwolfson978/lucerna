@@ -17,10 +17,15 @@ import { cn } from "./cn";
 import { ScrollTrack, usePrefersReducedMotion } from "./charts/primitives";
 
 /**
- * The tax bracket chart: each year's income, required withdrawal and Roth conversion
+ * The tax bracket chart: everything taxed in a year (income, withdrawals from the
+ * traditional account, the taxable part of Social Security and the Roth conversion)
  * stacked against the federal brackets, with the space left in each bracket. One
  * component for the results page, the conversation's result card and the MCP App View.
  * Plain data in; the brackets and standard deduction come from the caller.
+ *
+ * The axis is income counted for tax: the standard deduction is the 0% band at the
+ * bottom and each bracket line sits at the deduction plus the bracket's top. A bar
+ * therefore ends at the year's taxable income plus the standard deduction.
  */
 
 /** A federal bracket in taxable income; `max` is null for the top bracket. */
@@ -33,10 +38,68 @@ export interface TaxBracket {
 export interface BracketChartYear {
   year: number;
   age?: number;
-  /** Gross income other than the conversion and any required withdrawal. */
+  /** Income from outside the accounts (wages, pensions), without Social Security. */
   income?: number;
   rmdAmount?: number;
+  /** Traditional withdrawal that funds spending, beyond the required one. */
+  withdrawal?: number;
+  /** The part of Social Security that is taxed. It grows with the year's other income,
+   * the conversion included. */
+  socialSecurity?: number;
   conversion?: number;
+  /** Deductions at 65 and over on top of the standard one. They come off the bottom of
+   * the bar, so the bracket lines stay where they are in every year. */
+  extraDeduction?: number;
+}
+
+/** A bar's stacked parts, bottom to top. Social Security sits right under the
+ * conversion, so the two rise together when converting more makes more of it taxable. */
+const SEGMENTS = [
+  { key: "income", label: "Other income", color: CHART_COLORS.income },
+  { key: "rmdAmount", label: "Required withdrawal", color: CHART_COLORS.rmd },
+  {
+    key: "withdrawal",
+    label: "Withdrawals for spending",
+    color: CHART_COLORS.withdrawal,
+  },
+  {
+    key: "socialSecurity",
+    label: "Taxable Social Security",
+    color: CHART_COLORS.socialSecurity,
+  },
+  {
+    key: "conversion",
+    label: "Roth conversion",
+    color: CHART_COLORS.conversion,
+  },
+] as const satisfies readonly {
+  key: keyof BracketChartYear;
+  label: string;
+  color: string;
+}[];
+
+/** Where a year's bar ends: everything stacked in it, less the 65+ deductions. */
+export function barTop(year: BracketChartYear): number {
+  const stacked = SEGMENTS.reduce((sum, s) => sum + (year[s.key] ?? 0), 0);
+  return Math.max(0, stacked - (year.extraDeduction ?? 0));
+}
+
+export interface BracketLegendItem {
+  color: string;
+  label: string;
+  /** Drawn as an outlined swatch (the room left in a bracket). */
+  outline?: boolean;
+}
+
+/** The legend for these years: the conversion always, each other part when a year has
+ * it. One list for the chart's own legend and the results page's. */
+export function bracketLegend(years: BracketChartYear[]): BracketLegendItem[] {
+  return [
+    ...SEGMENTS.filter((s) => s.key === "conversion" || years.some((y) => (y[s.key] ?? 0) > 0)).map(
+      ({ label, color }) => ({ label, color })
+    ),
+    { color: "", label: "Room left in bracket", outline: true },
+  ];
 }
 
 export interface BracketChartLayout {
@@ -52,6 +115,15 @@ interface ChartTooltip extends BracketChartYear {
 }
 
 type YearData = BracketChartYear;
+
+/** What each part is called in the tooltip, where there is room to say more. */
+const TOOLTIP_LABELS: Record<(typeof SEGMENTS)[number]["key"], string> = {
+  income: "Other income",
+  rmdAmount: "Required withdrawal",
+  withdrawal: "Withdrawal for spending",
+  socialSecurity: "Social Security, taxable part",
+  conversion: "Conversion",
+};
 
 const DATA_FONT_FAMILY = "'Inter', system-ui";
 const dataFontStyle = {
@@ -77,7 +149,7 @@ interface BracketChartProps {
   /** Hide the built-in series legend (when rendered externally) */
   hideLegend?: boolean;
   /**
-   * Stable max gross amount (income + rmd + conversion) pre-computed from the
+   * The tallest bar (see barTop) pre-computed from the
    * full conversion curve. When provided, the chart Y-scale is fixed to this
    * value and does not rescale as the slider moves, preventing the jarring
    * "jump" that occurs when per-year gross crosses a bracket boundary.
@@ -306,11 +378,7 @@ export function BracketChart({
       setTooltip({
         x: e.clientX - rect.left,
         y: e.clientY - rect.top,
-        year: yearData.year,
-        age: yearData.age,
-        rmdAmount: yearData.rmdAmount,
-        conversion: yearData.conversion,
-        income: yearData.income,
+        ...yearData,
       });
     },
     [isEngaged]
@@ -325,9 +393,9 @@ export function BracketChart({
     }
   }, [isEngaged]);
 
-  const hasRmd = useMemo(() => years.some((y) => (y.rmdAmount ?? 0) > 0), [years]);
+  const legend = useMemo(() => bracketLegend(years), [years]);
 
-  // Max gross amount (income + rmd + conversion) across all years — drives chart scale.
+  // The tallest bar across all years drives the chart scale.
   // When stableMaxGrossAmount is provided (pre-computed from the full conversion curve),
   // use it directly so the Y-axis does not rescale as the slider moves.
   const maxGrossAmount = useMemo(() => {
@@ -337,7 +405,7 @@ export function BracketChart({
         : (() => {
             let max = 0;
             for (const y of years) {
-              const gross = (y.income ?? 0) + (y.rmdAmount ?? 0) + (y.conversion ?? 0);
+              const gross = barTop(y);
               if (gross > max) max = gross;
             }
             return max;
@@ -386,27 +454,18 @@ export function BracketChart({
       {/* Legend */}
       {!hideLegend && (
         <div className="text-body-sm text-text-secondary flex flex-wrap items-center gap-x-5 gap-y-2">
-          <span className="flex items-center gap-1.5">
-            <span className="h-3 w-3 rounded" style={{ backgroundColor: CHART_COLORS.income }} />
-            Other income
-          </span>
-          {hasRmd && (
-            <span className="flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded" style={{ backgroundColor: CHART_COLORS.rmd }} />
-              Required withdrawal
+          {legend.map((item) => (
+            <span key={item.label} className="flex items-center gap-1.5">
+              <span
+                className={cn(
+                  "h-3 w-3 rounded",
+                  item.outline && "border-border bg-bg-hover border"
+                )}
+                style={item.outline ? undefined : { backgroundColor: item.color }}
+              />
+              {item.label}
             </span>
-          )}
-          <span className="flex items-center gap-1.5">
-            <span
-              className="h-3 w-3 rounded"
-              style={{ backgroundColor: CHART_COLORS.conversion }}
-            />
-            Roth conversion
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="border-border bg-bg-hover h-3 w-3 rounded border" />
-            Room left in bracket
-          </span>
+          ))}
         </div>
       )}
 
@@ -688,60 +747,38 @@ export function BracketChart({
                   <span className="text-text-tertiary font-normal"> (age {tooltip.age})</span>
                 )}
               </div>
-              {(() => {
-                const baseIncome = tooltip.income ?? 0;
-                const rmd = tooltip.rmdAmount ?? 0;
-                const conversion = tooltip.conversion ?? 0;
-                const grandTotal = baseIncome + rmd + conversion;
-                return (
-                  <div className="flex flex-col gap-1.5">
-                    {baseIncome > 0 && (
-                      <div className="flex items-center justify-between gap-4">
-                        <span className="flex items-center gap-1.5">
-                          <span
-                            className="h-2 w-2 rounded-sm"
-                            style={{ backgroundColor: CHART_COLORS.income }}
-                          />
-                          <span className="text-text-secondary">Other income</span>
-                        </span>
-                        <span className="text-text-primary font-medium">
-                          {formatCurrency(baseIncome)}
-                        </span>
-                      </div>
-                    )}
-                    {rmd > 0 && (
-                      <div className="flex items-center justify-between gap-4">
-                        <span className="flex items-center gap-1.5">
-                          <span
-                            className="h-2 w-2 rounded-sm"
-                            style={{ backgroundColor: CHART_COLORS.rmd }}
-                          />
-                          <span className="text-text-secondary">Required withdrawal</span>
-                        </span>
-                        <span className="text-text-primary font-medium">{formatCurrency(rmd)}</span>
-                      </div>
-                    )}
-                    {conversion > 0 && (
-                      <div className="flex items-center justify-between gap-4">
-                        <span className="flex items-center gap-1.5">
-                          <span
-                            className="h-2 w-2 rounded-sm"
-                            style={{ backgroundColor: CHART_COLORS.conversion }}
-                          />
-                          <span className="text-text-secondary">Conversion</span>
-                        </span>
-                        <span className="text-text-primary font-medium">
-                          {formatCurrency(conversion)}
-                        </span>
-                      </div>
-                    )}
-                    <div className="border-glass-border text-caption text-text-primary mt-1 flex justify-between border-t pt-1.5 font-medium">
-                      <span>Total</span>
-                      <span>{formatCurrency(grandTotal)}</span>
+              <div className="flex flex-col gap-1.5">
+                {SEGMENTS.map((segment) => {
+                  const amount = tooltip[segment.key] ?? 0;
+                  if (amount <= 0) return null;
+                  return (
+                    <div key={segment.key} className="flex items-center justify-between gap-4">
+                      <span className="flex items-center gap-1.5">
+                        <span
+                          className="h-2 w-2 rounded-sm"
+                          style={{ backgroundColor: segment.color }}
+                        />
+                        <span className="text-text-secondary">{TOOLTIP_LABELS[segment.key]}</span>
+                      </span>
+                      <span className="text-text-primary font-medium">
+                        {formatCurrency(amount)}
+                      </span>
                     </div>
+                  );
+                })}
+                {(tooltip.extraDeduction ?? 0) > 0 && (
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-text-secondary pl-3.5">Extra deduction at 65+</span>
+                    <span className="text-text-primary font-medium">
+                      {`-${formatCurrency(tooltip.extraDeduction ?? 0)}`}
+                    </span>
                   </div>
-                );
-              })()}
+                )}
+                <div className="border-glass-border text-caption text-text-primary mt-1 flex justify-between gap-4 border-t pt-1.5 font-medium">
+                  <span>Counted for tax</span>
+                  <span>{formatCurrency(barTop(tooltip))}</span>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -779,30 +816,23 @@ function BracketBar({
 }: BracketBarProps) {
   const barBottom = chartHeight - bottomPadding;
 
-  const grossIncome = yearData.income ?? 0;
-  const grossRmd = yearData.rmdAmount ?? 0;
-  const grossConv = yearData.conversion ?? 0;
-  const grossTotal = grossIncome + grossRmd + grossConv;
-
-  // Heights for the three solid bar segments
-  const incomeBottom = yScale(0);
-  const incomeTop =
-    grossIncome > 0
-      ? Math.min(yScale(grossIncome), incomeBottom - MIN_SEGMENT_HEIGHT)
-      : incomeBottom;
-  const incomeHeight = incomeBottom - incomeTop;
-
-  const rmdBottom = incomeTop;
-  const rmdTop =
-    grossRmd > 0
-      ? Math.min(yScale(grossIncome + grossRmd), rmdBottom - MIN_SEGMENT_HEIGHT)
-      : rmdBottom;
-  const rmdHeight = rmdBottom - rmdTop;
-
-  const convBottom = rmdTop;
-  const convTop =
-    grossConv > 0 ? Math.min(yScale(grossTotal), convBottom - MIN_SEGMENT_HEIGHT) : convBottom;
-  const convHeight = convBottom - convTop;
+  // The solid segments, bottom to top. The 65+ deductions come off the bottom first, so
+  // the top of the bar is where the brackets apply. A small amount still gets a few
+  // pixels, so it can be seen.
+  let trim = yearData.extraDeduction ?? 0;
+  let stacked = 0;
+  let top = yScale(0);
+  const segments = SEGMENTS.flatMap((segment) => {
+    const amount = yearData[segment.key] ?? 0;
+    const shown = Math.max(0, amount - trim);
+    trim = Math.max(0, trim - amount);
+    if (shown <= 0) return [];
+    stacked += shown;
+    const bottom = top;
+    top = Math.min(yScale(stacked), bottom - MIN_SEGMENT_HEIGHT);
+    return [{ ...segment, y: top, height: bottom - top }];
+  });
+  const grossTotal = stacked;
 
   return (
     <g
@@ -844,34 +874,19 @@ function BracketBar({
         );
       })}
 
-      {/* Base income (bottom, blue) */}
-      {incomeHeight > 0 && (
+      {segments.map((segment, i) => (
         <rect
+          key={segment.key}
+          data-segment={segment.key}
           x={x}
-          y={incomeTop}
+          y={segment.y}
           width={barWidth}
-          height={incomeHeight}
-          fill={CHART_COLORS.income}
-          rx={2}
+          height={segment.height}
+          fill={segment.color}
+          // The ends of the bar are rounded; the joins between its parts are square
+          rx={i === 0 || i === segments.length - 1 ? 2 : 0}
         />
-      )}
-
-      {/* RMD (above income, amber) */}
-      {rmdHeight > 0 && (
-        <rect x={x} y={rmdTop} width={barWidth} height={rmdHeight} fill={CHART_COLORS.rmd} rx={0} />
-      )}
-
-      {/* Conversion (top, gold) */}
-      {convHeight > 0 && (
-        <rect
-          x={x}
-          y={convTop}
-          width={barWidth}
-          height={convHeight}
-          fill={CHART_COLORS.conversion}
-          rx={2}
-        />
-      )}
+      ))}
     </g>
   );
 }

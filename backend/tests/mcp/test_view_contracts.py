@@ -10,7 +10,13 @@ from mcp.shared.memory import create_connected_server_and_client_session
 
 from app.mcp.server import mcp
 from app.tools.views import VIEW_META_KEY
-from scripts.generate_view_fixtures import CHANGES, LABEL, SCENARIO
+from scripts.generate_view_fixtures import (
+    CHANGES,
+    LABEL,
+    SCENARIO,
+    SOCIAL_SECURITY_OUTPUT,
+    SOCIAL_SECURITY_SCENARIO,
+)
 
 FIXTURE = Path(__file__).resolve().parents[3] / "shared" / "fixtures" / "view-data.json"
 
@@ -81,6 +87,22 @@ def test_fixture_is_consistent():
         r["year"] for r in analysis["structured_content"]["schedule_by_year"]
     ]
     assert fixture["prepare_scenario"]["structured_content"]["ready_to_run"] is True
+
+
+def test_social_security_fixture_has_the_same_shape_and_shows_its_point():
+    """The second fixture is the bracket chart's Social Security case, for stories and
+    frontend tests. Same payload shape as the main one, and the benefit's taxable part
+    does grow with the amount converted."""
+    main = json.loads(FIXTURE.read_text())["analyze_roth_conversions"]
+    fixture = json.loads(SOCIAL_SECURITY_OUTPUT.read_text())
+    assert fixture["scenario"] == SOCIAL_SECURITY_SCENARIO
+    analysis = fixture["analyze_roth_conversions"]
+    _check_result_card(analysis["structured_content"])
+    assert _shape(analysis["view_meta"]) == _shape(main["view_meta"])
+    points = analysis["view_meta"]["curve"]["points"]
+    first_year = [p["taxable_social_security"][0] for p in points if p["conversions"][0] > 0]
+    assert points[0]["taxable_social_security"][0] < min(first_year)
+    assert any(y["extra_deduction"] > 0 for y in analysis["view_meta"]["bracket_fill"]["years"])
 
 
 def test_card_button_messages_are_ones_the_agents_handle():

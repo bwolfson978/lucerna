@@ -63,6 +63,13 @@ def build_curve_point(
     curve points always agree with the authoritative OptimizationResult.
     """
     from app.engine.optimizer import _build_year_detail, calculate_npv  # lazy — avoid circular
+    from app.engine.retirement import fundable_conversions
+
+    # A point lists what the account can fund, and its total is what it converts
+    asked = sum(yearly_conv)
+    yearly_conv = fundable_conversions(scenario, yearly_conv)
+    if asked - sum(yearly_conv) > 1.0:
+        cap_rounded = round(sum(yearly_conv), 2)
 
     npv_val = calculate_npv(scenario, yearly_conv)
     yearly_detail, yearly_bracket_fill, total_tax, _ = _build_year_detail(scenario, yearly_conv)
@@ -112,4 +119,16 @@ def generate_conversion_curve(
     """
     name = strategy or DEFAULT_CURVE_STRATEGY
     fn = _get_strategy(name)
-    return fn(scenario, n_curve_points=n_curve_points, curve_max=curve_max)
+    return _distinct_totals(fn(scenario, n_curve_points=n_curve_points, curve_max=curve_max))
+
+
+def _distinct_totals(points: list[ConversionCurvePoint]) -> list[ConversionCurvePoint]:
+    """One point per total, lowest total first. Totals past what the account can fund
+    all come down to about the same schedule (see ``build_curve_point``); the best of
+    those that land on the same dollar is kept."""
+    best: dict[int, ConversionCurvePoint] = {}
+    for point in points:
+        key = round(point.total_cap)
+        if key not in best or point.npv > best[key].npv:
+            best[key] = point
+    return [best[key] for key in sorted(best)]

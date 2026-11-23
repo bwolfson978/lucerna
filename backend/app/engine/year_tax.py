@@ -147,10 +147,17 @@ class YearTax:
         out = self.senior_bonus_people * each
         return out if np.ndim(agi) else float(out)
 
+    def federal_adjustments(self, income):
+        """What separates engine ``income`` from the income federal brackets apply to:
+        the part of Social Security that is not taxed, and the 65+ deductions that come
+        on top of the standard one. Both depend on the income (scalar or array)."""
+        agi = self.agi(income)
+        return income - agi, self.extra_deduction + self.senior_deduction(agi)
+
     def _federal_base(self, income):
         """The gross income federal brackets apply to (before the standard deduction)."""
-        agi = self.agi(income)
-        return agi - self.extra_deduction - self.senior_deduction(agi)
+        untaxed_benefits, deductions = self.federal_adjustments(income)
+        return income - untaxed_benefits - deductions
 
     def federal(self, income):
         base = self._federal_base(income)

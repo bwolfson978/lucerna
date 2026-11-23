@@ -28,6 +28,10 @@
           "text": "Tax brackets are “buckets” that fill from the bottom up. Your regular income fills the lowest brackets first. Conversions then fill the next available space."
         },
         {
+          "heading": "What the bars show",
+          "text": "Each bar stacks everything taxed that year: income from work or a pension, money taken from pre-tax accounts to live on, required withdrawals and the taxable part of Social Security. The conversion sits on top. The lines mark where each bracket ends, and the band at the bottom is the standard deduction, where no tax is owed."
+        },
+        {
           "heading": "Where the analysis stops",
           "text": "The analysis stops converting when the cost of entering the next bracket exceeds the long-term benefit. Converting into a bracket that's cheaper than your expected retirement rate saves money. Going higher costs more than it saves."
         },

@@ -5,6 +5,8 @@ import type { OptimizationResult, ScenarioInput } from "@/lib/types";
 import { ChartLegend } from "@/components/common/ChartLegend";
 import {
   BracketChart,
+  bracketChartYears,
+  bracketLegend,
   ConversionSlider,
   MostSavingsNote,
   Stat,
@@ -13,7 +15,7 @@ import {
 import { resultDisplay } from "@/lib/results/viewData";
 import { taxSourceNote } from "@/lib/results/taxSource";
 import { formatCurrency, formatSavings } from "@/lib/utils/formatting";
-import { CHART_COLORS, buildResultsDisclaimer } from "@/lib/utils/constants";
+import { buildResultsDisclaimer } from "@/lib/utils/constants";
 import { ScenarioCards } from "./ScenarioCards";
 import { BalanceProjections } from "./BalanceProjections";
 import { AcaSubsidyImpact } from "./AcaSubsidyImpact";
@@ -55,17 +57,7 @@ export function ResultsView({ result }: ResultsViewProps) {
   } = useResultSlider(data, details);
   const fill = chart ?? details.bracket_fill!;
 
-  const chartYears = useMemo(
-    () =>
-      fill.years.map((y) => ({
-        year: y.year,
-        age: y.age,
-        rmdAmount: y.rmd,
-        conversion: y.conversion,
-        income: y.income,
-      })),
-    [fill]
-  );
+  const chartYears = useMemo(() => bracketChartYears(fill), [fill]);
   const yearlyConversions = useMemo(() => fill.years.map((y) => y.conversion), [fill]);
   const taxSource = useMemo(() => taxSourceNote(fill.years), [fill]);
 
@@ -143,17 +135,7 @@ export function ResultsView({ result }: ResultsViewProps) {
         />
 
         <div className="flex flex-col items-start gap-2 border-t border-border pt-default sm:flex-row sm:items-center sm:justify-between">
-          <ChartLegend
-            className="!justify-start"
-            items={[
-              { color: CHART_COLORS.income, label: "Other income" },
-              ...(chartYears.some((y) => (y.rmdAmount ?? 0) > 0)
-                ? [{ color: CHART_COLORS.rmd, label: "Required withdrawal" }]
-                : []),
-              { color: CHART_COLORS.conversion, label: "Roth conversion" },
-              { color: "", label: "Room left in bracket", outline: true },
-            ]}
-          />
+          <ChartLegend className="!justify-start" items={bracketLegend(chartYears)} />
           <InfoTrigger
             label="How is this determined?"
             sectionId="bracket-filling"

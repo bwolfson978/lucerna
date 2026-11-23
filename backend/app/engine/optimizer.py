@@ -25,7 +25,7 @@ from app.engine.irmaa import (
     calculate_irmaa,
     irmaa_tier_index,
 )
-from app.engine.retirement import post_timeline_start, resolve_states
+from app.engine.retirement import fundable_conversions, post_timeline_start, resolve_states
 from app.engine.rmd import rmd_start_age
 from app.engine.state_tax import resolve_state_for_year
 from app.engine.tax import (
@@ -959,10 +959,8 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
             )
             total_conversion = sum(final_conversions)
 
-    # The answer lists what the account can fund in each year (it is taxed and valued
-    # that way): a year converts no more than is left after its RMD
-    walked = walk(scenario, final_conversions)
-    final_conversions = [flow.conversion for flow in walked.timeline()]
+    # The answer lists what the account can fund (it is taxed and valued that way)
+    final_conversions = fundable_conversions(scenario, final_conversions)
     total_conversion = sum(final_conversions)
 
     conversion_curve = _with_optimal_schedule(
