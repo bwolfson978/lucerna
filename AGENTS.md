@@ -166,7 +166,7 @@ lucerna/
 │   ├── capture/           # Before/after capture flows (pr-evidence skill)
 │   ├── fixtures/          # test.ts: the `test` every spec imports (fails on uncaught page errors)
 │   └── tests/
-├── .agents/skills/         # Repo skills (Agent Skills format): setup-lucerna, run-lucerna, pr-evidence, design-system-sync, formal-models, langfuse
+├── .agents/skills/         # Repo skills (Agent Skills format): setup-lucerna, run-lucerna, pr-evidence, design-system-sync, formal-models, langfuse, bug-hunt
 ├── .claude/skills          # Symlink to .agents/skills, for Claude Code
 ├── docs/
 │   ├── agent-and-mcp.md       # Website assistant, MCP server, MCP Apps, limits, analytics

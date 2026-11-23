@@ -1,0 +1,18 @@
+{
+  "birth_year": 1962,
+  "birth_month": 4,
+  "filing_status": "married_filing_jointly",
+  "spouse_birth_year": 1962,
+  "spouse_birth_month": 6,
+  "current_income": 0,
+  "traditional_balance": 1400000,
+  "roth_balance": 60000,
+  "retirement_age": 64,
+  "retirement_spending": 95000,
+  "state": "AZ",
+  "income_sources": [
+    {"kind": "pension", "owner": "you", "amount": 30000, "start_age": 64},
+    {"kind": "social_security", "owner": "you", "amount": 48000, "start_age": 70},
+    {"kind": "social_security", "owner": "spouse", "amount": 30000, "start_age": 70}
+  ]
+}
