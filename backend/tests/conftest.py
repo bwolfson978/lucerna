@@ -26,10 +26,28 @@ def sample_single_input():
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
         )
         defaults.update(overrides)
         return ScenarioInput(**defaults)
+
+    return _make
+
+
+@pytest.fixture
+def sample_low_income_year(sample_single_input):
+    """Factory: one low-income year and a balance large enough that converting pays.
+
+    ``sample_single_input`` earns $85,000 on a $250,000 balance, so its conversions
+    would be taxed at more than its later withdrawals and the engine makes none.
+    """
+
+    def _make(**overrides):
+        defaults = dict(
+            timeline=[PlanYear(year=2026, gross_income=20_000)],
+            traditional_ira_balance=900_000,
+        )
+        defaults.update(overrides)
+        return sample_single_input(**defaults)
 
     return _make
 
@@ -51,7 +69,6 @@ def sample_mfj_input():
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.07,
-            discount_rate=0.05,
         )
         defaults.update(overrides)
         return ScenarioInput(**defaults)

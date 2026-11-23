@@ -1,71 +1,75 @@
 {
   "early-retirement": {
     "start_age": 55,
-    "estimated_lifetime_tax_savings": 190467,
-    "after_tax_wealth_without": 1837993,
-    "after_tax_wealth_with": 2028460,
-    "total_converted": 912100,
-    "average_tax_rate": 0.109,
+    "estimated_lifetime_tax_savings": 49560,
+    "after_tax_wealth_without": 1009867,
+    "after_tax_wealth_with": 1059427,
+    "total_converted": 589400,
+    "average_tax_rate": 0.103,
     "conversions_by_year": [
+      96100,
       103000,
       103000,
-      103000,
-      103000,
-      103000,
-      103000,
-      103000,
-      83100,
+      57500,
       27000,
       27000,
       27000,
-      27000
+      27000,
+      27000,
+      27000,
+      33900,
+      33900
     ]
   },
   "before-social-security": {
     "start_age": 63,
-    "estimated_lifetime_tax_savings": 159936,
-    "after_tax_wealth_without": 1926877,
-    "after_tax_wealth_with": 2086813,
-    "total_converted": 591000,
-    "average_tax_rate": 0.102,
+    "estimated_lifetime_tax_savings": 50641,
+    "after_tax_wealth_without": 1245599,
+    "after_tax_wealth_with": 1296240,
+    "total_converted": 595000,
+    "average_tax_rate": 0.103,
     "conversions_by_year": [
-      113000,
-      113000,
-      113000,
-      113000,
-      87000,
-      52000
+      43800,
+      61200,
+      70000,
+      78800,
+      87500,
+      70000,
+      61200,
+      17500,
+      61200,
+      43800
     ]
   },
   "part-time": {
     "start_age": 58,
-    "estimated_lifetime_tax_savings": 139352,
-    "after_tax_wealth_without": 1497582,
-    "after_tax_wealth_with": 1636934,
-    "total_converted": 510800,
+    "estimated_lifetime_tax_savings": 34713,
+    "after_tax_wealth_without": 872461,
+    "after_tax_wealth_with": 907174,
+    "total_converted": 502700,
     "average_tax_rate": 0.109,
     "conversions_by_year": [
+      72600,
       83000,
       83000,
       83000,
-      83000,
-      83000,
-      14800,
+      81300,
       7000,
-      37000,
-      37000
+      7000,
+      42900,
+      42900
     ]
   },
   "career-break": {
     "start_age": 44,
-    "estimated_lifetime_tax_savings": 19606,
-    "after_tax_wealth_without": 680165,
-    "after_tax_wealth_with": 699771,
-    "total_converted": 104500,
-    "average_tax_rate": 0.106,
+    "estimated_lifetime_tax_savings": 1449,
+    "after_tax_wealth_without": 334834,
+    "after_tax_wealth_with": 336283,
+    "total_converted": 33300,
+    "average_tax_rate": 0.076,
     "conversions_by_year": [
-      54500,
-      50000
+      16500,
+      16800
     ]
   }
 }

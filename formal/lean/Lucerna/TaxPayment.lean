@@ -1,6 +1,7 @@
 /-
-Who pays the conversion tax: the valuation in `_npv_parts`
-(backend/app/engine/optimizer.py) and the dynamic programming search.
+Who pays the conversion tax: the year step and the plan's value in
+backend/app/engine/cashflow.py (`Plan.step`, `Plan.value_of`), which the
+optimizer (optimizer.py) and the dynamic programming search (dp.py) both use.
 
 A small world: one traditional balance `B`, one conversion `c` today, one flat
 tax rate `a / b` on every traditional dollar, now or later. By the end of the

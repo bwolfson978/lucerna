@@ -25,27 +25,40 @@ def _gap_years(healthcare=None, spending=60_000, age=60, balance=800_000):
 
 
 def test_year_detail_shows_where_spending_comes_from():
+    """The withdrawal covers the $60,000 of spending and the tax on itself."""
     result = optimize(_gap_years())
     first = result.yearly_detail[0]
     assert first["income"] == 0
-    assert first["spending_from_traditional"] == pytest.approx(60_000)
+    assert first["spending"] == 60_000
+    withdrawal = first["spending_from_traditional"]
+    tax = calculate_federal_tax(withdrawal, FilingStatus.MFJ)
+    assert withdrawal - tax == pytest.approx(60_000, abs=0.01)
+    assert first["total_tax"] == pytest.approx(tax, abs=0.01)
     assert first["spending_from_roth"] == 0
 
 
 def test_conversion_is_taxed_on_top_of_the_withdrawal():
-    result = optimize(_gap_years())
+    """The conversion is the top slice of the year's income, and the withdrawal
+    grows to pay its tax, so spending stays at $60,000."""
+    result = optimize(_gap_years(balance=1_500_000))
     first = result.yearly_detail[0]
     conversion = first["conversion"]
     assert conversion > 0
     fs = FilingStatus.MFJ
-    expected = calculate_federal_tax(60_000 + conversion, fs) - calculate_federal_tax(60_000, fs)
+    withdrawal = first["spending_from_traditional"]
+    expected = calculate_federal_tax(withdrawal + conversion, fs) - calculate_federal_tax(
+        withdrawal, fs
+    )
     assert first["federal_tax_cost"] == pytest.approx(expected, abs=1)
+    assert withdrawal - first["total_tax"] == pytest.approx(60_000, abs=0.01)
 
 
 def test_aca_income_includes_the_withdrawal():
     result = optimize(_gap_years(healthcare=HealthcareInput(household_size=2)))
     first = result.aca_subsidy_impact[0]
-    assert first.magi_without_conversion == pytest.approx(60_000)
+    withdrawal = result.yearly_detail[0]["spending_from_traditional"]
+    assert withdrawal > 60_000
+    assert first.magi_without_conversion == pytest.approx(withdrawal, abs=0.01)
     assert first.subsidy_without_conversion > 0
 
 

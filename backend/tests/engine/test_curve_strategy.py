@@ -8,7 +8,7 @@ from app.engine.curve_strategy import (
     build_curve_point,
     generate_conversion_curve,
 )
-from app.engine.dp import dp_optimize, extract_conversion_curve_3d
+from app.engine.dp import dp_optimize
 from app.engine.heuristic import _global_bracket_fill_for_cap, bracket_fill_curve
 from app.engine.optimizer import _build_year_detail, calculate_npv
 from app.engine.types import FilingStatus, PlanYear, ScenarioInput
@@ -30,7 +30,6 @@ def _simple_scenario(**kwargs) -> ScenarioInput:
         drawdown_start_age=65,
         planning_horizon_age=90,
         annual_growth_rate=0.07,
-        discount_rate=0.05,
     )
     defaults.update(kwargs)
     return ScenarioInput(**defaults)
@@ -39,9 +38,9 @@ def _simple_scenario(**kwargs) -> ScenarioInput:
 # ── Contract tests (both strategies) ─────────────────────────────────
 
 
-@pytest.mark.parametrize("strategy", ["dp_3d", "bracket_fill"])
+@pytest.mark.parametrize("strategy", ["bracket_fill"])
 class TestCurveStrategyContract:
-    """Contract tests that both strategies must satisfy."""
+    """What any curve strategy must satisfy."""
 
     def test_returns_expected_point_count(self, strategy):
         scenario = _simple_scenario()
@@ -168,7 +167,6 @@ class TestBuildCurvePoint:
             drawdown_start_age=80,
             planning_horizon_age=95,
             annual_growth_rate=0.05,
-            discount_rate=0.05,
         )
         conversions = [80_000, 80_000, 40_000]
 
@@ -194,7 +192,6 @@ class TestBuildCurvePoint:
             drawdown_start_age=80,
             planning_horizon_age=95,
             annual_growth_rate=0.05,
-            discount_rate=0.05,
         )
         scenario_no_rmd = ScenarioInput(
             age=40,  # below RMD age — no RMD
@@ -205,7 +202,6 @@ class TestBuildCurvePoint:
             drawdown_start_age=65,
             planning_horizon_age=90,
             annual_growth_rate=0.05,
-            discount_rate=0.05,
         )
         conversion = [50_000]
         pt_rmd = build_curve_point(scenario_with_rmd, 50_000, conversion)
@@ -226,10 +222,6 @@ class TestDispatch:
     def test_default_is_bracket_fill(self):
         assert DEFAULT_CURVE_STRATEGY == "bracket_fill"
 
-    def test_get_strategy_dp_3d(self):
-        fn = _get_strategy("dp_3d")
-        assert fn is extract_conversion_curve_3d
-
     def test_get_strategy_bracket_fill(self):
         fn = _get_strategy("bracket_fill")
         assert fn is bracket_fill_curve
@@ -239,20 +231,12 @@ class TestDispatch:
             _get_strategy("nonexistent")  # type: ignore[arg-type]
 
     def test_override_parameter(self):
-        scenario = _simple_scenario()
-        # Both strategies should return a list of curve points
-        curve_dp = generate_conversion_curve(
-            scenario,
-            n_curve_points=5,
-            strategy="dp_3d",
-        )
-        curve_bf = generate_conversion_curve(
-            scenario,
+        curve = generate_conversion_curve(
+            _simple_scenario(),
             n_curve_points=5,
             strategy="bracket_fill",
         )
-        assert len(curve_dp) == 5
-        assert len(curve_bf) == 5
+        assert len(curve) == 5
 
 
 # ── Bracket-fill specific tests ──────────────────────────────────────
@@ -284,22 +268,3 @@ class TestBracketFillStrategy:
         max_savings = npv_dp - npv_zero
         gap_pct = abs(npv_dp - npv_bf) / max_savings * 100 if max_savings > 0 else 0
         assert gap_pct < 1.0, f"Bracket-fill gap {gap_pct:.2f}% exceeds 1%"
-
-    def test_performance_faster_than_dp(self):
-        """Bracket-fill curve should be significantly faster than 3D DP."""
-        import time
-
-        scenario = _simple_scenario()
-
-        start = time.perf_counter()
-        bracket_fill_curve(scenario, n_curve_points=50)
-        bf_time = time.perf_counter() - start
-
-        start = time.perf_counter()
-        extract_conversion_curve_3d(scenario, n_curve_points=50)
-        dp_time = time.perf_counter() - start
-
-        # Bracket-fill should be at least 2x faster
-        assert bf_time < dp_time, (
-            f"Bracket-fill ({bf_time:.3f}s) not faster than DP ({dp_time:.3f}s)"
-        )

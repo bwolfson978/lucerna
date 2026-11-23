@@ -11,11 +11,11 @@
         },
         {
           "heading": "Why “today's dollars?”",
-          "text": "A dollar 20 years from now buys less than a dollar today. Every amount you enter and every result is in today's dollars, and we discount future savings at 5% a year so the number reflects what that money is actually worth to you right now, not an inflated future amount."
+          "text": "A dollar 20 years from now buys less than a dollar today. Every amount you enter and every result is in today's dollars. Later amounts are also brought back to today at your investment return: a dollar of tax avoided in 20 years counts as what you would need to set aside now to have that dollar then. So the number reflects what the savings are worth to you right now, not an inflated future amount."
         },
         {
           "heading": "What's included",
-          "text": "We model your full financial timeline: the tax cost of conversions now, growth in both accounts over time, retirement withdrawals (traditional is taxed, Roth is not), and any remaining balance. The savings number is the gap between converting optimally and not converting at all."
+          "text": "We model your full financial timeline: the tax on each conversion and the money that pays it, growth in both accounts over time, retirement withdrawals (traditional is taxed, Roth is not), and any remaining balance. The savings number is the gap between converting the recommended amounts and not converting at all. When you would pay the same tax rate now as later, converting gains nothing, and the analysis shows no conversions."
         }
       ]
     },
@@ -94,12 +94,12 @@
           "text": "Every amount you enter and every result is in today's dollars. Spending, Social Security, tax brackets, the standard deduction, IRMAA tiers and ACA subsidy limits keep up with prices, as the law and cost-of-living raises make them. A pension stays at its stated amount, so it buys a little less each year. A few thresholds are fixed in law and don't keep up: the Social Security taxation thresholds and the brackets of states that don't index theirs, so more income crosses them over time."
         },
         {
-          "heading": "5% discount rate",
-          "text": "How we turn future amounts into today's value, quoted before inflation like the investment return. A moderate assumption that avoids overstating benefits."
+          "heading": "Where the tax money comes from",
+          "text": "Every tax bill in the plan is paid by something. While you are working, the tax on a conversion comes out of your income. Once your accounts fund your spending, they pay the tax too: each year's withdrawals are sized so that your spending is left after the whole tax bill, the conversion's part included. Money that stays outside the accounts, such as a required withdrawal you don't need to spend, is assumed to earn your investment return, the same as money inside them. That return is also what brings later amounts back to today's value."
         },
         {
           "heading": "Income and spending in retirement",
-          "text": "Your income timeline runs through the age you plan to. Social Security, pensions and other income fill in the years they cover. Once you start drawing on your accounts, they cover whatever part of your spending that income doesn't, and required minimum distributions count toward it."
+          "text": "Your income timeline runs through the age you plan to. Social Security, pensions and other income fill in the years they cover. The spending you enter is what you spend in a year, not counting income tax. Once you start drawing on your accounts, they cover whatever part of it that income doesn't, plus the year's tax, and required minimum distributions count toward it. Before 59½ penalty-free Roth money is used first, then the traditional account, then Roth."
         },
         {
           "heading": "Money left at the end of the plan",
@@ -107,7 +107,7 @@
         },
         {
           "heading": "What's not included",
-          "text": "The few states that tax Social Security are treated as taxing all of it, without their own exemptions. Maine, Maryland, Delaware and Rhode Island exempt some retirement withdrawals but not Roth conversions; those breaks are not included. State credits and age deductions are not included either, and pension exclusions are not applied to pension income. IRMAA surcharges are factored in during optimization but are not a direct user input. The net investment income tax is not included, and every pension is treated as fixed, though some government pensions get cost-of-living raises. These simplifications could shift the optimal amount depending on your situation."
+          "text": "Savings and taxable investment accounts are not included yet, so the analysis cannot use them to pay conversion tax. The few states that tax Social Security are treated as taxing all of it, without their own exemptions. Maine, Maryland, Delaware and Rhode Island exempt some retirement withdrawals but not Roth conversions; those breaks are not included. State credits and age deductions are not included either, and pension exclusions are not applied to pension income. IRMAA surcharges are factored in during optimization but are not a direct user input. The net investment income tax is not included, and every pension is treated as fixed, though some government pensions get cost-of-living raises. These simplifications could shift the optimal amount depending on your situation."
         }
       ]
     },

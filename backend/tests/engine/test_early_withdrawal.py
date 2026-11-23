@@ -10,7 +10,7 @@ from app.engine.early_withdrawal import (
     penalty_free_draws,
 )
 from app.engine.optimizer import calculate_npv, optimize
-from app.engine.retirement import resolve_drawdowns, resolve_states
+from app.engine.retirement import resolve_states
 from app.tools.draft import ScenarioDraft, build_scenario_input, sync_timeline
 
 
@@ -29,7 +29,7 @@ def scenario(birth_year=1981, birth_month=6, **values):
         },
     )
     sync_timeline(draft, None, 2026)
-    return resolve_states(resolve_drawdowns(build_scenario_input(draft)))
+    return resolve_states(build_scenario_input(draft))
 
 
 @pytest.mark.parametrize(

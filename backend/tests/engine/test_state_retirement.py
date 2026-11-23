@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from app.engine.optimizer import optimize
+from app.engine.optimizer import _build_year_detail, optimize
 from app.engine.retirement import withdrawal_tax
 from app.engine.state_tax import calculate_state_tax, retirement_exclusion, retirement_rule
 from app.engine.tax import calculate_federal_tax
@@ -166,6 +166,9 @@ class TestOptimizer:
         notes = " ".join(result.reasoning_trace.sensitivity_notes)
         assert "New York exempts up to $20,000" in notes
 
+        # The same schedule costs less tax with the exclusion than without it
+        schedule = result.yearly_conversions
+        with_exclusion = _build_year_detail(_scenario("NY", age=60), schedule)[2]
         monkeypatch.setattr("app.engine.state_tax.retirement_rule", lambda state: None)
-        without = optimize(_scenario("NY", age=60))
-        assert result.total_tax_on_conversions < without.total_tax_on_conversions
+        without = _build_year_detail(_scenario("NY", age=60), schedule)[2]
+        assert with_exclusion < without

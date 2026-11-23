@@ -2,11 +2,10 @@ import numpy as np
 from scipy.optimize import minimize
 
 from app.engine.aca import (
-    aca_coverage_years,
     calculate_aca_subsidy,
-    calculate_subsidy_loss,
     find_subsidy_cliff_income,
 )
+from app.engine.cashflow import Plan, YearFlow, plan_for, walk
 from app.engine.constants import (
     IMPROVEMENT_THRESHOLD,
     ROUNDING_RESOLUTION,
@@ -16,8 +15,6 @@ from app.engine.early_withdrawal import (
     CONVERSION_SEASONING_YEARS,
     EARLY_WITHDRAWAL_PENALTY,
     age_59_half,
-    early_fraction,
-    early_penalty,
     has_early_spending,
     penalty_free_draws,
 )
@@ -25,22 +22,11 @@ from app.engine.heuristic import greedy_bracket_fill
 from app.engine.irmaa import (
     IRMAA_LOOKBACK_YEARS,
     IRMAA_TIERS,
-    MEDICARE_START_AGE,
     calculate_irmaa,
-    irmaa_surcharge_loss,
     irmaa_tier_index,
 )
-from app.engine.retirement import (
-    account_spending,
-    conversion_magi,
-    draw_beyond_rmd,
-    post_timeline_start,
-    resolve_drawdowns,
-    resolve_states,
-    terminal_value,
-    withdrawal_tax,
-)
-from app.engine.rmd import calculate_rmd, rmd_start_age
+from app.engine.retirement import post_timeline_start, resolve_states
+from app.engine.rmd import rmd_start_age
 from app.engine.state_tax import resolve_state_for_year
 from app.engine.tax import (
     STANDARD_DEDUCTION,
@@ -64,172 +50,57 @@ from app.engine.types import (
     ScenarioComparison,
     ScenarioInput,
 )
-from app.engine.year_tax import year_tax, year_taxes
-
-
-def _aca_coverage_years(scenario: ScenarioInput) -> set[int]:
-    """Calendar years the household needs ACA marketplace coverage."""
-    return aca_coverage_years(scenario)
-
-
-def _irmaa_exposed_years(scenario: ScenarioInput) -> set[int]:
-    """Timeline year indices (0-based) where a conversion creates IRMAA exposure.
-
-    A conversion in timeline year t causes IRMAA in year t+2. IRMAA applies
-    from Medicare start age (65), so someone in the household must be 65 by year t+2.
-    """
-    return {
-        t
-        for t in range(len(scenario.timeline))
-        if scenario.people_at_least(MEDICARE_START_AGE, t + IRMAA_LOOKBACK_YEARS)
-    }
+from app.engine.year_tax import year_tax
 
 
 def calculate_npv(scenario: ScenarioInput, yearly_conversions: list[float]) -> float:
-    """Calculate NPV for a given multi-year conversion schedule."""
-    return _npv_parts(scenario, yearly_conversions)[0]
+    """Today's value of a conversion schedule: what the accounts provide after tax
+    over the plan plus what is left at the end (see ``app.engine.cashflow``)."""
+    return walk(scenario, yearly_conversions).value
+
+
+def _subsidy_lost(plan: Plan, flow: YearFlow) -> tuple[float, float]:
+    """ACA premium credit without and with the year's conversion, which is the top
+    slice of the year's income."""
+    hc = plan.scenario.healthcare
+    if not flow.rule.aca or hc is None:
+        return 0.0, 0.0
+    without = calculate_aca_subsidy(flow.base_income, hc.household_size, hc.monthly_slcsp_premium)
+    return without, flow.subsidy
+
+
+def _irmaa_added(plan: Plan, flow: YearFlow) -> float:
+    """Medicare surcharge the year's conversion adds, two years on."""
+    tax = flow.rule.tax
+    if tax.medicare_people <= 0 or flow.conversion <= 0:
+        return 0.0
+    without = calculate_irmaa(
+        tax.agi(flow.base_income),
+        plan.scenario.filing_status,
+        tax.irmaa_scale,
+        tax.medicare_people,
+    )
+    return max(0.0, flow.irmaa - without)
 
 
 def _npv_parts(scenario: ScenarioInput, yearly_conversions: list[float]) -> tuple[float, float]:
-    """NPV of a conversion schedule, plus what the conversions cost when they happen
-    (tax, lost ACA subsidy, IRMAA) discounted the same way.
-
-    Unified timeline loop: every year can have conversions, RMDs, and drawdowns.
-    A post-timeline fallback handles years beyond the timeline until
-    planning_horizon_age. The traditional balance left after that is valued at
-    the final plan year's marginal rate (``terminal_value``).
-    """
-    n_years = len(scenario.timeline)
-    g = scenario.real_growth_rate
-    d = scenario.real_discount_rate
-    filing_status = scenario.filing_status
-
-    trad_balance = scenario.traditional_ira_balance
-    roth_balance = scenario.roth_ira_balance
-    npv = 0.0
+    """Value of a conversion schedule, plus what the conversions cost when they
+    happen (tax, lost ACA subsidy, IRMAA), brought back to today the same way."""
+    plan = plan_for(scenario)
+    walked = plan.walk(yearly_conversions)
     upfront_cost = 0.0
-
-    aca_years = _aca_coverage_years(scenario)
-    irmaa_exposed = _irmaa_exposed_years(scenario)
-    hc = scenario.healthcare
-    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
-    taxes = year_taxes(scenario)
-    free_draws = penalty_free_draws(scenario, yearly_conversions)
-
-    # ── Unified timeline loop ────────────────────────────────────────────────
-    for t in range(n_years):
-        entry = scenario.timeline[t]
-        income = entry.gross_income
-        owner_age = scenario.age + t
-        yt = taxes[t]
-        is_aca_year = hc is not None and entry.year in aca_years
-        discount_factor = (1 + d) ** (-t)
-
-        # RMD: computed on start-of-year balance, deducted before conversion
-        rmd = calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
-        rmd = min(rmd, trad_balance)
-
-        effective_income = income + rmd  # income base for conversion tax
-
-        # Conversion (on balance remaining after RMD)
-        available_for_conv = max(0.0, trad_balance - rmd)
-        conversion = min(max(0.0, yearly_conversions[t]), available_for_conv)
-
-        # Tax cost of RMD (marginal on top of gross_income)
-        if rmd > 0:
-            rmd_tax = yt.total(income + rmd) - yt.total(income)
-            after_tax_rmd = rmd - rmd_tax
-            npv += after_tax_rmd * discount_factor
-
-        # Spending beyond the RMD comes from the traditional account first (after any
-        # penalty-free Roth money before 59½), so the conversion is stacked on that
-        # withdrawal for tax, ACA and IRMAA.
-        need = draw_beyond_rmd(entry.drawdown, rmd)
-        free = free_draws[t]
-        base, added = conversion_magi(effective_income, available_for_conv, need - free, conversion)
-        trad_draw = min(need - free, available_for_conv - conversion)
-
-        conv_cost = yt.total(base + added) - yt.total(base)
-        if is_aca_year and added > 0:
-            conv_cost += calculate_subsidy_loss(
-                base, added, hc.household_size, hc.monthly_slcsp_premium
-            )
-        npv -= conv_cost * discount_factor
-        upfront_cost += conv_cost * discount_factor
-
-        # IRMAA cost (2-year lag — discounted at the surcharge year, not conversion year)
-        if t in irmaa_exposed and added > 0:
-            # IRMAA MAGI counts only the taxable part of Social Security
-            agi_base = yt.agi(base)
-            irmaa_cost = irmaa_surcharge_loss(
-                agi_base,
-                yt.agi(base + added) - agi_base,
-                filing_status,
-                yt.irmaa_scale,
-                yt.medicare_people,
-            )
-            if irmaa_cost > 0:
-                irmaa_discount = (1 + d) ** (-(t + IRMAA_LOOKBACK_YEARS))
-                npv -= irmaa_cost * irmaa_discount
-                upfront_cost += irmaa_cost * irmaa_discount
-
-        # Spending draws: penalty-free Roth before 59½, then traditional (taxed on top
-        # of income + RMD), then Roth
-        if base > effective_income:
-            npv += (trad_draw - (yt.total(base) - yt.total(effective_income))) * discount_factor
-        trad_balance -= rmd + conversion + trad_draw
-        roth_balance += conversion
-        roth_draw = min(need - trad_draw, roth_balance)
-        if roth_draw > 0:
-            npv += roth_draw * discount_factor
-            roth_balance -= roth_draw
-        # Before 59½: 10% on the traditional draw and any Roth money that isn't penalty-free
-        npv -= early_penalty(scenario, t, trad_draw + roth_draw - free) * discount_factor
-
-        trad_balance *= 1 + g
-        roth_balance *= 1 + g
-
-    # ── Post-timeline fallback ───────────────────────────────────────────────
-    phase3_start = post_timeline_start(scenario)
-
-    # Grow across any gap between end-of-timeline and phase3_start
-    extra_growth = phase3_start - n_years
-    if extra_growth > 0:
-        trad_balance *= (1 + g) ** extra_growth
-        roth_balance *= (1 + g) ** extra_growth
-
-    spending = account_spending(scenario, trad_balance + roth_balance)
-
-    total_plan_years = scenario.planning_horizon_age - scenario.age
-
-    # Same order as a timeline year: RMD and withdrawal on the start-of-year
-    # balance, then growth.
-    for year in range(phase3_start, total_plan_years + 1):
-        owner_age = scenario.age + year
-
-        rmd = calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
-        distribution = max(rmd, min(spending, trad_balance))
-        distribution = min(distribution, trad_balance)
-        trad_balance -= distribution
-
-        after_tax_dist = distribution - withdrawal_tax(scenario, distribution, year)
-
-        shortfall = spending - distribution
-        if shortfall > 0:
-            roth_draw = min(shortfall, roth_balance)
-            roth_balance -= roth_draw
-            after_tax_dist += roth_draw
-
-        discount_factor = (1 + d) ** (-year)
-        npv += after_tax_dist * discount_factor
-
-        trad_balance *= 1 + g
-        roth_balance *= 1 + g
-
-    # ── Leftover balances, traditional at the final year's marginal rate ────
-    npv += terminal_value(scenario, trad_balance, roth_balance, total_plan_years + 1)
-
-    return npv, upfront_cost
+    for flow in walked.timeline():
+        if flow.conversion <= 0:
+            continue
+        tax = flow.rule.tax.total
+        cost = flow.tax - tax(flow.base_income)
+        without, with_conversion = _subsidy_lost(plan, flow)
+        cost += max(0.0, without - with_conversion)
+        upfront_cost += cost * plan.discount(flow.rule.index)
+        upfront_cost += _irmaa_added(plan, flow) * plan.discount(
+            flow.rule.index + IRMAA_LOOKBACK_YEARS
+        )
+    return walked.value, upfront_cost
 
 
 def _objective(x: np.ndarray, scenario: ScenarioInput) -> float:
@@ -438,99 +309,78 @@ def _build_year_detail(
     scenario: ScenarioInput,
     conversions: list[float],
 ) -> tuple[list[dict], list[list[BracketFillResult]], float, list[AcaSubsidyDetail] | None]:
-    """Build per-year detail and bracket fill data for a given conversion schedule."""
-    n_years = len(scenario.timeline)
+    """Build per-year detail and bracket fill data for a given conversion schedule.
+
+    The conversion is the top slice of what the year is taxed on: its tax, lost ACA
+    subsidy and added IRMAA are measured on top of income, the RMD and the
+    traditional withdrawal that funds the year's spending and tax.
+    """
+    plan = plan_for(scenario)
+    hc = scenario.healthcare
     yearly_detail = []
     yearly_bracket_fill: list[list[BracketFillResult]] = []
     total_tax = 0.0
-
-    hc = scenario.healthcare
-    aca_years = _aca_coverage_years(scenario)
-    irmaa_exposed = _irmaa_exposed_years(scenario)
     aca_details: list[AcaSubsidyDetail] | None = [] if hc else None
-
-    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
-    free_draws = penalty_free_draws(scenario, conversions)
-    trad_balance = scenario.traditional_ira_balance
-    roth_balance = scenario.roth_ira_balance
 
     from app.engine.aca import federal_poverty_level
 
-    for t in range(n_years):
-        entry = scenario.timeline[t]
-        income = entry.gross_income
-        conversion = conversions[t]
-        year = entry.year
-        year_state = resolve_state_for_year(entry.state, scenario.state)
-        owner_age = scenario.age + t
+    for flow in plan.walk(conversions).timeline():
+        rule = flow.rule
+        yt = rule.tax
+        base, added = flow.base_income, flow.conversion
 
-        # RMD for this year (on start-of-year balance)
-        rmd = calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
-        rmd = min(rmd, trad_balance)
-        effective_income = income + rmd
-
-        # The conversion is measured on top of the traditional withdrawal for spending
-        available_for_conv = max(0.0, trad_balance - rmd)
-        actual_conv = min(conversion, available_for_conv)
-        need = draw_beyond_rmd(entry.drawdown, rmd)
-        free = free_draws[t]
-        base, added = conversion_magi(
-            effective_income, available_for_conv, need - free, actual_conv
-        )
-        trad_draw = min(need - free, available_for_conv - actual_conv)
-        roth_draw = min(need - trad_draw, roth_balance + actual_conv)
-        penalty = early_penalty(scenario, t, trad_draw + roth_draw - free)
-
-        yt = year_tax(scenario, t)
         fed_cost = federal_tax_on_conversion(base, added, scenario.filing_status, yt)
         state_cost = state_tax_on_conversion(
-            base,
-            added,
-            year_state,
-            scenario.filing_status,
-            scenario.custom_state_rate,
-            yt,
+            base, added, yt.state, scenario.filing_status, scenario.custom_state_rate, yt
         )
         tax_cost = fed_cost + state_cost
         total_tax += tax_cost
 
-        eff_rate = tax_cost / conversion if conversion > 0 else 0.0
+        eff_rate = tax_cost / added if added > 0 else 0.0
         marginal = combined_marginal_rate(
             base,
             added,
             scenario.filing_status,
-            state=year_state,
+            state=yt.state,
             custom_state_rate=scenario.custom_state_rate,
             year=yt,
         )
         fed_marginal = yt.federal_bracket(base + added)
 
-        # IRMAA detail
-        irmaa_cost = 0.0
+        # Where the conversion's tax comes from. A working household pays it out of
+        # income; one that is spending from its accounts pays it out of income only
+        # as far as income is left over after the budget, and the accounts pay the rest.
+        if rule.budget is None:
+            tax_from_income = tax_cost
+        else:
+            income_left = rule.income + flow.rmd - rule.budget
+            income_left -= yt.total(rule.income + flow.rmd)
+            tax_from_income = min(tax_cost, max(0.0, income_left))
+
         irmaa_tier = 0
-        if t in irmaa_exposed:
-            agi_base = yt.agi(base)
-            agi_with = yt.agi(base + added)
-            irmaa_cost = irmaa_surcharge_loss(
-                agi_base,
-                agi_with - agi_base,
-                scenario.filing_status,
-                yt.irmaa_scale,
-                yt.medicare_people,
+        if yt.medicare_people > 0:
+            irmaa_tier = irmaa_tier_index(
+                yt.agi(base + added), scenario.filing_status, yt.irmaa_scale
             )
-            irmaa_tier = irmaa_tier_index(agi_with, scenario.filing_status, yt.irmaa_scale)
 
         detail: dict = {
-            "year": year,
-            "income": income,
-            "rmd": round(rmd, 2),
-            "conversion": conversion,
-            "spending_from_traditional": round(trad_draw, 2),
-            "spending_from_roth": round(roth_draw, 2),
-            "early_withdrawal_penalty": round(penalty, 2),
+            "year": rule.year,
+            "income": rule.income,
+            "rmd": round(flow.rmd, 2),
+            "conversion": added,
+            # After-tax spending the household funds this year (None while working),
+            # and the withdrawals that pay for it and for the year's tax
+            "spending": None if rule.budget is None else round(rule.budget, 2),
+            "spending_from_traditional": round(flow.trad_draw, 2),
+            "spending_from_roth": round(flow.spending_from_roth, 2),
+            "spending_shortfall": round(flow.shortfall, 2),
+            "early_withdrawal_penalty": round(flow.penalty, 2),
+            # The year's whole income tax bill, and the conversion's part of it
+            "total_tax": round(flow.tax, 2),
             "tax_cost": round(tax_cost, 2),
             "federal_tax_cost": round(fed_cost, 2),
             "state_tax_cost": round(state_cost, 2),
+            "tax_paid_from_income": round(tax_from_income, 2),
             "effective_rate": round(eff_rate, 4),
             # What the federal brackets apply to, conversion and withdrawals included
             "taxable_income": round(yt.taxable_income(base + added), 2),
@@ -542,24 +392,15 @@ def _build_year_detail(
                 marginal - fed_marginal,
                 4,
             ),
-            "irmaa_cost": round(irmaa_cost, 2),
+            "irmaa_cost": round(_irmaa_added(plan, flow), 2),
             "irmaa_tier": irmaa_tier,
         }
 
-        if hc and year in aca_years:
-            subsidy_without = calculate_aca_subsidy(
-                base,
-                hc.household_size,
-                hc.monthly_slcsp_premium,
-            )
-            subsidy_with = calculate_aca_subsidy(
-                base + added,
-                hc.household_size,
-                hc.monthly_slcsp_premium,
-            )
+        if hc and rule.aca:
+            subsidy_without, subsidy_with = _subsidy_lost(plan, flow)
             subsidy_lost = max(0.0, subsidy_without - subsidy_with)
             combined_cost_val = tax_cost + subsidy_lost
-            combined_rate_val = combined_cost_val / conversion if conversion > 0 else 0.0
+            combined_rate_val = combined_cost_val / added if added > 0 else 0.0
             fpl = federal_poverty_level(hc.household_size)
             income_pct_fpl = ((base + added) / fpl) * 100
             # The conversion pushes income over 400% FPL and wipes out a subsidy
@@ -572,7 +413,7 @@ def _build_year_detail(
 
             aca_details.append(
                 AcaSubsidyDetail(
-                    year=year,
+                    year=rule.year,
                     magi_without_conversion=base,
                     magi_with_conversion=base + added,
                     subsidy_without_conversion=round(subsidy_without, 2),
@@ -587,13 +428,7 @@ def _build_year_detail(
             )
 
         yearly_detail.append(detail)
-        bracket_fill = analyze_bracket_fill(base, added, scenario.filing_status)
-        yearly_bracket_fill.append(bracket_fill)
-
-        # Advance balances for next year's RMD and spending draws
-        trad_balance -= rmd + actual_conv + trad_draw
-        roth_balance = (roth_balance + actual_conv - roth_draw) * (1 + scenario.real_growth_rate)
-        trad_balance *= 1 + scenario.real_growth_rate
+        yearly_bracket_fill.append(analyze_bracket_fill(base, added, scenario.filing_status))
 
     return yearly_detail, yearly_bracket_fill, total_tax, aca_details
 
@@ -603,52 +438,23 @@ def _build_irmaa_projection(
     conversions: list[float],
 ) -> IrmaaProjection | None:
     """Build IRMAA surcharge projection for a given conversion schedule."""
-    n_years = len(scenario.timeline)
-    free_draws = penalty_free_draws(scenario, conversions)
-    irmaa_exposed = _irmaa_exposed_years(scenario)
-    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
-
-    trad_balance = scenario.traditional_ira_balance
     yearly_detail: list[IrmaaYearDetail] = []
-
-    for t in range(n_years):
-        entry = scenario.timeline[t]
-        owner_age = scenario.age + t
-        conversion = conversions[t]
-        g = scenario.real_growth_rate
-
-        rmd = calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
-        rmd = min(rmd, trad_balance)
-        available_for_conv = max(0.0, trad_balance - rmd)
-        actual_conv = min(conversion, available_for_conv)
-
-        need = draw_beyond_rmd(entry.drawdown, rmd)
-        trad_draw = min(need - free_draws[t], available_for_conv - actual_conv)
-
-        if t in irmaa_exposed:
-            # Income, RMD, conversion and the traditional withdrawal for spending
-            yt = year_tax(scenario, t)
-            magi = yt.agi(entry.gross_income + rmd + actual_conv + trad_draw)
-
-            irmaa_cost = calculate_irmaa(
-                magi, scenario.filing_status, yt.irmaa_scale, yt.medicare_people
+    for flow in walk(scenario, conversions).timeline():
+        if flow.irmaa <= 0:
+            continue
+        rule = flow.rule
+        # Income, RMD, conversion and the traditional withdrawal for spending and tax
+        magi = rule.tax.agi(flow.taxed_income)
+        yearly_detail.append(
+            IrmaaYearDetail(
+                conversion_year=rule.year,
+                surcharge_year=rule.year + IRMAA_LOOKBACK_YEARS,
+                surcharge_age=rule.age + IRMAA_LOOKBACK_YEARS,
+                magi=round(magi, 2),
+                irmaa_annual_cost=round(flow.irmaa, 2),
+                irmaa_tier=irmaa_tier_index(magi, scenario.filing_status, rule.tax.irmaa_scale),
             )
-            tier = irmaa_tier_index(magi, scenario.filing_status, yt.irmaa_scale)
-
-            if irmaa_cost > 0:
-                yearly_detail.append(
-                    IrmaaYearDetail(
-                        conversion_year=entry.year,
-                        surcharge_year=entry.year + IRMAA_LOOKBACK_YEARS,
-                        surcharge_age=owner_age + IRMAA_LOOKBACK_YEARS,
-                        magi=round(magi, 2),
-                        irmaa_annual_cost=round(irmaa_cost, 2),
-                        irmaa_tier=tier,
-                    )
-                )
-
-        trad_balance -= rmd + actual_conv + trad_draw
-        trad_balance *= 1 + g
+        )
 
     if not yearly_detail:
         return None
@@ -713,105 +519,28 @@ def _build_rmd_projection(
     conversions: list[float],
 ) -> RmdProjection | None:
     """Project RMD amounts and taxes across the full plan (timeline + post-timeline)."""
-    n_years = len(scenario.timeline)
-    free_draws = penalty_free_draws(scenario, conversions)
-    g = scenario.real_growth_rate
-
-    trad_balance = scenario.traditional_ira_balance
-    roth_balance = scenario.roth_ira_balance
-
-    # Apply timeline conversions and track balance
-    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
-    first_year = scenario.timeline[0].year
     yearly_detail: list[RmdYearDetail] = []
     total_rmd_taxes = 0.0
-    ret_state = scenario.retirement_state or scenario.state
 
-    for t in range(n_years):
-        entry = scenario.timeline[t]
-        owner_age = scenario.age + t
-        calendar_year = entry.year
-
-        rmd = calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
-        rmd = min(rmd, trad_balance)
-
-        available_for_conv = max(0.0, trad_balance - rmd)
-        actual_conv = min(max(0.0, conversions[t]), available_for_conv)
-        need = draw_beyond_rmd(entry.drawdown, rmd)
-        trad_draw = min(need - free_draws[t], available_for_conv - actual_conv)
-
-        if rmd > 0:
-            # The RMD plus any spending drawn on top of it, taxed on top of income
-            income = entry.gross_income
-            distribution = rmd + trad_draw
-            yt = year_tax(scenario, t, state=ret_state)
-            tax = yt.total(income + distribution) - yt.total(income)
-
-            yearly_detail.append(
-                RmdYearDetail(
-                    year=calendar_year,
-                    age=owner_age,
-                    trad_balance_start=round(trad_balance, 2),
-                    rmd_amount=round(rmd, 2),
-                    actual_distribution=round(distribution, 2),
-                    tax_on_distribution=round(tax, 2),
-                    effective_rate=round(tax / distribution, 4),
-                )
+    for flow in walk(scenario, conversions).flows:
+        if flow.rmd <= 0:
+            continue
+        rule = flow.rule
+        # The RMD plus anything withdrawn on top of it, taxed on top of income
+        distribution = flow.rmd + flow.trad_draw
+        tax = float(rule.tax.total(rule.income + distribution)) - rule.tax_on_income
+        yearly_detail.append(
+            RmdYearDetail(
+                year=rule.year,
+                age=rule.age,
+                trad_balance_start=round(flow.trad_start, 2),
+                rmd_amount=round(flow.rmd, 2),
+                actual_distribution=round(distribution, 2),
+                tax_on_distribution=round(tax, 2),
+                effective_rate=round(tax / distribution, 4),
             )
-            total_rmd_taxes += tax
-
-        trad_balance -= rmd + actual_conv + trad_draw
-        roth_balance += actual_conv
-        roth_balance -= min(need - trad_draw, roth_balance)
-        trad_balance *= 1 + g
-        roth_balance *= 1 + g
-
-    # Post-timeline fallback (same rules as calculate_npv)
-    phase3_start = post_timeline_start(scenario)
-
-    extra_growth = phase3_start - n_years
-    if extra_growth > 0:
-        trad_balance *= (1 + g) ** extra_growth
-        roth_balance *= (1 + g) ** extra_growth
-
-    spending = account_spending(scenario, trad_balance + roth_balance)
-
-    total_plan_years = scenario.planning_horizon_age - scenario.age
-
-    for year in range(phase3_start, total_plan_years + 1):
-        owner_age = scenario.age + year
-        calendar_year = first_year + year
-        start_trad = trad_balance
-
-        rmd = calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
-        distribution = max(rmd, min(spending, trad_balance))
-        distribution = min(distribution, trad_balance)
-        trad_balance -= distribution
-
-        tax = withdrawal_tax(scenario, distribution, year)
-        eff_rate = tax / distribution if distribution > 0 else 0.0
-
-        if rmd > 0:
-            yearly_detail.append(
-                RmdYearDetail(
-                    year=calendar_year,
-                    age=owner_age,
-                    trad_balance_start=round(start_trad, 2),
-                    rmd_amount=round(rmd, 2),
-                    actual_distribution=round(distribution, 2),
-                    tax_on_distribution=round(tax, 2),
-                    effective_rate=round(eff_rate, 4),
-                )
-            )
-            total_rmd_taxes += tax
-
-        shortfall = spending - distribution
-        if shortfall > 0:
-            roth_draw = min(shortfall, roth_balance)
-            roth_balance -= roth_draw
-
-        trad_balance *= 1 + g
-        roth_balance *= 1 + g
+        )
+        total_rmd_taxes += tax
 
     if not yearly_detail:
         return None
@@ -819,7 +548,7 @@ def _build_rmd_projection(
     peak_detail = max(yearly_detail, key=lambda d: d.rmd_amount)
 
     return RmdProjection(
-        rmd_start_age=owner_rmd_start,
+        rmd_start_age=rmd_start_age(scenario.age, scenario.timeline[0].year),
         rmd_start_year=yearly_detail[0].year,
         yearly_detail=yearly_detail,
         total_rmd_taxes=round(total_rmd_taxes, 2),
@@ -982,18 +711,8 @@ def _build_scenarios(
     full_conversions = [max_balance] + [0.0] * (n_years - 1)
     npv_at_full = calculate_npv(scenario, full_conversions)
 
-    yr0_income = scenario.timeline[0].gross_income
-    yr0_state = resolve_state_for_year(scenario.timeline[0].state, scenario.state)
-    yr0_tax = year_tax(scenario, 0)
-    tax_full = federal_tax_on_conversion(yr0_income, max_balance, scenario.filing_status, yr0_tax)
-    tax_full += state_tax_on_conversion(
-        yr0_income,
-        max_balance,
-        yr0_state,
-        scenario.filing_status,
-        scenario.custom_state_rate,
-        yr0_tax,
-    )
+    # What the account can fund in year one, and the tax on it
+    tax_full = _build_year_detail(scenario, full_conversions)[2]
 
     return [
         ScenarioComparison(
@@ -1083,17 +802,18 @@ def _with_conversion_ladder(scenario: ScenarioInput, conversions: list[float]) -
     """
     if not has_early_spending(scenario):
         return conversions
-    n_years = len(scenario.timeline)
-    contributions = penalty_free_draws(scenario, [0.0] * n_years)
+    plan = plan_for(scenario)
+    n_years = plan.n_timeline
+    # Spending each year takes from the accounts with the penalty when nothing is converted
+    penalized = [flow.trad_draw + flow.roth_draw for flow in plan.no_conversion.timeline()]
     caps: dict[int, float] = {}
     for t in range(n_years - CONVERSION_SEASONING_YEARS):
         later = t + CONVERSION_SEASONING_YEARS
-        cap = (scenario.timeline[later].drawdown or 0.0) - contributions[later]
-        if cap > 0 and early_fraction(scenario, later) > 0:
-            caps[t] = cap
+        if penalized[later] > 0 and plan.years[later].penalty_rate > 0:
+            caps[t] = penalized[later]
     if not caps:
         return conversions
-    retired = [t for t in caps if scenario.timeline[t].drawdown]
+    retired = [t for t in caps if plan.years[t].budget is not None]
     best, best_npv = conversions, calculate_npv(scenario, conversions)
     for years in {tuple(retired), tuple(caps)}:
         for step in range(1, 11):
@@ -1107,13 +827,80 @@ def _with_conversion_ladder(scenario: ScenarioInput, conversions: list[float]) -
     return best
 
 
+# The search's traditional grid has this many points up to today's balance (see dp.py)
+_GRID_POINTS_TO_BALANCE = 160
+
+
+# A conversion has to earn its place: one that adds less than this per dollar
+# converted (a hundredth of a percent) is left out. Real differences are whole
+# percentage points of tax, so this only separates "no gain" from "a gain".
+_IDLE_GAIN_PER_DOLLAR = 1e-4
+
+
+def _refine_within_grid(scenario: ScenarioInput, conversions: list[float]) -> list[float]:
+    """Settle each year's conversion between the search's grid points, and drop
+    conversions that gain nothing.
+
+    The search places every conversion on a grid, about $16,000 apart for a $2.6M
+    balance, so a year can sit half a step from where it should. And where a
+    household pays the same rate now as later, converting changes nothing, so the
+    search has no reason to prefer any amount there and returns an arbitrary one.
+
+    This first leaves out each year's conversion that the plan is no worse without,
+    then moves one year at a time up or down by a shrinking step and keeps what the
+    exact value prefers, taking the smaller conversion when the two are equal.
+    Returns ``conversions`` itself when nothing beats it.
+    """
+    plan = plan_for(scenario)
+    grid_step = scenario.traditional_ira_balance / _GRID_POINTS_TO_BALANCE
+    best, best_value = conversions, plan.walk(conversions).value
+
+    def try_move(t: int, amount: float) -> bool:
+        nonlocal best, best_value
+        candidate = list(best)
+        candidate[t] = amount
+        value = plan.walk(candidate).value
+        change = amount - best[t]
+        if change < 0:
+            accepted = value >= best_value + _IDLE_GAIN_PER_DOLLAR * change
+        else:
+            accepted = value > best_value + max(1.0, _IDLE_GAIN_PER_DOLLAR * change)
+        if accepted:
+            best, best_value = candidate, value
+        return accepted
+
+    def drop_idle() -> None:
+        # Leaving one out can make another idle, so go round until none is
+        for _ in range(plan.n_timeline):
+            if not any([best[t] > 0 and try_move(t, 0.0) for t in range(plan.n_timeline)]):
+                break
+
+    drop_idle()
+    for step in (grid_step, grid_step / 2, grid_step / 4, grid_step / 8):
+        if step < ROUNDING_RESOLUTION:
+            break
+        for _ in range(3):
+            moved = False
+            for t in range(plan.n_timeline):
+                if (
+                    best[t] > 0
+                    and try_move(t, max(0.0, best[t] - step))
+                    or try_move(t, best[t] + step)
+                ):
+                    moved = True
+            if not moved:
+                break
+    drop_idle()
+    return best
+
+
 def optimize(scenario: ScenarioInput) -> OptimizationResult:
     """Find the optimal multi-year conversion schedule."""
     from app.engine.curve_strategy import generate_conversion_curve
     from app.engine.dp import dp_optimize
 
     original = scenario
-    scenario = resolve_states(resolve_drawdowns(scenario))
+    scenario = resolve_states(scenario)
     n_years = len(scenario.timeline)
     max_balance = scenario.traditional_ira_balance
 
@@ -1165,6 +952,19 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
             )
             total_conversion = sum(final_conversions)
 
+        refined = _refine_within_grid(scenario, final_conversions)
+        if refined is not final_conversions:
+            final_conversions = _finalize_conversions(
+                refined, max_balance, scenario.real_growth_rate
+            )
+            total_conversion = sum(final_conversions)
+
+    # The answer lists what the account can fund in each year (it is taxed and valued
+    # that way): a year converts no more than is left after its RMD
+    walked = walk(scenario, final_conversions)
+    final_conversions = [flow.conversion for flow in walked.timeline()]
+    total_conversion = sum(final_conversions)
+
     conversion_curve = _with_optimal_schedule(
         scenario,
         conversion_curve,
@@ -1180,60 +980,27 @@ def optimize(scenario: ScenarioInput) -> OptimizationResult:
         final_conversions,
     )
 
-    timeline_chart = []
-    chart_free_draws = penalty_free_draws(scenario, final_conversions)
-    trad_balance = scenario.traditional_ira_balance
-    roth_balance = scenario.roth_ira_balance
-    g = scenario.real_growth_rate
-    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
+    flows = walk(scenario, final_conversions).flows
+    timeline_chart = [
+        {
+            "year": flow.rule.year,
+            "income": flow.rule.income,
+            "rmd": round(flow.rmd, 2),
+            "conversion": flow.conversion,
+            "bracket_boundaries": [b.bracket_max for b in yearly_bracket_fill[t]],
+        }
+        for t, flow in enumerate(flows[:n_years])
+    ]
 
-    # Balances when drawdowns begin ("at retirement"), or after the timeline if later.
+    # Balances when drawdowns begin ("at retirement"), or after the timeline if later
     drawdown_offset = scenario.drawdown_start_age - scenario.age
-    at_retirement: tuple[float, float] | None = None
-
-    for t in range(n_years):
-        entry = scenario.timeline[t]
-        income = entry.gross_income
-        owner_age = scenario.age + t
-        c_t = final_conversions[t]
-        if t == drawdown_offset and t > 0:
-            at_retirement = (trad_balance, roth_balance)
-
-        rmd = calculate_rmd(trad_balance, owner_age) if owner_age >= owner_rmd_start else 0.0
-        rmd = min(rmd, trad_balance)
-
-        bracket_fill = yearly_bracket_fill[t]
-        timeline_chart.append(
-            {
-                "year": entry.year,
-                "income": income,
-                "rmd": round(rmd, 2),
-                "conversion": c_t,
-                "bracket_boundaries": [b.bracket_max for b in bracket_fill],
-            }
-        )
-
-        available_for_conv = max(0.0, trad_balance - rmd)
-        actual_conv = min(c_t, available_for_conv)
-        trad_balance -= rmd
-        trad_balance -= actual_conv
-        roth_balance += actual_conv
-        need = draw_beyond_rmd(entry.drawdown, rmd)
-        trad_draw = min(need - chart_free_draws[t], trad_balance)
-        trad_balance -= trad_draw
-        roth_balance -= min(need - trad_draw, roth_balance)
-        trad_balance *= 1 + g
-        roth_balance *= 1 + g
-
-    # Project to drawdown start
-    phase3_start = post_timeline_start(scenario)
-    extra_growth = phase3_start - n_years
-    if extra_growth > 0:
-        factor = (1 + g) ** extra_growth
-        trad_balance *= factor
-        roth_balance *= factor
-    if at_retirement is not None:
-        trad_balance, roth_balance = at_retirement
+    if 0 < drawdown_offset < n_years:
+        trad_balance = flows[drawdown_offset].trad_start
+        roth_balance = flows[drawdown_offset].roth_start
+    else:
+        before_withdrawals = flows[max(n_years, post_timeline_start(scenario)) - 1]
+        trad_balance = before_withdrawals.trad_end
+        roth_balance = before_withdrawals.roth_end
 
     overall_eff_rate = total_tax / total_conversion if total_conversion > 0 else 0.0
 

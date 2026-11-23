@@ -439,7 +439,6 @@
         "drawdown_start_age": 65,
         "planning_horizon_age": 90,
         "annual_growth_rate": 0.07,
-        "discount_rate": 0.05,
         "inflation_rate": 0.025
       }
     },
@@ -461,8 +460,7 @@
         "state": "CA",
         "retirement_state": "TX",
         "planning_horizon_age": 95,
-        "investment_return_pct": 6,
-        "discount_rate_pct": 4
+        "investment_return_pct": 6
       },
       "timeline": [
         {
@@ -875,7 +873,6 @@
         "default_drawdown": 80000.0,
         "planning_horizon_age": 95,
         "annual_growth_rate": 0.06,
-        "discount_rate": 0.04,
         "inflation_rate": 0.025,
         "state": "CA",
         "retirement_state": "TX"
@@ -1366,7 +1363,6 @@
         "drawdown_start_age": 55,
         "planning_horizon_age": 90,
         "annual_growth_rate": 0.07,
-        "discount_rate": 0.05,
         "inflation_rate": 0.025,
         "state": "NY"
       }
@@ -1624,7 +1620,6 @@
         "drawdown_start_age": 62,
         "planning_horizon_age": 90,
         "annual_growth_rate": 0.07,
-        "discount_rate": 0.05,
         "inflation_rate": 0.025
       }
     },
@@ -1955,7 +1950,6 @@
         "drawdown_start_age": 63,
         "planning_horizon_age": 90,
         "annual_growth_rate": 0.07,
-        "discount_rate": 0.05,
         "inflation_rate": 0.025,
         "healthcare": {
           "household_size": 2,
@@ -2540,7 +2534,6 @@
         "drawdown_start_age": 40,
         "planning_horizon_age": 90,
         "annual_growth_rate": 0.07,
-        "discount_rate": 0.05,
         "inflation_rate": 0.025
       }
     },
@@ -2932,7 +2925,6 @@
         "default_drawdown": 95000.0,
         "planning_horizon_age": 93,
         "annual_growth_rate": 0.07,
-        "discount_rate": 0.05,
         "inflation_rate": 0.025
       }
     },
@@ -3355,7 +3347,6 @@
         "drawdown_start_age": 62,
         "planning_horizon_age": 90,
         "annual_growth_rate": 0.07,
-        "discount_rate": 0.05,
         "inflation_rate": 0.035
       }
     },
@@ -3671,7 +3662,6 @@
         "drawdown_start_age": 65,
         "planning_horizon_age": 90,
         "annual_growth_rate": 0.07,
-        "discount_rate": 0.05,
         "inflation_rate": 0.0
       }
     },
@@ -4069,7 +4059,6 @@
         "drawdown_start_age": 60,
         "planning_horizon_age": 90,
         "annual_growth_rate": 0.07,
-        "discount_rate": 0.05,
         "inflation_rate": 0.025
       }
     },
@@ -4391,7 +4380,6 @@
         "default_drawdown": 130000.0,
         "planning_horizon_age": 90,
         "annual_growth_rate": 0.07,
-        "discount_rate": 0.05,
         "inflation_rate": 0.025,
         "state": "FL"
       }

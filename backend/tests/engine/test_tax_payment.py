@@ -132,19 +132,26 @@ class TestSpendingIsAfterTax:
         """The conversion's tax comes out of the accounts, not out of nowhere and not
         out of what the household spends."""
         scenario, optimized = retired_couple
-        assert optimized.total_conversion > 0
-        for t, detail in enumerate(optimized.yearly_detail):
-            assert _after_tax_spending(scenario, detail, t) == pytest.approx(BUDGET, abs=2.0)
+        converting = [
+            point for point in optimized.conversion_curve if 200_000 <= point.total_cap <= 900_000
+        ]
+        assert converting
+        for point in converting[::10]:
+            assert sum(d["conversion"] for d in point.yearly_detail) > 0
+            for t, detail in enumerate(point.yearly_detail):
+                assert detail.get("spending_shortfall", 0) == 0
+                assert _after_tax_spending(scenario, detail, t) == pytest.approx(BUDGET, abs=2.0)
 
 
-def test_a_discount_rate_does_not_change_the_plan():
-    """Money outside the accounts grows like money inside them, so there is no second
-    rate that could make a plan look better or worse."""
-    schedules = [
-        optimize(_retired(planning_horizon_age=62, discount_rate=rate)).yearly_conversions
-        for rate in (0.03, 0.07)
-    ]
-    assert schedules[0] == schedules[1]
+def test_there_is_no_second_rate():
+    """Money outside the accounts grows like money inside them, so there is no
+    discount rate that could make a plan look better or worse. A scenario saved
+    with one still loads, and the rate changes nothing."""
+    plain = optimize(_retired())
+    for rate in (0.03, 0.07):
+        saved = optimize(ScenarioInput(**_retired().model_dump(), discount_rate=rate))
+        assert saved.yearly_conversions == plain.yearly_conversions
+        assert saved.estimated_lifetime_tax_savings == plain.estimated_lifetime_tax_savings
 
 
 def test_no_withdrawal_is_larger_than_its_account():

@@ -24,15 +24,14 @@ from app.engine.types import (
 
 # ── Strategy type ────────────────────────────────────────────────────
 
-CurveStrategyName = Literal["dp_3d", "bracket_fill"]
+CurveStrategyName = Literal["bracket_fill"]
 
 
 class CurveStrategy(Protocol):
     """Protocol for conversion curve generation strategies.
 
-    Any callable with this signature satisfies the protocol.  Existing
-    functions like ``extract_conversion_curve_3d`` already conform (extra
-    keyword arguments with defaults are compatible).
+    Any callable with this signature satisfies the protocol (extra keyword
+    arguments with defaults are compatible).
     """
 
     def __call__(
@@ -88,10 +87,6 @@ def _get_strategy(name: CurveStrategyName) -> CurveStrategy:
 
     Uses lazy imports to avoid circular dependencies.
     """
-    if name == "dp_3d":
-        from app.engine.dp import extract_conversion_curve_3d
-
-        return extract_conversion_curve_3d  # type: ignore[return-value]
     if name == "bracket_fill":
         from app.engine.heuristic import bracket_fill_curve
 

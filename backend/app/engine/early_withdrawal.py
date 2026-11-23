@@ -17,7 +17,6 @@ Not modeled: the rule of 55 and 72(t) payments, which depend on which dollars
 sit in which employer plan, and income tax on Roth earnings withdrawn early.
 """
 
-from app.engine.rmd import calculate_rmd, rmd_start_age
 from app.engine.types import ScenarioInput
 
 EARLY_WITHDRAWAL_PENALTY = 0.10
@@ -69,53 +68,17 @@ def early_penalty(scenario: ScenarioInput, t: int, penalized: float) -> float:
 
 def has_early_spending(scenario: ScenarioInput) -> bool:
     """Whether any timeline year funds spending from the accounts before 59½."""
+    from app.engine.cashflow import plan_for  # lazy: cashflow builds on this module
+
     return any(
-        entry.drawdown and early_fraction(scenario, t) > 0
-        for t, entry in enumerate(scenario.timeline)
+        rule.in_timeline and rule.budget is not None and rule.penalty_rate > 0
+        for rule in plan_for(scenario).years
     )
 
 
 def penalty_free_draws(scenario: ScenarioInput, conversions: list[float]) -> list[float]:
-    """Spending drawn from penalty-free Roth money in each timeline year.
+    """Spending drawn from penalty-free Roth money in each timeline year: before 59½
+    it is drawn first, ahead of the traditional account (see ``app.engine.cashflow``)."""
+    from app.engine.cashflow import walk  # lazy: cashflow builds on this module
 
-    Walks the accounts the way every engine path does (RMD, conversion, spending
-    draw, then growth) with the penalty-free Roth money drawn first in years
-    before 59½. Every walker takes these amounts out of the year's spending need
-    before drawing on the traditional account, so all paths agree.
-    """
-    n_years = len(scenario.timeline)
-    if not has_early_spending(scenario):
-        return [0.0] * n_years
-
-    g = scenario.real_growth_rate
-    owner_rmd_start = rmd_start_age(scenario.age, scenario.timeline[0].year)
-    trad = scenario.traditional_ira_balance
-    roth = scenario.roth_ira_balance
-    # Penalty-free money not yet withdrawn: contributions, then seasoned conversions
-    basis = scenario.roth_ira_balance
-    converted = [0.0] * n_years
-    draws = []
-    for t, entry in enumerate(scenario.timeline):
-        owner_age = scenario.age + t
-        if t >= CONVERSION_SEASONING_YEARS:
-            basis += converted[t - CONVERSION_SEASONING_YEARS]
-        rmd = calculate_rmd(trad, owner_age) if owner_age >= owner_rmd_start else 0.0
-        rmd = min(rmd, trad)
-        available = trad - rmd
-        conversion = min(max(0.0, conversions[t]), available)
-        converted[t] = conversion
-        need = max(0.0, (entry.drawdown or 0.0) - rmd)
-
-        free = 0.0
-        if need > 0 and early_fraction(scenario, t) > 0:
-            free = max(0.0, min(need, basis, roth))
-            basis -= free
-        draws.append(free)
-
-        trad_draw = min(need - free, available - conversion)
-        trad -= rmd + conversion + trad_draw
-        roth += conversion
-        roth -= min(need - trad_draw, roth)
-        trad *= 1 + g
-        roth *= 1 + g
-    return draws
+    return [flow.roth_free for flow in walk(scenario, conversions).timeline()]

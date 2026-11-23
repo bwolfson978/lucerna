@@ -47,7 +47,6 @@ BUILD_CASES: list[tuple[str, dict]] = [
             retirement_state="TX",
             planning_horizon_age=95,
             investment_return_pct=6,
-            discount_rate_pct=4,
         ),
     ),
     (

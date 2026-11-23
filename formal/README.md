@@ -16,6 +16,7 @@ then the fix, in the same PR. See `.agents/skills/formal-models/SKILL.md`.
 | `lean/Lucerna/FederalTax.lean` | The two federal tax implementations agree; 2026 tax is monotone, at most 37% and at least the reported marginal rate per extra dollar (`engine/tax.py`) | Lean 4 |
 | `lean/Lucerna/SocialSecurity.lean` | Taxable Social Security equals IRS Pub. 915 Worksheet 1; 0 to 85% of benefits; at most 85 cents per extra dollar (`engine/year_tax.py`) | Lean 4 |
 | `lean/Lucerna/RmdStartAge.lean` | RMD start age by birth year (`engine/rmd.py`) | Lean 4 |
+| `lean/Lucerna/TaxPayment.lean` | Who pays the conversion tax: with one flat tax rate a conversion shows no gain and no loss; only one withdrawal leaves a given budget after tax (`engine/cashflow.py`, `optimizer.py`, `dp.py`) | Lean 4 |
 
 ## Results
 
@@ -40,6 +41,8 @@ hold. The Result column records what each property caught on earlier code.
 | ReplyRating `AckedIsTrue`, `LastPickWins`, `OneAtATime` | hold. Modeled before the code was written: without the sequence number the server checks, a slow thumbs down arriving after a later thumbs up would win | `backend/tests/api/test_reply_feedback.py`, `frontend/src/lib/agent/__tests__/replyRating.test.ts` |
 | Lean `loop_eq_vec`, `fed_mono_*`, `fed_slope_le_top_*`, `fed_slope_ge_marginal_*` | proved | `backend/tests/engine/test_formal_models.py` checks the premises against the data |
 | Lean `code_eq_worksheet`, `taxable_bounds`, `taxable_mono`, `taxable_slope` | proved | same file cross-checks Python against the worksheet |
+| Lean `old_breaks_neutrality`, `old_gain` | broke on the earlier code (the conversion tax was subtracted at today's value and paid by no account while the converted money kept growing, so with a 7% return and a 5% discount rate every conversion showed a gain even at one flat tax rate); `income_neutral`, `accounts_neutral` and `income_eq_accounts` prove it holds now that the tax is paid from income or from the accounts and money outside the accounts earns the investment return | `backend/tests/engine/test_tax_payment.py` |
+| Lean `net_strict_mono`, `gross_up_unique` | proved: one withdrawal nets the budget, so the search (`dp.py`) and the exact walk (`cashflow.py`) cannot disagree about a year | `backend/tests/engine/test_dp.py::TestSearchUsesTheSameYear` |
 | Lean `old_engine_misses_spec_from_2027`, `old_wrong_exactly_when` | broke on the earlier code (from 2027 a 67-year-old born 1960 got RMDs at 73, not 75); `engine_meets_spec` proves it holds now that callers pass the plan's first year (PR #198) | `test_rmds_start_by_birth_year_for_a_plan_starting_in_2027` |
 
 ## Running

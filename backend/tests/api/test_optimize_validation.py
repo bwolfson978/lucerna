@@ -282,12 +282,12 @@ class TestRetirementAgeValidation:
 
 
 # ---------------------------------------------------------------------------
-# 7. Growth and discount rate validation
+# 7. Growth rate validation
 # ---------------------------------------------------------------------------
 
 
 class TestRateValidation:
-    """Growth and discount rates are unconstrained — users can experiment freely."""
+    """The growth rate is unconstrained: users can experiment freely."""
 
     async def test_extreme_growth_rate_accepted(self, async_client):
         """Very high growth rate (500%) should be accepted — user can experiment."""
@@ -315,8 +315,9 @@ class TestRateValidation:
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200
 
-    async def test_extreme_discount_rate_accepted(self, async_client):
-        """Very high discount rate (200%) should be accepted — user can experiment."""
+    async def test_a_request_that_still_sends_a_discount_rate_is_accepted(self, async_client):
+        """The discount rate is no longer an input. A client that still sends one
+        (a saved scenario, an older page) gets its analysis, and the rate is ignored."""
         payload = dict(
             age=40,
             filing_status="single",
@@ -329,7 +330,7 @@ class TestRateValidation:
         assert resp.status_code == 200
 
     async def test_zero_rates_accepted(self, async_client):
-        """Zero growth and discount rates should be accepted."""
+        """A zero growth rate should be accepted."""
         payload = dict(
             age=40,
             filing_status="single",
@@ -337,7 +338,6 @@ class TestRateValidation:
             traditional_ira_balance=200000,
             drawdown_start_age=65,
             annual_growth_rate=0.0,
-            discount_rate=0.0,
         )
         resp = await async_client.post("/api/optimize", json=payload)
         assert resp.status_code == 200

@@ -72,6 +72,17 @@ def taxable_social_security(
     if benefits <= 0:
         return np.zeros_like(other_income, dtype=float) if np.ndim(other_income) else 0.0
     low, high = (threshold * fixed_scale for threshold in SS_THRESHOLDS[filing_status])
+    if not np.ndim(other_income):
+        # The same worksheet in plain arithmetic: one income is the engine's hot path
+        provisional = float(other_income) + 0.5 * benefits
+        if provisional <= low:
+            return 0.0
+        if provisional <= high:
+            return min(0.5 * (provisional - low), 0.5 * benefits)
+        return min(
+            0.85 * benefits,
+            0.85 * (provisional - high) + min(0.5 * benefits, 0.5 * (high - low)),
+        )
     provisional = np.asarray(other_income, dtype=float) + 0.5 * benefits
     middle = np.minimum(0.5 * (provisional - low), 0.5 * benefits)
     upper = np.minimum(
@@ -108,6 +119,11 @@ class YearTax:
         """Adjusted gross income: other income plus the taxable part of benefits."""
         if self.social_security <= 0:
             return income
+        if not np.ndim(income):
+            other = max(0.0, float(income) - self.social_security)
+            return other + taxable_social_security(
+                other, self.social_security, self.filing_status, self.fixed_scale
+            )
         other = np.maximum(0.0, np.asarray(income, dtype=float) - self.social_security)
         agi = other + taxable_social_security(
             other, self.social_security, self.filing_status, self.fixed_scale
@@ -119,6 +135,10 @@ class YearTax:
         if self.senior_bonus_people <= 0:
             return np.zeros_like(agi, dtype=float) if np.ndim(agi) else 0.0
         start = SENIOR_BONUS_PHASEOUT_START[self.filing_status] * self.fixed_scale
+        if not np.ndim(agi):
+            cut = SENIOR_BONUS_PHASEOUT_RATE * max(0.0, float(agi) - start)
+            each = max(0.0, SENIOR_BONUS_DEDUCTION * self.fixed_scale - cut)
+            return self.senior_bonus_people * each
         excess = np.maximum(0.0, np.asarray(agi, dtype=float) - start)
         each = np.maximum(
             0.0,
@@ -141,6 +161,20 @@ class YearTax:
     def state_income(self, income):
         """The income state tax applies to: benefits and IRA money drop out where
         the state exempts them."""
+        if not np.ndim(income):
+            out = float(income)
+            if self.other_income is not None:
+                out -= retirement_exclusion(
+                    self.state,
+                    self.filing_status,
+                    self.age,
+                    out - self.other_income,
+                    self.agi(income),
+                    self.fixed_scale,
+                )
+            if self.social_security > 0 and self.state not in STATES_TAXING_SOCIAL_SECURITY:
+                out = max(0.0, out - self.social_security)
+            return out
         out = np.asarray(income, dtype=float)
         if self.other_income is not None:
             out = out - retirement_exclusion(

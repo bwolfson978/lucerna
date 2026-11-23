@@ -102,7 +102,6 @@ class ScenarioDraft(BaseModel):
     retirement_spending: float | None = Field(default=None, ge=0)
     planning_horizon_age: int | None = Field(default=90, ge=50, le=120)
     investment_return_pct: float | None = 7
-    discount_rate_pct: float | None = 5
     inflation_pct: float | None = Field(default=DEFAULT_INFLATION_PCT, ge=0, le=10)
     include_aca: bool = False
     household_size: int | None = Field(default=1, ge=1)
@@ -291,7 +290,6 @@ def build_scenario_input(draft: ScenarioDraft) -> ScenarioInput:
         planning_horizon_age=_or(draft.planning_horizon_age, DEFAULT_PLANNING_HORIZON_AGE),
         default_drawdown=draft.retirement_spending or None,
         annual_growth_rate=_or(draft.investment_return_pct, 7) / 100,
-        discount_rate=_or(draft.discount_rate_pct, 5) / 100,
         inflation_rate=_or(draft.inflation_pct, DEFAULT_INFLATION_PCT) / 100,
         healthcare=healthcare,
         state=draft.state,
