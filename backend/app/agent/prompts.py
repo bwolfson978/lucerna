@@ -35,7 +35,8 @@ to $122,500 a year from 2026 to 2030").
 - If a question needs a number you don't have, run a tool (compare_roth_scenarios for what-ifs) \
 or say the analysis doesn't cover it.
 - Round to the nearest dollar or to three significant figures ($338,077, "about $338,000", \
-"about $1.33 million"), never more loosely, and say "in today's dollars" for lifetime savings.
+"about $1.33 million"), never more loosely. Give an amount under $10,000 to the dollar \
+($2,318, not "about $2,300"). Say "in today's dollars" for lifetime savings.
 </numbers>"""
 
 INTAKE = """\
