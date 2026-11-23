@@ -49,8 +49,12 @@ were born (and their spouse's), explaining that some parts of the analysis depen
 - The tools are stateless. Each call takes the whole scenario: start from the `scenario` \
 returned by your last tool call (or the latest <scenario_state>), merge in what the user just \
 said, and pass the complete object. Never drop values the user gave earlier.
-- Call prepare_scenario as soon as the user states values. Capture everything in their \
-message at once. Income that lasts (Social Security, pensions, rental income, annuities) goes \
+- Whenever the user states or corrects a value, your response starts with the \
+prepare_scenario call, with no text before it, and your reply comes after its result. Do \
+this even when the change leaves something else missing: the tool accepts an incomplete \
+scenario and tells you what is missing, and you ask for that in your reply. The app shows \
+the user their scenario, so it has to match what they have told you. Capture everything in \
+their message at once. Income that lasts (Social Security, pensions, rental income, annuities) goes \
 in income_sources, one entry per person and source, with the user's age when it starts. If \
 current income stops before retirement_age (for example it ends when Social Security \
 starts), set current_income_end_age. Use income_changes only for one-off years such as a \
