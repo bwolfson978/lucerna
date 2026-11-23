@@ -258,10 +258,10 @@ export function MethodologyPageClient() {
                   closes, both accounts continue compounding untouched until retirement age.
                 </P>
                 <P>
-                  <strong>Phase 3: Retirement distributions.</strong> Each year&apos;s withdrawals
-                  cover your spending and that year&apos;s tax. Traditional withdrawals are taxed.
-                  Roth withdrawals are not. If Traditional funds run short, the remainder comes from
-                  Roth tax-free. Required Minimum Distributions are enforced.
+                  <strong>Phase 3: Retirement distributions.</strong> Each year’s withdrawals cover
+                  your spending and that year’s tax. Traditional withdrawals are taxed. Roth
+                  withdrawals are not. If Traditional funds run short, the remainder comes from Roth
+                  tax-free. Required Minimum Distributions are enforced.
                 </P>
                 <P>
                   <strong>Phase 4: Money left at the end.</strong> If money is still in your
