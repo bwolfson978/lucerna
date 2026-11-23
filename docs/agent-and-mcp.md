@@ -126,7 +126,8 @@ E2E (uses the offline stand-in automatically): `cd e2e && npx playwright test`. 
 | Event | Payload | UI |
 |---|---|---|
 | `text_delta` | `text` | Streams into the current reply |
-| `tool_start` | `name`, `status` | Status line ("Running the optimizer") |
+| `tool_start` | `name`, `status` | Status line while the model writes a tool call ("Running the optimizer") |
+| `status` | `text` | Status line moves on: the tool is running ("Running the optimizer for 2026 to 2064"), then "Writing a reply" |
 | `draft` | `draft`, `missing` | Updates the shared scenario (the scenario panel marks the changed values New) |
 | `result` | `result_id`, `label`, `result`, `draft?` | Stores a full engine result for cards and the full results view |
 | `part` | `part` | Renders a card: `scenario_summary`, `result_headline`, `scenario_compare`, `suggestions` |
@@ -138,15 +139,19 @@ The browser stores `messages` exactly as returned and sends them back. Never edi
 **A turn, step by step.** The model never does anything itself. Each model call returns a proposal: text, tool requests, or both. The loop (`app/agent/loop.py`) decides what happens to each piece:
 
 1. The browser posts the message, the stored history and the scenario draft to `POST /api/agent`.
-2. The loop calls the model. Proposed text streams to the browser as `text_delta`; a tool request shows its status label (`tool_start`).
-3. The loop runs each requested tool through the MCP server. `app/agent/toolbox.py` turns the result into what the browser draws: a tool with a View becomes an `mcp_app` part, a complete scenario from `prepare_scenario` becomes a `scenario_summary` part, and full results become `result` events. The model's copy of the result goes back in the next call.
+2. The loop calls the model. Proposed text streams to the browser as `text_delta`; a tool request shows its status line (`tool_start`).
+3. The loop runs each requested tool through the MCP server, first moving the status line on to what this call is looking up (`status`), and to "Writing a reply" once the tools have answered. `app/agent/toolbox.py` turns the result into what the browser draws: a tool with a View becomes an `mcp_app` part, a complete scenario from `prepare_scenario` becomes a `scenario_summary` part, and full results become `result` events. The model's copy of the result goes back in the next call.
 4. Steps 2 and 3 repeat while a proposal contains tool requests (at most 8 model calls and 12 tool calls per message). The proposal with none is the answer.
 5. When the answer is about a result, the loop asks a small model (`AGENT_TASK_MODEL`, `ModelClient.task`) for two or three follow-up questions and sends them as a `suggestions` part (`app/agent/suggestions.py`). It gets the scenario, the person's recent messages and the answer. No result yet, or a turn that changed the scenario, gets none. A timeout or failure means no chips, never a failed turn. The chips are not stored in the history and the main model never sees them.
 6. `done` carries the messages to store.
 
 So one place decides each thing: the model proposes lookups and reply text, the loop runs the lookups, and the browser maps parts to components (`PartView` in `ConversationThread.tsx`, or the View inside a card). Don't add a tool whose job is to draw something, or tool-result text that tells the model what the user has seen.
 
-**The answer comes after the last tool call.** Only `text` blocks stream to the user. On Claude Sonnet 5.5, text longer than a sentence or two that the model writes before a tool call in the same response comes back as a progress-update `thinking` block, which is empty by default and never shown, while the model still sees it as written. A short remark stays `text`. So the prompt describes the turn in the order the user reads it: one short sentence before a lookup ("Let me compare that with retiring at 58."), which streams at once and is followed by the tool's status label, then the answer after the last tool call. Don't tell the model to write an answer, or anything with numbers in it, and then call a tool. Showing longer text in the middle of a turn (the API's `thinking.display: "updates"` summaries beside the status dot) is tracked in issue #230.
+**The answer comes after the last tool call.** Only `text` blocks stream to the user. On Claude Sonnet 5.5, text longer than a sentence or two that the model writes before a tool call in the same response comes back as a progress-update `thinking` block, which is empty by default and never shown, while the model still sees it as written. A short remark stays `text`. So the prompt describes the turn in the order the user reads it: one short sentence before a lookup ("Let me compare that with retiring at 58."), which streams at once and is followed by the tool's status label, then the answer after the last tool call. Don't tell the model to write an answer, or anything with numbers in it, and then call a tool.
+
+**The status line is written by the loop, from the tool call.** One line sits beside the progress dot while a turn runs, and it follows the turn through three stages: the model starts a tool call ("Comparing scenarios"), the call's arguments are in and the tool runs ("Comparing with “Retire at 58”", "Checking the methodology: Medicare Surcharges (IRMAA)", "Running the optimizer for 2026 to 2064"), and the tools have answered ("Writing a reply"). The lines are built in `app/agent/toolbox.py` ("The status line") from the tool's name and arguments, so they cost no tokens or waiting and can't state a result. The model writes none of it. A new tool gets a line there; without one it shows "Working".
+
+The API has nothing better to put there (issue #230, measured live in November 2026). Its progress summaries (`thinking.display: "updates"`) never appeared in 54 tool-calling responses: text before the first tool call of a response comes back as plain `text` at any length, and only long text between two tool calls is summarized. Its reasoning summaries (`display: "summarized"`) appeared in 7 of 25 tool-calling responses, arrive whole just before the tool call, and read as private deliberation (tool names, the model's rules for itself, unchecked numbers).
 
 ## The /demo tour
 

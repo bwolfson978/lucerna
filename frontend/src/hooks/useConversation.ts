@@ -64,7 +64,8 @@ export interface ReplayOptions {
 export const REPLAY_PACE = {
   betweenTurns: 700,
   afterQuestion: 450,
-  tool: 900,
+  tool: 500,
+  status: 800,
   part: 250,
   word: 40,
 };
@@ -229,8 +230,9 @@ export function useConversation({
             }
           } else {
             handleEvent(event);
-            // Long enough to read "Running the optimizer" before the card replaces it.
+            // Long enough to read each status line before the next one or the card replaces it.
             if (animate && event.type === "tool_start") await sleep(REPLAY_PACE.tool);
+            if (animate && event.type === "status") await sleep(REPLAY_PACE.status);
             if (animate && event.type === "part") await sleep(REPLAY_PACE.part);
             if (event.type === "part" && event.part.kind === "mcp_app") await stop(index, "card");
           }

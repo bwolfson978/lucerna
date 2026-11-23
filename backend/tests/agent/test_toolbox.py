@@ -4,7 +4,13 @@ import datetime
 
 import pytest
 
-from app.agent.toolbox import ToolContext, open_toolbox
+from app.agent.toolbox import (
+    STATUS_REPLYING,
+    ToolContext,
+    open_toolbox,
+    status_running,
+    status_starting,
+)
 from app.tools.draft import ScenarioDraft
 
 THIS_YEAR = datetime.date.today().year
@@ -186,3 +192,68 @@ async def test_http_mode_sends_the_internal_token(monkeypatch):
         async with toolbox_module.open_toolbox():
             pass  # pragma: no cover
     assert seen == {"url": "http://localhost:8000/mcp", "header": "s3cret"}
+
+
+def test_status_line_names_the_tool_while_its_arguments_arrive():
+    assert status_starting("analyze_roth_conversions") == "Running the optimizer"
+    assert status_starting("a_tool_added_later") == "Working"
+    assert STATUS_REPLYING == "Writing a reply"
+
+
+@pytest.mark.parametrize(
+    ("name", "arguments", "line"),
+    [
+        (
+            "analyze_roth_conversions",
+            {"scenario": SCENARIO},
+            f"Running the optimizer for 2026 to {THIS_YEAR - 52 + 90}",
+        ),
+        (
+            "compare_roth_scenarios",
+            {"scenario": SCENARIO, "changes": {"retirement_age": 58}, "label": "Retire at 58"},
+            "Comparing with \u201cRetire at 58\u201d",
+        ),
+        (
+            "get_tax_brackets",
+            {"filing_status": "single"},
+            "Looking up tax brackets for single filers",
+        ),
+        (
+            "get_tax_brackets",
+            {"filing_status": "married_filing_jointly", "state": "ca"},
+            "Looking up tax brackets for joint filers in California",
+        ),
+        (
+            "explain_methodology",
+            {"topic": "irmaa"},
+            "Checking the methodology: Medicare Surcharges (IRMAA)",
+        ),
+        ("prepare_scenario", {"scenario": SCENARIO}, "Updating your scenario"),
+    ],
+)
+def test_status_line_says_what_a_running_tool_is_looking_up(name, arguments, line):
+    assert status_running(name, arguments, 2026) == line
+
+
+@pytest.mark.parametrize(
+    ("name", "arguments"),
+    [
+        # Arguments the tool itself will turn down, or that say nothing specific.
+        ("analyze_roth_conversions", {"scenario": {"filing_status": "single"}}),
+        ("analyze_roth_conversions", {"scenario": {"birth_year": "last spring"}}),
+        ("analyze_roth_conversions", None),
+        ("compare_roth_scenarios", {"scenario": SCENARIO, "changes": {}}),
+        ("compare_roth_scenarios", {"label": "What-if"}),
+        ("compare_roth_scenarios", {"label": ["Retire at 58"]}),
+        ("get_tax_brackets", {"filing_status": "head_of_household"}),
+        ("explain_methodology", {"topic": "astrology"}),
+        ("explain_methodology", "irmaa"),
+    ],
+)
+def test_status_line_falls_back_to_the_tool_name_line(name, arguments):
+    assert status_running(name, arguments, 2026) == status_starting(name)
+
+
+def test_status_line_leaves_out_a_state_it_does_not_know():
+    line = status_running("get_tax_brackets", {"filing_status": "single", "state": "ZZ"}, 2026)
+    assert line == "Looking up tax brackets for single filers"

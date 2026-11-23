@@ -96,6 +96,69 @@ async function converse(page, { onSent = async () => {}, onSummary = async () =>
   await page.getByTestId('mcp-app').nth(1).waitFor({ timeout: 60000 })
 }
 
+/**
+ * Lets a flow stop a turn part-way, to capture what the screen shows at that moment (a
+ * status line is otherwise gone within a second). The assistant's event stream passes
+ * through a gate: `holdBefore(pattern)` lets the turn run until an event whose JSON
+ * matches the pattern is about to reach the page and keeps it there; `release()` lets
+ * the turn finish. Call before the page loads.
+ */
+async function holdableTurns(page) {
+  let holding = null
+  let onHeld = () => {}
+  let letGo = () => {}
+  await page.exposeFunction('__captureGate', (event) =>
+    new Promise((pass) => {
+      if (!holding?.test(event)) return pass()
+      holding = null
+      letGo = pass
+      onHeld()
+    })
+  )
+  await page.addInitScript(() => {
+    const realFetch = window.fetch.bind(window)
+    window.fetch = async (input, init) => {
+      const response = await realFetch(input, init)
+      const url = typeof input === 'string' ? input : input.url
+      if (!/\/api\/agent$/.test(new URL(url, location.href).pathname) || !response.body) return response
+      const reader = response.body.pipeThrough(new TextDecoderStream()).getReader()
+      const encoder = new TextEncoder()
+      let buffer = ''
+      const paced = new ReadableStream({
+        async pull(controller) {
+          const { done, value } = await reader.read()
+          buffer += value ?? ''
+          const frames = buffer.split('\n\n')
+          buffer = done ? '' : frames.pop()
+          for (const frame of frames) {
+            await window.__captureGate(frame)
+            controller.enqueue(encoder.encode(frame + '\n\n'))
+          }
+          if (done) controller.close()
+        },
+      })
+      return new Response(paced, { status: response.status, headers: response.headers })
+    }
+  })
+  return {
+    holdBefore(pattern) {
+      letGo()
+      return new Promise((held, missed) => {
+        holding = pattern
+        const giveUp = setTimeout(() => missed(new Error(`No event matching ${pattern} within 60 s`)), 60000)
+        onHeld = () => {
+          clearTimeout(giveUp)
+          held()
+        }
+      })
+    },
+    release() {
+      holding = null
+      letGo()
+    },
+  }
+}
+
 /** The View inside an MCP App frame: two iframes deep (sandbox proxy, then the View). */
 function view(page, i) {
   return page.getByTestId('mcp-app').nth(i).frameLocator('iframe').frameLocator('iframe').locator('#root')
@@ -685,6 +748,52 @@ export const flows = {
       await page.getByRole('button', { name: /Back to conversation/ }).waitFor({ timeout: 30000 })
       await page.waitForTimeout(1500)
       await shot('full-results', 'Full results (See full results on the result card)', { fullPage: true })
+    },
+  },
+
+  'status-line': {
+    title: 'Status line while the assistant works',
+    paths: [
+      'backend/app/agent/loop.py',
+      'backend/app/agent/toolbox.py',
+      'frontend/src/lib/agent/conversation.ts',
+      'frontend/src/components/conversation/ConversationThread',
+    ],
+    async run(page, shot) {
+      const turns = await holdableTurns(page)
+      const reply = page.getByTestId('assistant-message').last()
+      const line = reply.getByRole('status')
+      const finished = () => page.locator('[aria-live=polite][aria-busy=false]').waitFor({ timeout: 60000 })
+      const send = async (message) => {
+        await page.getByLabel('Message').fill(message)
+        await page.getByRole('button', { name: 'Send' }).click()
+      }
+      // Two moments of a turn with a lookup. The tool has its arguments and is running:
+      // held before the first thing that follows a tool call (its result, the line moving
+      // on, or the reply). Then its result is in and the written reply is about to start.
+      const toolDone = /"type":\s*"(result|text_delta)"|"Writing a reply"/
+      const replyStarts = /"type":\s*"text_delta"/
+      const lookup = async (name, what, start) => {
+        await finished()
+        const running = turns.holdBefore(toolDone)
+        await start()
+        await running
+        await page.waitForTimeout(500)
+        await shot(`${name}-running`, `${what}: while the lookup runs`, { element: line })
+        await turns.holdBefore(replyStarts)
+        await page.waitForTimeout(500)
+        await shot(`${name}-replying`, `${what}: the lookup is back and the reply is about to start`, { element: line })
+        if (name === 'methodology') await shot('methodology-screen', 'The same moment, whole screen')
+        turns.release()
+        await finished()
+      }
+      await page.goto('/calculator')
+      await waitForSample(page)
+      await send(MESSAGE)
+      const summary = await scenarioReady(page)
+      await lookup('run', 'Run the numbers', () => summary.getByRole('button', { name: 'Run the numbers' }).click())
+      await lookup('what-if', 'A what-if', () => send('What if I retire at 58?'))
+      await lookup('methodology', 'A question answered from the methodology', () => send('How do RMDs affect this?'))
     },
   },
 

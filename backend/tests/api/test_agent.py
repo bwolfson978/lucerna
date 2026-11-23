@@ -40,8 +40,15 @@ async def test_streams_events_from_the_loop(async_client):
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/event-stream")
     events = parse_sse(response.text)
-    assert [e["type"] for e in events] == ["tool_start", "draft", "text_delta", "done"]
-    assert events[1]["draft"]["age"] == 40
+    assert [e["type"] for e in events] == [
+        "tool_start",
+        "status",
+        "draft",
+        "status",
+        "text_delta",
+        "done",
+    ]
+    assert events[2]["draft"]["age"] == 40
     assert len(events[-1]["messages"]) == 4
     # The reply's trace id, which the page sends back with a rating.
     assert len(events[-1]["trace_id"]) == 32 and int(events[-1]["trace_id"], 16) >= 0

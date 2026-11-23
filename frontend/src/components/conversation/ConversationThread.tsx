@@ -192,11 +192,15 @@ function AssistantMessage({
         <ReplyFeedback rating={message.rating} onRate={onRate} className="-mt-2.5" />
       )}
       {parts.filter(({ part }) => part.kind === "suggestions").map(renderPart)}
+      {/* Aligned on the first line's baseline, so the dot stays beside the first words of
+          a status long enough to wrap on a phone. */}
       {showThinking && (
-        <div className="flex items-center gap-2 text-body-sm text-text-tertiary" role="status">
-          <span className="blink-dot inline-block h-2 w-2 rounded-full bg-sage" />
-          {status ?? "Thinking"}
-          {status ? "…" : ""}
+        <div className="flex items-baseline gap-2 text-body-sm text-text-tertiary" role="status">
+          <span className="blink-dot inline-block h-2 w-2 shrink-0 rounded-full bg-sage" />
+          <span>
+            {status ?? "Thinking"}
+            {status ? "…" : ""}
+          </span>
         </div>
       )}
     </div>

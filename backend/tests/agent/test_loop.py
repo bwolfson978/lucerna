@@ -111,6 +111,41 @@ async def test_full_intake_and_run_flow():
     assert result_event["result_id"] in tool_result["content"]
 
 
+async def test_status_line_follows_the_turn():
+    """Each tool call gets its own line once its arguments are in, and the line moves on
+    to the reply when the tools have answered."""
+    client = ScriptedModelClient(
+        [
+            [
+                text("Let me check both."),
+                tool_use("t1", "get_tax_brackets", {"filing_status": "single"}),
+                tool_use("t2", "explain_methodology", {"topic": "rmds"}),
+            ],
+            [text("Here is what I found.")],
+        ]
+    )
+    events = await collect(client)
+    assert [e.get("status") or e.get("text") for e in events if e["type"] != "done"] == [
+        "Let me check both.",
+        "Looking up tax brackets",
+        "Checking the methodology",
+        "Looking up tax brackets for single filers",
+        "Checking the methodology: Required Minimum Distributions",
+        "Writing a reply",
+        "Here is what I found.",
+    ]
+    assert [e["type"] for e in events] == [
+        "text_delta",
+        "tool_start",
+        "tool_start",
+        "status",
+        "status",
+        "status",
+        "text_delta",
+        "done",
+    ]
+
+
 async def test_tool_errors_are_returned_to_the_model():
     client = ScriptedModelClient(
         [

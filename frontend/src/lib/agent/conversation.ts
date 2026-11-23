@@ -15,7 +15,7 @@ export interface ConversationState {
   apiMessages: unknown[];
   results: Record<string, StoredResult>;
   streaming: boolean;
-  /** What the assistant is doing right now, e.g. "Running the optimizer". */
+  /** What the assistant is doing right now, e.g. "Running the optimizer for 2026 to 2064". */
   status: string | null;
   /** Next text delta starts a new paragraph block (a tool or card came in between). */
   breakText: boolean;
@@ -156,6 +156,8 @@ function applyEvent(state: ConversationState, event: AgentEvent): ConversationSt
       };
     case "tool_start":
       return { ...state, status: event.status, breakText: true };
+    case "status":
+      return { ...state, status: event.text };
     case "draft":
       return state;
     case "result":
