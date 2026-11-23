@@ -57,3 +57,21 @@ def test_a_turn_never_released_stops_holding_after_an_hour(monkeypatch):
     later = time.monotonic() + 60 * 60 + 1
     monkeypatch.setattr(time, "monotonic", lambda: later)
     assert isinstance(limiter.check("b", 0), Turn)
+
+
+def test_the_reserve_covers_every_call_a_turn_can_make():
+    # The model's ASSUME Reserve >= Calls * Cost: the tool loop's rounds, plus the small
+    # call that writes follow-up questions, each at its largest.
+    from app.agent.limits import _PRICES_PER_MTOK, estimate_cost, worst_case_turn_cost
+    from app.agent.loop import MAX_MODEL_CALLS_PER_TURN
+    from app.agent.model import MAX_TOKENS, TASK_MAX_TOKENS, TASK_MODEL
+
+    assert TASK_MODEL in _PRICES_PER_MTOK  # priced at its own rate, not the fallback
+    rounds = MAX_MODEL_CALLS_PER_TURN * estimate_cost(
+        "claude-sonnet-5-5", {"input_tokens": 200_000, "output_tokens": MAX_TOKENS}
+    )
+    follow_ups = estimate_cost(
+        TASK_MODEL, {"input_tokens": 100_000, "output_tokens": TASK_MAX_TOKENS}
+    )
+    assert follow_ups > 0
+    assert abs(worst_case_turn_cost("claude-sonnet-5-5") - (rounds + follow_ups)) < 1e-9

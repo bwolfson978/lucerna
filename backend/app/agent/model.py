@@ -1,14 +1,22 @@
 """Model access for the agent loop.
 
-``ModelClient`` is the seam between the loop and the Anthropic API: the loop asks
-for one streamed model turn at a time and receives text deltas, tool-start
-notices and the final assistant message as plain dicts. Tests and offline
-development swap in other implementations.
+``ModelClient`` is the seam between the loop and the Anthropic API. It offers two
+calls:
+
+- ``stream``: one turn of the main model, streamed as text deltas, tool-start
+  notices and the final assistant message as plain dicts.
+- ``task``: one short structured answer from a small, fast model, for side jobs
+  that should not occupy the main model (today: the follow-up questions offered
+  under a reply, see ``app.agent.suggestions``).
+
+Tests and offline development swap in other implementations.
 """
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
+import json
+from collections.abc import AsyncIterator, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Protocol
 
@@ -18,6 +26,11 @@ from app.config import settings
 MODEL = settings().agent_model
 EFFORT = settings().agent_effort
 MAX_TOKENS = 16000
+
+TASK_MODEL = settings().agent_task_model
+TASK_MAX_TOKENS = 1024
+# A side job never holds up the turn for long: past this it is dropped.
+TASK_TIMEOUT_S = 8.0
 
 # Server-side refusal fallback: the API re-runs a declined request on a suitable
 # model inside the same call.
@@ -50,6 +63,15 @@ class Final:
 StreamEvent = TextDelta | ToolStart | Final
 
 
+@dataclass
+class TaskReply:
+    """What the task model returned: the parsed JSON, empty when it gave none."""
+
+    data: dict
+    usage: dict = field(default_factory=dict)
+    model: str = TASK_MODEL
+
+
 def api_key() -> str | None:
     """The Anthropic API key.
 
@@ -73,6 +95,8 @@ class ModelClient(Protocol):
         self, *, system: str, tools: list[dict], messages: list[dict]
     ) -> AsyncIterator[StreamEvent]: ...
 
+    async def task(self, *, system: str, prompt: str, schema: dict) -> TaskReply: ...
+
 
 class AnthropicModelClient:
     def __init__(self) -> None:
@@ -89,8 +113,7 @@ class AnthropicModelClient:
     async def stream(
         self, *, system: str, tools: list[dict], messages: list[dict]
     ) -> AsyncIterator[StreamEvent]:
-        anthropic = self._anthropic
-        try:
+        with _outages_as_unavailable(self._anthropic):
             async with self._client.beta.messages.stream(
                 model=MODEL,
                 max_tokens=MAX_TOKENS,
@@ -111,17 +134,6 @@ class AnthropicModelClient:
                     ):
                         yield ToolStart(event.content_block.name)
                 final = await stream.get_final_message()
-        except (
-            anthropic.AuthenticationError,
-            anthropic.PermissionDeniedError,
-            anthropic.RateLimitError,
-            anthropic.APIConnectionError,
-        ) as err:
-            raise ModelUnavailable(type(err).__name__) from err
-        except anthropic.APIStatusError as err:
-            if err.status_code >= 500 or err.status_code == 529:
-                raise ModelUnavailable(f"status {err.status_code}") from err
-            raise
 
         usage = final.usage.to_dict(mode="json") if final.usage else {}
         yield Final(
@@ -132,6 +144,51 @@ class AnthropicModelClient:
                 model=final.model,
             )
         )
+
+    async def task(self, *, system: str, prompt: str, schema: dict) -> TaskReply:
+        with _outages_as_unavailable(self._anthropic):
+            message = await self._client.with_options(
+                timeout=TASK_TIMEOUT_S, max_retries=0
+            ).messages.create(
+                model=TASK_MODEL,
+                max_tokens=TASK_MAX_TOKENS,
+                system=system,
+                messages=[{"role": "user", "content": prompt}],
+                output_config={
+                    "effort": "low",
+                    "format": {"type": "json_schema", "schema": schema},
+                },
+            )
+        # A refusal or a reply cut off at max_tokens leaves no usable JSON.
+        text = "".join(block.text for block in message.content if block.type == "text")
+        try:
+            data = json.loads(text)
+        except ValueError:
+            data = {}
+        return TaskReply(
+            data=data if isinstance(data, dict) else {},
+            usage=message.usage.to_dict(mode="json") if message.usage else {},
+            model=message.model,
+        )
+
+
+@contextmanager
+def _outages_as_unavailable(anthropic) -> Iterator[None]:
+    """Turn the API failures we can't fix from here (no access, rate limit, network,
+    timeout, server error) into ModelUnavailable. Anything else is our bug and raises."""
+    try:
+        yield
+    except (
+        anthropic.AuthenticationError,
+        anthropic.PermissionDeniedError,
+        anthropic.RateLimitError,
+        anthropic.APIConnectionError,  # includes timeouts
+    ) as err:
+        raise ModelUnavailable(type(err).__name__) from err
+    except anthropic.APIStatusError as err:
+        if err.status_code >= 500 or err.status_code == 529:
+            raise ModelUnavailable(f"status {err.status_code}") from err
+        raise
 
 
 _default_client: ModelClient | None = None

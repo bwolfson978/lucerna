@@ -1,4 +1,4 @@
-"""The web assistant's MCP toolbox: tool listing, UI events and the local show tool."""
+"""The web assistant's MCP toolbox: tool listing and the browser events tool results become."""
 
 import datetime
 
@@ -25,10 +25,11 @@ def ctx() -> ToolContext:
     return ToolContext(draft=ScenarioDraft(), start_year=2026)
 
 
-async def test_lists_server_tools_plus_show():
+async def test_lists_only_the_server_tools():
     async with open_toolbox() as toolbox:
         names = [t["name"] for t in toolbox.definitions]
-        assert names[-1] == "show"
+        # The model gets no tool whose job is to draw something.
+        assert "show" not in names
         assert {"prepare_scenario", "analyze_roth_conversions", "compare_roth_scenarios"} <= set(
             names
         )
@@ -44,12 +45,13 @@ async def test_mcp_results_become_browser_events():
     async with open_toolbox() as toolbox:
         content, is_error = await toolbox.call("prepare_scenario", {"scenario": SCENARIO}, context)
         assert not is_error and content["ready_to_run"]
-        assert context.events[-1]["type"] == "draft"
         assert context.draft.age == 52
-
-        content, is_error = await toolbox.call("show", {"kind": "scenario_summary"}, context)
-        assert not is_error
-        assert context.events[-1]["part"]["kind"] == "scenario_summary"
+        # A complete scenario is put in front of the user without the model asking.
+        assert [e["type"] for e in context.events] == ["draft", "part"]
+        summary = context.events[-1]["part"]
+        assert summary["kind"] == "scenario_summary"
+        assert summary["draft"]["retirement_age"] == 60
+        assert summary["draft_hash"] == content["draft_hash"]
 
         content, is_error = await toolbox.call(
             "analyze_roth_conversions", {"scenario": SCENARIO, "user_confirmed": True}, context
@@ -75,29 +77,24 @@ async def test_mcp_results_become_browser_events():
         assert context.draft.retirement_age == 60  # a what-if never changes the scenario
 
 
-async def test_errors_and_show_validation():
+async def test_errors():
     context = ctx()
     async with open_toolbox() as toolbox:
         assert (await toolbox.call("nope", {}, context))[1] is True
+        assert (await toolbox.call("show", {"kind": "suggestions"}, context))[1] is True
         assert (await toolbox.call("prepare_scenario", {"scenario": {"birth_year": "x"}}, context))[
             1
         ]
-        assert (await toolbox.call("show", {"kind": "scenario_summary"}, context))[1]
-        assert (await toolbox.call("show", {"kind": "balance_comparison"}, context))[1]
-        assert (await toolbox.call("show", {"kind": "bracket_fill"}, context))[1]
-        assert (await toolbox.call("show", {"kind": "suggestions", "suggestions": []}, context))[1]
-        assert (await toolbox.call("show", {"kind": "unknown"}, context))[1]
+        assert context.events == []
 
 
-async def test_show_notes_when_nothing_was_written_yet():
+async def test_an_incomplete_scenario_shows_no_summary():
     context = ctx()
-    suggestions = {"kind": "suggestions", "suggestions": ["What if I retire at 60?"]}
+    partial = {k: v for k, v in SCENARIO.items() if k != "retirement_age"}
     async with open_toolbox() as toolbox:
-        content, is_error = await toolbox.call("show", suggestions, context)
-        assert not is_error and "not seen any text" in content["note"]
-
-        context.wrote_text = True
-        assert await toolbox.call("show", suggestions, context) == ({"shown": "suggestions"}, False)
+        content, is_error = await toolbox.call("prepare_scenario", {"scenario": partial}, context)
+        assert not is_error and not content["ready_to_run"]
+        assert [e["type"] for e in context.events] == ["draft"]
 
 
 async def test_ui_tool_results_become_mcp_app_parts():
@@ -110,13 +107,12 @@ async def test_ui_tool_results_become_mcp_app_parts():
         }
         # This host renders the scenario summary natively, so no View part for it.
         await toolbox.call("prepare_scenario", {"scenario": SCENARIO}, context)
-        assert not [e for e in context.events if e["type"] == "part"]
+        assert not [e for e in context.events if e.get("part", {}).get("kind") == "mcp_app"]
         content, is_error = await toolbox.call(
             "analyze_roth_conversions", {"scenario": SCENARIO, "user_confirmed": True}, context
         )
     assert not is_error
-    part = next(e["part"] for e in context.events if e["type"] == "part")
-    assert part["kind"] == "mcp_app"
+    part = next(e["part"] for e in context.events if e.get("part", {}).get("kind") == "mcp_app")
     assert part["resource_uri"] == "ui://roth-conversions/result-card.html"
     assert part["tool_input"]["user_confirmed"] is True
     view_data = part["tool_result"]
@@ -190,16 +186,3 @@ async def test_http_mode_sends_the_internal_token(monkeypatch):
         async with toolbox_module.open_toolbox():
             pass  # pragma: no cover
     assert seen == {"url": "http://localhost:8000/mcp", "header": "s3cret"}
-
-
-async def test_scenario_summary_asks_for_a_written_reply_when_there_is_none_yet():
-    # A first turn can end on the summary alone, which leaves the user with no reply.
-    context = ctx()
-    async with open_toolbox() as toolbox:
-        await toolbox.call("prepare_scenario", {"scenario": SCENARIO}, context)
-        content, is_error = await toolbox.call("show", {"kind": "scenario_summary"}, context)
-        assert not is_error and "Run the numbers" in content["next"]
-
-        context.wrote_text = True
-        content, _ = await toolbox.call("show", {"kind": "scenario_summary"}, context)
-        assert content["shown"] == "scenario_summary" and "next" not in content
